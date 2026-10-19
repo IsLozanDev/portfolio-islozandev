@@ -1,6 +1,6 @@
 # SPEC 01 — Monorepo Nx, CI, entorno local y reglas de límites
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** ninguna
 > **Date:** 2026-10-19
 > **Objective:** Dejar creado el monorepo Nx + pnpm con CI en GitHub Actions, entorno local reproducible y reglas de límites por scope, tipo, componente y capa verificadas automáticamente.
@@ -30,7 +30,7 @@ RNF heredados que toca: RNF-024 y RNF-119 (límites de módulos), RNF-011 (secre
 
 **Out of scope (para otros specs):**
 
-- Contenido del kernel (AggregateRoot, UnitOfWork, outbox): spec del kernel (F-06).
+- Contenido del kernel (AggregateRoot, UnitOfWork, outbox): spec 02 `supabase-y-kernel` (F-06).
 - `apps/worker`, generador Nx `modulo-hexagonal` y frontends Angular (`apps/plataforma-*`, `libs/shared/auth`, `ui`, `shell`): llegan cuando su sprint lo pida. Las reglas `type:feature`, `type:ui`, `type:data-access` quedan declaradas desde ya.
 - `deploy-staging.yml` y `deploy-prod.yml`, Dockerfile de `apps/api`, OpenTelemetry (`tracing.ts`).
 - Proyectos Supabase dev/prod, claves ES256, SMTP (F-04, es de operación).
@@ -38,6 +38,28 @@ RNF heredados que toca: RNF-024 y RNF-119 (límites de módulos), RNF-011 (secre
 - Tags `comp:*` de componentes R2/R3 (PER, IDN, ARC, FE, NOT, PAG, CMS, POR, SOP): se agregan con cada lib nueva.
 - Primera migración real de esquema. El runner se prueba con fixtures.
 - Cache remota Nx Cloud.
+
+## Base de código reutilizada
+
+Fuente: `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/` (`2_Estructura/` y `codigo/`).
+
+**Se conserva:**
+
+- `2_Estructura/eslint.boundaries.snippet.js`: base de las reglas `scope` y `type` (se amplía con `scope:app` y `comp:*`).
+- Versiones de `codigo/libs/plataforma/seguridad/package.json`: NestJS `^12.2.0`, TypeScript `~5.9.3`, `@types/node ^24`, `supertest ^7`.
+- Opciones de `codigo/libs/plataforma/seguridad/tsconfig.json`: `module`/`moduleResolution` `nodenext`, `strict`, `experimentalDecorators`, `emitDecoratorMetadata`. Pasan a `tsconfig.base.json`.
+- Patrón de `codigo/supabase/correr_pruebas.sh`: base temporal, `psql -v ON_ERROR_STOP=1`, scripts en orden. Inspira el runner `tools/migrar/` y el job `migraciones`.
+
+**Cambia:**
+
+- La prueba de `seguridad` corre con `tsc && node dist/...` sin runner. Aquí `apps/api` usa Jest + Supertest, como pide el árbol de `estructura_backend.txt` (`api-e2e`).
+- `correr_pruebas.sh` es bash y apunta a PostgreSQL 15+. Aquí el runner es Node (desarrollo en Windows) y la base es PostgreSQL 16.
+
+**No corresponde todavía** (cada spec declara su parte cuando llegue):
+
+- `libs/plataforma/seguridad/**`, `db/01b_seg.sql`, `supabase/migrations/20261102000000_seg_supabase_auth.sql` y `supabase/tests/`: specs 04 y 06.
+- `db/01a_org.sql`: spec 03.
+- `libs/shared/auth/**`: spec 05, verificando APIs contra Angular 21.
 
 ## Modelo de datos
 
