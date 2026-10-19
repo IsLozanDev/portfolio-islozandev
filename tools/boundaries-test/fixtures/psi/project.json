@@ -1,0 +1,7 @@
+{
+  "name": "fx-psi",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/boundaries-test/fixtures/psi/src",
+  "projectType": "library",
+  "tags": ["scope:psi", "type:backend"]
+}

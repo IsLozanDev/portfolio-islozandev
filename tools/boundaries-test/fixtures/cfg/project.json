@@ -1,0 +1,7 @@
+{
+  "name": "fx-cfg",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/boundaries-test/fixtures/cfg/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:cfg"]
+}

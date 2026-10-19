@@ -1,0 +1,7 @@
+{
+  "name": "fx-evt",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/boundaries-test/fixtures/evt/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:evt"]
+}
