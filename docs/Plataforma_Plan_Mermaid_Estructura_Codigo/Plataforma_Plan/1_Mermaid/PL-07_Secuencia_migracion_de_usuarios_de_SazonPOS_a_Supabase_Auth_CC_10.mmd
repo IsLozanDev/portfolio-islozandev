@@ -1,0 +1,21 @@
+%% PL-07 — Secuencia: migración de usuarios de SazónPOS a Supabase Auth (CC-10)
+sequenceDiagram
+  autonumber
+  participant OP as Script de migración
+  participant OLD as BD SazónPOS (users)
+  participant SA as Supabase Admin API
+  participant DB as PostgreSQL (seg)
+  participant BE as Backend SazónPOS
+  participant W as Frontend SazónPOS
+  OP->>OLD: usuarios activos (id, correo, hash bcrypt, proveedor OAuth)
+  loop por usuario
+    OP->>SA: admin.createUser(id, email, password_hash, email_confirm, app_metadata)
+    SA->>DB: auth.users → trigger seg.usuario
+    OP->>DB: membresía ACTIVO + asignaciones (mapeo rol → rol de plataforma)
+  end
+  OP->>OP: informe: migrados, omitidos, OAuth a re-vincular
+  Note over BE: Transición: guard acepta JWT propio (HS256 actual)<br/>y JWT de Supabase (ES256 por JWKS)
+  W->>W: nuevo login con Supabase Auth (feature flag)
+  W->>BE: Bearer (Supabase)
+  BE-->>W: 200
+  Note over BE,W: Corte: se retira el emisor propio y /auth/login.<br/>las sesiones antiguas expiran y piden ingresar de nuevo

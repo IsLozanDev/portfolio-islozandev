@@ -1,0 +1,22 @@
+%% PL-01 — Hoja de ruta de releases
+flowchart LR
+  R0["R0 · Fundaciones<br/>monorepo Nx · CI · Supabase<br/>kernel · kernel-infra"]:::infra
+  R1["R1 · Seguridad y organización<br/>TR-ORG · TR-SEG (Supabase Auth)<br/>TR-CFG · TR-SEQ · TR-CAT<br/>TR-AUD · TR-EVT · TR-OBS base<br/>SazónPOS CC-01..CC-08, CC-10"]:::trans
+  R2["R2 · Facturación y personas<br/>TR-PER · TR-IDN · TR-ARC<br/>TR-FE · TR-NOT · ARCO<br/>SazónPOS CC-06, CC-09"]:::trans
+  R3["R3 · Plataforma para PsicoAgenda<br/>TR-PAG · TR-REP · TR-CMS<br/>TR-POR · TR-SOP · TR-OBS negocio<br/>WhatsApp"]:::trans
+  R4["R4 · Backlog 2028<br/>TR-IA · TR-INT · TR-EDGE<br/>identidad portable · conciliación<br/>cobro de suscripciones"]:::ext
+  R0 --> R1 --> R2 --> R3 --> R4
+  H1(["06/04/27<br/>producción R1"]):::hito
+  H2(["30/06/27<br/>producción R2"]):::hito
+  H3(["05/10/27<br/>producción R3"]):::hito
+  R1 -.- H1
+  R2 -.- H2
+  R3 -.- H3
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef hito fill:#d5f5f0,stroke:#0f766e,color:#123;

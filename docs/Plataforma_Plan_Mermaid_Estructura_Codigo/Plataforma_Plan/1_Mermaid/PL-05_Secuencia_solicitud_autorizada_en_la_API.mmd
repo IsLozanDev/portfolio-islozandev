@@ -1,0 +1,32 @@
+%% PL-05 — Secuencia: solicitud autorizada en la API
+sequenceDiagram
+  autonumber
+  participant W as App Angular
+  participant G1 as AutenticacionGuard
+  participant G2 as PermisoGuard
+  participant UC as ResolverPermisosUseCase
+  participant R as Redis
+  participant DB as PostgreSQL
+  participant C as Controlador / caso de uso
+  W->>G1: POST /v1/seg/usuarios/invitar<br/>Bearer · X-Sucursal-Id
+  G1->>G1: jwtVerify(ES256, iss, aud, exp) con JWKS en memoria
+  alt token inválido
+    G1-->>W: 401
+  end
+  G1->>G2: principal {usuario, tenant, aal}
+  G2->>G2: ¿tenant? ¿cabecera de sucursal? ¿MFA si el permiso es sensible?
+  G2->>UC: permisos(usuario, tenant, sucursal)
+  UC->>R: GET perm:tenant:usuario:sucursal
+  alt no está en caché
+    UC->>DB: seg.sucursales_accesibles · seg.permisos_efectivos
+    UC->>R: SET (60 s) + índice del tenant
+  end
+  alt sin permiso
+    G2->>DB: evento_seguridad ACCESO_DENEGADO
+    G2-->>W: 403 {codigo: SIN_PERMISO}
+  else permitido
+    G2->>C: req.contexto {tenant, sucursal, permisos}
+    C->>DB: SET LOCAL app.tenant_id → RLS · transacción + outbox
+    C-->>W: 201
+  end
+  Note over R,DB: Al cambiar roles o asignaciones, el evento<br/>seg.asignacion.* invalida las claves del tenant

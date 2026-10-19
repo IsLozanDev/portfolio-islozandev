@@ -1,0 +1,45 @@
+vitrina/                                     Angular 22 · standalone · signals · zoneless · Angular Material
+├── apps/
+│   ├── plataforma-consola/                  SPA del equipo de plataforma (consola.<dominio>)
+│   │   ├── src/main.ts                      provideHttpClient(withInterceptors([authInterceptor]))
+│   │   ├── src/app/app.routes.ts            /auth/* · /tenants · /catalogos · /eventos · /salud  (lazy, MFA obligatoria)
+│   │   └── project.json                     tags: scope:plataforma, type:app
+│   ├── plataforma-admin/                    SPA de Administración del cliente (admin.<dominio>)
+│   │   └── src/app/app.routes.ts            monta libs/plataforma/admin-cliente; la abre SazónPOS con la misma cookie
+│   └── plataforma-consola-e2e/ · plataforma-admin-e2e/   Playwright
+│
+├── libs/shared/                             scope:shared (lo usan TODOS los productos)
+│   ├── auth/                                type:data-access   ← detalle de referencia
+│   │   └── src/lib/
+│   │       ├── config.ts                    CONFIG_AUTH (URL de Supabase, publishable key, API, dominio de cookie)
+│   │       ├── supabase.cliente.ts          createBrowserClient (@supabase/ssr) · PKCE · cookie de dominio
+│   │       ├── sesion.service.ts            signals: sesión, contexto, sucursal, permisos · login · OAuth · MFA · cambio de tenant
+│   │       ├── auth.interceptor.ts          Bearer + X-Sucursal-Id solo hacia la API propia
+│   │       ├── guards.ts                    autenticadoGuard (MFA pendiente → /auth/mfa) · permisoGuard(codigo)
+│   │       └── si-permiso.directive.ts      *siPermiso="'plat.usuario.invitar'"
+│   ├── auth-ui/                             type:feature · páginas /auth: ingresar · callback OAuth · mfa (enrolar/verificar)
+│   │                                        · recuperar y nueva clave · aceptar invitación
+│   ├── shell/                               type:feature · layout · menú dinámico desde la API · selector de empresa/sucursal
+│   │                                        · selector de tenant · avisos · página 403/404
+│   ├── ui/                                  type:ui · tokens de diseño (marca por tenant) · tabla, formulario, filtros,
+│   │                                        diálogo de confirmación, estado vacío, carga
+│   └── util/                                type:util · formatos es-PE · validadores DNI/RUC · zona America/Lima
+│
+├── libs/plataforma/                         scope:plataforma · pantallas transversales reutilizables
+│   ├── admin-cliente/                       type:feature · rutas lazy que cada <producto>-backoffice embebe
+│   │   └── src/lib/
+│   │       ├── admin.routes.ts              usuarios · roles · perfiles · empresas · sucursales · parámetros · series · catálogos
+│   │       ├── usuarios/                    lista · invitar · detalle con asignaciones por sucursal · revocar
+│   │       ├── roles/                       lista · editor de permisos agrupados por módulo · perfiles de puesto
+│   │       ├── organizacion/                empresas · sucursales · unidades operativas
+│   │       ├── parametros/                  árbol de herencia · restablecer valor
+│   │       ├── series/ · catalogos/
+│   │       └── bitacora/                    bitácora de seguridad · acceso temporal de soporte
+│   ├── consola-tenants/ · consola-catalogos/ · consola-eventos/      type:feature · solo plataforma-consola
+│   ├── data-access/                         type:data-access · cliente HTTP generado desde OpenAPI + stores con signals
+│   ├── cms-editor/ · cms-render/ · portal-cuenta/ · soporte-widget/  (R3)
+│
+└── reglas (eslint enforce-module-boundaries)
+    · type:app       → feature, ui, data-access, util
+    · type:feature   → feature, ui, data-access, util
+    · scope:plataforma nunca importa de un producto; scope:shared no importa de nada fuera de shared

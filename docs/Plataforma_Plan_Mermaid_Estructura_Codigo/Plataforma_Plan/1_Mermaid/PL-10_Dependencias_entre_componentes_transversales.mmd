@@ -1,0 +1,42 @@
+%% PL-10 — Dependencias entre componentes transversales
+flowchart LR
+  K["kernel<br/>kernel-infra"]:::infra
+  ORG["TR-ORG"]:::trans
+  SEG["TR-SEG<br/>Supabase Auth"]:::trans
+  CFG["TR-CFG"]:::trans
+  SEQ["TR-SEQ"]:::trans
+  CAT["TR-CAT"]:::trans
+  AUD["TR-AUD"]:::trans
+  EVT["TR-EVT"]:::trans
+  PER["TR-PER"]:::trans
+  IDN["TR-IDN"]:::trans
+  ARC["TR-ARC"]:::trans
+  FE["TR-FE"]:::trans
+  NOT["TR-NOT"]:::trans
+  PAG["TR-PAG"]:::trans
+  CMS["TR-CMS"]:::trans
+  POR["TR-POR"]:::trans
+  SOP["TR-SOP"]:::trans
+  OBS["TR-OBS"]:::trans
+  K --> ORG --> SEG
+  K --> EVT
+  SEG --> CFG & SEQ & CAT & AUD
+  EVT --> AUD
+  CAT --> PER --> IDN
+  SEQ & CAT & PER --> FE
+  ARC --> FE
+  EVT --> NOT
+  FE --> PAG
+  NOT --> PAG
+  ARC --> CMS --> POR
+  PER --> POR
+  NOT --> SOP
+  EVT --> OBS --> SOP
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef hito fill:#d5f5f0,stroke:#0f766e,color:#123;

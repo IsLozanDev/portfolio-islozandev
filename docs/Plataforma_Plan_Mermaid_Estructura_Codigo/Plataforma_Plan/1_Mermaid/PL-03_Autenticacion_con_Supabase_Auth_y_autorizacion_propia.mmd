@@ -1,0 +1,43 @@
+%% PL-03 — Autenticación con Supabase Auth y autorización propia
+flowchart LR
+  subgraph FE["Frontends Angular 22"]
+    A1["plataforma-consola"]:::app
+    A2["plataforma-admin"]:::app
+    A3["SazónPOS frontend"]:::rest
+    A4["psi-backoffice (R3)"]:::app
+  end
+  subgraph SB["Supabase"]
+    AUTH["Supabase Auth<br/>login · OAuth · MFA TOTP<br/>refresh · invitaciones"]:::ext
+    HOOK["Hook de token<br/>seg.custom_access_token_hook<br/>+ tenant_id · tipo_usuario"]:::dato
+    JWKS["/auth/v1/.well-known/jwks.json<br/>llave pública ES256"]:::ext
+    DB[("PostgreSQL<br/>org · seg · cfg · cat · seq · aud · sync")]:::dato
+  end
+  subgraph API["apps/api · NestJS 12"]
+    G1["AutenticacionGuard<br/>verifica firma, iss, aud, exp"]:::trans
+    G2["PermisoGuard<br/>tenant + X-Sucursal-Id + permiso + aal2"]:::trans
+    RP["ResolverPermisosUseCase"]:::trans
+  end
+  RD[("Redis<br/>caché de permisos")]:::infra
+  subgraph REST["SazónPOS backend (repo propio)"]
+    SP["src/plataforma<br/>guard @Permiso · contexto"]:::rest
+  end
+  FE -- "1. credenciales / OAuth / código TOTP" --> AUTH
+  AUTH -- "2. invoca" --> HOOK
+  HOOK -. lee .-> DB
+  AUTH -- "3. access token (JWT) + refresh" --> FE
+  A1 & A2 & A4 -- "4. Bearer + X-Sucursal-Id" --> G1
+  G1 -. "llaves en caché 10 min" .-> JWKS
+  G1 --> G2 --> RP
+  RP <--> RD
+  RP -- "seg.permisos_efectivos()" --> DB
+  A3 -- Bearer --> SP
+  SP -. JWKS .-> JWKS
+  SP -- "mismas funciones seg" --> DB
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef hito fill:#d5f5f0,stroke:#0f766e,color:#123;

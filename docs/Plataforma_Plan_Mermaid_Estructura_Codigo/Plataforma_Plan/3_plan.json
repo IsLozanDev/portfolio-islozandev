@@ -1,0 +1,1374 @@
+{
+ "inicio": "2026-10-19",
+ "h_semana": 11,
+ "ceremonia": 2,
+ "sprints": [
+  {
+   "n": 0,
+   "release": "R0",
+   "objetivo": "Fundaciones: monorepo, CI, Supabase, kernel",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2026-10-19",
+   "fin": "2026-11-01",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 1,
+   "release": "R1",
+   "objetivo": "Autenticación con Supabase Auth y MFA",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2026-11-02",
+   "fin": "2026-11-15",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 2,
+   "release": "R1",
+   "objetivo": "Organización: tenants, empresas, sucursales y consola",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2026-11-16",
+   "fin": "2026-11-29",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 3,
+   "release": "R1",
+   "objetivo": "Autorización: roles, permisos efectivos, guard y membresías",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2026-11-30",
+   "fin": "2026-12-13",
+   "feriados": [
+    "Inmaculada Concepción (08/12)",
+    "Batalla de Ayacucho (09/12)"
+   ],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 4,
+   "release": "R1",
+   "objetivo": "Frontend de seguridad: diseño, shell y usuarios",
+   "factor": 0.7,
+   "nota": "Fiestas de fin de año",
+   "inicio": "2026-12-14",
+   "fin": "2026-12-27",
+   "feriados": [
+    "Navidad (25/12)"
+   ],
+   "horas": 14,
+   "capacidad": 14
+  },
+  {
+   "n": 5,
+   "release": "R1",
+   "objetivo": "Roles, sucursales, app de Administración y bitácora",
+   "factor": 0.7,
+   "nota": "Fiestas de fin de año",
+   "inicio": "2026-12-28",
+   "fin": "2027-01-10",
+   "feriados": [
+    "Año Nuevo (01/01)"
+   ],
+   "horas": 14,
+   "capacidad": 14
+  },
+  {
+   "n": 6,
+   "release": "R1",
+   "objetivo": "Datos de referencia: parámetros, correlativos y catálogos",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-01-11",
+   "fin": "2027-01-24",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 7,
+   "release": "R1",
+   "objetivo": "Administración de datos, auditoría y eventos",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-01-25",
+   "fin": "2027-02-07",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 8,
+   "release": "R1",
+   "objetivo": "Observabilidad, staging e inicio de integración SazónPOS",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-02-08",
+   "fin": "2027-02-21",
+   "feriados": [],
+   "horas": 18,
+   "capacidad": 20
+  },
+  {
+   "n": 9,
+   "release": "R1",
+   "objetivo": "SazónPOS: autenticación Supabase y permisos en modo sombra",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-02-22",
+   "fin": "2027-03-07",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 10,
+   "release": "R1",
+   "objetivo": "SazónPOS: catálogos, shell, eventos y pruebas E2E",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-03-08",
+   "fin": "2027-03-21",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 11,
+   "release": "R1",
+   "objetivo": "UAT y preparación de producción",
+   "factor": 0.75,
+   "nota": "Semana Santa",
+   "inicio": "2027-03-22",
+   "fin": "2027-04-04",
+   "feriados": [
+    "Jueves Santo (25/03)",
+    "Viernes Santo (26/03)"
+   ],
+   "horas": 15,
+   "capacidad": 15
+  },
+  {
+   "n": 12,
+   "release": "R1",
+   "objetivo": "Pase a producción R1 e hipercuidado",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-04-05",
+   "fin": "2027-04-18",
+   "feriados": [],
+   "horas": 16,
+   "capacidad": 20
+  },
+  {
+   "n": 13,
+   "release": "R2",
+   "objetivo": "Personas, identidad DNI/RUC y archivos",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-04-19",
+   "fin": "2027-05-02",
+   "feriados": [
+    "Día del Trabajo (01/05)"
+   ],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 14,
+   "release": "R2",
+   "objetivo": "Facturación electrónica I: emisor, boleta y factura",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-05-03",
+   "fin": "2027-05-16",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 15,
+   "release": "R2",
+   "objetivo": "Facturación electrónica II: notas, resumen, baja, contingencia",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-05-17",
+   "fin": "2027-05-30",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 16,
+   "release": "R2",
+   "objetivo": "Notificaciones, administración de FE y personas en SazónPOS",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-05-31",
+   "fin": "2027-06-13",
+   "feriados": [
+    "Batalla de Arica y Día de la Bandera (07/06)"
+   ],
+   "horas": 18,
+   "capacidad": 20
+  },
+  {
+   "n": 17,
+   "release": "R2",
+   "objetivo": "SazónPOS: facturación electrónica y homologación",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-06-14",
+   "fin": "2027-06-27",
+   "feriados": [],
+   "horas": 20,
+   "capacidad": 20
+  },
+  {
+   "n": 18,
+   "release": "R2",
+   "objetivo": "Pase a producción R2, ARCO e hipercuidado",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-06-28",
+   "fin": "2027-07-11",
+   "feriados": [
+    "San Pedro y San Pablo (29/06)"
+   ],
+   "horas": 16,
+   "capacidad": 20
+  },
+  {
+   "n": 19,
+   "release": "R3",
+   "objetivo": "Pagos en línea: pasarela, Yape/Plin, webhooks",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-07-12",
+   "fin": "2027-07-25",
+   "feriados": [
+    "Día de la Fuerza Aérea (23/07)"
+   ],
+   "horas": 18,
+   "capacidad": 20
+  },
+  {
+   "n": 20,
+   "release": "R3",
+   "objetivo": "Pagos II y reportes base",
+   "factor": 0.8,
+   "nota": "Fiestas Patrias",
+   "inicio": "2027-07-26",
+   "fin": "2027-08-08",
+   "feriados": [
+    "Fiestas Patrias (28/07)",
+    "Fiestas Patrias (29/07)",
+    "Batalla de Junín (06/08)"
+   ],
+   "horas": 16,
+   "capacidad": 16
+  },
+  {
+   "n": 21,
+   "release": "R3",
+   "objetivo": "CMS: sitio, páginas por bloques, SEO",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-08-09",
+   "fin": "2027-08-22",
+   "feriados": [],
+   "horas": 16,
+   "capacidad": 20
+  },
+  {
+   "n": 22,
+   "release": "R3",
+   "objetivo": "CMS II y portal del cliente final",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-08-23",
+   "fin": "2027-09-05",
+   "feriados": [
+    "Santa Rosa de Lima (30/08)"
+   ],
+   "horas": 18,
+   "capacidad": 20
+  },
+  {
+   "n": 23,
+   "release": "R3",
+   "objetivo": "Centro de soporte y widget",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-09-06",
+   "fin": "2027-09-19",
+   "feriados": [],
+   "horas": 18,
+   "capacidad": 20
+  },
+  {
+   "n": 24,
+   "release": "R3",
+   "objetivo": "Observabilidad de negocio, WhatsApp y estabilización",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-09-20",
+   "fin": "2027-10-03",
+   "feriados": [],
+   "horas": 16,
+   "capacidad": 20
+  },
+  {
+   "n": 25,
+   "release": "R3",
+   "objetivo": "Pase a producción R3",
+   "factor": 1.0,
+   "nota": "",
+   "inicio": "2027-10-04",
+   "fin": "2027-10-17",
+   "feriados": [
+    "Combate de Angamos (08/10)"
+   ],
+   "horas": 12,
+   "capacidad": 20
+  }
+ ],
+ "backlog": [
+  {
+   "id": "F-01",
+   "sprint": 0,
+   "componente": "SazónPOS",
+   "historia": "Aplicar CC-00 (parche de seguridad) si aún no está en producción",
+   "rf": "CC-00",
+   "tipo": "SazónPOS",
+   "horas": 5,
+   "release": "R0"
+  },
+  {
+   "id": "F-02",
+   "sprint": 0,
+   "componente": "Monorepo",
+   "historia": "Crear monorepo Nx con pnpm, apps/libs, etiquetas y enforce-module-boundaries; Husky y commitlint",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 3,
+   "release": "R0"
+  },
+  {
+   "id": "F-03",
+   "sprint": 0,
+   "componente": "Monorepo",
+   "historia": "CI en GitHub Actions: nx affected lint, test y build con caché",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 2,
+   "release": "R0"
+  },
+  {
+   "id": "F-04",
+   "sprint": 0,
+   "componente": "TR-SEG",
+   "historia": "Supabase: proyectos dev y prod, claves JWT asimétricas (ES256), Data API sin esquemas de plataforma, SMTP propio",
+   "rf": "TR-RNF",
+   "tipo": "Ops",
+   "horas": 3,
+   "release": "R0"
+  },
+  {
+   "id": "F-05",
+   "sprint": 0,
+   "componente": "Kernel",
+   "historia": "Entorno local: docker-compose PostgreSQL 16 + Redis, Supabase CLI y flujo de migraciones",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 2,
+   "release": "R0"
+  },
+  {
+   "id": "F-06",
+   "sprint": 0,
+   "componente": "Kernel",
+   "historia": "kernel y kernel-infra: AggregateRoot, DomainEvent, UnitOfWork, AlsTenantContext, OutboxPublisher",
+   "rf": "TR-RF-092",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R0"
+  },
+  {
+   "id": "A-01",
+   "sprint": 1,
+   "componente": "TR-SEG",
+   "historia": "Verificador de JWT por JWKS (jose), guard global de autenticación y decorador @Publico",
+   "rf": "TR-RF-010",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "A-02",
+   "sprint": 1,
+   "componente": "TR-SEG",
+   "historia": "Hook de token personalizado: tenant_id, tipo de usuario y versión de permisos (SQL + pruebas)",
+   "rf": "TR-RF-015",
+   "tipo": "Back",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "A-03",
+   "sprint": 1,
+   "componente": "TR-SEG",
+   "historia": "Sincronizar auth.users con seg.usuario y vincular identidad",
+   "rf": "TR-RF-010",
+   "tipo": "Back",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "A-04",
+   "sprint": 1,
+   "componente": "Shared",
+   "historia": "shared/auth: cliente Supabase, ingreso con correo, Google y Microsoft, recuperación, sesión en cookie de dominio",
+   "rf": "TR-RF-010",
+   "tipo": "Front",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "A-05",
+   "sprint": 1,
+   "componente": "TR-SEG",
+   "historia": "MFA TOTP: enrolar, desafiar y exigir aal2 en el backend",
+   "rf": "TR-RF-017",
+   "tipo": "Full",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "O-01",
+   "sprint": 2,
+   "componente": "TR-ORG",
+   "historia": "Dominio org: tenant, empresa, sucursal, unidad y suscripción con migraciones",
+   "rf": "TR-RF-002, 003, 004",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "O-02",
+   "sprint": 2,
+   "componente": "TR-ORG",
+   "historia": "Alta de tenant transaccional con siembra e invitación al propietario (Admin API de Supabase)",
+   "rf": "TR-RF-001",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "O-03",
+   "sprint": 2,
+   "componente": "TR-ORG",
+   "historia": "Suscripción, cambio de estado y vencimiento de prueba (tarea diaria)",
+   "rf": "TR-RF-005, 006, 007",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "O-04",
+   "sprint": 2,
+   "componente": "Consola",
+   "historia": "plataforma-consola: base con MFA obligatorio; tenants (lista, alta, estado)",
+   "rf": "TR-RF-001, 006",
+   "tipo": "Front",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "S-01",
+   "sprint": 3,
+   "componente": "TR-SEG",
+   "historia": "Dominio seg: permiso, rol, perfil, asignación con alcance y vigencia; manifiesto de producto",
+   "rf": "TR-RF-008, 011, 012, 013",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "S-02",
+   "sprint": 3,
+   "componente": "TR-SEG",
+   "historia": "Permisos efectivos y menú con caché Redis e invalidación por versión",
+   "rf": "TR-RF-015",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "S-03",
+   "sprint": 3,
+   "componente": "TR-SEG",
+   "historia": "Guard @Permiso y contexto de empresa/sucursal (X-Sucursal-Id)",
+   "rf": "TR-RF-016",
+   "tipo": "Back",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "S-04",
+   "sprint": 3,
+   "componente": "TR-SEG",
+   "historia": "Invitar, aceptar, revocar y suspender membresía",
+   "rf": "TR-RF-009, 010, 014",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "S-05",
+   "sprint": 3,
+   "componente": "TR-SEG",
+   "historia": "Pruebas de aislamiento entre tenants (RLS y API)",
+   "rf": "TR-RNF",
+   "tipo": "QA",
+   "horas": 2,
+   "release": "R1"
+  },
+  {
+   "id": "U-01",
+   "sprint": 4,
+   "componente": "Shared",
+   "historia": "shared/ui: sistema de diseño base (Angular Material + tokens por tenant)",
+   "rf": "—",
+   "tipo": "Front",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "U-02",
+   "sprint": 4,
+   "componente": "Shared",
+   "historia": "shared/shell: layout, menú dinámico, selector de empresa y sucursal, *siPermiso",
+   "rf": "TR-RF-015, 016",
+   "tipo": "Front",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "U-03",
+   "sprint": 4,
+   "componente": "Admin cliente",
+   "historia": "Usuarios: invitar, asignar rol por sucursal, revocar",
+   "rf": "TR-RF-009, 013, 014",
+   "tipo": "Front",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "U-04",
+   "sprint": 5,
+   "componente": "Admin cliente",
+   "historia": "Roles y perfiles de puesto",
+   "rf": "TR-RF-011, 012",
+   "tipo": "Front",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "U-05",
+   "sprint": 5,
+   "componente": "Admin cliente",
+   "historia": "Empresas, sucursales y unidades operativas",
+   "rf": "TR-RF-002, 003, 004",
+   "tipo": "Front",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "U-06",
+   "sprint": 5,
+   "componente": "Admin cliente",
+   "historia": "App plataforma-admin autónoma (para SazónPOS) con sesión compartida",
+   "rf": "—",
+   "tipo": "Front",
+   "horas": 2,
+   "release": "R1"
+  },
+  {
+   "id": "S-06",
+   "sprint": 5,
+   "componente": "TR-SEG",
+   "historia": "Bitácora de seguridad y acceso temporal de soporte",
+   "rf": "TR-RF-019, 020",
+   "tipo": "Full",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "D-01",
+   "sprint": 6,
+   "componente": "TR-CFG",
+   "historia": "Parámetros: definiciones, valor por alcance y resolución efectiva con caché",
+   "rf": "TR-RF-030, 031, 032",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "D-02",
+   "sprint": 6,
+   "componente": "TR-SEQ",
+   "historia": "Correlativos: series, siguiente número atómico y reinicio por periodo",
+   "rf": "TR-RF-035, 036, 037",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "D-03",
+   "sprint": 6,
+   "componente": "TR-CAT",
+   "historia": "Catálogos globales, mixtos y del tenant con vigencia, caché y validación",
+   "rf": "TR-RF-022 a 027",
+   "tipo": "Back",
+   "horas": 7,
+   "release": "R1"
+  },
+  {
+   "id": "D-04",
+   "sprint": 6,
+   "componente": "TR-CAT",
+   "historia": "Importar tablas SUNAT; feriados y cálculo de días hábiles",
+   "rf": "TR-RF-028, 029",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "D-05",
+   "sprint": 7,
+   "componente": "Admin cliente",
+   "historia": "Parámetros (herencia y restablecer), series y catálogos propios",
+   "rf": "TR-RF-025, 026, 031, 033, 035",
+   "tipo": "Front",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "D-06",
+   "sprint": 7,
+   "componente": "Consola",
+   "historia": "Catálogos globales e ítems con vigencia",
+   "rf": "TR-RF-022, 023",
+   "tipo": "Front",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "E-01",
+   "sprint": 7,
+   "componente": "TR-AUD",
+   "historia": "Auditoría inmutable con hash encadenado, acceso a datos sensibles, consulta y exportación",
+   "rf": "TR-RF-084, 085, 086",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "E-02",
+   "sprint": 7,
+   "componente": "TR-EVT",
+   "historia": "Relay del outbox en el worker (BullMQ), suscriptores, reintentos y reproceso",
+   "rf": "TR-RF-092, 093, 095",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R1"
+  },
+  {
+   "id": "E-03",
+   "sprint": 8,
+   "componente": "TR-OBS",
+   "historia": "Observabilidad base: OpenTelemetry a Grafana Cloud, Sentry y logs con tenant/sucursal",
+   "rf": "TR-RNF",
+   "tipo": "Ops",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "E-04",
+   "sprint": 8,
+   "componente": "Monorepo",
+   "historia": "Staging: api y worker en contenedor, frontends en Vercel, dominios y secretos",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "C-01",
+   "sprint": 8,
+   "componente": "SazónPOS",
+   "historia": "CC-01 Organización (restaurante = sucursal) en staging",
+   "rf": "CC-01",
+   "tipo": "SazónPOS",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "C-02",
+   "sprint": 8,
+   "componente": "SazónPOS",
+   "historia": "CC-03 Correlativos y CC-05 Parámetros",
+   "rf": "CC-03, CC-05",
+   "tipo": "SazónPOS",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "C-03",
+   "sprint": 9,
+   "componente": "SazónPOS",
+   "historia": "CC-10 Migrar autenticación a Supabase Auth: usuarios con hash bcrypt, mismos UUID, OAuth, aceptación dual de tokens",
+   "rf": "CC-10",
+   "tipo": "SazónPOS",
+   "horas": 8,
+   "release": "R1"
+  },
+  {
+   "id": "C-04",
+   "sprint": 9,
+   "componente": "SazónPOS",
+   "historia": "CC-02 Seguridad en modo SOMBRA (@Roles → @Permiso, registro de denegaciones)",
+   "rf": "CC-02",
+   "tipo": "SazónPOS",
+   "horas": 8,
+   "release": "R1"
+  },
+  {
+   "id": "C-05",
+   "sprint": 9,
+   "componente": "SazónPOS",
+   "historia": "CC-04 Catálogos (parte 1: migración de maestros)",
+   "rf": "CC-04",
+   "tipo": "SazónPOS",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "C-06",
+   "sprint": 10,
+   "componente": "SazónPOS",
+   "historia": "CC-04 Catálogos (parte 2: vistas de compatibilidad)",
+   "rf": "CC-04",
+   "tipo": "SazónPOS",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "C-07",
+   "sprint": 10,
+   "componente": "SazónPOS",
+   "historia": "CC-08 Shell del frontend: selector de sucursal, menú desde la API, *siPermiso, enlace a Administración",
+   "rf": "CC-08",
+   "tipo": "SazónPOS",
+   "horas": 7,
+   "release": "R1"
+  },
+  {
+   "id": "C-08",
+   "sprint": 10,
+   "componente": "SazónPOS",
+   "historia": "CC-07 Eventos y auditoría (triggers → outbox)",
+   "rf": "CC-07",
+   "tipo": "SazónPOS",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "Q-01",
+   "sprint": 10,
+   "componente": "Calidad",
+   "historia": "Pruebas E2E (Playwright) de ingreso, pedido, caja y administración",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "Q-02",
+   "sprint": 11,
+   "componente": "SazónPOS",
+   "historia": "Revisar 2 semanas de modo sombra y ajustar permisos",
+   "rf": "CC-02",
+   "tipo": "SazónPOS",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "Q-03",
+   "sprint": 11,
+   "componente": "Calidad",
+   "historia": "UAT con el cliente piloto en staging",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "P-01",
+   "sprint": 11,
+   "componente": "Monorepo",
+   "historia": "Producción: plan Pro de Supabase, respaldos, runbook de despliegue y reversión, alertas",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 5,
+   "release": "R1"
+  },
+  {
+   "id": "Q-04",
+   "sprint": 11,
+   "componente": "Calidad",
+   "historia": "Simulacro de restauración de respaldo y de reversión de migraciones",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 3,
+   "release": "R1"
+  },
+  {
+   "id": "P-02",
+   "sprint": 12,
+   "componente": "SazónPOS",
+   "historia": "Pase a producción R1: migración de datos y corte a Supabase Auth",
+   "rf": "CC-01..CC-10",
+   "tipo": "Ops",
+   "horas": 4,
+   "release": "R1"
+  },
+  {
+   "id": "P-03",
+   "sprint": 12,
+   "componente": "SazónPOS",
+   "historia": "Corte de CC-02 a modo PERMISOS (tras una semana sin denegaciones inesperadas)",
+   "rf": "CC-02",
+   "tipo": "SazónPOS",
+   "horas": 2,
+   "release": "R1"
+  },
+  {
+   "id": "P-04",
+   "sprint": 12,
+   "componente": "Calidad",
+   "historia": "Hipercuidado y corrección de incidencias",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 8,
+   "release": "R1"
+  },
+  {
+   "id": "P-05",
+   "sprint": 12,
+   "componente": "Gestión",
+   "historia": "Retrospectiva del release y ajuste del plan R2",
+   "rf": "—",
+   "tipo": "Gestión",
+   "horas": 2,
+   "release": "R1"
+  },
+  {
+   "id": "R2-01",
+   "sprint": 13,
+   "componente": "TR-PER",
+   "historia": "Personas: registro con documento, rol por producto, contactos, direcciones y consentimientos",
+   "rf": "TR-RF-039, 040, 041, 043",
+   "tipo": "Back",
+   "horas": 7,
+   "release": "R2"
+  },
+  {
+   "id": "R2-02",
+   "sprint": 13,
+   "componente": "TR-IDN",
+   "historia": "Validación y consulta de DNI/RUC con caché, proveedor y cuota por plan",
+   "rf": "TR-RF-044 a 047",
+   "tipo": "Back",
+   "horas": 7,
+   "release": "R2"
+  },
+  {
+   "id": "R2-03",
+   "sprint": 13,
+   "componente": "TR-ARC",
+   "historia": "Archivos: subida validada, versiones y URL firmada",
+   "rf": "TR-RF-080, 081, 082",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R2"
+  },
+  {
+   "id": "R2-04",
+   "sprint": 14,
+   "componente": "TR-FE",
+   "historia": "Emisor electrónico y adaptador PSE/OSE detrás de un puerto",
+   "rf": "TR-RF-052",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R2"
+  },
+  {
+   "id": "R2-05",
+   "sprint": 14,
+   "componente": "TR-FE",
+   "historia": "Emitir boleta y factura; procesar CDR",
+   "rf": "TR-RF-053, 054, 059",
+   "tipo": "Back",
+   "horas": 10,
+   "release": "R2"
+  },
+  {
+   "id": "R2-06",
+   "sprint": 14,
+   "componente": "TR-FE",
+   "historia": "Representación impresa (PDF y ticket con QR)",
+   "rf": "TR-RF-061",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R2"
+  },
+  {
+   "id": "R2-07",
+   "sprint": 15,
+   "componente": "TR-FE",
+   "historia": "Nota de crédito, resumen diario y comunicación de baja",
+   "rf": "TR-RF-055, 057, 058",
+   "tipo": "Back",
+   "horas": 8,
+   "release": "R2"
+  },
+  {
+   "id": "R2-08",
+   "sprint": 15,
+   "componente": "TR-FE",
+   "historia": "Reintentos, contingencia y monitor de pendientes y rechazados",
+   "rf": "TR-RF-060, 063",
+   "tipo": "Full",
+   "horas": 6,
+   "release": "R2"
+  },
+  {
+   "id": "R2-09",
+   "sprint": 15,
+   "componente": "TR-NOT",
+   "historia": "Notificaciones por correo: plantillas, envío, estados; entrega del comprobante",
+   "rf": "TR-RF-062, 074, 075, 079",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R2"
+  },
+  {
+   "id": "R2-10",
+   "sprint": 16,
+   "componente": "TR-NOT",
+   "historia": "Recordatorios programados, preferencias y bajas",
+   "rf": "TR-RF-076, 077",
+   "tipo": "Back",
+   "horas": 5,
+   "release": "R2"
+  },
+  {
+   "id": "R2-11",
+   "sprint": 16,
+   "componente": "Admin cliente",
+   "historia": "Emisor electrónico, series de FE y plantillas",
+   "rf": "TR-RF-052, 074",
+   "tipo": "Front",
+   "horas": 5,
+   "release": "R2"
+  },
+  {
+   "id": "R2-12",
+   "sprint": 16,
+   "componente": "SazónPOS",
+   "historia": "CC-06 Personas por tenant con fusión de duplicados",
+   "rf": "CC-06, TR-RF-042",
+   "tipo": "SazónPOS",
+   "horas": 8,
+   "release": "R2"
+  },
+  {
+   "id": "R2-13",
+   "sprint": 17,
+   "componente": "SazónPOS",
+   "historia": "CC-09 Facturación electrónica desde la caja",
+   "rf": "CC-09",
+   "tipo": "SazónPOS",
+   "horas": 12,
+   "release": "R2"
+  },
+  {
+   "id": "R2-14",
+   "sprint": 17,
+   "componente": "Calidad",
+   "historia": "Homologación con el PSE en ambiente beta",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 4,
+   "release": "R2"
+  },
+  {
+   "id": "R2-15",
+   "sprint": 17,
+   "componente": "Calidad",
+   "historia": "Pruebas E2E de emisión y anulación",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 4,
+   "release": "R2"
+  },
+  {
+   "id": "R2-16",
+   "sprint": 18,
+   "componente": "SazónPOS",
+   "historia": "Pase a producción R2",
+   "rf": "—",
+   "tipo": "Ops",
+   "horas": 3,
+   "release": "R2"
+  },
+  {
+   "id": "R2-17",
+   "sprint": 18,
+   "componente": "TR-AUD",
+   "historia": "Derechos ARCO (registro y atención) e incidentes de datos",
+   "rf": "TR-RF-088, 089, 091",
+   "tipo": "Full",
+   "horas": 5,
+   "release": "R2"
+  },
+  {
+   "id": "R2-18",
+   "sprint": 18,
+   "componente": "Calidad",
+   "historia": "Hipercuidado de facturación electrónica",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 8,
+   "release": "R2"
+  },
+  {
+   "id": "R3-01",
+   "sprint": 19,
+   "componente": "TR-PAG",
+   "historia": "Pasarela por empresa, intención de cobro con tarjeta, Yape/Plin",
+   "rf": "TR-RF-065, 066, 067",
+   "tipo": "Back",
+   "horas": 12,
+   "release": "R3"
+  },
+  {
+   "id": "R3-02",
+   "sprint": 19,
+   "componente": "TR-PAG",
+   "historia": "Webhook de la pasarela con idempotencia",
+   "rf": "TR-RF-069",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R3"
+  },
+  {
+   "id": "R3-03",
+   "sprint": 20,
+   "componente": "TR-PAG",
+   "historia": "Link de pago y reembolso",
+   "rf": "TR-RF-068, 070",
+   "tipo": "Full",
+   "horas": 8,
+   "release": "R3"
+  },
+  {
+   "id": "R3-04",
+   "sprint": 20,
+   "componente": "TR-REP",
+   "historia": "Definiciones de reportes, ejecución y exportación",
+   "rf": "TR-RF-096, 097",
+   "tipo": "Full",
+   "horas": 8,
+   "release": "R3"
+  },
+  {
+   "id": "R3-05",
+   "sprint": 21,
+   "componente": "TR-CMS",
+   "historia": "Sitio público, dominio, páginas por bloques y SEO",
+   "rf": "TR-RF-119, 120, 123",
+   "tipo": "Full",
+   "horas": 16,
+   "release": "R3"
+  },
+  {
+   "id": "R3-06",
+   "sprint": 22,
+   "componente": "TR-CMS",
+   "historia": "Menús, banners, galería, noticias y formularios de contacto",
+   "rf": "TR-RF-121, 122, 124",
+   "tipo": "Full",
+   "horas": 8,
+   "release": "R3"
+  },
+  {
+   "id": "R3-07",
+   "sprint": 22,
+   "componente": "TR-POR",
+   "historia": "Portal del cliente final: registro, ingreso con OTP, perfil, consentimientos",
+   "rf": "TR-RF-125, 126, 127, 129",
+   "tipo": "Full",
+   "horas": 10,
+   "release": "R3"
+  },
+  {
+   "id": "R3-08",
+   "sprint": 23,
+   "componente": "TR-SOP",
+   "historia": "Widget de soporte con contexto, bandeja por SLA, estados y comentarios",
+   "rf": "TR-RF-111, 113, 114, 115",
+   "tipo": "Full",
+   "horas": 14,
+   "release": "R3"
+  },
+  {
+   "id": "R3-09",
+   "sprint": 23,
+   "componente": "TR-SOP",
+   "historia": "Escalamiento a N2 y vínculo con GitHub",
+   "rf": "TR-RF-116, 117",
+   "tipo": "Back",
+   "horas": 4,
+   "release": "R3"
+  },
+  {
+   "id": "R3-10",
+   "sprint": 24,
+   "componente": "TR-OBS",
+   "historia": "Indicadores de negocio, reglas de alerta y salud por tenant",
+   "rf": "TR-RF-106 a 109",
+   "tipo": "Full",
+   "horas": 10,
+   "release": "R3"
+  },
+  {
+   "id": "R3-11",
+   "sprint": 24,
+   "componente": "TR-NOT",
+   "historia": "Envío por WhatsApp con plantillas aprobadas",
+   "rf": "TR-RF-078",
+   "tipo": "Back",
+   "horas": 6,
+   "release": "R3"
+  },
+  {
+   "id": "R3-12",
+   "sprint": 25,
+   "componente": "Calidad",
+   "historia": "Pase a producción R3 e hipercuidado",
+   "rf": "—",
+   "tipo": "QA",
+   "horas": 12,
+   "release": "R3"
+  }
+ ],
+ "hitos": [
+  {
+   "id": "H0",
+   "nombre": "Monorepo y entornos listos",
+   "sprint": 0,
+   "fecha": "2026-11-01",
+   "criterio": "CI verde; login de prueba contra Supabase dev"
+  },
+  {
+   "id": "H1",
+   "nombre": "Seguridad y organización completas",
+   "sprint": 5,
+   "fecha": "2027-01-10",
+   "criterio": "Alta de tenant, usuarios, roles y permisos funcionando de punta a punta en dev"
+  },
+  {
+   "id": "H2",
+   "nombre": "Plataforma R1 en staging",
+   "sprint": 8,
+   "fecha": "2027-02-21",
+   "criterio": "api, worker y frontends desplegados en staging con observabilidad"
+  },
+  {
+   "id": "H3",
+   "nombre": "Pase a producción R1 (SazónPOS sobre la plataforma)",
+   "sprint": 12,
+   "fecha": "2027-04-06",
+   "criterio": "SazónPOS en producción con Supabase Auth, permisos por sucursal y datos de referencia de la plataforma"
+  },
+  {
+   "id": "H4",
+   "nombre": "Pase a producción R2 (facturación electrónica)",
+   "sprint": 18,
+   "fecha": "2027-06-30",
+   "criterio": "Boletas y facturas aceptadas por el OSE desde la caja de SazónPOS"
+  },
+  {
+   "id": "H5",
+   "nombre": "Pase a producción R3 (plataforma lista para PsicoAgenda)",
+   "sprint": 25,
+   "fecha": "2027-10-05",
+   "criterio": "Pagos, CMS, portal, soporte y observabilidad de negocio en producción"
+  }
+ ],
+ "feriados": [
+  [
+   "2026-12-08",
+   "Inmaculada Concepción"
+  ],
+  [
+   "2026-12-09",
+   "Batalla de Ayacucho"
+  ],
+  [
+   "2026-12-25",
+   "Navidad"
+  ],
+  [
+   "2027-01-01",
+   "Año Nuevo"
+  ],
+  [
+   "2027-03-25",
+   "Jueves Santo"
+  ],
+  [
+   "2027-03-26",
+   "Viernes Santo"
+  ],
+  [
+   "2027-05-01",
+   "Día del Trabajo"
+  ],
+  [
+   "2027-06-07",
+   "Batalla de Arica y Día de la Bandera"
+  ],
+  [
+   "2027-06-29",
+   "San Pedro y San Pablo"
+  ],
+  [
+   "2027-07-23",
+   "Día de la Fuerza Aérea"
+  ],
+  [
+   "2027-07-28",
+   "Fiestas Patrias"
+  ],
+  [
+   "2027-07-29",
+   "Fiestas Patrias"
+  ],
+  [
+   "2027-08-06",
+   "Batalla de Junín"
+  ],
+  [
+   "2027-08-30",
+   "Santa Rosa de Lima"
+  ],
+  [
+   "2027-10-08",
+   "Combate de Angamos"
+  ],
+  [
+   "2027-11-01",
+   "Todos los Santos"
+  ],
+  [
+   "2027-12-08",
+   "Inmaculada Concepción"
+  ],
+  [
+   "2027-12-09",
+   "Batalla de Ayacucho"
+  ],
+  [
+   "2027-12-25",
+   "Navidad"
+  ]
+ ],
+ "riesgos": [
+  [
+   "Capacidad: un solo desarrollador a tiempo parcial bajo",
+   "Alta",
+   "Alto",
+   "Cada semana sin avance mueve todas las fechas",
+   "Plan con holgura en diciembre y Semana Santa; replanificar cada sprint con la velocidad real; priorizar Must"
+  ],
+  [
+   "Picos de trabajo en el empleo principal",
+   "Media",
+   "Alto",
+   "Sprints con menos de 15 h reales",
+   "Medir horas reales en la hoja Sprints; si dos sprints seguidos caen bajo 70 %, mover el hito afectado"
+  ],
+  [
+   "Migración de autenticación de SazónPOS",
+   "Media",
+   "Alto",
+   "Usuarios que no pueden ingresar el día del corte",
+   "Importar con mismos UUID y hash bcrypt; aceptar ambos tokens durante la transición; ensayo completo en staging"
+  ],
+  [
+   "Modo PERMISOS bloquea operaciones legítimas",
+   "Media",
+   "Medio",
+   "Denegaciones inesperadas en caja o pedidos",
+   "Dos semanas de modo SOMBRA y corte solo con registro limpio; interruptor SEGURIDAD_MODO para volver"
+  ],
+  [
+   "Dependencia de Supabase (precio, límites, caídas)",
+   "Baja",
+   "Medio",
+   "Costos o indisponibilidad del proveedor",
+   "Autenticación detrás de un puerto; PostgreSQL estándar; respaldo diario exportable"
+  ],
+  [
+   "Homologación de facturación electrónica",
+   "Media",
+   "Alto",
+   "Retraso de R2",
+   "Usar un PSE con API probada; iniciar homologación en el sprint 14, no al final"
+  ],
+  [
+   "Alcance que crece por pedidos comerciales",
+   "Alta",
+   "Medio",
+   "R1 nunca termina",
+   "Todo pedido nuevo entra al backlog de R2 o R3 salvo que sea bloqueante legal o de seguridad"
+  ],
+  [
+   "Conocimiento concentrado en una persona",
+   "Alta",
+   "Alto",
+   "Nadie más puede operar o corregir",
+   "ADR, runbooks y SRS al día; repositorio con README de arranque en menos de 30 minutos"
+  ],
+  [
+   "Versiones de framework",
+   "Media",
+   "Bajo",
+   "Angular 19 ya no tiene soporte (EOL mayo 2026)",
+   "Arrancar el monorepo en Angular 22 y NestJS 12; SazónPOS migra en un control de cambios aparte"
+  ]
+ ]
+}

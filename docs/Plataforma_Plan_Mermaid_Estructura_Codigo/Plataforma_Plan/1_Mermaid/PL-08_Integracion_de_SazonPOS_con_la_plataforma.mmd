@@ -1,0 +1,32 @@
+%% PL-08 — Integración de SazónPOS con la plataforma
+flowchart TB
+  subgraph R1["Repositorio vitrina (monorepo Nx)"]
+    API["apps/api<br/>NestJS 12 · plataforma"]:::trans
+    WK["apps/worker<br/>outbox · tareas"]:::trans
+    CON["apps/plataforma-consola<br/>consola.dominio.pe"]:::app
+    ADM["apps/plataforma-admin<br/>admin.dominio.pe"]:::app
+  end
+  subgraph R2["Repositorio SazónPOS (sin cambio de arquitectura)"]
+    RB["backend NestJS 11<br/>+ src/plataforma"]:::rest
+    RF["frontend Angular<br/>pos.dominio.pe"]:::rest
+  end
+  subgraph S["Supabase (un proyecto por ambiente)"]
+    AU["Auth"]:::ext
+    PG[("PostgreSQL<br/>esquemas de plataforma + esquema de SazónPOS")]:::dato
+    ST["Storage"]:::ext
+  end
+  RF -- "menú Administración<br/>(misma cookie .dominio.pe)" --> ADM
+  RF & ADM & CON -- login --> AU
+  ADM & CON --> API
+  RF --> RB
+  API & WK --> PG
+  RB -- "lee seg/org/cfg/cat/seq<br/>escribe sync.outbox" --> PG
+  WK -- "eventos de SazónPOS" --> PG
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef hito fill:#d5f5f0,stroke:#0f766e,color:#123;

@@ -1,0 +1,26 @@
+%% PL-04 — Secuencia: ingreso con MFA y token con tenant activo
+sequenceDiagram
+  autonumber
+  actor U as Usuario
+  participant W as App Angular<br/>(shared/auth)
+  participant A as Supabase Auth
+  participant H as Hook seg.custom_access_token_hook
+  participant DB as PostgreSQL (seg, org)
+  participant API as API NestJS
+  U->>W: correo y clave (o Google / Microsoft)
+  W->>A: signInWithPassword / signInWithOAuth (PKCE)
+  A->>H: event {user_id, claims}
+  H->>DB: usuario activo · membresía activa · tenant preferido
+  H-->>A: claims + tenant_id + tipo_usuario
+  A-->>W: access token (aal1) + refresh token en cookie del dominio
+  W->>A: mfa.getAuthenticatorAssuranceLevel()
+  alt tiene factor TOTP (nextLevel = aal2)
+    W->>U: pide código de 6 dígitos
+    U->>W: código
+    W->>A: mfa.challenge + mfa.verify
+    A->>H: nuevo token
+    A-->>W: access token aal2
+  end
+  W->>API: GET /v1/seg/mi-contexto (Bearer)
+  API-->>W: sucursales accesibles, menú y permisos de la sucursal elegida
+  W->>U: selector de sucursal (si tiene más de una) y menú

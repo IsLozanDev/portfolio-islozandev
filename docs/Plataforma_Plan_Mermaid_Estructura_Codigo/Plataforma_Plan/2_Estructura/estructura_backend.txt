@@ -1,0 +1,92 @@
+vitrina/                                     monorepo Nx · pnpm · Node 24 LTS · TypeScript 5.9 (ESM)
+├── apps/
+│   ├── api/                                 NestJS 12 · desplegable HTTP (REST /v1 + OpenAPI)
+│   │   ├── src/main.ts                      import './tracing' · helmet · CORS por dominio · ValidationPipe
+│   │   ├── src/app.module.ts                PlataformaModule.registrar({...}) + módulos de producto (R3: PsiModule)
+│   │   ├── src/tracing.ts                   OpenTelemetry SDK (exporta a Grafana Cloud por OTLP)
+│   │   ├── src/config/                      esquema de variables (zod) · carga por ambiente
+│   │   ├── Dockerfile                       imagen distroless, usuario sin privilegios
+│   │   └── project.json                     tags: scope:app, type:app
+│   ├── worker/                              NestJS 12 · desplegable de colas (BullMQ sobre Redis)
+│   │   └── src/main.ts                      relay del outbox · notificaciones · vencimientos · FE (R2)
+│   └── api-e2e/                             Jest + Supertest contra api levantada con PostgreSQL de prueba
+│
+├── libs/plataforma/                         scope:plataforma
+│   ├── kernel/                              type:domain · sin NestJS ni TypeORM
+│   │   └── src/  agregado.ts · evento-dominio.ts · resultado.ts · reloj.port.ts · id.port.ts
+│   │             unidad-de-trabajo.port.ts · contexto-tenant.port.ts · errores-dominio.ts
+│   ├── kernel-infra/                        type:backend
+│   │   └── src/  typeorm-unidad-de-trabajo.ts (SET LOCAL app.tenant_id → RLS) · als-contexto-tenant.ts
+│   │             outbox.publicador.ts · reloj-sistema.ts · uuid-v7.ts · filtro-errores.http.ts
+│   │
+│   ├── seguridad/                           TR-SEG · type:backend   ← detalle de referencia
+│   │   ├── src/
+│   │   │   ├── domain/
+│   │   │   │   ├── principal.ts             identidad autenticada (usuario, tenant, tipo, aal)
+│   │   │   │   ├── membresia.ts             agregado: invitar · aceptar · suspender · revocar
+│   │   │   │   ├── rol.ts · perfil.ts       agregados con sus permisos
+│   │   │   │   ├── asignacion.ts            alcance TENANT/EMPRESA/SUCURSAL/UNIDAD + vigencia
+│   │   │   │   ├── manifiesto-producto.ts   permisos, opciones de menú y roles semilla de cada producto
+│   │   │   │   ├── eventos/                 membresia-invitada · asignacion-otorgada · rol-permisos-cambiados
+│   │   │   │   └── errores.ts
+│   │   │   ├── application/
+│   │   │   │   ├── ports/                   verificador-token · proveedor-identidad (Admin API) ·
+│   │   │   │   │                            permisos.repositorio · cache-permisos · membresia.repositorio
+│   │   │   │   ├── invitar-usuario.use-case.ts · aceptar-invitacion.use-case.ts
+│   │   │   │   ├── asignar-rol.use-case.ts · revocar-acceso.use-case.ts
+│   │   │   │   ├── resolver-permisos.use-case.ts · obtener-mi-contexto.use-case.ts
+│   │   │   │   ├── cambiar-tenant.use-case.ts · aplicar-manifiesto.use-case.ts
+│   │   │   │   └── handlers/invalidar-cache-permisos.handler.ts
+│   │   │   ├── infrastructure/
+│   │   │   │   ├── supabase/                supabase-jwks.verificador.ts · supabase-admin.proveedor.ts
+│   │   │   │   ├── persistence/             entidades ORM · mappers · repositorios TypeORM
+│   │   │   │   ├── permisos.sql.repositorio.ts (seg.permisos_efectivos)
+│   │   │   │   └── cache-permisos.redis.ts
+│   │   │   ├── interface/
+│   │   │   │   ├── autenticacion.guard.ts · permiso.guard.ts · decoradores.ts (@Publico @Permiso @UsuarioActual)
+│   │   │   │   ├── http/                    mi-contexto.controller · usuarios.controller · roles.controller ·
+│   │   │   │   │                            invitaciones.controller · dto/
+│   │   │   │   └── consumidores/            tenant-creado.consumer (siembra roles del producto)
+│   │   │   ├── seguridad.module.ts          cableado con useFactory
+│   │   │   └── index.ts                     API pública
+│   │   └── test/                            unitarias de dominio · integración (JWKS local + PostgreSQL)
+│   │
+│   ├── org/                                 TR-ORG · tenant · empresa · sucursal · unidad · suscripción · alta de tenant
+│   ├── parametros/                          TR-CFG · definiciones · valor por alcance · resolución con caché
+│   ├── correlativos/                        TR-SEQ · series · siguiente número atómico · reinicio por periodo
+│   ├── catalogos/                           TR-CAT · catálogos globales/mixtos/tenant · tablas SUNAT · feriados
+│   ├── auditoria/                           TR-AUD · bitácora inmutable con hash encadenado · ARCO (R2)
+│   ├── eventos/                             TR-EVT · outbox · relay · suscripciones · reproceso
+│   ├── observabilidad/                      TR-OBS · interceptor de contexto · métricas · (R3) indicadores de negocio
+│   ├── personas/        (R2)                TR-PER
+│   ├── identidad/       (R2)                TR-IDN · DNI/RUC vía proveedor con caché
+│   ├── archivos/        (R2)                TR-ARC · Supabase Storage con URL firmadas
+│   ├── comprobantes/    (R2)                TR-FE · puerto PSE/OSE · representación impresa
+│   ├── notificaciones/  (R2)                TR-NOT · correo · (R3) WhatsApp
+│   ├── pagos/           (R3)                TR-PAG
+│   ├── reportes/        (R3)                TR-REP
+│   ├── cms/             (R3)                TR-CMS
+│   ├── portal/          (R3)                TR-POR
+│   ├── soporte/         (R3)                TR-SOP
+│   └── plataforma.module.ts                 compone los módulos según los releases habilitados
+│      (cada módulo repite la estructura de seguridad/: domain · application · infrastructure · interface · test)
+│
+├── libs/shared/
+│   ├── contracts/                           tipos compartidos backend/frontend: DTO públicos, eventos, códigos de error
+│   └── util/                                validadores DNI/RUC/celular, fechas en America/Lima
+│
+├── supabase/                                proyecto Supabase CLI (solo lo que pertenece a Supabase)
+│   ├── config.toml                          [auth] MFA TOTP · OAuth Google/Microsoft · hook custom_access_token
+│   ├── migrations/                          20261102000000_seg_supabase_auth.sql (hook, triggers, privilegios)
+│   ├── templates/                           correos de invitación, recuperación y MFA en español
+│   └── seed.sql                             datos de desarrollo (tenant demo, usuarios de prueba)
+│
+├── db/                                      esquemas de plataforma, en orden y reversibles
+│   ├── 01a_org.sql · 01b_seg.sql · 01c_cfg.sql · 01d_cat_seq.sql · 01e_sync_outbox.sql
+│   ├── rollback/                            un script inverso por migración
+│   └── pruebas/                             pruebas SQL (se ejecutan en CI contra PostgreSQL 16)
+│
+├── tools/generators/                        generador Nx "modulo-hexagonal" (crea las 4 capas + test + index)
+├── docker-compose.yml                       PostgreSQL 16 + Redis 7 para desarrollo
+├── .github/workflows/                       ci.yml (nx affected) · deploy-staging.yml · deploy-prod.yml (tag + aprobación)
+└── nx.json · tsconfig.base.json · eslint.config.mjs · pnpm-workspace.yaml · .env.example (sin secretos)

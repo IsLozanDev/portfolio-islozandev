@@ -1,0 +1,16 @@
+%% PL-09 — Ambientes y flujo de entrega
+flowchart LR
+  DEV["Local<br/>docker-compose PG16 + Redis<br/>Supabase CLI"]:::infra
+  PR["Pull request<br/>lint · test · build · boundaries<br/>(nx affected)"]:::app
+  STG["Staging<br/>Supabase dev/staging (Free)<br/>api + worker · Vercel preview"]:::trans
+  PRD["Producción<br/>Supabase Pro · respaldos<br/>api + worker · Vercel"]:::dato
+  DEV --> PR -- "merge a main" --> STG -- "tag vX.Y.Z +<br/>aprobación manual" --> PRD
+  PRD -. "migración reversible<br/>+ runbook de reversión" .-> STG
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef hito fill:#d5f5f0,stroke:#0f766e,color:#123;

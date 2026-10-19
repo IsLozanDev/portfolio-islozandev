@@ -1,0 +1,20 @@
+%% PL-06 — Secuencia: invitación de un usuario al tenant
+sequenceDiagram
+  autonumber
+  actor AD as Administrador del cliente
+  participant API as API NestJS (seg)
+  participant SA as Supabase Admin API
+  participant DB as PostgreSQL
+  actor I as Invitado
+  participant W as App Angular
+  AD->>API: invitar(correo, rol, alcance sucursal)  @Permiso plat.usuario.invitar
+  API->>SA: inviteUserByEmail(correo, app_metadata.tipo_usuario = INTERNO)
+  SA->>DB: INSERT auth.users
+  DB->>DB: trigger → seg.usuario
+  API->>DB: membresía INVITADO + asignación con vigencia + evento seg.membresia.invitada
+  SA-->>I: correo con enlace
+  I->>W: abre el enlace, define clave (o usa Google/Microsoft)
+  W->>API: POST /v1/seg/invitaciones/aceptar
+  API->>DB: membresía ACTIVO · usuario.tenant_preferido
+  W->>W: refreshSession() → token con tenant_id
+  Note over AD,I: Si el correo ya existe en Supabase (usuario de otro tenant),<br/>no se crea otra cuenta: solo se agrega la membresía.
