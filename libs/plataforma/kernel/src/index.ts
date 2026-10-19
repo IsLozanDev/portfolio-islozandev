@@ -1,1 +1,10 @@
-export {};
+export * from './domain-errors.js';
+export * from './result.js';
+export * from './domain-event.js';
+export * from './aggregate-root.js';
+export type { Clock } from './clock.port.js';
+export type { IdGenerator } from './id-generator.port.js';
+export type { TenantContext, TenantScope } from './tenant-context.port.js';
+export type { UnitOfWork } from './unit-of-work.port.js';
+export type { EventPublisher } from './event-publisher.port.js';
+export type { EventSchemaValidator } from './event-schema-validator.port.js';

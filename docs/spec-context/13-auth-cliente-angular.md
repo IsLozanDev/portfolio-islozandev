@@ -1,4 +1,4 @@
-# Contexto para el spec 05 · auth-cliente-angular
+# Contexto para los specs 13 y 14 · auth-cliente-angular y auth-ui-minima (antes "spec 05")
 
 Paquete de contexto (no es el spec). Fuentes: `CLAUDE.md`, `docs/roadmap-specs.md`, SRS xlsx, plan docx, `3_plan.json`, `codigo/`. Ruta base del código: `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/`.
 
