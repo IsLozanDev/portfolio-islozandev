@@ -1,6 +1,6 @@
 # SPEC 01 — Monorepo Nx, CI, entorno local y reglas de límites
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** ninguna
 > **Date:** 2026-10-19
 > **Objective:** Dejar creado el monorepo Nx + pnpm con CI en GitHub Actions, entorno local reproducible y reglas de límites por scope, tipo, componente y capa verificadas automáticamente.
