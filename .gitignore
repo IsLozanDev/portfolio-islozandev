@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.nx/
+coverage/
+out.json
+.env
+.env.*
+!.env.example
