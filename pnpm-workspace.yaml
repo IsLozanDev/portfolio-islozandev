@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   nx: true
+  supabase: true
   "@parcel/watcher": false
   unrs-resolver: false
   "@scarf/scarf": false

@@ -9,9 +9,17 @@
   "scripts": {
     "lint": "nx run-many -t lint",
     "test": "nx run-many -t test",
-    "build": "nx run-many -t build"
+    "build": "nx run-many -t build",
+    "prepare": "husky",
+    "dev:infra": "docker compose up -d --wait",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "db:up": "node --env-file-if-exists=.env tools/migrar/cli.mjs up",
+    "db:down": "node --env-file-if-exists=.env tools/migrar/cli.mjs down"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@eslint/js": "^10.0.1",
     "@nestjs/testing": "12.2.0",
     "@nx/eslint": "23.3.0",
@@ -20,8 +28,12 @@
     "@types/node": "^24.0.0",
     "@types/supertest": "^7.2.1",
     "eslint": "^10.13.0",
+    "husky": "^9.1.7",
     "jest": "^30.5.2",
+    "lint-staged": "^17.6.0",
     "nx": "23.3.0",
+    "pg": "^8.23.1",
+    "supabase": "^2.121.0",
     "supertest": "^7.3.1",
     "ts-jest": "^29.4.15",
     "typescript": "~5.9.3",
@@ -35,5 +47,8 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "zod": "^4.6.7"
+  },
+  "lint-staged": {
+    "{apps,libs,tools}/**/*.ts": "eslint --fix"
   }
 }
