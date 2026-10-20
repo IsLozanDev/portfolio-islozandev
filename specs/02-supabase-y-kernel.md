@@ -1,6 +1,6 @@
 # SPEC 02 — Proyectos Supabase, kernel y kernel-infra con outbox transaccional
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-10-19
 > **Objective:** Dejar configurados los proyectos Supabase dev y prod y construir las libs `kernel` y `kernel-infra` con unidad de trabajo, contexto de tenant y publicación de eventos en `sync.outbox` dentro de la misma transacción del cambio de negocio.
