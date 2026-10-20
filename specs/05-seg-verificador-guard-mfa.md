@@ -44,7 +44,7 @@ Historias del backlog: **A-01** y **A-05** (parte backend).
   - `application/ports/`: `verificador-token.port.ts` (`VerificadorToken`, `VERIFICADOR_TOKEN`) y `registro-acceso.port.ts` (`RegistroAcceso`, `REGISTRO_ACCESO`).
   - `infrastructure/supabase/supabase-jwks.verificador.ts`: `jose` con `createRemoteJWKSet` y `jwtVerify`.
   - `infrastructure/typeorm/registro-acceso.typeorm.ts`: actualiza `seg.usuario.ultimo_acceso`.
-  - `infrastructure/seguridad.module.ts`: `SeguridadModule.register(opciones)`. Registra `APP_GUARD` en orden `AutenticacionGuard` → `MfaGuard`.
+  - `src/seguridad.module.ts`, fuera de las capas: `SeguridadModule.register(opciones)`. Registra `APP_GUARD` en orden `AutenticacionGuard` → `MfaGuard`.
   - `interface/`: `decoradores.ts` (`@Publico`, `@RequiereMfa`, `@PrincipalActual`), `autenticacion.guard.ts`, `mfa.guard.ts` y `sesion.controller.ts` (`GET /v1/seg/sesion`).
 - **Dependencia** `jose` `6.2.12` en `package.json` (hoy solo es transitiva del CLI de Supabase).
 - **`apps/api`**:
@@ -307,7 +307,7 @@ En cada rechazo: nivel `warn`, `evento: 'auth.rechazo'`, `codigo`, `motivo`, `ru
 - **Sí:** bloqueo tras 5 intentos e inactividad de 30 min quedan como brecha documentada. Decisión del usuario. Supabase Auth no los ofrece tal cual y el timebox de sesión es de plan Pro. Un bloqueo propio sería otro spec.
 - **No:** registrar rechazos en `seg.evento_seguridad`. Decisión del usuario. Un token inválido no trae tenant, y la tabla exige `tenant_id`. `ACCESO_DENEGADO` es del 07 y la auditoría MFA del 20.
 - **Sí:** pruebas con JWKS HTTP local, PostgreSQL 16 real para `ultimo_acceso` y humo manual en dev con TOTP. Decisión del usuario.
-- **Sí:** el módulo Nest en `infrastructure/seguridad.module.ts`, como `org`. Los guards y decoradores van en `interface/` porque el dominio no puede importar `@nestjs/*`.
+- **Sí:** el módulo Nest en `src/seguridad.module.ts`, fuera de las capas, como en el código base. Decisión del usuario al implementar el paso 3: la regla de capas impide que `infrastructure/` importe los guards de `interface/`, así que el módulo de `org` (en `infrastructure/`) no sirve de patrón. Los guards y decoradores van en `interface/` porque el dominio no puede importar `@nestjs/*`.
 - **No:** fijar `TenantContext` desde el token en este spec. Va con `X-Sucursal-Id` en el 07, que ya define el alcance por petición.
 
 ## Riesgos
