@@ -19,7 +19,7 @@ const restringir = (...patterns) => ({ 'no-restricted-imports': ['error', { patt
 export default [
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
-  { ignores: ['**/dist', '**/.nx'] },
+  { ignores: ['**/dist', '**/.nx', '**/coverage'] },
   {
     files: ['**/*.ts'],
     rules: {
