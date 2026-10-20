@@ -17,7 +17,11 @@
     "db:up": "node --env-file-if-exists=.env tools/migrar/cli.mjs up",
     "db:down": "node --env-file-if-exists=.env tools/migrar/cli.mjs down",
     "db:up:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up db --remoto",
-    "db:down:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down db --remoto"
+    "db:down:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down db --remoto",
+    "db:up:supabase": "node --env-file-if-exists=.env tools/migrar/cli.mjs up supabase/migrations",
+    "db:down:supabase": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations",
+    "db:up:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up supabase/migrations --remoto",
+    "db:down:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations --remoto"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

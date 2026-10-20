@@ -63,10 +63,12 @@ export async function subir({ url, dir }) {
   }
 }
 
+// Solo revierte las del directorio: db/ y supabase/migrations comparten la tabla de registro.
 export async function bajar({ url, dir }) {
+  const delDirectorio = new Set(await listarSql(dir));
   const cliente = await conectar(url);
   try {
-    const revertir = (await aplicadas(cliente)).reverse();
+    const revertir = (await aplicadas(cliente)).filter((a) => delDirectorio.has(a)).reverse();
     await exigirInversos(revertir, dir);
     for (const archivo of revertir) {
       await aplicar(cliente, archivo, await readFile(join(dir, 'rollback', archivo), 'utf8'), 'DELETE FROM migraciones._migraciones WHERE nombre = $1');
