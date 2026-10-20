@@ -1,15 +1,23 @@
 import { bajar, subir } from './migrar.mjs';
 
-const [comando, dir = 'db'] = process.argv.slice(2);
-const url = process.env.DATABASE_URL;
+const args = process.argv.slice(2);
+const remoto = args.includes('--remoto');
+const [comando, dir = 'db'] = args.filter((a) => !a.startsWith('--'));
+const variable = remoto ? 'DATABASE_MIGRATION_URL' : 'DATABASE_URL';
+const url = process.env[variable];
 
 if (!url) {
-  console.error('Falta DATABASE_URL. Copia .env.example a .env.');
+  console.error(`Falta ${variable}. Copia .env.example a .env.`);
   process.exit(1);
 }
 if (!['up', 'down'].includes(comando)) {
-  console.error('Uso: cli.mjs <up|down> [directorio]');
+  console.error('Uso: cli.mjs <up|down> [directorio] [--remoto]');
   process.exit(1);
+}
+
+if (remoto) {
+  const { host, pathname } = new URL(url);
+  console.log(`Destino remoto: ${host}${pathname}`);
 }
 
 try {
