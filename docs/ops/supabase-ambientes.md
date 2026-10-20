@@ -27,13 +27,13 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 ### 1. Claves de firma JWT asimétricas (ES256)
 
 - [ ] Panel: *Project Settings → JWT Keys*: migrar a claves asimétricas, crear una clave ECC (P-256) y rotar para que sea la activa; revocar la clave heredada cuando no queden sesiones.
-- [ ] `curl {SUPABASE_URL}/auth/v1/.well-known/jwks.json` devuelve una clave con `kty = EC`, `crv = P-256` y `alg = ES256`.
+- [x] (dev) `curl {SUPABASE_URL}/auth/v1/.well-known/jwks.json` devuelve una clave con `kty = EC`, `crv = P-256` y `alg = ES256`.
 
 ### 2. Data API sin esquemas de plataforma
 
 - [ ] Panel: *Project Settings → Data API → Exposed schemas*: dejar solo `public` (o ninguno). Ni `seg`, `org`, `sync` ni los siguientes.
-- [ ] `curl -H "apikey: {PUBLISHABLE_KEY}" {SUPABASE_URL}/rest/v1/` no lista tablas de `sync`, `seg` ni `org`.
-- [ ] Tras aplicar la migración: `has_schema_privilege('anon', 'sync', 'USAGE')` y `has_schema_privilege('authenticated', 'sync', 'USAGE')` devuelven `false` (consulta de solo lectura por el MCP).
+- [x] (dev) `curl -H "apikey: {PUBLISHABLE_KEY}" -H "Accept-Profile: sync" {SUPABASE_URL}/rest/v1/outbox?limit=1` responde `406 PGRST106` ("Only the following schemas are exposed: public, graphql_public"). El `GET /rest/v1/` solo admite secret key, por eso no sirve para esta prueba.
+- [x] (dev) Tras aplicar la migración: `has_schema_privilege('anon', 'sync', 'USAGE')` y `has_schema_privilege('authenticated', 'sync', 'USAGE')` devuelven `false` (consulta de solo lectura por el MCP).
 
 ### 3. SMTP propio con Resend
 
@@ -47,9 +47,9 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 
 ### 5. Migración del outbox
 
-- [ ] `pnpm db:up:remoto` imprime el host de destino y aplica `01e_sync_outbox.sql`.
-- [ ] Por el MCP (solo lectura): `list_tables` de `sync` muestra `outbox` con RLS activa y `get_advisors` no reporta tablas sin RLS.
-- [ ] `pnpm db:down:remoto` y luego `pnpm db:up:remoto` terminan con 0 (solo en dev).
+- [x] (dev) `pnpm db:up:remoto` imprime el host de destino y aplica `01e_sync_outbox.sql`.
+- [x] (dev) Por el MCP: `list_tables` de `sync` muestra `outbox` con RLS activa y `get_advisors` no reporta tablas sin RLS.
+- [x] (dev) `pnpm db:down:remoto` y luego `pnpm db:up:remoto` terminan con 0 (solo en dev).
 
 ### 6. Login de prueba (hito H0, solo dev)
 
@@ -59,7 +59,7 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 
 ### 7. Rol de conexión de la aplicación
 
-- [ ] Anotar con qué rol se conecta la aplicación y si tiene `BYPASSRLS`. En Supabase el rol `postgres` es dueño de las tablas; `FORCE ROW LEVEL SECURITY` no lo frena si tiene ese atributo. La corrección (rol de aplicación sin `BYPASSRLS`) se cierra en el spec 03 junto con `01a_org.sql`.
+- [ ] (dev: la conexión `postgres` tiene `BYPASSRLS = true`, ver evidencia) Anotar con qué rol se conecta la aplicación y si tiene `BYPASSRLS`. En Supabase el rol `postgres` es dueño de las tablas; `FORCE ROW LEVEL SECURITY` no lo frena si tiene ese atributo. La corrección (rol de aplicación sin `BYPASSRLS`) se cierra en el spec 03 junto con `01a_org.sql`.
 
 ### 8. Secretos
 
@@ -75,4 +75,11 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 | 2026-10-19 | dev | MCP `list_tables` (`public`, `seg`, `org`, `sync`) y `list_migrations` | Sin tablas ni migraciones |
 | 2026-10-19 | dev | Conexión por `DATABASE_MIGRATION_URL` (session pooler 5432) | Conecta como `postgres`, PostgreSQL 17.11 |
 
-_Las filas de los pasos 1 a 8 se agregan al ejecutarlos, con fecha, ambiente y resultado._
+| 2026-10-19 | dev | JWKS | Una clave `EC` / `P-256` / `ES256`, `kid` `29aacbfd-3ac6-4313-a565-f091e014d5ef` |
+| 2026-10-19 | dev | Data API | `Accept-Profile: sync` responde 406 `PGRST106`; esquemas expuestos: `public`, `graphql_public` |
+| 2026-10-19 | dev | `pnpm db:up:remoto`, luego `db:down:remoto` y `db:up:remoto` | Aplica y revierte `01e_sync_outbox.sql`; `sync.outbox` con RLS activa y forzada, 2 políticas, 1 trigger, 0 filas |
+| 2026-10-19 | dev | `has_schema_privilege` / `has_table_privilege` sobre `sync` | `anon` y `authenticated`: `false` en `USAGE`, `SELECT` e `INSERT` |
+| 2026-10-19 | dev | Advisors de seguridad (MCP) | Sin avisos (un `function_search_path_mutable` inicial se corrigió con `SET search_path = ''`) |
+| 2026-10-19 | dev | Rol de conexión | `postgres` con `BYPASSRLS = true`: la RLS no lo frena; pendiente el rol de aplicación (spec 03) |
+
+_Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, ambiente y resultado._

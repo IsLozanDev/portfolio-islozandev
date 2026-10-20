@@ -24,7 +24,7 @@ CREATE INDEX outbox_tenant_aggregate_ix ON sync.outbox (tenant_id, aggregate_typ
 
 -- Sin política de UPDATE/DELETE las filas quedarían invisibles y la sentencia afectaría 0 filas
 -- sin error. El trigger por sentencia hace que falle siempre, también para el dueño.
-CREATE FUNCTION sync.outbox_solo_insercion() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE FUNCTION sync.outbox_solo_insercion() RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
   RAISE EXCEPTION 'sync.outbox es de solo inserción' USING ERRCODE = 'insufficient_privilege';
 END;
