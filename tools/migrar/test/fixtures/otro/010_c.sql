@@ -1,0 +1,1 @@
+CREATE SCHEMA fx_c;

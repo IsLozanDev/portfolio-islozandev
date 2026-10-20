@@ -52,6 +52,17 @@ describe('runner de migraciones', () => {
     await bajar({ url: urlDb, dir });
   });
 
+  test('down de un directorio no toca las migraciones de otro', async () => {
+    await subir({ url: urlDb, dir: fixture('ok') });
+    expect(await subir({ url: urlDb, dir: fixture('otro') })).toEqual(['010_c.sql']);
+
+    expect(await bajar({ url: urlDb, dir: fixture('otro') })).toEqual(['010_c.sql']);
+    expect(await existeEsquema('fx_c')).toBe(false);
+    expect(await existeEsquema('fx_a')).toBe(true);
+
+    expect(await bajar({ url: urlDb, dir: fixture('ok') })).toEqual(['002_b.sql', '001_a.sql']);
+  });
+
   test('falta el script inverso: falla y no aplica nada', async () => {
     await expect(subir({ url: urlDb, dir: fixture('sin-inverso') })).rejects.toThrow(/Falta el script inverso.*001_x\.sql/);
     expect(await existeEsquema('fx_x')).toBe(false);

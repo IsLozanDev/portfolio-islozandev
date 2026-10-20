@@ -1,6 +1,6 @@
 # SPEC 03 — Dominio org: tenant, empresa, sucursal, unidad, suscripción y estados
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02
 > **Date:** 2026-10-19
 > **Objective:** Construir la lib `libs/plataforma/org` con la jerarquía tenant → empresa → sucursal → unidad, la suscripción por producto y el cambio de estado del tenant, sobre una migración `org` corregida con RLS forzada y eventos por outbox.
