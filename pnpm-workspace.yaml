@@ -9,6 +9,7 @@ allowBuilds:
   "@parcel/watcher": false
   unrs-resolver: false
   "@scarf/scarf": false
+  esbuild: false
 
 minimumReleaseAgeExclude:
   - "@nestjs/common@12.2.0"

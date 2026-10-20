@@ -24,6 +24,9 @@
       "@vitrina/plataforma/kernel-infra": [
         "./libs/plataforma/kernel-infra/src/index.ts"
       ],
+      "@vitrina/plataforma/org": [
+        "./libs/plataforma/org/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

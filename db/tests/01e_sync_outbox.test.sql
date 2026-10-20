@@ -1,4 +1,4 @@
--- Prueba de sync.outbox. La ejecuta tools/migrar/test/db-sync-outbox.test.mjs sobre una base
+-- Prueba de sync.outbox. La ejecuta tools/migrar/test/db-esquemas.test.mjs sobre una base
 -- temporal con db/ aplicado. Corre como superusuario y cambia a un rol sin BYPASSRLS.
 -- UPDATE y DELETE se conceden al rol para que el fallo sea del trigger, no de privilegios.
 

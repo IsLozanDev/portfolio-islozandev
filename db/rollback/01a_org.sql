@@ -1,0 +1,1 @@
+DROP SCHEMA org CASCADE;
