@@ -3,7 +3,7 @@
 > **Status:** Aprobado
 > **Depends on:** SPEC 02, SPEC 03
 > **Date:** 2026-10-19
-> **Objective:** Crear el esquema `seg` corregido y la migración de Supabase que replica `auth.users` en `seg.usuario` y agrega `tenant_id` y `tipo_usuario` al token con el hook de Supabase Auth, en dev y prod.
+> **Objective:** Crear el esquema `seg` corregido y la migración de Supabase que replica `auth.users` en `seg.usuario` y agrega `tenant_id` y `tipo_usuario` al token con el hook de Supabase Auth, en dev.
 
 ## Por qué existe este spec
 
@@ -29,8 +29,9 @@ Historias del backlog: **A-02** y **A-03**.
 - **Simulación de Supabase para CI** en `tools/migrar/test/fixtures/simular-supabase.sql`: roles `anon`, `authenticated` y `supabase_auth_admin`, y `auth.users` con las columnas que usa el espejo (`email` nulo, `phone`, `is_anonymous NOT NULL`, `raw_app_meta_data`, `raw_user_meta_data`).
 - **Prueba SQL** `supabase/tests/seg_supabase_auth.test.sql`. La ejecuta `tools/migrar/test/db-esquemas.test.mjs`, que se extiende para aplicar `db/`, la simulación y `supabase/migrations`, y para bajarlos.
 - **Scripts** `db:up:supabase`, `db:down:supabase`, `db:up:supabase:remoto`, `db:down:supabase:remoto` en `package.json` (runner `tools/migrar` con `supabase/migrations`).
-- **`supabase/config.toml`**: `enable_signup = false` y `[auth.hook.custom_access_token]` activado con `pg-functions://postgres/seg/custom_access_token_hook`.
-- **Nube (manual, dev y prod)**: aplicar `01b_seg.sql` y la migración de Supabase, activar el hook y desactivar el registro abierto en el panel, y hacer una prueba de humo con un token real. Evidencia en `docs/ops/supabase-ambientes.md`.
+- **`supabase/config.toml`**: `enable_signup = false`, `[auth.hook.custom_access_token]` activado con `pg-functions://postgres/seg/custom_access_token_hook` y `[db.migrations] enabled = false`.
+- **Runner `tools/migrar`**: `bajar` revierte solo las migraciones de la carpeta indicada (`db/` y `supabase/migrations` comparten la tabla de registro), con su prueba.
+- **Nube (manual, dev)**: aplicar `01b_seg.sql` y la migración de Supabase, activar el hook y desactivar el registro abierto en el panel, y hacer una prueba de humo con un token real. Evidencia en `docs/ops/supabase-ambientes.md`.
 - Actualizar `docs/roadmap-specs.md`: la fila 06 deja de corregir `01b_seg.sql`; las funciones de permisos pasan a la 07.
 
 **Out of scope (para otros specs):**
@@ -45,6 +46,7 @@ Historias del backlog: **A-02** y **A-03**.
 - Bloqueo tras 5 intentos, expiración por inactividad y límites de tasa de Auth (TR-RNF-009, 014 y 015): configuración del panel, se revisa con el spec 05.
 - MFA TOTP en el panel y en `config.toml` (spec 05 y spec 14).
 - Registro de eventos en `seg.evento_seguridad` (la tabla se crea; la escriben los specs 05, 07 y 18).
+- Proyecto prod: migraciones y configuración del panel van al plan de migración a producción.
 
 ## Base de código reutilizada
 
@@ -65,6 +67,7 @@ Fuente: `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/codigo/`
 - `seg.membresia`: `UNIQUE (tenant_id, id)` para FK compuestas; `CHECK (hasta IS NULL OR hasta > desde)`.
 - `seg.asignacion`: columna nueva `tenant_id uuid NOT NULL` y FK compuestas `(tenant_id, membresia_id)` a `seg.membresia`, `(tenant_id, empresa_id)` a `org.empresa`, `(tenant_id, sucursal_id)` a `org.sucursal` y `(tenant_id, unidad_id)` a `org.unidad_operativa`, en lugar de las FK simples. `CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde)` (TR-RN-008, `hasta` no anterior a `desde`).
 - `seg.evento_seguridad.tenant_id` con FK a `org.tenant`.
+- Trigger por sentencia `seg.sin_borrado` en `rol`, `perfil`, `membresia` y `asignacion` (`DELETE`) y en `evento_seguridad` (`UPDATE` y `DELETE`): sin política de `DELETE` la sentencia afectaría 0 filas sin error. Mismo patrón que `org.sin_borrado`.
 - Ids sin default en SQL (los generará `IdGenerator`, UUID v7), salvo `evento_seguridad.id`, que sigue `bigserial`.
 - RLS (`ENABLE` y `FORCE`) y políticas por operación con `current_setting('app.tenant_id', true)::uuid`:
 
@@ -89,9 +92,10 @@ Fuente: `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/codigo/`
 **Cambia en la migración de Supabase:**
 
 - Sin el `ALTER TABLE seg.usuario` (las columnas nacen en `01b_seg.sql`) ni el `REVOKE` de esquemas (lo hacen `01a` y `01b`).
+- Función auxiliar `seg.fn_auth_espejar_usuario(id, email, app_meta, user_meta)` con el alta, que usan los dos triggers; `EXECUTE` revocado a `PUBLIC, anon, authenticated`.
 - `fn_auth_usuario_creado`: si `NEW.is_anonymous` o `NEW.email IS NULL`, no crea fila. Si el correo ya existe en `seg.usuario` con otro id, lanza `unique_violation` (23505) con el mensaje `seg.usuario: el correo ya pertenece a otro usuario` y el alta en Auth se revierte.
 - `fn_auth_usuario_correo`: si el correo nuevo es nulo, no toca la fila. Si no existe fila (usuario creado sin correo que luego lo agrega), la crea con las mismas reglas del alta. El correo duplicado falla igual que en el alta.
-- Inverso: `DROP TRIGGER` de los dos triggers en `auth.users`, `DROP FUNCTION` de las cuatro funciones y `REVOKE USAGE ON SCHEMA seg FROM supabase_auth_admin`.
+- Inverso: `DROP TRIGGER` de los dos triggers en `auth.users`, `DROP FUNCTION` de las cinco funciones y `REVOKE USAGE ON SCHEMA seg FROM supabase_auth_admin`.
 
 **De `supabase/tests/99_pruebas_auth.sql`** se conservan los casos 1.1 a 6.1, reescritos en `supabase/tests/seg_supabase_auth.test.sql` con el patrón de `db/tests/01a_org.test.sql` (bloques `DO` que lanzan excepción). `correr_pruebas.sh` no se usa: el orden lo da `db-esquemas.test.mjs`.
 
@@ -161,9 +165,9 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 2. **Simulación y espejo**: `tools/migrar/test/fixtures/simular-supabase.sql`; migración de Supabase con las dos funciones del espejo, los triggers y su inverso; `db-esquemas.test.mjs` aplica `db/`, la simulación y `supabase/migrations`. Pruebas de los casos 1 y 2 y de los nuevos (anónimo, sin correo, correo duplicado en alta y en cambio, alta posterior del correo). Verificar: `pnpm nx test migrar`.
 3. **Hook y privilegios**: `seg.tenant_para_token`, `seg.custom_access_token_hook`, `GRANT` y `REVOKE`. Pruebas de los casos 3 a 6 (sin membresías, preferido, más reciente, suspendido, vencido, usuario bloqueado, privilegios, ejecución como `supabase_auth_admin`). Verificar: `pnpm nx test migrar`.
 4. **Ida y vuelta y scripts**: la prueba baja `supabase/migrations` y `db/`, y vuelve a subir ambos; scripts `db:*:supabase` en `package.json`. Verificar: `pnpm nx test migrar` y `pnpm nx run-many -t lint test build` con código 0.
-5. **`supabase/config.toml`**: `enable_signup = false` en `[auth]` y bloque `[auth.hook.custom_access_token]`. Si el CLI intenta aplicar `supabase/migrations` al arrancar, `[db.migrations] enabled = false` (ver Riesgos). Verificar: `pnpm supabase:start` levanta sin errores.
+5. **`supabase/config.toml`**: `enable_signup = false` en `[auth]`, bloque `[auth.hook.custom_access_token]` y `[db.migrations] enabled = false` (con volumen nuevo el CLI aplicaba `supabase/migrations` y fallaba sin `seg`; ver Riesgos). Verificar: `pnpm supabase:start` levanta sin errores.
 6. **Nube, dev (manual)**: `pnpm db:up:remoto` (aplica `01b_seg.sql`) y `pnpm db:up:supabase:remoto`; en el panel, Authentication → Hooks → Custom Access Token con `seg.custom_access_token_hook` y registro abierto desactivado. Prueba de humo: crear un usuario desde el panel, comprobar su fila en `seg.usuario`, iniciar sesión y decodificar el token (`tipo_usuario = EXTERNO`, `tenant_id = null`); insertar con la conexión de migración una membresía `ACTIVO` en un tenant `ACTIVO`, refrescar la sesión y ver ese `tenant_id`; borrar los datos de prueba. Evidencia en `docs/ops/supabase-ambientes.md`.
-7. **Nube, prod (manual)**: mismas migraciones y la misma configuración del panel; sin datos de prueba, solo se comprueba con el MCP que existen las funciones, los triggers y la RLS. Actualizar `docs/roadmap-specs.md` (filas 04, 06 y 07).
+7. **Roadmap**: actualizar `docs/roadmap-specs.md` (filas 04, 06 y 07). Prod queda para el plan de migración a producción.
 
 ## Criterios de aceptación
 
@@ -174,7 +178,7 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 - [ ] `DELETE` sobre `membresia` y `asignacion` falla para el rol de la aplicación.
 - [ ] Una asignación cuya membresía, empresa, sucursal o unidad es de otro tenant falla por FK.
 - [ ] Una asignación con rol y perfil, sin ninguno, con alcance incoherente o con `vigente_hasta < vigente_desde` falla.
-- [ ] `anon` y `authenticated` no tienen `USAGE` sobre `seg` ni sobre `org` en dev y prod (`has_schema_privilege`).
+- [ ] `anon` y `authenticated` no tienen `USAGE` sobre `seg` ni sobre `org` en dev (`has_schema_privilege`).
 - [ ] `db/01b_seg.sql` no define `permisos_efectivos`, `menu_usuario` ni `sucursales_accesibles`.
 
 **Espejo `auth.users → seg.usuario` (A-03, TR-RF-010 parte identidad):**
@@ -204,8 +208,8 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 **Nube (verificación manual, evidencia en `docs/ops/supabase-ambientes.md`):**
 
 - [ ] En dev, un token real decodificado trae `tipo_usuario` y `tenant_id = null`; tras crear una membresía `ACTIVO` y refrescar la sesión, trae ese `tenant_id`.
-- [ ] En dev y prod el hook está activado en el panel y el registro abierto está desactivado (un `signUp` con la publishable key responde con error).
-- [ ] En prod el MCP confirma las funciones, los triggers en `auth.users` y la RLS activa en las tablas de `seg` con `tenant_id`.
+- [ ] En dev el hook está activado en el panel y el registro abierto está desactivado (un `signUp` con la publishable key responde con error).
+- [ ] En dev el MCP confirma las funciones, los triggers en `auth.users` y la RLS activa en las tablas de `seg` con `tenant_id`.
 - [ ] `pnpm nx run-many -t lint test build` termina con código 0 y `nx affected` está en verde en CI.
 - [ ] Las horas reales de A-02 y A-03 quedan registradas en el plan.
 
@@ -227,7 +231,11 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 - **Sí:** registro abierto desactivado. Decisión del usuario. Las altas llegan por la Admin API (invitación, specs 08 y 12) o por la migración CC-10.
 - **Sí:** sin código TypeScript. Decisión del usuario. La lib `seguridad` nace en el 05 con el verificador; `ultimo_acceso` lo escribe el 05.
 - **Sí:** pruebas en PostgreSQL 16 con `auth.users` simulado en CI, más humo manual en dev. Decisión del usuario. `supabase start` en CI es lento; la simulación incluye `is_anonymous` y el correo nulo, que la simulación base no tenía.
-- **Sí:** dev y prod. Decisión del usuario. Prod no tiene usuarios; activarlo ahora evita que diverja.
+- **Sí:** solo dev. Decisión del usuario al implementar: el proyecto prod no existe y su creación, migraciones y configuración van a un plan de migración a producción. Reemplaza la decisión inicial de cubrir dev y prod.
+- **Sí:** `bajar` del runner acotado a su carpeta. Agregado al implementar el paso 2: `db/` y `supabase/migrations` comparten `migraciones._migraciones` y `bajar` exigía inverso para todo lo registrado.
+- **Sí:** `seg.fn_auth_espejar_usuario` como función auxiliar. Agregada en el paso 2 para no duplicar el alta en los dos triggers.
+- **Sí:** trigger `seg.sin_borrado`. Agregado en el paso 1 para que el criterio "DELETE falla" se cumpla; sin él el borrado afecta 0 filas sin error. Efecto lateral: el `ON DELETE CASCADE` de membresía a asignación también queda bloqueado.
+- **Sí:** `[db.migrations] enabled = false` en `config.toml`. Confirmado en el paso 5 con un volumen nuevo: el CLI aplicaba la migración y fallaba con `schema "seg" does not exist`.
 - **Sí:** funciones con dueño `postgres`. En Supabase ese rol tiene `BYPASSRLS` (comprobado con el MCP en dev), así que el hook lee membresías con RLS forzada sin `app.tenant_id`.
 - **Sí:** sin eventos de outbox. El espejo y el hook corren en transacciones de Supabase Auth, fuera del UoW y sin tenant; `ASIGNACION_OTORGADA` es del spec 08.
 
@@ -235,7 +243,7 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 
 | Riesgo | Mitigación |
 | --- | --- |
-| Supabase CLI aplica `supabase/migrations` al hacer `supabase start` y falla porque la base local no tiene `org` ni `seg` | Paso 5: si pasa, `[db.migrations] enabled = false` en `config.toml`. Las migraciones las aplica siempre `tools/migrar`. |
+| Supabase CLI aplica `supabase/migrations` al hacer `supabase start` y falla porque la base local no tiene `org` ni `seg` | Ocurrió con volumen nuevo (paso 5). `[db.migrations] enabled = false` en `config.toml`; las migraciones las aplica siempre `tools/migrar`. |
 | `postgres` pierde `BYPASSRLS` en un cambio de Supabase y el hook devuelve siempre `tenant_id = null` | La prueba de humo de dev lo detecta. Alternativa preparada: política de `SELECT` en `membresia` para el dueño de las funciones. |
 | El trigger que aborta por correo duplicado bloquea la migración masiva CC-10 si hay correos repetidos | La migración de SazónPOS (spec 23) depura duplicados antes; el error identifica la causa. |
 | `auth.users` simulado difiere del real y una prueba pasa en CI pero falla en Supabase | La simulación copia el nombre, tipo y nulabilidad de las columnas usadas (consultados en dev); el humo de dev lo confirma. |
@@ -251,5 +259,6 @@ Sin eventos de dominio: el espejo y el hook corren dentro de Supabase Auth, sin 
 - Invitación, aceptación y ciclo de vida de membresías, TR-CA-028 a 030 (spec 08).
 - Bitácora de seguridad en uso (specs 05, 07 y 18).
 - Bloqueo por intentos, inactividad y límites de tasa de Auth (se revisan con el spec 05).
+- Migraciones y configuración de Auth en prod (plan de migración a producción).
 
 Cada uno entra en su propio spec cuando su sprint lo pida.

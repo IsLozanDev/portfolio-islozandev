@@ -13,10 +13,10 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 01 | fundaciones-monorepo | F-02, F-03, F-05: Nx, pnpm, CI, docker-compose, Husky. Reglas de límites: etiquetas `comp:*`, ESLint por capa dentro de cada lib, matriz de dependencias entre componentes según PL-10. Debe dejar el generador `modulo-hexagonal`, libs en stub registradas y rangos de migraciones por componente | 7+ | — | — |
 | 02 | supabase-y-kernel | F-04, F-06 (RF 092): proyectos Supabase, kernel, kernel-infra, DDL de `sync.outbox` | 8 | 01 | 02 |
 | 03 | org-dominio-y-suscripcion | O-01 y parte de O-03 (RF 002-006): tenant, empresa, sucursal, unidad, suscripción, estados. Corrige `01a_org.sql` (RLS, CHECK, FK, historial) | 8-9 | 02 | 03 |
-| 04 | seg-identidad-hook-espejo | A-02, A-03: hook de token (`tenant_id`, `tipo_usuario`), espejo `auth.users` a `seg.usuario`, migración con rollback | 6-7 | 02, 03 | 04 |
+| 04 | seg-identidad-hook-espejo | A-02, A-03: hook de token (`tenant_id`, `tipo_usuario`), espejo `auth.users` a `seg.usuario`, migración con rollback. Crea `db/01b_seg.sql` corregido (tablas con RLS, sin funciones de permisos). Solo dev; prod va al plan de migración a producción | 8-9 | 02, 03 | 04 |
 | 05 | seg-verificador-guard-mfa | A-01, A-05 (RF 017): JWKS, `AutenticacionGuard`, `@Publico`, aal2 con antigüedad de 15 min, 401 step-up | 8 | 04 | 04 |
-| 06 | seg-dominio-autorizacion | S-01 (RF 008, 011, 012, 013): permiso, rol, perfil, asignación con alcance y vigencia, manifiesto. Corrige `01b_seg.sql` | 6-8 | 04 | 06 |
-| 07 | seg-permisos-efectivos-guard | S-02, S-03, S-05 (RF 015, 016): permisos efectivos, caché Redis con invalidación, `@Permiso`, `X-Sucursal-Id`, aislamiento entre tenants | 10 | 05, 06 | 06 |
+| 06 | seg-dominio-autorizacion | S-01 (RF 008, 011, 012, 013): permiso, rol, perfil, asignación con alcance y vigencia, manifiesto. `01b_seg.sql` ya existe (spec 04): lo que falte (p. ej. `version` en los agregados) entra como migración nueva | 6-8 | 04 | 06 |
+| 07 | seg-permisos-efectivos-guard | S-02, S-03, S-05 (RF 015, 016): permisos efectivos, caché Redis con invalidación, `@Permiso`, `X-Sucursal-Id`, aislamiento entre tenants. Incluye `seg.permisos_efectivos`, `seg.menu_usuario` y `seg.sucursales_accesibles` (`SECURITY DEFINER`, `search_path` fijo), que el 04 no creó | 10 | 05, 06 | 06 |
 | 08 | seg-membresias | S-04 (RF 009, 010, 014): invitar, aceptar, revocar, suspender. Estimado mayor que las 4 h del plan | 8 | 07 | 08 |
 | 09 | cfg-parametros | D-01 y parte de D-05 (RF 030-033) | 8-9 | 07 | 09 |
 | 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | 10 |

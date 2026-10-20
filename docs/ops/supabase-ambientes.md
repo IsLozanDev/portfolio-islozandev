@@ -53,9 +53,9 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 
 ### 6. Login de prueba (hito H0, solo dev)
 
-- [ ] Crear un usuario de prueba en *Authentication → Users → Add user* con clave y correo confirmado.
-- [ ] `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` con la publishable key devuelve un `access_token`.
-- [ ] La cabecera del token (`node -e "console.log(JSON.parse(Buffer.from(process.argv[1].split('.')[0],'base64url')))" <token>`) dice `alg: ES256` y su `kid` aparece en el JWKS.
+- [x] (dev) Crear un usuario de prueba en *Authentication → Users → Add user* con clave y correo confirmado.
+- [x] (dev) `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` con la publishable key devuelve un `access_token`.
+- [x] (dev) La cabecera del token (`node -e "console.log(JSON.parse(Buffer.from(process.argv[1].split('.')[0],'base64url')))" <token>`) dice `alg: ES256` y su `kid` aparece en el JWKS.
 
 ### 7. Rol de conexión de la aplicación
 
@@ -66,6 +66,17 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 - [ ] `git grep -nE "sb_secret|re_[A-Za-z0-9]{8}|eyJ[A-Za-z0-9_-]{10}"` no devuelve resultados.
 - [ ] `.env` está en `.gitignore` y `.env.example` no trae valores secretos.
 - [ ] La contraseña de la base y la API key de Resend que circularon en el chat se rotaron.
+
+### 9. Esquema seg, espejo y hook de token (SPEC 04)
+
+Orden: primero `db/` y luego `supabase/migrations`; para revertir, al revés (`db:down:supabase:remoto` antes que `db:down:remoto`). `supabase/migrations` necesita `org`, `seg` y `auth`: no corre contra el compose local.
+
+- [x] (dev) `pnpm db:up:remoto` aplica `01b_seg.sql` y `pnpm db:up:supabase:remoto` aplica `20261102000000_seg_supabase_auth.sql`.
+- [x] (dev) Panel: *Authentication → Hooks → Custom Access Token*, tipo Postgres, `seg.custom_access_token_hook`, activado.
+- [x] (dev) Panel: *Authentication → Sign In / Providers*: *Allow new users to sign up* desactivado.
+- [x] (dev) Un usuario creado en el panel aparece en `seg.usuario` con el mismo id y correo en minúsculas.
+- [x] (dev) Su token trae `tipo_usuario` y `tenant_id = null`; con una membresía `ACTIVO` en un tenant `ACTIVO`, trae ese `tenant_id`. Datos de prueba borrados.
+- [ ] (prod) Mismas migraciones y configuración del panel cuando exista el proyecto.
 
 ## Evidencia
 
@@ -81,5 +92,9 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 | 2026-10-19 | dev | `has_schema_privilege` / `has_table_privilege` sobre `sync` | `anon` y `authenticated`: `false` en `USAGE`, `SELECT` e `INSERT` |
 | 2026-10-19 | dev | Advisors de seguridad (MCP) | Sin avisos (un `function_search_path_mutable` inicial se corrigió con `SET search_path = ''`) |
 | 2026-10-19 | dev | Rol de conexión | `postgres` con `BYPASSRLS = true`: la RLS no lo frena; pendiente el rol de aplicación (spec 03) |
+| 2026-10-19 | dev | SPEC 04: `db:up:remoto` y `db:up:supabase:remoto` | Aplica `01b_seg.sql` y `20261102000000_seg_supabase_auth.sql` (antes: `01a`, `01e`; 0 usuarios en `auth.users`) |
+| 2026-10-19 | dev | SPEC 04: MCP tras migrar | Triggers `trg_auth_usuario_creado` y `trg_auth_usuario_correo` en `auth.users`; RLS activa y forzada en 7 tablas de `seg`; `anon`/`authenticated` sin `USAGE` en `seg` ni `org`; hook ejecutable solo por `supabase_auth_admin`, dueño `postgres` (`BYPASSRLS`) |
+| 2026-10-19 | dev | SPEC 04: humo | `signup` con publishable key: 422 `signup_disabled`. Usuario del panel con espejo en `seg.usuario` (`EXTERNO`, `ACTIVO`). Login: `alg ES256`, `kid 29aacbfd-…`, `tenant_id null`, `tipo_usuario EXTERNO`; con membresía `ACTIVO` en tenant de prueba: `tenant_id` de ese tenant. Tenant y membresía de prueba borrados; el usuario de prueba queda para el spec 05 |
+| 2026-10-19 | dev | SPEC 04: advisors de seguridad | Sin avisos sobre `seg` ni `org`. Queda `auth_leaked_password_protection` (configuración de Auth, se revisa con el spec 05 y TR-RNF-009) |
 
 _Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, ambiente y resultado._
