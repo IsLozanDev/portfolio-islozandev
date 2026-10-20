@@ -1,5 +1,6 @@
 import { AggregateRoot, ConflictError, ValidationError } from '@vitrina/plataforma/kernel';
 import { CodigoTenant } from './codigo-tenant.js';
+import { textoRequerido } from './texto.js';
 
 export const ESTADOS_TENANT = ['PRUEBA', 'ACTIVO', 'SUSPENDIDO', 'BAJA'] as const;
 export type EstadoTenant = (typeof ESTADOS_TENANT)[number];
@@ -45,7 +46,7 @@ export class Tenant extends AggregateRoot {
 
   static crear(datos: { id: string; codigo: string; nombre: string; estado: 'PRUEBA' | 'ACTIVO' }): Tenant {
     const codigo = CodigoTenant.de(datos.codigo).valor;
-    const nombre = validarNombre(datos.nombre);
+    const nombre = textoRequerido(datos.nombre, 3, 150, 'El nombre del tenant');
     const tenant = new Tenant(datos.id, 0, {
       codigo,
       nombre,
@@ -132,12 +133,4 @@ export class Tenant extends AggregateRoot {
     });
     return { estadoAnterior: anterior, estadoNuevo: nuevo, motivo: motivoLimpio, fechaEfectiva };
   }
-}
-
-function validarNombre(nombre: string): string {
-  const limpio = nombre.trim();
-  if (limpio.length < 3 || limpio.length > 150) {
-    throw new ValidationError('El nombre del tenant debe tener de 3 a 150 caracteres');
-  }
-  return limpio;
 }

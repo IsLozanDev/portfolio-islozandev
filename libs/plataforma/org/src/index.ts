@@ -1,4 +1,7 @@
 export { CodigoTenant } from './domain/codigo-tenant.js';
+export { exigirCupo, topeSucursales, type CupoSucursales } from './domain/cupo-sucursales.js';
+export { Empresa, type DatosEmpresa, type EmpresaProps } from './domain/empresa.js';
+export { Sucursal, type DatosSucursal, type SucursalProps } from './domain/sucursal.js';
 export {
   ESTADOS_SUSCRIPCION,
   PLANES,
@@ -19,3 +22,12 @@ export {
   type EstadoTenant,
   type TenantProps,
 } from './domain/tenant.js';
+export {
+  TIPOS_UNIDAD,
+  UnidadOperativa,
+  type Atributos,
+  type DatosUnidad,
+  type TipoUnidad,
+  type UnidadProps,
+} from './domain/unidad-operativa.js';
+export { CodigoEstablecimiento, Ruc, Ubigeo } from './domain/valores.js';

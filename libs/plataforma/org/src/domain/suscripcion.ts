@@ -1,4 +1,5 @@
 import { AggregateRoot, ValidationError } from '@vitrina/plataforma/kernel';
+import { textoOpcional } from './texto.js';
 
 export const PRODUCTOS = ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] as const;
 export type ProductoCodigo = (typeof PRODUCTOS)[number];
@@ -102,8 +103,7 @@ function validarDatos(datos: DatosSuscripcion, estadoActual: EstadoSuscripcion |
     throw new ValidationError('El estado VENCIDA lo asigna solo el control diario de vencimientos');
   }
 
-  const edicion = datos.edicion?.trim() || null;
-  if (edicion !== null && edicion.length > 30) throw new ValidationError('La edición admite hasta 30 caracteres');
+  const edicion = textoOpcional(datos.edicion, 30, 'La edición');
   if (datos.vigenteHasta !== null && !esFecha(datos.vigenteHasta)) {
     throw new ValidationError('vigente_hasta debe ser una fecha YYYY-MM-DD');
   }
