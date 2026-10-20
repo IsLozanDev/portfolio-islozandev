@@ -1,1 +1,1 @@
-export {};
+export { validarRuc } from './ruc.js';

@@ -3,5 +3,11 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/util/src",
   "projectType": "library",
-  "tags": ["scope:shared", "type:util"]
+  "tags": ["scope:shared", "type:util"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node --experimental-vm-modules node_modules/jest/bin/jest.js -c libs/shared/util/jest.config.mjs", "cwd": "{workspaceRoot}" }
+    }
+  }
 }

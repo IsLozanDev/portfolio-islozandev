@@ -6,7 +6,7 @@ import { bajar, subir } from '../migrar.mjs';
 const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
 const rutaDb = (sub) => new URL(`../../../db/${sub}`, import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
-const nombreDb = `outbox_test_${randomBytes(4).toString('hex')}`;
+const nombreDb = `esquemas_test_${randomBytes(4).toString('hex')}`;
 const urlDb = (() => {
   const u = new URL(ADMIN_URL);
   u.pathname = `/${nombreDb}`;
@@ -47,24 +47,32 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
-  await ejecutar(ADMIN_URL, 'DROP ROLE IF EXISTS outbox_test_app');
-  for (const rol of creados) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 });
 
-const existeEsquema = async () => (await ejecutar(urlDb, "SELECT 1 FROM pg_namespace WHERE nspname = 'sync'")).rowCount === 1;
+// Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
+// en paralelo los crearían y borrarían a la vez.
+const CASOS = [
+  { migracion: '01a_org.sql', esquema: 'org', prueba: 'tests/01a_org.test.sql' },
+  { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
+];
 
-describe('db/01e_sync_outbox.sql', () => {
-  test('aplica, pasa la prueba SQL, revierte y vuelve a aplicar', async () => {
+const existeEsquema = async (esquema) =>
+  (await ejecutar(urlDb, `SELECT 1 FROM pg_namespace WHERE nspname = '${esquema}'`)).rowCount === 1;
+
+describe('db/', () => {
+  test('aplica, pasa las pruebas SQL, revierte y vuelve a aplicar', async () => {
     const dir = rutaDb('');
-    expect(await subir({ url: urlDb, dir })).toContain('01e_sync_outbox.sql');
-    expect(await existeEsquema()).toBe(true);
+    const migraciones = CASOS.map((c) => c.migracion);
+    expect(await subir({ url: urlDb, dir })).toEqual(expect.arrayContaining(migraciones));
+    for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
-    await ejecutar(urlDb, await readFile(rutaDb('tests/01e_sync_outbox.test.sql'), 'utf8'));
+    for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
-    expect(await bajar({ url: urlDb, dir })).toContain('01e_sync_outbox.sql');
-    expect(await existeEsquema()).toBe(false);
+    expect(await bajar({ url: urlDb, dir })).toEqual(expect.arrayContaining(migraciones));
+    for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(false);
 
-    expect(await subir({ url: urlDb, dir })).toContain('01e_sync_outbox.sql');
-    expect(await existeEsquema()).toBe(true);
+    expect(await subir({ url: urlDb, dir })).toEqual(expect.arrayContaining(migraciones));
+    for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
   });
 });

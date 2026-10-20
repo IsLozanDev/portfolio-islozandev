@@ -195,7 +195,7 @@ interface UsoUsuariosPort { activos(tenantId: string, producto: ProductoCodigo):
 ## Plan de implementación
 
 1. **Migración** `db/01a_org.sql`, inverso y `db/tests/01a_org.test.sql` con un rol sin `BYPASSRLS`: aislamiento entre dos tenants en las seis tablas, `DELETE` falla, CHECKs de RUC, plan, límites, principal `0000` y unidad sin sucursal. Verificar: `pnpm db:up && pnpm db:down && pnpm db:up` y la prueba SQL en verde.
-2. **`validarRuc`** en `libs/shared/util` con pruebas (20601234561 válido, 20601234560 inválido, prefijo 11 inválido, 10 dígitos inválido). Verificar: `pnpm nx test shared-util`.
+2. **`validarRuc`** en `libs/shared/util` con pruebas (20601234565 válido, 20601234560 inválido, prefijo 11 inválido, 10 dígitos inválido). Verificar: `pnpm nx test shared-util`.
 3. **Lib `org`**: `project.json` con tags y alias `@vitrina/plataforma/org`, carpetas de capa, `index.ts` vacío. Verificar: `pnpm nx lint org` y `build`.
 4. **Dominio `Tenant` y `Suscripcion`**: transiciones, motivo, límites contra uso. Pruebas unitarias. Verificar: `pnpm nx test org`.
 5. **Dominio `Empresa`, `Sucursal`, `UnidadOperativa`** y value objects: principal `0000`, traslado de principal, inactivar principal rechazado, tope de sucursales, reglas de unidad. Pruebas unitarias. Verificar: `pnpm nx test org`.
@@ -210,8 +210,8 @@ interface UsoUsuariosPort { activos(tenantId: string, producto: ProductoCodigo):
 
 **Empresa (TR-RF-002):**
 
-- [ ] **TR-CA-004 (adaptado):** con tenant en `ACTIVO`, `RegistrarEmpresa` con RUC 20512345678 y razón social del comando deja la empresa activa y una sucursal principal con establecimiento `0000`, en una sola transacción, con `empresa.creada` y `sucursal.creada` en `sync.outbox`.
-- [ ] **TR-CA-005:** registrar otra vez el RUC 20512345678 en el mismo tenant falla con «La empresa ya está registrada en este tenant» y no deja filas nuevas ni eventos.
+- [ ] **TR-CA-004 (adaptado):** con tenant en `ACTIVO`, `RegistrarEmpresa` con RUC 20512345671 y razón social del comando deja la empresa activa y una sucursal principal con establecimiento `0000`, en una sola transacción, con `empresa.creada` y `sucursal.creada` en `sync.outbox`.
+- [ ] **TR-CA-005:** registrar otra vez el RUC 20512345671 en el mismo tenant falla con «La empresa ya está registrada en este tenant» y no deja filas nuevas ni eventos.
 - [ ] El mismo RUC se puede registrar en otro tenant.
 - [ ] Un RUC con dígito verificador inválido (20601234560) falla con «RUC inválido» antes de abrir la transacción.
 - [ ] `RegistrarEmpresa` falla si el tenant está en `SUSPENDIDO` o `BAJA`.
@@ -274,6 +274,7 @@ interface UsoUsuariosPort { activos(tenantId: string, producto: ProductoCodigo):
 - **No:** controladores sin guard detrás de un flag, ni un guard falso. Superficie abierta o código a retirar.
 - **Sí:** `PadronRucPort` con adaptador nulo y razón social manual. Decisión del usuario. El caso de uso no cambia cuando llegue TR-IDN en R2.
 - **Sí:** RUC solo por módulo 11 en `libs/shared/util`. La estructura del plan lo ubica ahí y lo reusarán personas e identidad.
+- **Sí:** RUC de prueba distintos a los del SRS. Los de los GWT (20601234561, 20512345678, 20498765432) no cumplen el dígito verificador de SUNAT. Se usan 20601234565, 20512345671 y 20498765433; 20601234560 sigue siendo el inválido de TR-CA-003. Decisión del usuario.
 - **Sí:** matriz `PRUEBA → ACTIVO|SUSPENDIDO|BAJA`, `ACTIVO → SUSPENDIDO|BAJA`, `SUSPENDIDO → ACTIVO|BAJA`, `BAJA` terminal. Decisión del usuario. Cumple CA-017 y permite reactivar.
 - **Sí:** eventos `tenant.reactivado` y `tenant.dado_de_baja`, que el SRS no cita. Sin ellos el consumidor de seguridad no sabe reponer ni retirar el tenant del token.
 - **Sí:** historial de estados en tabla propia, de solo inserción. RF-006 pide motivo y auditoría; AUD (spec 16) consumirá los eventos, pero el motivo no puede depender de que AUD exista.
