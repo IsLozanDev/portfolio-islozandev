@@ -31,3 +31,11 @@ export {
   type UnidadProps,
 } from './domain/unidad-operativa.js';
 export { CodigoEstablecimiento, Ruc, Ubigeo } from './domain/valores.js';
+export type {
+  RepositorioEmpresas,
+  RepositorioSucursales,
+  RepositorioSuscripciones,
+  RepositorioTenants,
+  RepositorioUnidades,
+} from './application/ports/repositorios.js';
+export { ESQUEMAS_ORG, registrarEsquemasOrg } from './infrastructure/event-schemas.js';
