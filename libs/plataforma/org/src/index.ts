@@ -39,3 +39,22 @@ export type {
   RepositorioUnidades,
 } from './application/ports/repositorios.js';
 export { ESQUEMAS_ORG, registrarEsquemasOrg } from './infrastructure/event-schemas.js';
+export { CrearTenant, type CrearTenantComando } from './application/crear-tenant.js';
+export {
+  EditarEmpresa,
+  RegistrarEmpresa,
+  type EditarEmpresaComando,
+  type EmpresaRepos,
+  type RegistrarEmpresaComando,
+} from './application/empresa.casos-de-uso.js';
+export type { DatosPadron, PadronRucPort } from './application/ports/padron-ruc.port.js';
+export { PadronRucNulo } from './infrastructure/padron-ruc.nulo.js';
+export {
+  EditarSucursal,
+  InactivarSucursal,
+  MarcarSucursalPrincipal,
+  RegistrarSucursal,
+  type EditarSucursalComando,
+  type RegistrarSucursalComando,
+  type SucursalRepos,
+} from './application/sucursal.casos-de-uso.js';
