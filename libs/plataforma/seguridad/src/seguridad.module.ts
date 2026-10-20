@@ -4,11 +4,16 @@ import { REGISTRO_ACCESO, type RegistroAcceso } from './application/ports/regist
 import { VERIFICADOR_TOKEN, type VerificadorToken } from './application/ports/verificador-token.port.js';
 import { AutenticacionGuard } from './interface/autenticacion.guard.js';
 import { MfaGuard } from './interface/mfa.guard.js';
+import { MFA_MAX_EDAD_SEG, SesionController } from './interface/sesion.controller.js';
+import type { DataSource } from 'typeorm';
 import { SupabaseJwksVerificador } from './infrastructure/supabase/supabase-jwks.verificador.js';
+import { RegistroAccesoTypeorm } from './infrastructure/typeorm/registro-acceso.typeorm.js';
 
 export interface SeguridadOpciones {
   supabaseUrl: string;
   mfaMaxEdadSeg: number;
+  /** El mismo DataSource que recibe KernelInfraModule. */
+  dataSource: DataSource;
   /** Solo pruebas. */
   jwksUrl?: string;
   /** Solo pruebas. */
@@ -20,7 +25,9 @@ export class SeguridadModule {
   static register(op: SeguridadOpciones): DynamicModule {
     return {
       module: SeguridadModule,
+      controllers: [SesionController],
       providers: [
+        { provide: MFA_MAX_EDAD_SEG, useValue: op.mfaMaxEdadSeg },
         {
           provide: VERIFICADOR_TOKEN,
           useFactory: (): VerificadorToken =>
@@ -30,7 +37,7 @@ export class SeguridadModule {
               enfriamientoMs: op.enfriamientoMs,
             }),
         },
-        { provide: REGISTRO_ACCESO, useValue: { marcar: async () => undefined } satisfies RegistroAcceso },
+        { provide: REGISTRO_ACCESO, useFactory: (): RegistroAcceso => new RegistroAccesoTypeorm(op.dataSource) },
         // APP_GUARD se ejecuta en el orden de registro: primero autenticación, luego MFA.
         {
           provide: APP_GUARD,

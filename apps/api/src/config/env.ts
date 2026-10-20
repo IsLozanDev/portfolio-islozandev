@@ -4,6 +4,9 @@ const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  SUPABASE_URL: z.url({ protocol: /^https?$/ }),
+  // TR-RN-009: antigüedad máxima del MFA para @RequiereMfa.
+  SEG_MFA_MAX_EDAD_SEG: z.coerce.number().int().positive().default(900),
 });
 
 export type Config = z.infer<typeof esquema>;

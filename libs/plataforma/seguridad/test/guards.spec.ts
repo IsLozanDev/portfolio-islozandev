@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { Controller, Get, Logger, Post, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 import type { Principal } from '../src/domain/principal.js';
 import { REGISTRO_ACCESO, type RegistroAcceso } from '../src/application/ports/registro-acceso.port.js';
 import { SeguridadModule, type SeguridadOpciones } from '../src/seguridad.module.js';
@@ -65,7 +66,7 @@ function capturarWarn() {
 
 async function crearApp(registro: RegistroAcceso, op: Partial<SeguridadOpciones> = {}): Promise<INestApplication> {
   const modulo = await Test.createTestingModule({
-    imports: [SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, jwksUrl, ...op })],
+    imports: [SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, dataSource: new DataSource({ type: 'postgres' }), jwksUrl, ...op })],
     controllers: [PruebaController],
   })
     .overrideProvider(REGISTRO_ACCESO)

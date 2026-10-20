@@ -14,4 +14,5 @@ export { REGISTRO_ACCESO, type RegistroAcceso } from './application/ports/regist
 export { PrincipalActual, PUBLICO, Publico, REQUIERE_MFA, RequiereMfa } from './interface/decoradores.js';
 export { AutenticacionGuard } from './interface/autenticacion.guard.js';
 export { MfaGuard } from './interface/mfa.guard.js';
+export { SesionDto } from './interface/sesion.controller.js';
 export { SeguridadModule, type SeguridadOpciones } from './seguridad.module.js';

@@ -1,0 +1,42 @@
+import { execFile } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { promisify } from 'node:util';
+import { DataSource } from 'typeorm';
+
+const exec = promisify(execFile);
+const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+
+const withDb = (name: string): string => {
+  const url = new URL(ADMIN_URL);
+  url.pathname = `/${name}`;
+  return url.toString();
+};
+
+async function admin(sql: string): Promise<void> {
+  const ds = new DataSource({ type: 'postgres', url: ADMIN_URL });
+  await ds.initialize();
+  try {
+    await ds.query(sql);
+  } finally {
+    await ds.destroy();
+  }
+}
+
+export interface TempDb {
+  readonly url: string;
+  drop(): Promise<void>;
+}
+
+/** Base temporal con db/ aplicado por el runner de migraciones. */
+export async function createTempDb(): Promise<TempDb> {
+  const name = `seg_${randomBytes(4).toString('hex')}`;
+  const url = withDb(name);
+  await admin(`CREATE DATABASE ${name}`);
+  try {
+    await exec('node', ['tools/migrar/cli.mjs', 'up', 'db'], { env: { ...process.env, DATABASE_URL: url } });
+  } catch (error) {
+    await admin(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    throw error;
+  }
+  return { url, drop: () => admin(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`) };
+}
