@@ -58,3 +58,20 @@ export {
   type RegistrarSucursalComando,
   type SucursalRepos,
 } from './application/sucursal.casos-de-uso.js';
+export {
+  EditarUnidad,
+  InactivarUnidad,
+  RegistrarUnidad,
+  type EditarUnidadComando,
+  type RegistrarUnidadComando,
+  type UnidadRepos,
+} from './application/unidad.casos-de-uso.js';
+export {
+  CambiarEstadoTenant,
+  GestionarSuscripcion,
+  type CambiarEstadoTenantComando,
+  type GestionarSuscripcionComando,
+} from './application/tenant.casos-de-uso.js';
+export type { UsoUsuariosPort } from './application/ports/uso-usuarios.port.js';
+export { UsoUsuariosProvisional } from './infrastructure/uso-usuarios.provisional.js';
+export { OrgModule, PADRON_RUC, USO_USUARIOS } from './infrastructure/org.module.js';

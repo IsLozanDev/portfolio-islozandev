@@ -288,6 +288,7 @@ interface UsoUsuariosPort { activos(tenantId: string, producto: ProductoCodigo):
 - **Sí:** tope de sucursales por tenant, el menor de las suscripciones vigentes. Las sucursales no son de un producto y RN-006 dice "no se exceden límites". Con un solo producto (CA-008) da lo mismo. Pendiente de confirmar al revisar este borrador (ver Riesgos).
 - **Sí:** `UsoUsuariosPort` provisional que devuelve 0. El conteo real necesita `seg.membresia` (spec 08); CA-014 se prueba con un falso.
 - **Sí:** tipos de unidad como lista cerrada en el dominio y ubigeo solo por formato. Decisión del usuario. El spec 19a los cambia por `CatalogoPort`.
+- **Sí:** `EditarUnidad` recorre la cadena de padres y rechaza un padre que sea descendiente de la unidad (tope de 50 niveles). El dominio solo ve un nivel y la base no impide ciclos; agregado al implementar el paso 9.
 - **Sí:** TR-RN-010 fuera de este spec. Decisión del usuario. No hay membresías; queda para los specs 08 y 12.
 - **Sí:** `suscripcion.id` uuid propio con `UNIQUE (tenant_id, producto_codigo)`. El outbox exige `aggregate_id` uuid; la consulta de `seg.permisos_efectivos` por tenant y producto sigue funcionando.
 - **No:** FK de `suscripcion.producto_codigo` a `seg.producto`. Invierte la dependencia `ORG → SEG`; el CHECK cubre la lista mientras tanto.
