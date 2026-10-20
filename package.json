@@ -15,7 +15,9 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "db:up": "node --env-file-if-exists=.env tools/migrar/cli.mjs up",
-    "db:down": "node --env-file-if-exists=.env tools/migrar/cli.mjs down"
+    "db:down": "node --env-file-if-exists=.env tools/migrar/cli.mjs down",
+    "db:up:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up db --remoto",
+    "db:down:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down db --remoto"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
@@ -44,8 +46,11 @@
     "@nestjs/core": "12.2.0",
     "@nestjs/platform-express": "12.2.0",
     "@nestjs/swagger": "12.0.2",
+    "ajv": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "typeorm": "^1.1.2",
+    "uuid": "^14.0.3",
     "zod": "^4.6.7"
   },
   "lint-staged": {

@@ -9,6 +9,10 @@
       "executor": "nx:run-commands",
       "options": { "command": "tsc -p libs/plataforma/kernel/tsconfig.json", "cwd": "{workspaceRoot}" },
       "outputs": ["{projectRoot}/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node --experimental-vm-modules node_modules/jest/bin/jest.js -c libs/plataforma/kernel/jest.config.mjs", "cwd": "{workspaceRoot}" }
     }
   }
 }

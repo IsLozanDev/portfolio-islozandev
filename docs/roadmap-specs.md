@@ -8,7 +8,7 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 
 ## R0 y R1 (sprints 0 a 12): 27 specs
 
-| NN | Slug | Cubre | h est. | Depende de | Contexto (archivo actual) |
+| NN | Slug | Cubre | h est. | Depende de | Contexto (`spec-context/NN-*.md`) |
 |---|---|---|---|---|---|
 | 01 | fundaciones-monorepo | F-02, F-03, F-05: Nx, pnpm, CI, docker-compose, Husky. Reglas de límites: etiquetas `comp:*`, ESLint por capa dentro de cada lib, matriz de dependencias entre componentes según PL-10. Debe dejar el generador `modulo-hexagonal`, libs en stub registradas y rangos de migraciones por componente | 7+ | — | — |
 | 02 | supabase-y-kernel | F-04, F-06 (RF 092): proyectos Supabase, kernel, kernel-infra, DDL de `sync.outbox` | 8 | 01 | 02 |
@@ -17,20 +17,21 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 05 | seg-verificador-guard-mfa | A-01, A-05 (RF 017): JWKS, `AutenticacionGuard`, `@Publico`, aal2 con antigüedad de 15 min, 401 step-up | 8 | 04 | 04 |
 | 06 | seg-dominio-autorizacion | S-01 (RF 008, 011, 012, 013): permiso, rol, perfil, asignación con alcance y vigencia, manifiesto. Corrige `01b_seg.sql` | 6-8 | 04 | 06 |
 | 07 | seg-permisos-efectivos-guard | S-02, S-03, S-05 (RF 015, 016): permisos efectivos, caché Redis con invalidación, `@Permiso`, `X-Sucursal-Id`, aislamiento entre tenants | 10 | 05, 06 | 06 |
-| 08 | seg-membresias | S-04 (RF 009, 010, 014): invitar, aceptar, revocar, suspender. Estimado mayor que las 4 h del plan | 8 | 07 | 07 |
-| 09 | cfg-parametros | D-01 y parte de D-05 (RF 030-033) | 8-9 | 07 | — |
-| 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | — |
-| 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | — |
+| 08 | seg-membresias | S-04 (RF 009, 010, 014): invitar, aceptar, revocar, suspender. Estimado mayor que las 4 h del plan | 8 | 07 | 08 |
+| 09 | cfg-parametros | D-01 y parte de D-05 (RF 030-033) | 8-9 | 07 | 09 |
+| 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | 10 |
+| 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | 11 |
 | 12 | org-alta-tenant-vencimiento | O-02 y vencimiento de O-03 (RF 001, 007): alta transaccional, siembra, invitación al propietario, tarea diaria. IDN y NOT van por puertos con adaptador nulo hasta R2 | 9 | 08, 09, 10, 11 | 03 |
-| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 05 |
-| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth, MFA, recuperar y nueva clave. Sin historia en el plan; se agrega | 4-5 | 13 | 05 |
-| 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI) | 8 | 13 | — |
+| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 |
+| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth, MFA, recuperar y nueva clave. Sin historia en el plan; se agrega | 4-5 | 13 | 13 |
+| 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI) | 8 | 13 | 15 |
 | 16 | admin-usuarios-roles | U-03, U-04 | 10 | 08, 15 | — |
 | 17 | consola-y-admin-org | O-04, U-05, U-06 | 11 | 12, 15 | — |
-| 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | — |
-| 19 | cat-catalogos | D-03, D-04, D-06 (RF 022-029) | 14 | 07 | — |
-| 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | — |
-| 21 | obs-y-staging | E-03, E-04 | 8 | 11 | — |
+| 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
+| 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
+| 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |
+| 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 |
+| 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 |
 | 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — |
 | 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — |
 | 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — |
@@ -38,7 +39,9 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 26 | sazonpos-shell | C-07: CC-08 | 7 | 15, 24 | — |
 | 27 | e2e-uat-produccion-r1 | Q-01, Q-03, P-01, Q-04, P-02, P-04 | 29 | todos | — |
 
-Los specs 16, 17, 19, 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
+Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/NN-slug.md`. Pendientes de decidir al redactar: la UI de 09 y 10 depende de 13 y 15 (hoy declaran solo 07); RF-094 (registro de esquemas) sin spec; el spec 25 depende de 19a y 19b; formato de número de SEQ (8 dígitos vs "A-001").
+
+Los specs 16, 17, 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
 ## Cambios respecto a la versión 1
 

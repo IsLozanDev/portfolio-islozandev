@@ -1,4 +1,4 @@
-# Contexto para spec 07 · seg-membresias
+# Contexto para el spec 08 · seg-membresias (antes "spec 07")
 
 Paquete de contexto (no es el spec). Versiones vigentes: Angular 21, NestJS 12. Rutas de código relativas a `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/` (abreviado `PLAN/`).
 
