@@ -92,3 +92,30 @@ export class ProductoNoContratadoError extends ValidationError {
     super(`El tenant no tiene suscripción vigente al producto ${producto}`);
   }
 }
+
+// Manifiesto (TR-RF-008).
+
+/** Rechaza el manifiesto completo. Cada detalle lleva su ruta, p. ej. `permisos[3].codigo: rest-caja-cerrar`. */
+export class ManifiestoInvalidoError extends ValidationError {
+  override readonly code = 'MANIFIESTO_INVALIDO';
+
+  constructor(readonly detalles: readonly string[]) {
+    super(`Manifiesto inválido: ${detalles.join('; ')}`);
+  }
+}
+
+export class ManifiestoVersionAlteradaError extends ConflictError {
+  override readonly code = 'MANIFIESTO_VERSION_ALTERADA';
+
+  constructor(producto: string, version: string) {
+    super(`La versión ${version} de ${producto} ya se aplicó con otro contenido`);
+  }
+}
+
+export class ManifiestoVersionAnteriorError extends ConflictError {
+  override readonly code = 'MANIFIESTO_VERSION_ANTERIOR';
+
+  constructor(producto: string, version: string, vigente: string) {
+    super(`La versión ${version} de ${producto} es anterior a la vigente ${vigente}`);
+  }
+}

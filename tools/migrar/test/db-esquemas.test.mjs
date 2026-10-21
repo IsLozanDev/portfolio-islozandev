@@ -3,6 +3,10 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { bajar, subir } from '../migrar.mjs';
 
+// Aplica, prueba, revierte y reaplica todo: con lint, build y otras suites creando bases en paralelo
+// pasa de los 5 s por defecto, y al vencer afterAll borra la base con la migración en curso.
+const TIMEOUT_MS = 60_000;
+
 const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
 const ruta = (rel) => new URL(rel, import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const rutaDb = (sub) => ruta(`../../../db/${sub}`);
@@ -46,12 +50,12 @@ beforeAll(async () => {
     `ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
      ALTER DEFAULT PRIVILEGES GRANT ALL ON SCHEMAS TO anon, authenticated;`,
   );
-});
+}, TIMEOUT_MS);
 
 afterAll(async () => {
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
-});
+}, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
 // en paralelo los crearían y borrarían a la vez.
@@ -131,5 +135,5 @@ describe('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
     expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual([MIGRACION_SUPABASE]);
     expect(await triggersAuth()).toEqual(['trg_auth_usuario_correo', 'trg_auth_usuario_creado']);
-  });
+  }, TIMEOUT_MS);
 });

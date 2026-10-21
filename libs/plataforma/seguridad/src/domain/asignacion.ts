@@ -1,6 +1,7 @@
 import { AggregateRoot, ValidationError } from '@vitrina/plataforma/kernel';
 import { ALCANCES, alcanceAlMenos, type Alcance, type Ambito } from './alcance.js';
 import { AlcanceIncoherenteError, AlcanceInsuficienteError, RolOPerfilError, VigenciaInvalidaError } from './errores.js';
+import { EVENTOS_SEG, type AsignacionOtorgada } from './eventos.js';
 
 /** Fecha calendario `YYYY-MM-DD`, como la columna `date` de la base. */
 export type Fecha = string;
@@ -131,23 +132,19 @@ export class Asignacion extends AggregateRoot {
 
   private publicarOtorgada(): void {
     const p = this.props;
-    this.raise({
-      eventType: 'asignacion.otorgada',
-      aggregateType: 'asignacion',
-      schemaVersion: 1,
-      payload: {
-        membresia_id: p.membresiaId,
-        rol_id: p.rolId,
-        perfil_id: p.perfilId,
-        alcance: p.alcance,
-        empresa_id: p.empresaId,
-        sucursal_id: p.sucursalId,
-        unidad_id: p.unidadId,
-        vigente_desde: p.vigenteDesde,
-        vigente_hasta: p.vigenteHasta,
-        otorgado_por: p.otorgadoPor,
-      },
-    });
+    const payload: AsignacionOtorgada = {
+      membresia_id: p.membresiaId,
+      rol_id: p.rolId,
+      perfil_id: p.perfilId,
+      alcance: p.alcance,
+      empresa_id: p.empresaId,
+      sucursal_id: p.sucursalId,
+      unidad_id: p.unidadId,
+      vigente_desde: p.vigenteDesde,
+      vigente_hasta: p.vigenteHasta,
+      otorgado_por: p.otorgadoPor,
+    };
+    this.raise({ eventType: EVENTOS_SEG.asignacionOtorgada, aggregateType: 'asignacion', schemaVersion: 1, payload });
   }
 }
 

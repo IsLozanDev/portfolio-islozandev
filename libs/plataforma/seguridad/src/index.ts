@@ -16,3 +16,34 @@ export { AutenticacionGuard } from './interface/autenticacion.guard.js';
 export { MfaGuard } from './interface/mfa.guard.js';
 export { SesionDto } from './interface/sesion.controller.js';
 export { SeguridadModule, type SeguridadOpciones } from './seguridad.module.js';
+
+// Autorización (spec 06): dominio, casos de uso de rol y perfil, y esquemas de eventos.
+export { ALCANCES, alcanceAlMenos, cubre, type Alcance, type Ambito } from './domain/alcance.js';
+export { CodigoPermiso } from './domain/codigo-permiso.js';
+export {
+  AlcanceIncoherenteError,
+  AlcanceInsuficienteError,
+  ManifiestoInvalidoError,
+  ManifiestoVersionAlteradaError,
+  ManifiestoVersionAnteriorError,
+  PerfilPredefinidoNoEditableError,
+  PermisoAjenoAlProductoError,
+  ProductoNoContratadoError,
+  RolOPerfilError,
+  RolPredefinidoNoEditableError,
+  VigenciaInvalidaError,
+} from './domain/errores.js';
+export { EVENTOS_SEG } from './domain/eventos.js';
+export {
+  CambiarPermisosRol,
+  CopiarRol,
+  CrearRol,
+  InactivarRol,
+  type CambiarPermisosRolComando,
+  type CopiarRolComando,
+  type CrearRolComando,
+  type InactivarRolComando,
+  type ResultadoInactivar,
+} from './application/rol.casos-de-uso.js';
+export { CambiarRolesPerfil, CrearPerfil, type CambiarRolesPerfilComando, type CrearPerfilComando } from './application/perfil.casos-de-uso.js';
+export { ESQUEMAS_SEG, registrarEsquemasSeg } from './infrastructure/event-schemas.js';
