@@ -362,9 +362,9 @@ Bitácora `seg.evento_seguridad` (tipos del SQL):
 
 ### CLI del manifiesto
 
-`pnpm manifiesto:aplicar <archivo.json>` ejecuta `node --env-file-if-exists=.env dist/apps/api/cli/aplicar-manifiesto.js <archivo>`:
+`pnpm manifiesto:aplicar <archivo.json>` compila `api` y ejecuta `node --env-file-if-exists=.env apps/api/dist/cli/aplicar-manifiesto.js <archivo>`:
 
-- Usa `DATABASE_MIGRATION_URL` si existe y, si no, `DATABASE_URL`. Escribe catálogo global y roles predefinidos, que la RLS de la aplicación no permite.
+- Mismo criterio que `tools/migrar`: sin flag usa `DATABASE_URL` (local); con `--remoto` (`pnpm manifiesto:aplicar:remoto <archivo>`) usa `DATABASE_MIGRATION_URL` e imprime el host de destino. Escribe catálogo global y roles predefinidos, que la RLS de la aplicación no permite.
 - Imprime `{ producto, version, cambios }` en JSON.
 - Sale con código 0 si aplica o no hay cambios, y con 1 si el manifiesto es inválido (el despliegue se detiene).
 
@@ -420,7 +420,7 @@ Bitácora `seg.evento_seguridad` (tipos del SQL):
     - Los repositorios no leen filas de B con el rol `seg_test_app`.
     - Verificar: `pnpm nx test seguridad` y `nx affected` en verde en CI.
 12. **Nube, dev (manual).**
-    - `pnpm db:up:remoto` (aplica `01b_seg_autorizacion.sql`) y `pnpm manifiesto:aplicar` del manifiesto PLAT contra dev.
+    - `pnpm db:up:remoto` (aplica `01b_seg_autorizacion.sql`) y `pnpm manifiesto:aplicar:remoto` del manifiesto PLAT contra dev.
     - Prueba de humo con la API local y el usuario de prueba del spec 04: sin asignaciones, `mi-contexto` da `sin_accesos = true`. Tras insertar una asignación `TENANT` con la conexión de migración, da sus permisos y su menú. Borrar los datos de prueba.
     - Evidencia en `docs/ops/supabase-ambientes.md`.
 
@@ -502,6 +502,7 @@ Bitácora `seg.evento_seguridad` (tipos del SQL):
 - **Sí:** `mi-contexto` sin `@Permiso`. Un usuario sin asignaciones tiene que poder recibir `sin_accesos` (TR-CA-046). Excepción a la regla 5, como `/v1/seg/sesion` en el 05. `plat.sesion.contexto` queda declarado para la consola.
 - **Sí:** `mi-contexto` reemplaza y elimina `/v1/seg/sesion`. Lo fijó el spec 05.
 - **Sí:** manifiesto por CLI (`pnpm manifiesto:aplicar`) con la conexión de migración. Decisión del usuario. El pipeline no necesita token de servicio. El código 1 detiene el despliegue (TR-CA-024).
+- **Sí:** el CLI usa `DATABASE_URL` por defecto y `DATABASE_MIGRATION_URL` solo con `--remoto`, como `tools/migrar`. Decisión del usuario al implementar el paso 7: con la regla anterior, un `.env` local con la URL de Supabase escribía en dev cloud sin avisar.
 - **Sí:** se aplican módulos, opciones, permisos y roles predefinidos. Parámetros, indicadores y reportes solo se validan. Decisión del usuario. Sus dueños (CFG y REP) llegan después.
 - **Sí:** lo retirado queda `obsoleto`, no se borra. Decisión del usuario. Hay FK desde `rol_permiso` y `opcion_permiso`, y borrar perdería historia.
 - **Sí:** misma versión con otro contenido se rechaza (hash). Protege la idempotencia: "0 cambios" solo vale si el contenido es el mismo.

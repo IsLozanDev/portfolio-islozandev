@@ -1,4 +1,4 @@
-import { ConflictError, DomainError, ValidationError } from '@vitrina/plataforma/kernel';
+import { ConflictError, DomainError, ForbiddenError, ValidationError } from '@vitrina/plataforma/kernel';
 
 /** El motivo es solo para el log; la respuesta HTTP no lo expone. */
 export class TokenInvalidoError extends DomainError {
@@ -117,5 +117,23 @@ export class ManifiestoVersionAnteriorError extends ConflictError {
 
   constructor(producto: string, version: string, vigente: string) {
     super(`La versión ${version} de ${producto} es anterior a la vigente ${vigente}`);
+  }
+}
+
+// Otorgamiento (TR-RF-013).
+
+export class OtorganteSinAlcanceError extends ForbiddenError {
+  override readonly code = 'OTORGANTE_SIN_ALCANCE';
+
+  constructor() {
+    super('El otorgante no tiene un alcance igual o mayor sobre el destino');
+  }
+}
+
+export class MembresiaNoAsignableError extends ConflictError {
+  override readonly code = 'MEMBRESIA_NO_ASIGNABLE';
+
+  constructor(estado: string) {
+    super(`La membresía está ${estado}: solo se asigna a una membresía ACTIVO o INVITADO`);
   }
 }

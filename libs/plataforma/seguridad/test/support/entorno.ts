@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
+import type { Ambito } from '../../src/domain/alcance.js';
 import { registrarEsquemasSeg } from '../../src/infrastructure/event-schemas.js';
+import { AsignacionRepositorioTypeOrm, BitacoraSeguridadTypeOrm, UbicacionesOrgTypeOrm } from '../../src/infrastructure/typeorm/asignacion.repositorio.js';
 import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm, ProductosContratadosTypeOrm } from '../../src/infrastructure/typeorm/lecturas.js';
 import { PerfilRepositorioTypeOrm } from '../../src/infrastructure/typeorm/perfil.repositorio.js';
 import { RolRepositorioTypeOrm } from '../../src/infrastructure/typeorm/rol.repositorio.js';
@@ -21,6 +23,9 @@ export interface Entorno {
     catalogo: CatalogoPermisosTypeOrm;
     productos: ProductosContratadosTypeOrm;
     membresias: MembresiasLecturaTypeOrm;
+    asignaciones: AsignacionRepositorioTypeOrm;
+    ubicaciones: UbicacionesOrgTypeOrm;
+    bitacora: BitacoraSeguridadTypeOrm;
   };
   /** Ejecuta `fn` con el tenant en el contexto, como lo hará el interceptor HTTP. */
   en<T>(tenantId: string, fn: () => Promise<T>): Promise<T>;
@@ -38,7 +43,15 @@ export interface Semilla {
   rol(tenantId: string | null, producto: string, codigo: string, permisos: string[]): Promise<string>;
   perfil(tenantId: string, codigo: string, roles: string[]): Promise<string>;
   membresia(tenantId: string, estado?: 'INVITADO' | 'ACTIVO' | 'SUSPENDIDO', esPropietario?: boolean): Promise<{ membresiaId: string; usuarioId: string }>;
-  asignacion(tenantId: string, membresiaId: string, destino: { rolId?: string; perfilId?: string }, vigencia?: { desde?: string; hasta?: string | null }): Promise<string>;
+  asignacion(
+    tenantId: string,
+    membresiaId: string,
+    destino: { rolId?: string; perfilId?: string },
+    vigencia?: { desde?: string; hasta?: string | null },
+    ambito?: Partial<Ambito>,
+  ): Promise<string>;
+  /** Empresa con dos sucursales (la primera principal) y una caja en cada una. */
+  organizacion(tenantId: string): Promise<{ empresaId: string; sucursales: [string, string]; cajas: [string, string] }>;
 }
 
 const PRODUCTOS = ['PLAT', 'REST', 'GYM', 'LIB', 'ECO', 'CLI'];
@@ -112,14 +125,45 @@ export async function crearEntorno(): Promise<Entorno> {
       ]);
       return { membresiaId, usuarioId };
     },
-    asignacion: async (tenantId, membresiaId, { rolId, perfilId }, vigencia = {}) => {
+    asignacion: async (tenantId, membresiaId, { rolId, perfilId }, vigencia = {}, ambito = {}) => {
       const id = uuidV7();
       await q(
-        `INSERT INTO seg.asignacion (id, tenant_id, membresia_id, rol_id, perfil_id, alcance, vigente_desde, vigente_hasta)
-         VALUES ($1, $2, $3, $4, $5, 'TENANT', COALESCE($6::date, current_date), $7::date)`,
-        [id, tenantId, membresiaId, rolId ?? null, perfilId ?? null, vigencia.desde ?? null, vigencia.hasta ?? null],
+        `INSERT INTO seg.asignacion (id, tenant_id, membresia_id, rol_id, perfil_id, alcance, empresa_id, sucursal_id, unidad_id,
+           vigente_desde, vigente_hasta)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::date, current_date), $11::date)`,
+        [
+          id,
+          tenantId,
+          membresiaId,
+          rolId ?? null,
+          perfilId ?? null,
+          ambito.alcance ?? 'TENANT',
+          ambito.empresaId ?? null,
+          ambito.sucursalId ?? null,
+          ambito.unidadId ?? null,
+          vigencia.desde ?? null,
+          vigencia.hasta ?? null,
+        ],
       );
       return id;
+    },
+    organizacion: async (tenantId) => {
+      const empresaId = uuidV7();
+      const sucursales: [string, string] = [uuidV7(), uuidV7()];
+      const cajas: [string, string] = [uuidV7(), uuidV7()];
+      const ruc = `20${String(++n).padStart(9, '0')}`;
+      await q(`INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version) VALUES ($1, $2, $3, 'Sabores del Sur SAC', 1)`, [empresaId, tenantId, ruc]);
+      await q(
+        `INSERT INTO org.sucursal (id, tenant_id, empresa_id, codigo, nombre, codigo_establecimiento_sunat, es_principal, version) VALUES
+           ($1, $3, $4, 'MIRAFLORES', 'Miraflores', '0000', true, 1), ($2, $3, $4, 'SURCO', 'Surco', NULL, false, 1)`,
+        [...sucursales, tenantId, empresaId],
+      );
+      await q(
+        `INSERT INTO org.unidad_operativa (id, tenant_id, empresa_id, sucursal_id, tipo, codigo, nombre, version) VALUES
+           ($1, $3, $4, $5, 'CAJA', 'CAJA-02', 'Caja 02', 1), ($2, $3, $4, $6, 'CAJA', 'CAJA-01', 'Caja 01', 1)`,
+        [...cajas, tenantId, empresaId, ...sucursales],
+      );
+      return { empresaId, sucursales, cajas };
     },
   };
 
@@ -136,6 +180,9 @@ export async function crearEntorno(): Promise<Entorno> {
       catalogo: new CatalogoPermisosTypeOrm(uow, contexto),
       productos: new ProductosContratadosTypeOrm(uow, contexto),
       membresias: new MembresiasLecturaTypeOrm(uow, contexto),
+      asignaciones: new AsignacionRepositorioTypeOrm(uow, contexto),
+      ubicaciones: new UbicacionesOrgTypeOrm(uow, contexto),
+      bitacora: new BitacoraSeguridadTypeOrm(uow, contexto),
     },
     en: (tenantId, fn) => contexto.run({ tenantId }, fn),
     eventosDe: async (aggregateId) =>

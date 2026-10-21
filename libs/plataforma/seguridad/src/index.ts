@@ -26,6 +26,8 @@ export {
   ManifiestoInvalidoError,
   ManifiestoVersionAlteradaError,
   ManifiestoVersionAnteriorError,
+  MembresiaNoAsignableError,
+  OtorganteSinAlcanceError,
   PerfilPredefinidoNoEditableError,
   PermisoAjenoAlProductoError,
   ProductoNoContratadoError,
@@ -46,4 +48,8 @@ export {
   type ResultadoInactivar,
 } from './application/rol.casos-de-uso.js';
 export { CambiarRolesPerfil, CrearPerfil, type CambiarRolesPerfilComando, type CrearPerfilComando } from './application/perfil.casos-de-uso.js';
+export { OtorgarAsignacion, type Otorgante, type OtorgarAsignacionComando } from './application/otorgar-asignacion.js';
+export { AplicarManifiesto, type ResultadoManifiesto } from './application/aplicar-manifiesto.js';
+export type { RepositorioManifiestos, SesionManifiesto } from './application/ports/repositorios.js';
+export { ManifiestoRepositorioTypeOrm } from './infrastructure/typeorm/manifiesto.repositorio.js';
 export { ESQUEMAS_SEG, registrarEsquemasSeg } from './infrastructure/event-schemas.js';

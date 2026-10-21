@@ -1,4 +1,4 @@
-// Empaqueta la salida de tsc (dist/tsc) en dist/main.js. Node no conoce los alias @vitrina/* de
+// Empaqueta la salida de tsc (dist/tsc) en dist/main.js y el CLI del manifiesto en dist/cli/. Node no conoce los alias @vitrina/* de
 // tsconfig.base.json: aquí se resuelven contra el dist/ de cada lib, que tsc -b ya compiló.
 // Se empaqueta el JS de tsc y no el TS: esbuild no emite emitDecoratorMetadata, que NestJS usa.
 import { readFile } from 'node:fs/promises';
@@ -12,8 +12,8 @@ const alias = Object.fromEntries(
 );
 
 await build({
-  entryPoints: ['apps/api/dist/tsc/main.js'],
-  outfile: 'apps/api/dist/main.js',
+  entryPoints: { main: 'apps/api/dist/tsc/main.js', 'cli/aplicar-manifiesto': 'apps/api/dist/tsc/cli/aplicar-manifiesto.js' },
+  outdir: 'apps/api/dist',
   bundle: true,
   platform: 'node',
   format: 'esm',
