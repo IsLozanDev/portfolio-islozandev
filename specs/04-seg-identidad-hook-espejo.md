@@ -1,6 +1,6 @@
 # SPEC 04 — Identidad: esquema seg, espejo de auth.users y hook de token
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 03
 > **Date:** 2026-10-19
 > **Objective:** Crear el esquema `seg` corregido y la migración de Supabase que replica `auth.users` en `seg.usuario` y agrega `tenant_id` y `tipo_usuario` al token con el hook de Supabase Auth, en dev.

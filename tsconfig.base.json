@@ -27,6 +27,9 @@
       "@vitrina/plataforma/org": [
         "./libs/plataforma/org/src/index.ts"
       ],
+      "@vitrina/plataforma/seguridad": [
+        "./libs/plataforma/seguridad/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

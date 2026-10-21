@@ -78,6 +78,24 @@ Orden: primero `db/` y luego `supabase/migrations`; para revertir, al revés (`d
 - [x] (dev) Su token trae `tipo_usuario` y `tenant_id = null`; con una membresía `ACTIVO` en un tenant `ACTIVO`, trae ese `tenant_id`. Datos de prueba borrados.
 - [ ] (prod) Mismas migraciones y configuración del panel cuando exista el proyecto.
 
+### 10. Verificador JWKS, guard y MFA (SPEC 05)
+
+La API verifica el token con el JWKS de `{SUPABASE_URL}/auth/v1/.well-known/jwks.json` (solo ES256) y exige `aal2` con un factor de 15 min como máximo en rutas con `@RequiereMfa()`. Variables: `SUPABASE_URL`, `SEG_MFA_MAX_EDAD_SEG` (por defecto 900).
+
+- [ ] (dev) Panel: JWT expiry en 900 s. Hoy un token real trae `exp - iat = 3600`.
+- [x] (dev) MFA TOTP habilitado para enrolar y verificar (viene así por defecto; el humo enroló y verificó).
+- [ ] (dev) Anotar los rate limits de Auth vigentes (*Authentication → Rate Limits*).
+- [x] (dev) Humo con token real contra `GET /v1/seg/sesion` (aal1, token alterado, TOTP, aal2). Factor de prueba borrado.
+- [ ] (dev) Revocar la llave legacy HS256 en el panel. La API ya rechaza HS256 aunque Supabase lo emita.
+- [ ] (prod) Misma configuración cuando exista el proyecto.
+
+Brechas de RNF que Supabase Auth no cubre tal cual:
+
+| RNF | Pide | Qué hay | Motivo |
+| --- | --- | --- | --- |
+| TR-RNF-009 | Bloqueo tras 5 intentos fallidos | Rate limits de Auth por IP | Supabase Auth no bloquea la cuenta por intentos. Un bloqueo propio sería otro spec. |
+| TR-RNF-014 | Expiración por inactividad (30 min) | Tokens de 900 s; inactividad en el cliente (spec 13) | El timebox y la inactividad de sesión del servidor son de plan Pro. |
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |
@@ -96,5 +114,6 @@ Orden: primero `db/` y luego `supabase/migrations`; para revertir, al revés (`d
 | 2026-10-19 | dev | SPEC 04: MCP tras migrar | Triggers `trg_auth_usuario_creado` y `trg_auth_usuario_correo` en `auth.users`; RLS activa y forzada en 7 tablas de `seg`; `anon`/`authenticated` sin `USAGE` en `seg` ni `org`; hook ejecutable solo por `supabase_auth_admin`, dueño `postgres` (`BYPASSRLS`) |
 | 2026-10-19 | dev | SPEC 04: humo | `signup` con publishable key: 422 `signup_disabled`. Usuario del panel con espejo en `seg.usuario` (`EXTERNO`, `ACTIVO`). Login: `alg ES256`, `kid 29aacbfd-…`, `tenant_id null`, `tipo_usuario EXTERNO`; con membresía `ACTIVO` en tenant de prueba: `tenant_id` de ese tenant. Tenant y membresía de prueba borrados; el usuario de prueba queda para el spec 05 |
 | 2026-10-19 | dev | SPEC 04: advisors de seguridad | Sin avisos sobre `seg` ni `org`. Queda `auth_leaked_password_protection` (configuración de Auth, se revisa con el spec 05 y TR-RNF-009) |
+| 2026-10-21 | dev | SPEC 05: humo con API local (`SUPABASE_URL` de dev) y usuario de prueba | Login: `aal1`, `amr [password]`, `exp - iat = 3600`; `GET /v1/seg/sesion` 200 con `aal1`, `mfa_vigente false`, `mfa_en null`. Token alterado: 401 `TOKEN_INVALIDO` y log `auth.rechazo`. Enrolar TOTP, `challenge` y `verify`: token `aal2`, `amr [totp, password]`; `GET /v1/seg/sesion` 200 con `aal2`, `mfa_vigente true` y `mfa_en` del verify. Factor borrado (0 en `auth.mfa_factors`) |
 
 _Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, ambiente y resultado._
