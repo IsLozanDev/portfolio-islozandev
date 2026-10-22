@@ -4,7 +4,10 @@ import { promisify } from 'node:util';
 import { DataSource } from 'typeorm';
 
 const exec = promisify(execFile);
-const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+// Las pruebas de integración crean bases temporales: solo corren con TEST_DATABASE_URL (CI) y nunca
+// contra la DATABASE_URL de .env, que apunta a Supabase dev.
+const ADMIN_URL = process.env.TEST_DATABASE_URL ?? '';
+export const describeConDb = ADMIN_URL ? describe : describe.skip;
 
 const withDb = (name: string): string => {
   const url = new URL(ADMIN_URL);

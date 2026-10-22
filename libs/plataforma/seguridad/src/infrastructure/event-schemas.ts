@@ -36,6 +36,12 @@ export const ESQUEMAS_SEG: Readonly<Record<string, object>> = {
     vigente_hasta: { anyOf: [fecha, nulo] },
     otorgado_por: uuidNulo,
   }),
+  [EVENTOS_SEG.asignacionRevocada]: objeto({ membresia_id: uuid, motivo: texto, por: uuid }),
+  [EVENTOS_SEG.membresiaInvitada]: objeto({ usuario_id: uuid, invitado_por: uuid, reinvitacion: { type: 'boolean' }, expira_en: texto }),
+  [EVENTOS_SEG.membresiaAceptada]: objeto({ usuario_id: uuid }),
+  [EVENTOS_SEG.membresiaSuspendida]: objeto({ usuario_id: uuid, motivo: texto, por: uuid }),
+  [EVENTOS_SEG.membresiaReactivada]: objeto({ usuario_id: uuid, motivo: texto, por: uuid }),
+  [EVENTOS_SEG.membresiaFinalizada]: objeto({ usuario_id: uuid, motivo: texto, por: uuid, asignaciones_revocadas: uuids }),
 };
 
 export function registrarEsquemasSeg(validator: Pick<InMemoryEventSchemaValidator, 'register'>): void {

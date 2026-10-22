@@ -9,6 +9,7 @@ import { CachePermisosRedis, crearClienteRedis } from '../src/infrastructure/red
 import { Permiso, type SolicitudAutenticada } from '../src/interface/decoradores.js';
 import { SeguridadModule } from '../src/seguridad.module.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 import { ahoraSeg, claimsBase, firmar, JwksLocal, nuevaLlave, type Llave } from './support/jwks-local.js';
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -52,7 +53,7 @@ class PruebaController {
   }
 }
 
-describe('PermisoGuard y ContextoTenantInterceptor (TR-RF-016)', () => {
+describeConDb('PermisoGuard y ContextoTenantInterceptor (TR-RF-016)', () => {
   let e: Entorno;
   let app: INestApplication;
   let tenant: string;

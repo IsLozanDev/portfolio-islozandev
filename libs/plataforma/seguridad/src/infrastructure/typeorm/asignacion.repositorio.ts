@@ -18,6 +18,9 @@ interface Fila {
   vigente_desde: string;
   vigente_hasta: string | null;
   otorgado_por: string | null;
+  revocada_en: Date | null;
+  revocada_por: string | null;
+  motivo_revocacion: string | null;
   version: string;
 }
 
@@ -25,7 +28,7 @@ interface Fila {
 const SELECT = `
   SELECT id, tenant_id, membresia_id, rol_id, perfil_id, alcance, empresa_id, sucursal_id, unidad_id,
          to_char(vigente_desde, 'YYYY-MM-DD') AS vigente_desde, to_char(vigente_hasta, 'YYYY-MM-DD') AS vigente_hasta,
-         otorgado_por, version
+         otorgado_por, revocada_en, revocada_por, motivo_revocacion, version
     FROM seg.asignacion`;
 
 export class AsignacionRepositorioTypeOrm extends RepositorioBase<Asignacion> implements RepositorioAsignaciones {
@@ -33,16 +36,29 @@ export class AsignacionRepositorioTypeOrm extends RepositorioBase<Asignacion> im
     super(uow, tenants);
   }
 
+  async buscar(id: string): Promise<Asignacion | null> {
+    const [f] = await this.consultar<Fila>(`${SELECT} WHERE id = $1 AND tenant_id = $2`, [id, this.tenantId]);
+    return f ? this.leido(aDominio(f)) : null;
+  }
+
   async vigentesDe(membresiaId: string, hoy: Fecha): Promise<Asignacion[]> {
     const filas = await this.consultar<Fila>(
-      `${SELECT} WHERE tenant_id = $1 AND membresia_id = $2
+      `${SELECT} WHERE tenant_id = $1 AND membresia_id = $2 AND revocada_en IS NULL
           AND $3::date BETWEEN vigente_desde AND COALESCE(vigente_hasta, 'infinity'::date)`,
       [this.tenantId, membresiaId, hoy],
     );
     return filas.map((f) => this.leido(aDominio(f)));
   }
 
-  /** En este spec las asignaciones solo se otorgan; editar y revocar son del spec 08. */
+  async noRevocadasDe(membresiaId: string): Promise<Asignacion[]> {
+    const filas = await this.consultar<Fila>(`${SELECT} WHERE tenant_id = $1 AND membresia_id = $2 AND revocada_en IS NULL ORDER BY id`, [
+      this.tenantId,
+      membresiaId,
+    ]);
+    return filas.map((f) => this.leido(aDominio(f)));
+  }
+
+  /** Una asignación otorgada solo cambia al revocarse (TR-RF-014). */
   async guardar(a: Asignacion): Promise<void> {
     const u = a.ubicacion;
     await this.persistir(
@@ -57,8 +73,9 @@ export class AsignacionRepositorioTypeOrm extends RepositorioBase<Asignacion> im
       },
       (previa) =>
         this.actualizarFilas(
-          'UPDATE seg.asignacion SET vigente_hasta = $3, version = $4 WHERE id = $1 AND tenant_id = $2 AND version = $5',
-          [a.id, this.tenantId, a.vigenteHasta, a.version, previa],
+          `UPDATE seg.asignacion SET vigente_hasta = $3, revocada_en = $4, revocada_por = $5, motivo_revocacion = $6, version = $7
+            WHERE id = $1 AND tenant_id = $2 AND version = $8`,
+          [a.id, this.tenantId, a.vigenteHasta, a.revocadaEn, a.revocadaPor, a.motivoRevocacion, a.version, previa],
         ),
     );
   }
@@ -77,6 +94,9 @@ function aDominio(f: Fila): Asignacion {
     vigenteDesde: f.vigente_desde,
     vigenteHasta: f.vigente_hasta,
     otorgadoPor: f.otorgado_por,
+    revocadaEn: f.revocada_en,
+    revocadaPor: f.revocada_por,
+    motivoRevocacion: f.motivo_revocacion,
   });
 }
 

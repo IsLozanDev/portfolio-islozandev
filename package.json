@@ -12,8 +12,6 @@
     "build": "nx run-many -t build",
     "prepare": "husky",
     "dev:infra": "docker compose up -d --wait",
-    "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop",
     "db:up": "node --env-file-if-exists=.env tools/migrar/cli.mjs up",
     "db:down": "node --env-file-if-exists=.env tools/migrar/cli.mjs down",
     "db:up:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up db --remoto",

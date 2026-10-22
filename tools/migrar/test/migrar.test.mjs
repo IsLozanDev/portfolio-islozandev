@@ -2,11 +2,14 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { bajar, subir } from '../migrar.mjs';
 
-const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
+// Crea bases temporales: solo con TEST_DATABASE_URL (CI), nunca contra la DATABASE_URL de .env.
+const ADMIN_URL = process.env.TEST_DATABASE_URL ?? '';
+const describeConDb = ADMIN_URL ? describe : describe.skip;
 const fixture = (nombre) => new URL(`./fixtures/${nombre}`, import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
 const nombreDb = `migrar_test_${randomBytes(4).toString('hex')}`;
 const urlDb = (() => {
+  if (!ADMIN_URL) return '';
   const u = new URL(ADMIN_URL);
   u.pathname = `/${nombreDb}`;
   return u.toString();
@@ -34,10 +37,10 @@ async function consultar(sql) {
 
 const existeEsquema = async (n) => (await consultar(`SELECT 1 FROM pg_namespace WHERE nspname = '${n}'`)).length === 1;
 
-beforeAll(() => admin(`CREATE DATABASE ${nombreDb}`));
-afterAll(() => admin(`DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`));
+beforeAll(() => ADMIN_URL && admin(`CREATE DATABASE ${nombreDb}`));
+afterAll(() => ADMIN_URL && admin(`DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`));
 
-describe('runner de migraciones', () => {
+describeConDb('runner de migraciones', () => {
   test('up, down, up aplica y revierte en orden inverso', async () => {
     const dir = fixture('ok');
     expect(await subir({ url: urlDb, dir })).toEqual(['001_a.sql', '002_b.sql']);

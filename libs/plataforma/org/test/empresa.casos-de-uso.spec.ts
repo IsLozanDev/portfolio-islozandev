@@ -5,6 +5,7 @@ import type { PadronRucPort } from '../src/application/ports/padron-ruc.port.js'
 import { Suscripcion } from '../src/domain/suscripcion.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
 const COMANDO: RegistrarEmpresaComando = {
   ruc: '20512345671',
@@ -14,7 +15,7 @@ const COMANDO: RegistrarEmpresaComando = {
   ubigeo: '040101',
 };
 
-describe('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
+describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
   let e: Entorno;
   let crearTenant: CrearTenant;
   const registrar = (padron: PadronRucPort = new PadronRucNulo()) => new RegistrarEmpresa(e.uow, e.contexto, e.ids, e.eventos, e.repos, padron);

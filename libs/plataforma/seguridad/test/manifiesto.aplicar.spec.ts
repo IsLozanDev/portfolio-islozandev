@@ -4,6 +4,7 @@ import { ManifiestoInvalidoError, ManifiestoVersionAlteradaError } from '../src/
 import { PERMISOS_SEG } from '../src/domain/permisos-seg.js';
 import { ManifiestoRepositorioTypeOrm } from '../src/infrastructure/typeorm/manifiesto.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
 type Json = Record<string, unknown>;
 
@@ -27,7 +28,7 @@ const rest = (version: string, cambios: (m: Json) => void = () => undefined): Js
   return m;
 };
 
-describe('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
+describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
   let e: Entorno;
   let aplicar: AplicarManifiesto;
   const uno = async <T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T> => (await e.dataSource.query(sql, params))[0];

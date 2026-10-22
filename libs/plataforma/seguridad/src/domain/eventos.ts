@@ -8,6 +8,12 @@ export const EVENTOS_SEG = {
   perfilCreado: 'perfil.creado',
   perfilRolesCambiados: 'perfil.roles_cambiados',
   asignacionOtorgada: 'asignacion.otorgada',
+  asignacionRevocada: 'asignacion.revocada',
+  membresiaInvitada: 'membresia.invitada',
+  membresiaAceptada: 'membresia.aceptada',
+  membresiaSuspendida: 'membresia.suspendida',
+  membresiaReactivada: 'membresia.reactivada',
+  membresiaFinalizada: 'membresia.finalizada',
 } as const;
 
 export interface RolCreado {
@@ -44,6 +50,35 @@ export interface AsignacionOtorgada {
   vigente_desde: string;
   vigente_hasta: string | null;
   otorgado_por: string | null;
+}
+
+export interface AsignacionRevocada {
+  membresia_id: string;
+  motivo: string;
+  por: string;
+}
+
+// Membresías: ningún payload lleva correo ni nombre (TR-RNF-026).
+
+export interface MembresiaInvitada {
+  usuario_id: string;
+  invitado_por: string;
+  reinvitacion: boolean;
+  expira_en: string;
+}
+
+export interface MembresiaAceptada {
+  usuario_id: string;
+}
+
+export interface MembresiaCambiada {
+  usuario_id: string;
+  motivo: string;
+  por: string;
+}
+
+export interface MembresiaFinalizada extends MembresiaCambiada {
+  asignaciones_revocadas: string[];
 }
 
 /** Diferencia entre dos conjuntos, ordenada para que el payload sea estable. */

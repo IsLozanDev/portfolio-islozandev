@@ -12,7 +12,7 @@ import { SuscripcionRepositorioTypeOrm } from '../src/infrastructure/typeorm/sus
 import { TenantRepositorioTypeOrm } from '../src/infrastructure/typeorm/tenant.repositorio.js';
 import { UnidadRepositorioTypeOrm } from '../src/infrastructure/typeorm/unidad.repositorio.js';
 import { datosSucursal } from './support/fabricas.js';
-import { createTempDb, type TempDb } from './support/temp-db.js';
+import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const hallado = <T>(valor: T | null): T => {
   if (valor === null) throw new Error('se esperaba un registro');
@@ -29,7 +29,7 @@ const BASICO: DatosSuscripcion = {
   vigenteHasta: '2026-12-31',
 };
 
-describe('Repositorios org (PostgreSQL 16)', () => {
+describeConDb('Repositorios org (PostgreSQL 16)', () => {
   let db: TempDb;
   let dataSource: DataSource;
   const tenants = new AlsTenantContext();

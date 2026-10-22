@@ -1,7 +1,14 @@
 import { AggregateRoot, ValidationError } from '@vitrina/plataforma/kernel';
 import { ALCANCES, alcanceAlMenos, type Alcance, type Ambito } from './alcance.js';
-import { AlcanceIncoherenteError, AlcanceInsuficienteError, RolOPerfilError, VigenciaInvalidaError } from './errores.js';
-import { EVENTOS_SEG, type AsignacionOtorgada } from './eventos.js';
+import {
+  AlcanceIncoherenteError,
+  AlcanceInsuficienteError,
+  AsignacionYaRevocadaError,
+  RolOPerfilError,
+  VigenciaInvalidaError,
+} from './errores.js';
+import { EVENTOS_SEG, type AsignacionOtorgada, type AsignacionRevocada } from './eventos.js';
+import { motivo as validarMotivo } from './texto.js';
 
 /** Fecha calendario `YYYY-MM-DD`, como la columna `date` de la base. */
 export type Fecha = string;
@@ -35,6 +42,10 @@ export interface AsignacionProps extends Required<DatosAsignacion> {
   tenantId: string;
   vigenteDesde: Fecha;
   otorgadoPor: string | null;
+  /** Revocación (TR-RF-014). Ausente equivale a no revocada. */
+  revocadaEn?: Date | null;
+  revocadaPor?: string | null;
+  motivoRevocacion?: string | null;
 }
 
 // Qué id lleva cada alcance; los demás van nulos (TR-RN-008, ck_asig_alcance).
@@ -49,7 +60,7 @@ export class Asignacion extends AggregateRoot {
   private constructor(
     id: string,
     version: number,
-    private readonly props: AsignacionProps,
+    private props: AsignacionProps,
   ) {
     super(id, version);
   }
@@ -123,6 +134,27 @@ export class Asignacion extends AggregateRoot {
 
   get otorgadoPor(): string | null {
     return this.props.otorgadoPor;
+  }
+
+  get revocadaEn(): Date | null {
+    return this.props.revocadaEn ?? null;
+  }
+
+  get revocadaPor(): string | null {
+    return this.props.revocadaPor ?? null;
+  }
+
+  get motivoRevocacion(): string | null {
+    return this.props.motivoRevocacion ?? null;
+  }
+
+  /** Deja de dar acceso desde el commit; la vigencia original se conserva (TR-RF-014). */
+  revocar(motivo: string, por: string, ahora: Date): void {
+    if (this.revocadaEn !== null) throw new AsignacionYaRevocadaError();
+    const texto = validarMotivo(motivo);
+    this.props = { ...this.props, revocadaEn: ahora, revocadaPor: por, motivoRevocacion: texto };
+    const payload: AsignacionRevocada = { membresia_id: this.props.membresiaId, motivo: texto, por };
+    this.raise({ eventType: EVENTOS_SEG.asignacionRevocada, aggregateType: 'asignacion', schemaVersion: 1, payload });
   }
 
   /** Vigencia inclusiva en ambos extremos (TR-CA-043). */

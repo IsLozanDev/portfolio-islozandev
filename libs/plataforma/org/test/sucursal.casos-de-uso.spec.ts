@@ -6,8 +6,9 @@ import { Suscripcion } from '../src/domain/suscripcion.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { datosSucursal } from './support/fabricas.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
-describe('Casos de uso de sucursal (PostgreSQL 16)', () => {
+describeConDb('Casos de uso de sucursal (PostgreSQL 16)', () => {
   let e: Entorno;
   let casos: {
     registrar: RegistrarSucursal;

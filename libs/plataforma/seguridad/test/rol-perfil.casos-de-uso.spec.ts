@@ -4,8 +4,9 @@ import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from '../src/ap
 import { PermisoAjenoAlProductoError, ProductoNoContratadoError, RolPredefinidoNoEditableError } from '../src/domain/errores.js';
 import { RolRepositorioTypeOrm } from '../src/infrastructure/typeorm/rol.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
-describe('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
+describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
   let e: Entorno;
   let tenant: string;
   let REST_MOZO: string;

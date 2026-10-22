@@ -5,6 +5,12 @@ import type { Ambito } from '../../src/domain/alcance.js';
 import { registrarEsquemasSeg } from '../../src/infrastructure/event-schemas.js';
 import { AsignacionRepositorioTypeOrm, BitacoraSeguridadTypeOrm, UbicacionesOrgTypeOrm } from '../../src/infrastructure/typeorm/asignacion.repositorio.js';
 import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm, ProductosContratadosTypeOrm } from '../../src/infrastructure/typeorm/lecturas.js';
+import {
+  InvitacionRepositorioTypeOrm,
+  LimitesPlanTypeOrm,
+  MembresiaRepositorioTypeOrm,
+  UsuariosIdentidadTypeOrm,
+} from '../../src/infrastructure/typeorm/membresia.repositorio.js';
 import { PerfilRepositorioTypeOrm } from '../../src/infrastructure/typeorm/perfil.repositorio.js';
 import { RolRepositorioTypeOrm } from '../../src/infrastructure/typeorm/rol.repositorio.js';
 import { createTempDb, type TempDb } from './temp-db.js';
@@ -26,6 +32,10 @@ export interface Entorno {
     asignaciones: AsignacionRepositorioTypeOrm;
     ubicaciones: UbicacionesOrgTypeOrm;
     bitacora: BitacoraSeguridadTypeOrm;
+    ciclo: MembresiaRepositorioTypeOrm;
+    invitaciones: InvitacionRepositorioTypeOrm;
+    usuarios: UsuariosIdentidadTypeOrm;
+    limites: LimitesPlanTypeOrm;
   };
   /** Ejecuta `fn` con el tenant en el contexto, como lo hará el interceptor HTTP. */
   en<T>(tenantId: string, fn: () => Promise<T>): Promise<T>;
@@ -38,11 +48,17 @@ export interface Entorno {
 /** Inserta como superusuario (salta la RLS): datos de partida de cada prueba. */
 export interface Semilla {
   tenant(): Promise<string>;
-  suscripcion(tenantId: string, producto: string, estado?: 'PRUEBA' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA'): Promise<void>;
+  suscripcion(tenantId: string, producto: string, estado?: 'PRUEBA' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA', limiteUsuarios?: number | null): Promise<void>;
   permiso(codigo: string, cambios?: { alcanceMinimo?: string; sensible?: boolean; obsoleto?: boolean }): Promise<void>;
   rol(tenantId: string | null, producto: string, codigo: string, permisos: string[]): Promise<string>;
   perfil(tenantId: string, codigo: string, roles: string[]): Promise<string>;
-  membresia(tenantId: string, estado?: 'INVITADO' | 'ACTIVO' | 'SUSPENDIDO', esPropietario?: boolean): Promise<{ membresiaId: string; usuarioId: string }>;
+  membresia(
+    tenantId: string,
+    estado?: 'INVITADO' | 'ACTIVO' | 'SUSPENDIDO' | 'FINALIZADO',
+    esPropietario?: boolean,
+  ): Promise<{ membresiaId: string; usuarioId: string }>;
+  /** Invitación pendiente que expira en `expiraEn` (por defecto, en 72 h). */
+  invitacion(tenantId: string, membresiaId: string, creadaPor: string, expiraEn?: Date): Promise<string>;
   asignacion(
     tenantId: string,
     membresiaId: string,
@@ -76,13 +92,11 @@ export async function crearEntorno(): Promise<Entorno> {
       await q(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ($1, $2, 'Tenant de prueba', 'ACTIVO', 1)`, [id, `t-${++n}-${id.slice(-8)}`]);
       return id;
     },
-    suscripcion: async (tenantId, producto, estado = 'ACTIVA') => {
-      await q(`INSERT INTO org.suscripcion (id, tenant_id, producto_codigo, plan, estado, version) VALUES ($1, $2, $3, 'PRO', $4, 1)`, [
-        uuidV7(),
-        tenantId,
-        producto,
-        estado,
-      ]);
+    suscripcion: async (tenantId, producto, estado = 'ACTIVA', limiteUsuarios = null) => {
+      await q(
+        `INSERT INTO org.suscripcion (id, tenant_id, producto_codigo, plan, estado, limite_usuarios, version) VALUES ($1, $2, $3, 'PRO', $4, $5, 1)`,
+        [uuidV7(), tenantId, producto, estado, limiteUsuarios],
+      );
     },
     permiso: async (codigo, c = {}) => {
       await q(
@@ -116,14 +130,22 @@ export async function crearEntorno(): Promise<Entorno> {
         usuarioId,
         `u-${randomUUID()}@prueba.pe`,
       ]);
-      await q(`INSERT INTO seg.membresia (id, usuario_id, tenant_id, estado, es_propietario) VALUES ($1, $2, $3, $4, $5)`, [
-        membresiaId,
-        usuarioId,
-        tenantId,
-        estado,
-        esPropietario,
-      ]);
+      // FINALIZADO necesita `hasta` posterior a `desde` (ck_membresia_vigencia).
+      await q(
+        `INSERT INTO seg.membresia (id, usuario_id, tenant_id, estado, es_propietario, desde, hasta)
+         VALUES ($1, $2, $3, $4, $5, now() - interval '1 day', CASE WHEN $4 = 'FINALIZADO' THEN now() END)`,
+        [membresiaId, usuarioId, tenantId, estado, esPropietario],
+      );
       return { membresiaId, usuarioId };
+    },
+    invitacion: async (tenantId, membresiaId, creadaPor, expiraEn = new Date(Date.now() + 72 * 3_600_000)) => {
+      const id = uuidV7();
+      await q(
+        `INSERT INTO seg.invitacion (id, tenant_id, membresia_id, token_hash, expira_en, creada_por)
+         VALUES ($1, $2, $3, encode(sha256(convert_to($1::text, 'UTF8')), 'hex'), $4, $5)`,
+        [id, tenantId, membresiaId, expiraEn, creadaPor],
+      );
+      return id;
     },
     asignacion: async (tenantId, membresiaId, { rolId, perfilId }, vigencia = {}, ambito = {}) => {
       const id = uuidV7();
@@ -183,6 +205,10 @@ export async function crearEntorno(): Promise<Entorno> {
       asignaciones: new AsignacionRepositorioTypeOrm(uow, contexto),
       ubicaciones: new UbicacionesOrgTypeOrm(uow, contexto),
       bitacora: new BitacoraSeguridadTypeOrm(uow, contexto),
+      ciclo: new MembresiaRepositorioTypeOrm(uow, contexto),
+      invitaciones: new InvitacionRepositorioTypeOrm(uow, contexto, dataSource),
+      usuarios: new UsuariosIdentidadTypeOrm(uow, contexto),
+      limites: new LimitesPlanTypeOrm(uow, contexto),
     },
     en: (tenantId, fn) => contexto.run({ tenantId }, fn),
     eventosDe: async (aggregateId) =>
