@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm';
 import { RegistroAccesoTypeorm } from '../src/infrastructure/typeorm/registro-acceso.typeorm.js';
-import { createTempDb, type TempDb } from './support/temp-db.js';
+import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const USUARIO = '0193f3a0-0000-7000-8000-000000000001';
 
-describe('RegistroAccesoTypeorm (PostgreSQL)', () => {
+describeConDb('RegistroAccesoTypeorm (PostgreSQL)', () => {
   let tmp: TempDb;
   let ds: DataSource;
   let consultas: number;

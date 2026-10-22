@@ -2,6 +2,7 @@ import { EventSchemaValidationError, type DomainEvent } from '@vitrina/plataform
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { Asignacion } from '../src/domain/asignacion.js';
 import { EVENTOS_SEG } from '../src/domain/eventos.js';
+import { Membresia } from '../src/domain/membresia.js';
 import { Perfil } from '../src/domain/perfil.js';
 import { Rol } from '../src/domain/rol.js';
 import { ESQUEMAS_SEG, registrarEsquemasSeg } from '../src/infrastructure/event-schemas.js';
@@ -28,7 +29,14 @@ function eventosDelDominio(): DomainEvent[] {
     { membresiaId: ID, rolId: ID, perfilId: null, alcance: 'SUCURSAL', empresaId: null, sucursalId: OTRO, unidadId: null, vigenteHasta: null },
     { hoy: '2026-10-21', otorgadoPor: ID, permisos: [] },
   );
-  return [rol, copia, perfil, asignacion].flatMap((a) => a.pullEvents());
+  asignacion.revocar('Cambio de puesto', OTRO, new Date());
+  const ahora = new Date('2026-10-22T15:00:00Z');
+  const membresia = Membresia.invitar(OTRO, { usuarioId: ID, tenantId: ID, invitadoPor: OTRO }, ahora, ahora);
+  membresia.aceptar(ahora);
+  membresia.suspender('Licencia médica', OTRO, ahora);
+  membresia.reactivar('Fin de licencia', OTRO, ahora);
+  membresia.finalizar('Fin de contrato', OTRO, ahora, [ID]);
+  return [rol, copia, perfil, asignacion, membresia].flatMap((a) => a.pullEvents());
 }
 
 describe('Esquemas de eventos de seg', () => {

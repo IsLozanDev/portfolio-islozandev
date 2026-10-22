@@ -13,6 +13,7 @@ import { RolRepositorioTypeOrm } from '../src/infrastructure/typeorm/rol.reposit
 import { Permiso } from '../src/interface/decoradores.js';
 import { SeguridadModule } from '../src/seguridad.module.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 import { claimsBase, firmar, JwksLocal, nuevaLlave, type Llave } from './support/jwks-local.js';
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
@@ -38,7 +39,7 @@ interface Datos {
  * TR-RNF-010 (S-05): dos tenants completos y la aplicación corriendo con `seg_test_app`, un rol sin
  * BYPASSRLS. Desde A no se ve nada de B, ni por SQL ni por repositorios ni por la API.
  */
-describe('Aislamiento entre tenants (TR-RNF-010)', () => {
+describeConDb('Aislamiento entre tenants (TR-RNF-010)', () => {
   let e: Entorno;
   let appDs: DataSource;
   let contexto: AlsTenantContext;

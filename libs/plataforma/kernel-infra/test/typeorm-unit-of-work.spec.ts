@@ -2,12 +2,12 @@ import { DataSource } from 'typeorm';
 import { MissingTenantContextError, NoActiveTransactionError } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext } from '../src/als-tenant-context.js';
 import { TypeOrmUnitOfWork } from '../src/typeorm-unit-of-work.js';
-import { createTempDb, type TempDb } from './support/temp-db.js';
+import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const TENANT_A = 'aaaaaaaa-0000-0000-0000-000000000001';
 const TENANT_B = 'bbbbbbbb-0000-0000-0000-000000000002';
 
-describe('TypeOrmUnitOfWork (PostgreSQL 16)', () => {
+describeConDb('TypeOrmUnitOfWork (PostgreSQL 16)', () => {
   let db: TempDb;
   let dataSource: DataSource;
   let tenants: AlsTenantContext;

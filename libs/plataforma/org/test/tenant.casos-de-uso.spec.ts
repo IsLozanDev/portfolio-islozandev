@@ -6,10 +6,11 @@ import { CambiarEstadoTenant, GestionarSuscripcion, type GestionarSuscripcionCom
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { UsoUsuariosProvisional } from '../src/infrastructure/uso-usuarios.provisional.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
 const AHORA = new Date('2026-11-20T15:00:00Z');
 
-describe('Suscripción y estado del tenant (PostgreSQL 16)', () => {
+describeConDb('Suscripción y estado del tenant (PostgreSQL 16)', () => {
   let e: Entorno;
   let cambiarEstado: CambiarEstadoTenant;
   const gestionar = (uso: UsoUsuariosPort = new UsoUsuariosProvisional()) => new GestionarSuscripcion(e.uow, e.contexto, e.ids, e.eventos, e.repos, uso);

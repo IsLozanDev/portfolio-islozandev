@@ -9,11 +9,12 @@ import {
   VigenciaInvalidaError,
 } from '../src/domain/errores.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
 // Reloj fijo: el "hoy" de los casos de uso es el 14/10/2026 en Lima.
 const RELOJ = { now: () => new Date('2026-10-14T15:00:00Z') };
 
-describe('OtorgarAsignacion (TR-RF-013, PostgreSQL 16)', () => {
+describeConDb('OtorgarAsignacion (TR-RF-013, PostgreSQL 16)', () => {
   let e: Entorno;
   let tenant: string;
   let org: { empresaId: string; sucursales: [string, string]; cajas: [string, string] };

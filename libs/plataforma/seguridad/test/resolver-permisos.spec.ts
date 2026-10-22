@@ -5,6 +5,7 @@ import { SucursalNoAsignadaError } from '../src/domain/errores.js';
 import { CachePermisosRedis, crearClienteRedis } from '../src/infrastructure/redis/cache-permisos.redis.js';
 import { PermisosSqlRepositorio } from '../src/infrastructure/typeorm/permisos.sql.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
 
@@ -20,7 +21,7 @@ function contando(repo: PermisosRepositorio) {
   return { envuelto, llamadas };
 }
 
-describe('ResolverPermisos con Redis 7 y PostgreSQL 16 (TR-RF-015, TR-RNF-101)', () => {
+describeConDb('ResolverPermisos con Redis 7 y PostgreSQL 16 (TR-RF-015, TR-RNF-101)', () => {
   let e: Entorno;
   let redis: Redis;
   let tenant: string;

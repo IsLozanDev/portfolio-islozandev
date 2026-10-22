@@ -5,7 +5,7 @@ import { InMemoryEventSchemaValidator } from '../src/in-memory-event-schema-vali
 import { OutboxPublisher } from '../src/outbox.publisher.js';
 import { TypeOrmUnitOfWork } from '../src/typeorm-unit-of-work.js';
 import { uuidV7 } from '../src/uuid-v7.js';
-import { createTempDb, type TempDb } from './support/temp-db.js';
+import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const TENANT = 'aaaaaaaa-0000-0000-0000-000000000001';
 const SEDE = 'cccccccc-0000-0000-0000-000000000003';
@@ -22,7 +22,7 @@ const evento = (parcial: Partial<DomainEvent>): DomainEvent => ({
   ...parcial,
 });
 
-describe('OutboxPublisher (PostgreSQL 16)', () => {
+describeConDb('OutboxPublisher (PostgreSQL 16)', () => {
   let db: TempDb;
   let dataSource: DataSource;
   let tenants: AlsTenantContext;

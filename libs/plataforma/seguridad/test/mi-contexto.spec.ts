@@ -7,12 +7,13 @@ import { REGISTRO_ACCESO } from '../src/application/ports/registro-acceso.port.j
 import { CachePermisosRedis, crearClienteRedis } from '../src/infrastructure/redis/cache-permisos.redis.js';
 import { SeguridadModule } from '../src/seguridad.module.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 import { claimsBase, firmar, JwksLocal, nuevaLlave, type Llave } from './support/jwks-local.js';
 
 const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const OTRA_SUCURSAL = '0193f3a0-0000-7000-8000-0000000000ff';
 
-describe('GET /seg/mi-contexto (TR-CA-044 a 046, parte back)', () => {
+describeConDb('GET /seg/mi-contexto (TR-CA-044 a 046, parte back)', () => {
   let e: Entorno;
   let app: INestApplication;
   let tenant: string;

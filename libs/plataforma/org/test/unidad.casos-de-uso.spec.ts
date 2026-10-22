@@ -6,8 +6,9 @@ import { EditarUnidad, InactivarUnidad, RegistrarUnidad, type RegistrarUnidadCom
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { datosSucursal } from './support/fabricas.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
+import { describeConDb } from './support/temp-db.js';
 
-describe('Casos de uso de unidad operativa (PostgreSQL 16)', () => {
+describeConDb('Casos de uso de unidad operativa (PostgreSQL 16)', () => {
   let e: Entorno;
   let casos: { registrar: RegistrarUnidad; editar: EditarUnidad; inactivar: InactivarUnidad };
 
