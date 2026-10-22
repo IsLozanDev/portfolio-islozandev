@@ -1,6 +1,6 @@
 # SPEC 06 — Autorización: roles, perfiles, asignaciones, manifiesto y permisos efectivos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 04, SPEC 05
 > **Date:** 2026-10-21
 > **Objective:** Construir en `libs/plataforma/seguridad` el dominio de autorización (manifiesto, roles, perfiles y asignaciones con alcance y vigencia) y su evaluación por petición (permisos efectivos y menú con caché Redis versionada, `@Permiso`, `X-Sucursal-Id` y `GET /v1/seg/mi-contexto`), con aislamiento entre tenants probado.
