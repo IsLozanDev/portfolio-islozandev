@@ -52,6 +52,11 @@ export interface MembresiasLectura {
   deUsuario(usuarioId: string): Promise<MembresiaLeida | null>;
 }
 
+/** `seg.membresia.ultima_sucursal_id`: preferencia, no acceso; no sube la versión de seguridad. */
+export interface PreferenciaSucursal {
+  recordar(membresiaId: string, sucursalId: string): Promise<void>;
+}
+
 export interface RepositorioAsignaciones {
   guardar(asignacion: Asignacion): Promise<void>;
   /** Vigentes en `hoy` (inclusive en ambos extremos). */

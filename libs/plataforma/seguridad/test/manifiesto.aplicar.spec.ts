@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { AplicarManifiesto } from '../src/application/aplicar-manifiesto.js';
 import { ManifiestoInvalidoError, ManifiestoVersionAlteradaError } from '../src/domain/errores.js';
+import { PERMISOS_SEG } from '../src/domain/permisos-seg.js';
 import { ManifiestoRepositorioTypeOrm } from '../src/infrastructure/typeorm/manifiesto.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
 
@@ -51,6 +52,11 @@ describe('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     expect(segunda).toMatchObject({ yaAplicado: true, total: 0 });
     expect(await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'")).toBe(filas);
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.asignacion.otorgar'")).toEqual({ sensible: true });
+  });
+
+  it('PERMISOS_SEG son exactamente los permisos del manifiesto PLAT', async () => {
+    const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
+    expect(plat.permisos.map((p: { codigo: string }) => p.codigo).sort()).toEqual(Object.values(PERMISOS_SEG).sort());
   });
 
   it('TR-CA-022: con REST en 1.4.0, aplicar 1.5.0 registra rest.propina.configurar y la versión 1.5.0', async () => {

@@ -1,5 +1,5 @@
 import { Logger, Module, type DynamicModule, type OnModuleDestroy } from '@nestjs/common';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import type { Redis } from 'ioredis';
 import type { TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import { TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
@@ -8,13 +8,19 @@ import { REGISTRO_ACCESO, type RegistroAcceso } from './application/ports/regist
 import { VERIFICADOR_TOKEN, type VerificadorToken } from './application/ports/verificador-token.port.js';
 import { AutenticacionGuard } from './interface/autenticacion.guard.js';
 import { MfaGuard } from './interface/mfa.guard.js';
-import { MFA_MAX_EDAD_SEG, SesionController } from './interface/sesion.controller.js';
+import { MFA_MAX_EDAD_SEG, MiContextoController } from './interface/mi-contexto.controller.js';
 import type { DataSource } from 'typeorm';
 import { SupabaseJwksVerificador } from './infrastructure/supabase/supabase-jwks.verificador.js';
 import { RegistroAccesoTypeorm } from './infrastructure/typeorm/registro-acceso.typeorm.js';
 import { ResolverPermisos } from './application/resolver-permisos.js';
 import { CachePermisosRedis, crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';
 import { PermisosSqlRepositorio } from './infrastructure/typeorm/permisos.sql.repositorio.js';
+import { BitacoraSeguridadTypeOrm } from './infrastructure/typeorm/asignacion.repositorio.js';
+import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm } from './infrastructure/typeorm/lecturas.js';
+import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia-sucursal.repositorio.js';
+import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
+import { PermisoGuard } from './interface/permiso.guard.js';
+import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 
@@ -47,7 +53,7 @@ export class SeguridadModule {
     const logger = new Logger('Seguridad');
     return {
       module: SeguridadModule,
-      controllers: [SesionController],
+      controllers: [MiContextoController],
       providers: [
         { provide: MFA_MAX_EDAD_SEG, useValue: op.mfaMaxEdadSeg },
         {
@@ -78,13 +84,28 @@ export class SeguridadModule {
             new ResolverPermisos(uow, ctx, repo, cache, (mensaje, datos) => logger.warn({ mensaje, ...datos })),
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, PERMISOS_REPOSITORIO, CACHE_PERMISOS],
         },
-        // APP_GUARD se ejecuta en el orden de registro: primero autenticación, luego MFA.
+        {
+          provide: ObtenerMiContexto,
+          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext, repo: PermisosRepositorio, resolver: ResolverPermisos) =>
+            new ObtenerMiContexto(uow, ctx, repo, new MembresiasLecturaTypeOrm(uow, ctx), new PreferenciaSucursalTypeOrm(uow, ctx), resolver, (mensaje, datos) =>
+              logger.warn({ mensaje, ...datos }),
+            ),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PERMISOS_REPOSITORIO, ResolverPermisos],
+        },
+        // APP_GUARD se ejecuta en el orden de registro: autenticación, MFA y permiso.
         {
           provide: APP_GUARD,
           useFactory: (r: Reflector, v: VerificadorToken, a: RegistroAcceso) => new AutenticacionGuard(r, v, a),
           inject: [Reflector, VERIFICADOR_TOKEN, REGISTRO_ACCESO],
         },
         { provide: APP_GUARD, useFactory: (r: Reflector) => new MfaGuard(r, op.mfaMaxEdadSeg), inject: [Reflector] },
+        {
+          provide: APP_GUARD,
+          useFactory: (r: Reflector, resolver: ResolverPermisos, uow: TypeOrmUnitOfWork, ctx: TenantContext) =>
+            new PermisoGuard(r, resolver, new CatalogoPermisosTypeOrm(uow, ctx), new BitacoraSeguridadTypeOrm(uow, ctx), uow, ctx, op.mfaMaxEdadSeg),
+          inject: [Reflector, ResolverPermisos, TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
       exports: [VERIFICADOR_TOKEN, ResolverPermisos],
     };

@@ -68,30 +68,31 @@ describe('api', () => {
     expect(res.body).toEqual({ estado: 'ok' });
   });
 
-  it('GET /v1/seg/sesion sin token responde 401 TOKEN_INVALIDO', async () => {
-    const res = await request(app.getHttpServer()).get('/v1/seg/sesion');
+  it('GET /v1/seg/mi-contexto sin token responde 401 TOKEN_INVALIDO', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/seg/mi-contexto');
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ codigo: 'TOKEN_INVALIDO' });
   });
 
-  it('GET /v1/seg/sesion con token válido devuelve los datos del token', async () => {
-    const res = await request(app.getHttpServer()).get('/v1/seg/sesion').set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      usuario_id: '0193f3a0-0000-7000-8000-000000000001',
-      tenant_id: null,
-      tipo_usuario: 'EXTERNO',
-      aal: 'aal1',
-      mfa_vigente: false,
-      mfa_en: null,
-    });
+  it('GET /v1/seg/mi-contexto con un token sin tenant responde 403 SIN_TENANT', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/seg/mi-contexto').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ codigo: 'SIN_TENANT' });
   });
 
-  it('GET /v1/docs-json publica /v1/salud y /v1/seg/sesion con bearer auth', async () => {
+  it('GET /v1/seg/sesion ya no existe', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/seg/sesion').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+  });
+
+  it('GET /v1/docs-json publica /v1/salud y /v1/seg/mi-contexto con bearer auth y X-Sucursal-Id', async () => {
     const res = await request(app.getHttpServer()).get('/v1/docs-json');
     expect(res.status).toBe(200);
     expect(res.body.paths['/v1/salud'].get).toBeDefined();
-    expect(res.body.paths['/v1/seg/sesion'].get.security).toEqual([{ bearer: [] }]);
+    expect(res.body.paths['/v1/seg/sesion']).toBeUndefined();
+    const miContexto = res.body.paths['/v1/seg/mi-contexto'].get;
+    expect(miContexto.security).toEqual([{ bearer: [] }]);
+    expect(miContexto.parameters).toContainEqual(expect.objectContaining({ name: 'X-Sucursal-Id', in: 'header', required: false }));
     expect(res.body.components.securitySchemes.bearer).toMatchObject({ type: 'http', scheme: 'bearer' });
   });
 
