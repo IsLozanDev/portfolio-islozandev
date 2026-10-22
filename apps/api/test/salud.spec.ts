@@ -14,7 +14,13 @@ import { configurarApp } from '../src/app.setup.js';
 import { cargarConfig } from '../src/config/env.js';
 
 const SUPABASE_URL = 'https://proyecto-prueba.supabase.co';
-const ENV_MINIMO = { DATABASE_URL: 'postgres://localhost:5432/vitrina', SUPABASE_URL, REDIS_URL: 'redis://localhost:6379' };
+const ENV_MINIMO = {
+  DATABASE_URL: 'postgres://localhost:5432/vitrina',
+  SUPABASE_URL,
+  REDIS_URL: 'redis://localhost:6379',
+  SUPABASE_SECRET_KEY: 'sb_secret_prueba',
+  SEG_URL_INVITACION: 'http://127.0.0.1:4200/auth/invitacion',
+};
 
 describe('api', () => {
   let app: INestApplication;
@@ -122,5 +128,15 @@ describe('api', () => {
     expect(cargarConfig(ENV_MINIMO).SEG_MFA_MAX_EDAD_SEG).toBe(900);
     expect(cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '60' }).SEG_MFA_MAX_EDAD_SEG).toBe(60);
     expect(() => cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '0' })).toThrow(/SEG_MFA_MAX_EDAD_SEG/);
+  });
+
+  it('cargarConfig exige la secret key y la URL de invitación, y toma 72 h por defecto', () => {
+    const { SUPABASE_SECRET_KEY: _clave, ...sinClave } = ENV_MINIMO;
+    const { SEG_URL_INVITACION: _url, ...sinUrl } = ENV_MINIMO;
+    expect(() => cargarConfig(sinClave)).toThrow(/SUPABASE_SECRET_KEY/);
+    expect(() => cargarConfig({ ...ENV_MINIMO, SUPABASE_SECRET_KEY: 'sb_secret_x' })).not.toThrow(/sb_secret_x/);
+    expect(() => cargarConfig(sinUrl)).toThrow(/SEG_URL_INVITACION/);
+    expect(() => cargarConfig({ ...ENV_MINIMO, SEG_URL_INVITACION: 'ftp://x/invitacion' })).toThrow(/SEG_URL_INVITACION/);
+    expect(cargarConfig(ENV_MINIMO).SEG_INVITACION_HORAS).toBe(72);
   });
 });

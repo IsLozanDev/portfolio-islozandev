@@ -411,7 +411,7 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
 - **Sí:** `seg.usuario.tipo = 'INTERNO'` lo fija el caso de uso solo para usuarios creados por la invitación. El hook lee `seg.usuario.tipo`; no hace falta `app_metadata`.
 - **Sí:** `otp_expiry = 86400`. Más tiempo para el enlace de Supabase sin pasar el máximo recomendado.
 - **Sí:** motivo de 4 a 300 caracteres, no de 5. Decisión del usuario al implementar el paso 2: TR-CA-039 usa «Cese» (4) y el SRS choca con su propio TR-RF-014.
-- **Sí:** sin Supabase ni PostgreSQL locales. Decisión del usuario al implementar el paso 2 (memoria de la laptop). Las pruebas de integración solo corren con `TEST_DATABASE_URL` (CI con PostgreSQL 16); en local se saltan. Cada migración se aplica y verifica en dev con `db:up:remoto` y el MCP. La prueba del adaptador del paso 4 no puede usar el Supabase local.
+- **Sí:** sin Supabase ni PostgreSQL locales. Decisión del usuario al implementar el paso 2 (memoria de la laptop). Las pruebas de integración solo corren con `TEST_DATABASE_URL` (CI con PostgreSQL 16); en local se saltan. Cada migración se aplica y verifica en dev con `db:up:remoto` y el MCP. El adaptador del paso 4 se prueba contra un Auth simulado por HTTP (supabase-js real, sin red); el envío real de correos se prueba en dev en el paso 9.
 - **Sí:** un solo spec de 11-13 h. Decisión del usuario; mismo criterio que el 06.
 - **Sí:** prueba de humo en dev con correo real. Decisión del usuario. La secret key se pide al implementar el paso 9.
 

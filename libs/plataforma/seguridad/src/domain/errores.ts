@@ -253,3 +253,12 @@ export class ConfirmacionRequeridaError extends ValidationError {
     super('La acción exige confirmación explícita');
   }
 }
+
+/** HTTP 503. Solo lleva el código de error de Supabase: nunca el correo (TR-RNF-026). */
+export class IdentidadNoDisponibleError extends DomainError {
+  readonly code = 'IDENTIDAD_NO_DISPONIBLE';
+
+  constructor(readonly causa: string) {
+    super(`El proveedor de identidad no respondió (${causa})`);
+  }
+}

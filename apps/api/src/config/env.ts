@@ -9,6 +9,11 @@ const esquema = z.object({
   SUPABASE_URL: z.url({ protocol: /^https?$/ }),
   // TR-RN-009: antigüedad máxima del MFA para @RequiereMfa.
   SEG_MFA_MAX_EDAD_SEG: z.coerce.number().int().positive().default(900),
+  // Admin API de Supabase (invitaciones, TR-RF-009). Solo apps/api (regla 9).
+  SUPABASE_SECRET_KEY: z.string().min(1),
+  // Página de aceptación de invitaciones (spec 14); recibe ?token=.
+  SEG_URL_INVITACION: z.url({ protocol: /^https?$/ }),
+  SEG_INVITACION_HORAS: z.coerce.number().int().positive().default(72),
 });
 
 export type Config = z.infer<typeof esquema>;
