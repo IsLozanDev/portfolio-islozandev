@@ -14,7 +14,7 @@ import { configurarApp } from '../src/app.setup.js';
 import { cargarConfig } from '../src/config/env.js';
 
 const SUPABASE_URL = 'https://proyecto-prueba.supabase.co';
-const ENV_MINIMO = { DATABASE_URL: 'postgres://localhost:5432/vitrina', SUPABASE_URL };
+const ENV_MINIMO = { DATABASE_URL: 'postgres://localhost:5432/vitrina', SUPABASE_URL, REDIS_URL: 'redis://localhost:6379' };
 
 describe('api', () => {
   let app: INestApplication;
@@ -44,6 +44,8 @@ describe('api', () => {
       validator: new InMemoryEventSchemaValidator(),
       supabaseUrl: SUPABASE_URL,
       mfaMaxEdadSeg: 900,
+      // lazyConnect: estas pruebas no usan la caché y no abren conexión.
+      redisUrl: 'redis://127.0.0.1:6379',
       jwksUrl: `http://127.0.0.1:${port}/auth/v1/.well-known/jwks.json`,
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
@@ -102,14 +104,20 @@ describe('api', () => {
   });
 
   it('cargarConfig exige DATABASE_URL postgres y no repite su valor en el error', () => {
-    expect(() => cargarConfig({ SUPABASE_URL })).toThrow(/DATABASE_URL/);
-    expect(() => cargarConfig({ SUPABASE_URL, DATABASE_URL: 'mysql://usuario:clave-secreta@host/db' })).toThrow(/DATABASE_URL/);
-    expect(() => cargarConfig({ SUPABASE_URL, DATABASE_URL: 'mysql://usuario:clave-secreta@host/db' })).not.toThrow(/clave-secreta/);
+    expect(() => cargarConfig({ SUPABASE_URL, REDIS_URL: ENV_MINIMO.REDIS_URL })).toThrow(/DATABASE_URL/);
+    expect(() => cargarConfig({ SUPABASE_URL, REDIS_URL: ENV_MINIMO.REDIS_URL, DATABASE_URL: 'mysql://usuario:clave-secreta@host/db' })).toThrow(/DATABASE_URL/);
+    expect(() => cargarConfig({ SUPABASE_URL, REDIS_URL: ENV_MINIMO.REDIS_URL, DATABASE_URL: 'mysql://usuario:clave-secreta@host/db' })).not.toThrow(/clave-secreta/);
     expect(cargarConfig(ENV_MINIMO).DATABASE_URL).toBe('postgres://localhost:5432/vitrina');
   });
 
+  it('cargarConfig exige REDIS_URL redis o rediss', () => {
+    expect(() => cargarConfig({ DATABASE_URL: ENV_MINIMO.DATABASE_URL, SUPABASE_URL })).toThrow(/REDIS_URL/);
+    expect(() => cargarConfig({ ...ENV_MINIMO, REDIS_URL: 'http://localhost:6379' })).toThrow(/REDIS_URL/);
+    expect(cargarConfig({ ...ENV_MINIMO, REDIS_URL: 'rediss://cache:6380' }).REDIS_URL).toBe('rediss://cache:6380');
+  });
+
   it('cargarConfig exige SUPABASE_URL y toma SEG_MFA_MAX_EDAD_SEG con 900 por defecto', () => {
-    expect(() => cargarConfig({ DATABASE_URL: ENV_MINIMO.DATABASE_URL })).toThrow(/SUPABASE_URL/);
+    expect(() => cargarConfig({ DATABASE_URL: ENV_MINIMO.DATABASE_URL, REDIS_URL: ENV_MINIMO.REDIS_URL })).toThrow(/SUPABASE_URL/);
     expect(cargarConfig(ENV_MINIMO).SEG_MFA_MAX_EDAD_SEG).toBe(900);
     expect(cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '60' }).SEG_MFA_MAX_EDAD_SEG).toBe(60);
     expect(() => cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '0' })).toThrow(/SEG_MFA_MAX_EDAD_SEG/);

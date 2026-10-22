@@ -52,4 +52,16 @@ export { OtorgarAsignacion, type Otorgante, type OtorgarAsignacionComando } from
 export { AplicarManifiesto, type ResultadoManifiesto } from './application/aplicar-manifiesto.js';
 export type { RepositorioManifiestos, SesionManifiesto } from './application/ports/repositorios.js';
 export { ManifiestoRepositorioTypeOrm } from './infrastructure/typeorm/manifiesto.repositorio.js';
+export { clavePermisos, ResolverPermisos, TTL_PERMISOS_SEG } from './application/resolver-permisos.js';
+export {
+  CACHE_PERMISOS,
+  PERMISOS_REPOSITORIO,
+  type CachePermisos,
+  type ConsultaPermisos,
+  type OpcionMenu,
+  type PermisosRepositorio,
+  type PermisosResueltos,
+  type SucursalAccesible,
+} from './application/ports/permisos.port.js';
+export { SucursalNoAsignadaError } from './domain/errores.js';
 export { ESQUEMAS_SEG, registrarEsquemasSeg } from './infrastructure/event-schemas.js';

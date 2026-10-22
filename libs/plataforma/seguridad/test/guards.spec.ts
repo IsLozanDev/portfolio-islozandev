@@ -3,6 +3,7 @@ import { Controller, Get, Logger, Post, type INestApplication } from '@nestjs/co
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import type { Principal } from '../src/domain/principal.js';
 import { REGISTRO_ACCESO, type RegistroAcceso } from '../src/application/ports/registro-acceso.port.js';
 import { SeguridadModule, type SeguridadOpciones } from '../src/seguridad.module.js';
@@ -65,8 +66,13 @@ function capturarWarn() {
 }
 
 async function crearApp(registro: RegistroAcceso, op: Partial<SeguridadOpciones> = {}): Promise<INestApplication> {
+  // Sin initialize() ni conexión a Redis (lazyConnect): estas pruebas no tocan la base ni la caché.
+  const dataSource = new DataSource({ type: 'postgres' });
   const modulo = await Test.createTestingModule({
-    imports: [SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, dataSource: new DataSource({ type: 'postgres' }), jwksUrl, ...op })],
+    imports: [
+      KernelInfraModule.register({ dataSource, validator: new InMemoryEventSchemaValidator() }),
+      SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, dataSource, redisUrl: 'redis://127.0.0.1:6379', jwksUrl, ...op }),
+    ],
     controllers: [PruebaController],
   })
     .overrideProvider(REGISTRO_ACCESO)

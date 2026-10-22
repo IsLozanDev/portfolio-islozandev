@@ -137,3 +137,13 @@ export class MembresiaNoAsignableError extends ConflictError {
     super(`La membresía está ${estado}: solo se asigna a una membresía ACTIVO o INVITADO`);
   }
 }
+
+// Permisos efectivos (TR-RF-015, TR-RF-016).
+
+export class SucursalNoAsignadaError extends ForbiddenError {
+  override readonly code = 'SUCURSAL_NO_ASIGNADA';
+
+  constructor() {
+    super('No tiene acceso vigente a la sucursal indicada');
+  }
+}

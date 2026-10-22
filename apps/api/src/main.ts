@@ -18,7 +18,13 @@ registrarEsquemasOrg(validator);
 registrarEsquemasSeg(validator);
 
 const app = await NestFactory.create(
-  AppModule.register({ dataSource, validator, supabaseUrl: config.SUPABASE_URL, mfaMaxEdadSeg: config.SEG_MFA_MAX_EDAD_SEG }),
+  AppModule.register({
+    dataSource,
+    validator,
+    supabaseUrl: config.SUPABASE_URL,
+    mfaMaxEdadSeg: config.SEG_MFA_MAX_EDAD_SEG,
+    redisUrl: config.REDIS_URL,
+  }),
 );
 configurarApp(app);
 await app.listen(config.PORT);
