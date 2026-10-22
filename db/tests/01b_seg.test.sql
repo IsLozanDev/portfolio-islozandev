@@ -281,11 +281,3 @@ DO $$ BEGIN
     END IF;
   END IF;
 END $$;
-
--- Las funciones de permisos son del spec 07.
-DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-              WHERE n.nspname = 'seg' AND p.proname IN ('permisos_efectivos', 'menu_usuario', 'sucursales_accesibles')) THEN
-    RAISE EXCEPTION 'seg no debe definir las funciones de permisos';
-  END IF;
-END $$;

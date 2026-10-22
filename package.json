@@ -21,7 +21,9 @@
     "db:up:supabase": "node --env-file-if-exists=.env tools/migrar/cli.mjs up supabase/migrations",
     "db:down:supabase": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations",
     "db:up:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up supabase/migrations --remoto",
-    "db:down:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations --remoto"
+    "db:down:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations --remoto",
+    "manifiesto:aplicar": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js",
+    "manifiesto:aplicar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js --remoto"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
@@ -52,6 +54,7 @@
     "@nestjs/platform-express": "12.2.0",
     "@nestjs/swagger": "12.0.2",
     "ajv": "^8.20.0",
+    "ioredis": "6.0.0",
     "jose": "6.2.12",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",

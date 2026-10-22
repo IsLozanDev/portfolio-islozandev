@@ -43,7 +43,8 @@ async function exigirInversos(archivos, dir) {
 }
 
 async function aplicadas(cliente) {
-  const { rows } = await cliente.query('SELECT nombre FROM migraciones._migraciones ORDER BY nombre');
+  // COLLATE "C": mismo orden byte a byte que el sort de listarSql (la collation de la base ignora `.` y `_`).
+  const { rows } = await cliente.query('SELECT nombre FROM migraciones._migraciones ORDER BY nombre COLLATE "C"');
   return rows.map((r) => r.nombre);
 }
 

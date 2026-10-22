@@ -1,6 +1,6 @@
 # SPEC 05 — Autenticación en la API: verificador JWKS, guard global y MFA reciente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 04
 > **Date:** 2026-10-19
 > **Objective:** Crear la lib `libs/plataforma/seguridad` que verifica el JWT de Supabase por JWKS en un guard global de `apps/api`, con `@Publico` y `@RequiereMfa()`, este último con aal2 y MFA de 15 minutos como máximo y 401 step-up.

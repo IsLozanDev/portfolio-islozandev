@@ -4,13 +4,11 @@ import type { RegistroAcceso } from '../application/ports/registro-acceso.port.j
 import type { VerificadorToken } from '../application/ports/verificador-token.port.js';
 import { AutenticacionNoDisponibleError, TokenInvalidoError } from '../domain/errores.js';
 import { PUBLICO, type SolicitudAutenticada } from './decoradores.js';
-import { rechazar } from './respuestas.js';
+import { rechazar, TOKEN_INVALIDO } from './respuestas.js';
 
 interface Solicitud extends SolicitudAutenticada {
   headers: Record<string, string | string[] | undefined>;
 }
-
-const TOKEN_INVALIDO = { estado: 401, cuerpo: { codigo: 'TOKEN_INVALIDO' }, wwwAuthenticate: 'Bearer error="invalid_token"' } as const;
 
 /** Guard global: toda ruta sin `@Publico()` exige un Bearer válido. */
 export class AutenticacionGuard implements CanActivate {

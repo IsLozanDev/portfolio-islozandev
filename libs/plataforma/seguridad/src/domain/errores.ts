@@ -1,4 +1,4 @@
-import { DomainError } from '@vitrina/plataforma/kernel';
+import { ConflictError, DomainError, ForbiddenError, ValidationError } from '@vitrina/plataforma/kernel';
 
 /** El motivo es solo para el log; la respuesta HTTP no lo expone. */
 export class TokenInvalidoError extends DomainError {
@@ -22,5 +22,128 @@ export class AutenticacionNoDisponibleError extends DomainError {
 
   constructor() {
     super('No se pudo obtener el JWKS del proveedor de identidad');
+  }
+}
+
+// Asignaciones (TR-RN-008). Los mensajes son los del SRS.
+
+export class RolOPerfilError extends ValidationError {
+  override readonly code = 'ASIGNACION_ROL_O_PERFIL';
+
+  constructor() {
+    super('Seleccione un rol o un perfil, no ambos');
+  }
+}
+
+export class VigenciaInvalidaError extends ValidationError {
+  override readonly code = 'VIGENCIA_INVALIDA';
+
+  constructor() {
+    super('La vigencia hasta no puede ser anterior a la vigencia desde');
+  }
+}
+
+export class AlcanceIncoherenteError extends ValidationError {
+  override readonly code = 'ALCANCE_INCOHERENTE';
+
+  constructor(alcance: string) {
+    super(`El alcance ${alcance} no corresponde a la empresa, sucursal o unidad indicadas`);
+  }
+}
+
+export class AlcanceInsuficienteError extends ValidationError {
+  override readonly code = 'ALCANCE_INSUFICIENTE';
+
+  constructor(readonly permisos: readonly string[]) {
+    super(`El alcance es menor que el alcance mínimo de: ${permisos.join(', ')}`);
+  }
+}
+
+// Roles y perfiles (TR-RF-011, TR-RF-012).
+
+export class RolPredefinidoNoEditableError extends ConflictError {
+  override readonly code = 'ROL_PREDEFINIDO_NO_EDITABLE';
+
+  constructor() {
+    super('Los roles predefinidos no se editan; cree una copia');
+  }
+}
+
+export class PerfilPredefinidoNoEditableError extends ConflictError {
+  override readonly code = 'PERFIL_PREDEFINIDO_NO_EDITABLE';
+
+  constructor() {
+    super('Los perfiles predefinidos no se editan; cree una copia');
+  }
+}
+
+export class PermisoAjenoAlProductoError extends ValidationError {
+  override readonly code = 'PERMISO_AJENO_AL_PRODUCTO';
+
+  constructor(readonly codigos: readonly string[]) {
+    super(`Permisos de otro producto, inexistentes u obsoletos: ${codigos.join(', ')}`);
+  }
+}
+
+export class ProductoNoContratadoError extends ValidationError {
+  override readonly code = 'PRODUCTO_NO_CONTRATADO';
+
+  constructor(readonly producto: string) {
+    super(`El tenant no tiene suscripción vigente al producto ${producto}`);
+  }
+}
+
+// Manifiesto (TR-RF-008).
+
+/** Rechaza el manifiesto completo. Cada detalle lleva su ruta, p. ej. `permisos[3].codigo: rest-caja-cerrar`. */
+export class ManifiestoInvalidoError extends ValidationError {
+  override readonly code = 'MANIFIESTO_INVALIDO';
+
+  constructor(readonly detalles: readonly string[]) {
+    super(`Manifiesto inválido: ${detalles.join('; ')}`);
+  }
+}
+
+export class ManifiestoVersionAlteradaError extends ConflictError {
+  override readonly code = 'MANIFIESTO_VERSION_ALTERADA';
+
+  constructor(producto: string, version: string) {
+    super(`La versión ${version} de ${producto} ya se aplicó con otro contenido`);
+  }
+}
+
+export class ManifiestoVersionAnteriorError extends ConflictError {
+  override readonly code = 'MANIFIESTO_VERSION_ANTERIOR';
+
+  constructor(producto: string, version: string, vigente: string) {
+    super(`La versión ${version} de ${producto} es anterior a la vigente ${vigente}`);
+  }
+}
+
+// Otorgamiento (TR-RF-013).
+
+export class OtorganteSinAlcanceError extends ForbiddenError {
+  override readonly code = 'OTORGANTE_SIN_ALCANCE';
+
+  constructor() {
+    super('El otorgante no tiene un alcance igual o mayor sobre el destino');
+  }
+}
+
+export class MembresiaNoAsignableError extends ConflictError {
+  override readonly code = 'MEMBRESIA_NO_ASIGNABLE';
+
+  constructor(estado: string) {
+    super(`La membresía está ${estado}: solo se asigna a una membresía ACTIVO o INVITADO`);
+  }
+}
+
+// Permisos efectivos (TR-RF-015, TR-RF-016).
+
+export class SucursalNoAsignadaError extends ForbiddenError {
+  override readonly code = 'SUCURSAL_NO_ASIGNADA';
+
+  constructor() {
+    super('No tiene acceso vigente a la sucursal indicada');
   }
 }

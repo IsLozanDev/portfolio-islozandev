@@ -3,6 +3,10 @@ import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { bajar, subir } from '../migrar.mjs';
 
+// Aplica, prueba, revierte y reaplica todo: con lint, build y otras suites creando bases en paralelo
+// pasa de los 5 s por defecto, y al vencer afterAll borra la base con la migración en curso.
+const TIMEOUT_MS = 60_000;
+
 const ADMIN_URL = process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/postgres';
 const ruta = (rel) => new URL(rel, import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const rutaDb = (sub) => ruta(`../../../db/${sub}`);
@@ -46,18 +50,19 @@ beforeAll(async () => {
     `ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
      ALTER DEFAULT PRIVILEGES GRANT ALL ON SCHEMAS TO anon, authenticated;`,
   );
-});
+}, TIMEOUT_MS);
 
 afterAll(async () => {
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
-});
+}, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
 // en paralelo los crearían y borrarían a la vez.
 const CASOS = [
   { migracion: '01a_org.sql', esquema: 'org', prueba: 'tests/01a_org.test.sql' },
   { migracion: '01b_seg.sql', esquema: 'seg', prueba: 'tests/01b_seg.test.sql' },
+  { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
 ];
 
@@ -74,6 +79,30 @@ const triggersAuth = async () =>
     )
   ).rows.map((r) => r.tgname);
 
+const columnasExtra = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT table_name || '.' || column_name AS c FROM information_schema.columns
+        WHERE table_schema = 'seg' AND column_name IN ('version', 'obsoleto', 'ultima_sucursal_id') ORDER BY 1`,
+    )
+  ).rows.map((r) => r.c);
+
+const funcionesAutorizacion = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'seg' AND p.proname IN ('permisos_efectivos', 'menu_usuario', 'sucursales_accesibles',
+              'versiones_seguridad', 'asignaciones_aplicables', 'subir_version_seguridad') ORDER BY 1`,
+    )
+  ).rows.map((r) => r.proname);
+
+const triggersSuscripcion = async () =>
+  (
+    await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
+  ).rows.map((r) => r.tgname);
+
 describe('db/ y supabase/migrations', () => {
   test('aplica, pasa las pruebas SQL, revierte y vuelve a aplicar', async () => {
     const dir = rutaDb('');
@@ -82,6 +111,14 @@ describe('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01b_seg_autorizacion deja seg como lo dejó 01b_seg (con datos) y se puede reaplicar.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01b_seg_autorizacion.sql'), 'utf8'));
+    expect(await columnasExtra()).toEqual([]);
+    expect(await funcionesAutorizacion()).toEqual([]);
+    expect(await triggersSuscripcion()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01b_seg_autorizacion.sql'), 'utf8'));
+    expect(await funcionesAutorizacion()).toHaveLength(6);
 
     // supabase/migrations necesita auth.users y los roles de Supabase.
     const dirSupabase = rutaSupabase('migrations');
@@ -98,5 +135,5 @@ describe('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
     expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual([MIGRACION_SUPABASE]);
     expect(await triggersAuth()).toEqual(['trg_auth_usuario_correo', 'trg_auth_usuario_creado']);
-  });
+  }, TIMEOUT_MS);
 });

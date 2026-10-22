@@ -96,6 +96,15 @@ Brechas de RNF que Supabase Auth no cubre tal cual:
 | TR-RNF-009 | Bloqueo tras 5 intentos fallidos | Rate limits de Auth por IP | Supabase Auth no bloquea la cuenta por intentos. Un bloqueo propio sería otro spec. |
 | TR-RNF-014 | Expiración por inactividad (30 min) | Tokens de 900 s; inactividad en el cliente (spec 13) | El timebox y la inactividad de sesión del servidor son de plan Pro. |
 
+### 11. Autorización: manifiesto, permisos efectivos y mi-contexto (SPEC 06)
+
+Orden: `pnpm db:up:remoto` (aplica `01b_seg_autorizacion.sql`) y luego `pnpm manifiesto:aplicar:remoto libs/plataforma/seguridad/manifiesto/plat.manifiesto.json`. La API necesita `REDIS_URL`. Para el humo con la API local, `SUPABASE_URL` tiene que ser la de dev: el `.env` local apunta al Supabase local (`127.0.0.1:54321`).
+
+- [x] (dev) `01b_seg_autorizacion.sql` aplicada y manifiesto PLAT 1.0.0 en `seg.manifiesto_aplicado`.
+- [x] (dev) Humo de `GET /v1/seg/mi-contexto` con token real: `sin_accesos = true` sin asignaciones; permisos y menú tras una asignación `TENANT`. Datos de prueba borrados.
+- [ ] (dev) Rotar la secret key `sb_secret_j5xz…`: se pegó en el chat el 2026-10-21.
+- [ ] (prod) Mismas migraciones y manifiesto cuando exista el proyecto.
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |
@@ -115,5 +124,7 @@ Brechas de RNF que Supabase Auth no cubre tal cual:
 | 2026-10-19 | dev | SPEC 04: humo | `signup` con publishable key: 422 `signup_disabled`. Usuario del panel con espejo en `seg.usuario` (`EXTERNO`, `ACTIVO`). Login: `alg ES256`, `kid 29aacbfd-…`, `tenant_id null`, `tipo_usuario EXTERNO`; con membresía `ACTIVO` en tenant de prueba: `tenant_id` de ese tenant. Tenant y membresía de prueba borrados; el usuario de prueba queda para el spec 05 |
 | 2026-10-19 | dev | SPEC 04: advisors de seguridad | Sin avisos sobre `seg` ni `org`. Queda `auth_leaked_password_protection` (configuración de Auth, se revisa con el spec 05 y TR-RNF-009) |
 | 2026-10-21 | dev | SPEC 05: humo con API local (`SUPABASE_URL` de dev) y usuario de prueba | Login: `aal1`, `amr [password]`, `exp - iat = 3600`; `GET /v1/seg/sesion` 200 con `aal1`, `mfa_vigente false`, `mfa_en null`. Token alterado: 401 `TOKEN_INVALIDO` y log `auth.rechazo`. Enrolar TOTP, `challenge` y `verify`: token `aal2`, `amr [totp, password]`; `GET /v1/seg/sesion` 200 con `aal2`, `mfa_vigente true` y `mfa_en` del verify. Factor borrado (0 en `auth.mfa_factors`) |
+| 2026-10-21 | dev | SPEC 06: `db:up:remoto` y `manifiesto:aplicar:remoto` | Aplica `01b_seg_autorizacion.sql`. Manifiesto PLAT 1.0.0: 12 cambios (1 módulo, 4 opciones, 6 permisos, 1 rol). MCP: 6 funciones nuevas en `seg`, `version_seguridad` con RLS activa y forzada; advisors solo con `auth_leaked_password_protection` (ya anotado) |
+| 2026-10-21 | dev | SPEC 06: humo con API local (base y `SUPABASE_URL` de dev, conexión `postgres`) y usuario de prueba | Tenant `humo-06` con empresa, sucursal `HUMO` y membresía `ACTIVO`. Token con ese `tenant_id`; `mi-contexto` 200 con `sin_accesos true`, sin sucursales, permisos ni menú. Con asignación `TENANT` de `PLAT_ADMIN_SEGURIDAD`: sucursal `HUMO` como actual, `requiere_seleccion false`, 5 permisos `plat.*` y el menú Seguridad con Roles, Perfiles y Asignaciones. Datos borrados (0 tenants, membresías, asignaciones, versiones y eventos); los 9 triggers `*_sin_borrado` siguen activos. La contraseña del usuario de prueba se cambió por SQL en `auth.users` |
 
 _Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, ambiente y resultado._
