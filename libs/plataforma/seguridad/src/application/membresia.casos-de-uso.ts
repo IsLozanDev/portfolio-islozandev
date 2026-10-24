@@ -56,7 +56,7 @@ abstract class CambioMembresia {
   /** Aplica la transición y devuelve las asignaciones que cambió (solo finalizar). */
   protected abstract aplicar(m: Membresia, motivo: string, actorId: string, ahora: Date): Promise<Asignacion[]>;
 
-  protected cambiar(c: AccionMembresiaComando): Promise<{ estado: EstadoMembresia; asignacionesRevocadas: string[] }> {
+  protected async cambiar(c: AccionMembresiaComando): Promise<{ estado: EstadoMembresia; asignacionesRevocadas: string[] }> {
     if (c.confirmar !== true) throw new ConfirmacionRequeridaError();
     const motivo = validarMotivo(c.motivo);
 
@@ -65,8 +65,9 @@ abstract class CambioMembresia {
       const membresia = await this.repos.ciclo.buscar(c.membresiaId);
       if (!membresia) throw new NotFoundError('La membresía no existe');
 
+      // No revocadas y no solo vigentes: una asignación futura en otra sucursal también acota al actor.
       const destinos = await Promise.all(
-        (await this.repos.asignaciones.vigentesDe(membresia.id, fechaLocal(ahora))).map((a) => this.repos.ubicaciones.resolver(a.ubicacion)),
+        (await this.repos.asignaciones.noRevocadasDe(membresia.id)).map((a) => this.repos.ubicaciones.resolver(a.ubicacion)),
       );
       if (!(await actorCubre(this.repos, c.actorId, destinos, fechaLocal(ahora)))) throw new ActorSinAlcanceError();
 
@@ -125,7 +126,7 @@ export class ReactivarMembresia extends CambioMembresia {
 export class FinalizarMembresia extends CambioMembresia {
   protected readonly accion = 'FINALIZAR';
 
-  ejecutar(c: AccionMembresiaComando): Promise<{ estado: EstadoMembresia; asignacionesRevocadas: string[] }> {
+  async ejecutar(c: AccionMembresiaComando): Promise<{ estado: EstadoMembresia; asignacionesRevocadas: string[] }> {
     return this.cambiar(c);
   }
 
@@ -157,7 +158,7 @@ export class RevocarAsignacion {
     private readonly repos: CicloRepos,
   ) {}
 
-  ejecutar(c: RevocarAsignacionComando): Promise<{ revocadaEn: Date }> {
+  async ejecutar(c: RevocarAsignacionComando): Promise<{ revocadaEn: Date }> {
     if (c.confirmar !== true) throw new ConfirmacionRequeridaError();
     const motivo = validarMotivo(c.motivo);
 

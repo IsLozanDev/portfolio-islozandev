@@ -142,17 +142,18 @@ export async function crearEntorno(): Promise<Entorno> {
       const id = uuidV7();
       await q(
         `INSERT INTO seg.invitacion (id, tenant_id, membresia_id, token_hash, expira_en, creada_por)
-         VALUES ($1, $2, $3, encode(sha256(convert_to($1::text, 'UTF8')), 'hex'), $4, $5)`,
+         VALUES ($1::uuid, $2, $3, encode(sha256(convert_to($1::uuid::text, 'UTF8')), 'hex'), $4, $5)`,
         [id, tenantId, membresiaId, expiraEn, creadaPor],
       );
       return id;
     },
     asignacion: async (tenantId, membresiaId, { rolId, perfilId }, vigencia = {}, ambito = {}) => {
       const id = uuidV7();
+      // Desde ayer: current_date es UTC y los casos de uso miden la vigencia con la fecha de Lima.
       await q(
         `INSERT INTO seg.asignacion (id, tenant_id, membresia_id, rol_id, perfil_id, alcance, empresa_id, sucursal_id, unidad_id,
            vigente_desde, vigente_hasta)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::date, current_date), $11::date)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::date, current_date - 1), $11::date)`,
         [
           id,
           tenantId,
