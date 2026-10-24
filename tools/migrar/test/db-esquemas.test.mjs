@@ -59,7 +59,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
-  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -69,6 +69,7 @@ const CASOS = [
   { migracion: '01b_seg.sql', esquema: 'seg', prueba: 'tests/01b_seg.test.sql' },
   { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01b_seg_membresias.sql', esquema: 'seg', prueba: 'tests/01b_seg_membresias.test.sql' },
+  { migracion: '01c_cfg.sql', esquema: 'cfg', prueba: 'tests/01c_cfg.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
 ];
 
@@ -135,6 +136,12 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01c_cfg borra cfg (con datos) y se puede reaplicar. Va primero: cfg depende de seg.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01c_cfg.sql'), 'utf8'));
+    expect(await existeEsquema('cfg')).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01c_cfg.sql'), 'utf8'));
+    expect(await existeEsquema('cfg')).toBe(true);
 
     // El inverso de 01b_seg_membresias deja seg como lo dejó 01b_seg_autorizacion (con datos, y la
     // membresía FINALIZADO como SUSPENDIDO). Va primero: reemplaza funciones de autorización.
