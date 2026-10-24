@@ -16,12 +16,12 @@ const withDb = (name: string): string => {
 };
 
 async function admin(sql: string): Promise<void> {
-  const ds = new DataSource({ type: 'postgres', url: ADMIN_URL });
-  await ds.initialize();
+  const dataSource = new DataSource({ type: 'postgres', url: ADMIN_URL });
+  await dataSource.initialize();
   try {
-    await ds.query(sql);
+    await dataSource.query(sql);
   } finally {
-    await ds.destroy();
+    await dataSource.destroy();
   }
 }
 

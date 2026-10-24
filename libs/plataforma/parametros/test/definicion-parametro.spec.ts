@@ -18,12 +18,12 @@ const propina = (cambios: Partial<DatosDefinicion> = {}): DatosDefinicion => ({
   ...cambios,
 });
 
-const detallesDe = (f: () => unknown): readonly string[] => {
+const detallesDe = (accion: () => unknown): readonly string[] => {
   try {
-    f();
-  } catch (e) {
-    if (e instanceof DefinicionInvalidaError) return e.detalles;
-    throw e;
+    accion();
+  } catch (error) {
+    if (error instanceof DefinicionInvalidaError) return error.detalles;
+    throw error;
   }
   throw new Error('no falló');
 };
@@ -44,10 +44,10 @@ describe('CodigoParametro', () => {
 
 describe('DefinicionParametro.crear (TR-RF-030, TR-RN-015)', () => {
   it('TR-CA-078: propina NUMERO con defecto 10 y alcance máximo SUCURSAL', () => {
-    const d = DefinicionParametro.crear(propina(), esquemas);
-    expect(d.alcanceMaximo).toBe('SUCURSAL');
-    expect(d.valorDefecto).toBe(10);
-    expect(d.obsoleto).toBe(false);
+    const definicion = DefinicionParametro.crear(propina(), esquemas);
+    expect(definicion.alcanceMaximo).toBe('SUCURSAL');
+    expect(definicion.valorDefecto).toBe(10);
+    expect(definicion.obsoleto).toBe(false);
   });
 
   it('TR-CA-079: defecto «treinta» en NUMERO indica el tipo esperado', () => {
@@ -70,7 +70,7 @@ describe('DefinicionParametro.crear (TR-RF-030, TR-RN-015)', () => {
     const datos = propina({ codigo: 'plat.propina.x', descripcion: 'ab', tipo: 'FECHA' as never, alcanceMaximo: 'UNIDAD' as never });
     const detalles = detallesDe(() => DefinicionParametro.crear(datos, esquemas));
     expect(detalles).toHaveLength(4);
-    expect(detalles.map((d) => d.split(':')[0])).toEqual(['codigo', 'descripcion', 'tipo', 'alcance_maximo']);
+    expect(detalles.map((detalle) => detalle.split(':')[0])).toEqual(['codigo', 'descripcion', 'tipo', 'alcance_maximo']);
   });
 
   it('recorta la descripción', () => {
@@ -79,7 +79,7 @@ describe('DefinicionParametro.crear (TR-RF-030, TR-RN-015)', () => {
 });
 
 describe('DefinicionParametro.validarValor por tipo', () => {
-  const de = (tipo: DatosDefinicion['tipo'], valorDefecto: unknown) =>
+  const definicionDe = (tipo: DatosDefinicion['tipo'], valorDefecto: unknown) =>
     DefinicionParametro.crear(propina({ tipo, valorDefecto, esquema: null }), esquemas);
 
   it.each([
@@ -88,21 +88,21 @@ describe('DefinicionParametro.validarValor por tipo', () => {
     ['BOOLEANO', true, false, 'true'],
     ['JSON', { a: 1 }, [1, 2], 'x'],
   ] as const)('%s acepta su tipo y rechaza otro', (tipo, defecto, valido, invalido) => {
-    const d = de(tipo, defecto);
-    expect(() => d.validarValor(valido, esquemas)).not.toThrow();
-    expect(() => d.validarValor(invalido, esquemas)).toThrow(new ValorInvalidoError(`Se esperaba un valor ${tipo}`));
+    const definicion = definicionDe(tipo, defecto);
+    expect(() => definicion.validarValor(valido, esquemas)).not.toThrow();
+    expect(() => definicion.validarValor(invalido, esquemas)).toThrow(new ValorInvalidoError(`Se esperaba un valor ${tipo}`));
   });
 
   it('NUMERO rechaza NaN e infinito; JSON rechaza null', () => {
-    expect(() => de('NUMERO', 1).validarValor(Number.NaN, esquemas)).toThrow(ValorInvalidoError);
-    expect(() => de('NUMERO', 1).validarValor(Number.POSITIVE_INFINITY, esquemas)).toThrow(ValorInvalidoError);
-    expect(() => de('JSON', {}).validarValor(null, esquemas)).toThrow(ValorInvalidoError);
+    expect(() => definicionDe('NUMERO', 1).validarValor(Number.NaN, esquemas)).toThrow(ValorInvalidoError);
+    expect(() => definicionDe('NUMERO', 1).validarValor(Number.POSITIVE_INFINITY, esquemas)).toThrow(ValorInvalidoError);
+    expect(() => definicionDe('JSON', {}).validarValor(null, esquemas)).toThrow(ValorInvalidoError);
   });
 
   it('TR-CA-082: 25 con rango 0 a 20', () => {
-    const d = DefinicionParametro.crear(propina(), esquemas);
-    expect(() => d.validarValor(25, esquemas)).toThrow(new ValorInvalidoError('El valor debe estar entre 0 y 20'));
-    expect(() => d.validarValor(0, esquemas)).not.toThrow();
+    const definicion = DefinicionParametro.crear(propina(), esquemas);
+    expect(() => definicion.validarValor(25, esquemas)).toThrow(new ValorInvalidoError('El valor debe estar entre 0 y 20'));
+    expect(() => definicion.validarValor(0, esquemas)).not.toThrow();
   });
 });
 
@@ -119,8 +119,8 @@ describe('DefinicionParametro.admite (TR-RN-014)', () => {
   });
 
   it('máximo TENANT solo admite TENANT', () => {
-    const d = DefinicionParametro.crear(propina({ alcanceMaximo: 'TENANT' }), esquemas);
-    expect(() => d.admite('EMPRESA')).toThrow('a nivel de tenant');
+    const definicion = DefinicionParametro.crear(propina({ alcanceMaximo: 'TENANT' }), esquemas);
+    expect(() => definicion.admite('EMPRESA')).toThrow('a nivel de tenant');
   });
 });
 
@@ -142,16 +142,16 @@ describe('DefinicionParametro.difiereDe', () => {
 });
 
 describe('ambitoValor', () => {
-  const S = '0193f3a0-0000-7000-8000-000000000101';
+  const SUCURSAL = '0193f3a0-0000-7000-8000-000000000101';
   it('acepta los ámbitos coherentes', () => {
     expect(ambitoValor('TENANT')).toEqual({ alcance: 'TENANT', empresaId: null, sucursalId: null });
-    expect(ambitoValor('SUCURSAL', null, S).sucursalId).toBe(S);
+    expect(ambitoValor('SUCURSAL', null, SUCURSAL).sucursalId).toBe(SUCURSAL);
   });
 
   it.each([
-    ['TENANT', S, null],
+    ['TENANT', SUCURSAL, null],
     ['EMPRESA', null, null],
-    ['SUCURSAL', S, S],
+    ['SUCURSAL', SUCURSAL, SUCURSAL],
   ] as const)('rechaza %s con empresa %s y sucursal %s', (alcance, empresa, sucursal) => {
     expect(() => ambitoValor(alcance, empresa, sucursal)).toThrow(AmbitoValorInvalidoError);
   });

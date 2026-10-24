@@ -87,3 +87,8 @@ export { PROVEEDOR_IDENTIDAD, type ProveedorIdentidad } from './application/port
 export { InvitarUsuario, type InvitacionEmitida, type InvitarUsuarioComando } from './application/invitar-usuario.js';
 export { AceptarInvitacion, ConsultarInvitacion } from './application/aceptar-invitacion.js';
 export { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMembresia } from './application/membresia.casos-de-uso.js';
+
+// Para componentes que dependen de seg (spec 09).
+export { ALCANCE_ACTOR, type AlcanceActor, type DestinoAlcance } from './application/ports/alcance-actor.port.js';
+export { AlcanceActorSeg } from './application/alcance-actor.js';
+export { ConfirmacionRequeridaError } from './domain/errores.js';

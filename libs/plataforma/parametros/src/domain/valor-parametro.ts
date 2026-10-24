@@ -22,17 +22,17 @@ export class ValorParametro extends AggregateRoot {
     super(id, version);
   }
 
-  static fijar(d: { id: string; tenantId: string; codigo: string; ambito: AmbitoValor; valor: unknown; por: string; ahora: Date }): ValorParametro {
-    const v = new ValorParametro(d.id, 0, {
-      tenantId: d.tenantId,
-      codigo: d.codigo,
-      ambito: d.ambito,
-      valor: d.valor,
-      modificadoPor: d.por,
-      modificadoEn: d.ahora,
+  static fijar(datos: { id: string; tenantId: string; codigo: string; ambito: AmbitoValor; valor: unknown; por: string; ahora: Date }): ValorParametro {
+    const valorParametro = new ValorParametro(datos.id, 0, {
+      tenantId: datos.tenantId,
+      codigo: datos.codigo,
+      ambito: datos.ambito,
+      valor: datos.valor,
+      modificadoPor: datos.por,
+      modificadoEn: datos.ahora,
     });
-    v.publicar(null, d.valor, false, d.por);
-    return v;
+    valorParametro.publicar(null, datos.valor, false, datos.por);
+    return valorParametro;
   }
 
   static reconstituir(id: string, version: number, props: ValorParametroProps): ValorParametro {

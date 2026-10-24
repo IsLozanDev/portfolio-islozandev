@@ -18,11 +18,11 @@ export interface DefinicionProps extends DatosDefinicion {
   obsoleto: boolean;
 }
 
-const CUMPLE_TIPO: Record<TipoParametro, (v: unknown) => boolean> = {
-  TEXTO: (v) => typeof v === 'string',
-  NUMERO: (v) => typeof v === 'number' && Number.isFinite(v),
-  BOOLEANO: (v) => typeof v === 'boolean',
-  JSON: (v) => v !== null && typeof v === 'object',
+const CUMPLE_TIPO: Record<TipoParametro, (valor: unknown) => boolean> = {
+  TEXTO: (valor) => typeof valor === 'string',
+  NUMERO: (valor) => typeof valor === 'number' && Number.isFinite(valor),
+  BOOLEANO: (valor) => typeof valor === 'boolean',
+  JSON: (valor) => valor !== null && typeof valor === 'object',
 };
 
 /** Definición global de un parámetro, declarada en el manifiesto del producto (TR-RF-030). */
@@ -32,11 +32,11 @@ export class DefinicionParametro {
   /** Junta todos los errores antes de rechazar: el manifiesto los informa juntos. */
   static crear(datos: DatosDefinicion, esquemas: ValidadorEsquema): DefinicionParametro {
     const detalles: string[] = [];
-    const anotar = (campo: string, f: () => void): void => {
+    const anotar = (campo: string, validacion: () => void): void => {
       try {
-        f();
-      } catch (e) {
-        detalles.push(`${campo}: ${(e as Error).message}`);
+        validacion();
+      } catch (error) {
+        detalles.push(`${campo}: ${(error as Error).message}`);
       }
     };
 
@@ -52,7 +52,7 @@ export class DefinicionParametro {
     if (esquema !== null) {
       const problemas = typeof esquema === 'object' && !Array.isArray(esquema) ? esquemas.soporta(esquema) : ['debe ser un objeto'];
       esquemaValido = problemas.length === 0;
-      for (const p of problemas) detalles.push(`esquema: ${p}`);
+      for (const problema of problemas) detalles.push(`esquema: ${problema}`);
     }
 
     const definicion = new DefinicionParametro({ ...datos, descripcion, esquema, obsoleto: false });

@@ -11,13 +11,13 @@ class DefinicionesEnMemoria implements RepositorioDefiniciones {
 
   transaccion<T>(trabajo: (sesion: SesionDefiniciones) => Promise<T>): Promise<T> {
     return trabajo({
-      todasDe: async (producto) => [...this.filas.values()].filter((d) => d.productoCodigo === producto),
+      todasDe: async (producto) => [...this.filas.values()].filter((definicion) => definicion.productoCodigo === producto),
       aplicar: async (producto, cambios, resumen) => {
         this.aplicados.push({ producto, cambios, resumen });
-        for (const d of [...cambios.insertar, ...cambios.actualizar, ...cambios.reactivar]) this.filas.set(d.codigo, d);
+        for (const definicion of [...cambios.insertar, ...cambios.actualizar, ...cambios.reactivar]) this.filas.set(definicion.codigo, definicion);
         for (const codigo of cambios.obsoletar) {
-          const d = this.filas.get(codigo) as DefinicionParametro;
-          this.filas.set(codigo, DefinicionParametro.reconstituir({ codigo, productoCodigo: d.productoCodigo, descripcion: d.descripcion, tipo: d.tipo, valorDefecto: d.valorDefecto, alcanceMaximo: d.alcanceMaximo, esquema: d.esquema, obsoleto: true }));
+          const anterior = this.filas.get(codigo) as DefinicionParametro;
+          this.filas.set(codigo, DefinicionParametro.reconstituir({ codigo, productoCodigo: anterior.productoCodigo, descripcion: anterior.descripcion, tipo: anterior.tipo, valorDefecto: anterior.valorDefecto, alcanceMaximo: anterior.alcanceMaximo, esquema: anterior.esquema, obsoleto: true }));
         }
       },
     });
@@ -38,17 +38,17 @@ const rest = (...parametros: unknown[]) => ({ productoCodigo: 'REST', parametros
 const NADA = { insertadas: 0, actualizadas: 0, obsoletas: 0, reactivadas: 0 };
 
 describe('RegistrarDefiniciones (TR-RF-030, TR-RNF-120)', () => {
-  let repo: DefinicionesEnMemoria;
+  let repositorio: DefinicionesEnMemoria;
   let registrar: RegistrarDefiniciones;
 
   beforeEach(() => {
-    repo = new DefinicionesEnMemoria();
-    registrar = new RegistrarDefiniciones(repo, new ValidadorEsquemaAjv());
+    repositorio = new DefinicionesEnMemoria();
+    registrar = new RegistrarDefiniciones(repositorio, new ValidadorEsquemaAjv());
   });
 
   it('TR-CA-078: el manifiesto REST 1.5.0 registra la propina con alcance máximo SUCURSAL', async () => {
     expect(await registrar.ejecutar(rest(PROPINA))).toEqual({ ...NADA, insertadas: 1 });
-    expect(repo.filas.get('rest.propina.porcentaje')).toMatchObject({ alcanceMaximo: 'SUCURSAL', valorDefecto: 10, obsoleto: false });
+    expect(repositorio.filas.get('rest.propina.porcentaje')).toMatchObject({ alcanceMaximo: 'SUCURSAL', valorDefecto: 10, obsoleto: false });
   });
 
   it('TR-CA-079: un defecto «treinta» rechaza con el tipo esperado y no escribe', async () => {
@@ -56,7 +56,7 @@ describe('RegistrarDefiniciones (TR-RF-030, TR-RNF-120)', () => {
     const ejecutar = registrar.ejecutar({ productoCodigo: 'PLAT', parametros: [malo] });
     await expect(ejecutar).rejects.toThrow(DefinicionInvalidaError);
     await expect(ejecutar).rejects.toMatchObject({ detalles: ['parametros[0].valor_defecto: Se esperaba un valor NUMERO'] });
-    expect(repo.aplicados).toEqual([]);
+    expect(repositorio.aplicados).toEqual([]);
   });
 
   it('validar no toca el repositorio y junta errores de varios parámetros', () => {
@@ -70,7 +70,7 @@ describe('RegistrarDefiniciones (TR-RF-030, TR-RNF-120)', () => {
         ],
       }),
     );
-    expect(repo.aplicados).toEqual([]);
+    expect(repositorio.aplicados).toEqual([]);
   });
 
   it('parametros que no es arreglo se rechaza', () => {
@@ -80,24 +80,24 @@ describe('RegistrarDefiniciones (TR-RF-030, TR-RNF-120)', () => {
   it('repetir las mismas definiciones da 0 cambios y no registra (vd no sube)', async () => {
     await registrar.ejecutar(rest(PROPINA, MESAS));
     expect(await registrar.ejecutar(rest({ ...PROPINA, esquema: { maximum: 20, minimum: 0 } }, MESAS))).toEqual(NADA);
-    expect(repo.aplicados).toHaveLength(1);
+    expect(repositorio.aplicados).toHaveLength(1);
   });
 
   it('un defecto o una descripción nuevos actualizan', async () => {
     await registrar.ejecutar(rest(PROPINA));
     expect(await registrar.ejecutar(rest({ ...PROPINA, valor_defecto: 12 }))).toEqual({ ...NADA, actualizadas: 1 });
-    expect(repo.filas.get('rest.propina.porcentaje')?.valorDefecto).toBe(12);
+    expect(repositorio.filas.get('rest.propina.porcentaje')?.valorDefecto).toBe(12);
   });
 
   it('una definición retirada queda obsoleta y al volver se reactiva', async () => {
     await registrar.ejecutar(rest(PROPINA, MESAS));
     expect(await registrar.ejecutar(rest(PROPINA))).toEqual({ ...NADA, obsoletas: 1 });
-    expect(repo.filas.get('rest.salon.mesas')?.obsoleto).toBe(true);
+    expect(repositorio.filas.get('rest.salon.mesas')?.obsoleto).toBe(true);
     // Sigue obsoleta sin repetir el cambio.
     expect(await registrar.ejecutar(rest(PROPINA))).toEqual(NADA);
 
     expect(await registrar.ejecutar(rest(PROPINA, { ...MESAS, valor_defecto: 8 }))).toEqual({ ...NADA, reactivadas: 1 });
-    expect(repo.filas.get('rest.salon.mesas')).toMatchObject({ obsoleto: false, valorDefecto: 8 });
+    expect(repositorio.filas.get('rest.salon.mesas')).toMatchObject({ obsoleto: false, valorDefecto: 8 });
   });
 
   it('cambiar el tipo de una definición existente se rechaza y no escribe', async () => {
@@ -105,12 +105,12 @@ describe('RegistrarDefiniciones (TR-RF-030, TR-RNF-120)', () => {
     await expect(registrar.ejecutar(rest({ ...PROPINA, tipo: 'TEXTO', valor_defecto: '10', esquema: null }))).rejects.toMatchObject({
       detalles: ['parametros[0].tipo: rest.propina.porcentaje es NUMERO y no puede cambiar a TEXTO'],
     });
-    expect(repo.aplicados).toHaveLength(1);
+    expect(repositorio.aplicados).toHaveLength(1);
   });
 
   it('solo mira las definiciones del mismo producto', async () => {
     await registrar.ejecutar({ productoCodigo: 'PLAT', parametros: [{ ...MESAS, codigo: 'plat.sesion.minutos_inactividad' }] });
     expect(await registrar.ejecutar(rest(PROPINA))).toEqual({ ...NADA, insertadas: 1 });
-    expect(repo.filas.get('plat.sesion.minutos_inactividad')?.obsoleto).toBe(false);
+    expect(repositorio.filas.get('plat.sesion.minutos_inactividad')?.obsoleto).toBe(false);
   });
 });

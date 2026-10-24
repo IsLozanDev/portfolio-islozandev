@@ -3,4 +3,5 @@ export { DefinicionInvalidaError } from './domain/errores.js';
 export { RegistrarDefiniciones, type EntradaDefiniciones } from './application/registrar-definiciones.js';
 export type { RepositorioDefiniciones, ResumenDefiniciones } from './application/ports/repositorios.js';
 export { DefinicionesRepositorioTypeOrm } from './infrastructure/typeorm/definiciones.repositorio.js';
+export { ENTIDADES_CFG } from './infrastructure/typeorm/entidades.js';
 export { ValidadorEsquemaAjv } from './infrastructure/ajv/validador-esquema.ajv.js';

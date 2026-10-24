@@ -19,8 +19,8 @@ export class ValidadorEsquemaAjv implements ValidadorEsquema {
     try {
       this.compilar(esquema);
       return [];
-    } catch (e) {
-      return [`esquema mal formado: ${(e as Error).message}`];
+    } catch (error) {
+      return [`esquema mal formado: ${(error as Error).message}`];
     }
   }
 
@@ -44,19 +44,19 @@ export class ValidadorEsquemaAjv implements ValidadorEsquema {
 function noSoportadas(esquema: Esquema, ruta: string): string[] {
   const fuera: string[] = [];
   for (const [clave, valor] of Object.entries(esquema)) {
-    const aqui = ruta ? `${ruta}.${clave}` : clave;
+    const rutaClave = ruta ? `${ruta}.${clave}` : clave;
     if (!PERMITIDAS.has(clave)) {
-      fuera.push(aqui);
+      fuera.push(rutaClave);
     } else if (clave === 'properties' && esObjeto(valor)) {
-      for (const [prop, sub] of Object.entries(valor)) if (esObjeto(sub)) fuera.push(...noSoportadas(sub, `${aqui}.${prop}`));
+      for (const [propiedad, subesquema] of Object.entries(valor)) if (esObjeto(subesquema)) fuera.push(...noSoportadas(subesquema, `${rutaClave}.${propiedad}`));
     } else if (clave === 'items' && esObjeto(valor)) {
-      fuera.push(...noSoportadas(valor, aqui));
+      fuera.push(...noSoportadas(valor, rutaClave));
     }
   }
   return fuera;
 }
 
-const esObjeto = (v: unknown): v is Esquema => v !== null && typeof v === 'object' && !Array.isArray(v);
+const esObjeto = (valor: unknown): valor is Esquema => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 
 function mensaje(error: ErrorObject | undefined): string {
   const padre = (error?.parentSchema ?? {}) as Esquema;
@@ -69,7 +69,7 @@ function mensaje(error: ErrorObject | undefined): string {
         ? `El valor${donde} debe ser mayor o igual a ${padre.minimum}`
         : `El valor${donde} debe ser menor o igual a ${padre.maximum}`;
     case 'enum':
-      return `El valor${donde} debe ser uno de: ${(padre.enum as unknown[]).map((v) => (typeof v === 'string' ? v : JSON.stringify(v))).join(', ')}`;
+      return `El valor${donde} debe ser uno de: ${(padre.enum as unknown[]).map((opcion) => (typeof opcion === 'string' ? opcion : JSON.stringify(opcion))).join(', ')}`;
     case 'pattern':
       return `El valor${donde} no tiene el formato esperado`;
     case 'minLength':

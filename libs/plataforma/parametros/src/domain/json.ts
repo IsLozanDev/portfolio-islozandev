@@ -1,12 +1,12 @@
 /** JSON con claves ordenadas: jsonb no conserva el orden y dos objetos iguales deben compararse iguales. */
 export function jsonCanonico(valor: unknown): string {
-  return JSON.stringify(valor, (_clave, v: unknown) =>
-    v !== null && typeof v === 'object' && !Array.isArray(v)
-      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
-      : v,
+  return JSON.stringify(valor, (_clave, anidado: unknown) =>
+    anidado !== null && typeof anidado === 'object' && !Array.isArray(anidado)
+      ? Object.fromEntries(Object.entries(anidado as Record<string, unknown>).sort(([claveA], [claveB]) => (claveA < claveB ? -1 : claveA > claveB ? 1 : 0)))
+      : anidado,
   );
 }
 
-export function igualJson(a: unknown, b: unknown): boolean {
-  return jsonCanonico(a) === jsonCanonico(b);
+export function igualJson(izquierdo: unknown, derecho: unknown): boolean {
+  return jsonCanonico(izquierdo) === jsonCanonico(derecho);
 }

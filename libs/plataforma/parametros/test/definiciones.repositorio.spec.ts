@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { RegistrarDefiniciones } from '../src/application/registrar-definiciones.js';
 import { ValidadorEsquemaAjv } from '../src/infrastructure/ajv/validador-esquema.ajv.js';
 import { DefinicionesRepositorioTypeOrm } from '../src/infrastructure/typeorm/definiciones.repositorio.js';
+import { ENTIDADES_CFG } from '../src/infrastructure/typeorm/entidades.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const PROPINA = {
@@ -16,23 +17,23 @@ const MONEDA = { codigo: 'rest.factura.moneda', descripcion: 'Moneda de la cuent
 const rest = (...parametros: unknown[]) => ({ productoCodigo: 'REST', parametros });
 
 describeConDb('DefinicionesRepositorioTypeOrm (TR-RF-030, PostgreSQL 16)', () => {
-  let db: TempDb;
-  let ds: DataSource;
+  let baseTemporal: TempDb;
+  let dataSource: DataSource;
   let registrar: RegistrarDefiniciones;
-  const filas = (sql: string, params: unknown[] = []) => ds.query(sql, params);
+  const filas = (sql: string, params: unknown[] = []) => dataSource.query(sql, params);
   const vd = async () => Number((await filas('SELECT COALESCE(max(id), 0) AS vd FROM cfg.definiciones_aplicadas'))[0].vd);
 
   beforeAll(async () => {
-    db = await createTempDb();
-    ds = new DataSource({ type: 'postgres', url: db.url });
-    await ds.initialize();
-    await ds.query("INSERT INTO seg.producto (codigo, nombre) VALUES ('REST', 'Restaurantes') ON CONFLICT (codigo) DO NOTHING");
-    registrar = new RegistrarDefiniciones(new DefinicionesRepositorioTypeOrm(ds), new ValidadorEsquemaAjv());
+    baseTemporal = await createTempDb();
+    dataSource = new DataSource({ type: 'postgres', url: baseTemporal.url, entities: ENTIDADES_CFG });
+    await dataSource.initialize();
+    await dataSource.query("INSERT INTO seg.producto (codigo, nombre) VALUES ('REST', 'Restaurantes') ON CONFLICT (codigo) DO NOTHING");
+    registrar = new RegistrarDefiniciones(new DefinicionesRepositorioTypeOrm(dataSource), new ValidadorEsquemaAjv());
   });
 
   afterAll(async () => {
-    await ds?.destroy();
-    await db?.drop();
+    await dataSource?.destroy();
+    await baseTemporal?.drop();
   });
 
   it('TR-CA-078: inserta con jsonb real (texto, número y esquema) y registra el cambio', async () => {
@@ -51,9 +52,9 @@ describeConDb('DefinicionesRepositorioTypeOrm (TR-RF-030, PostgreSQL 16)', () =>
   });
 
   it('retirar marca obsoleta y conserva los valores; volver la reactiva', async () => {
-    await ds.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('0193f3a0-0000-7000-8000-0000000000c1', 'cfg-repo', 'Cfg repo', 'ACTIVO', 1)`);
-    await ds.query(`INSERT INTO seg.usuario (id, email, nombre, tipo, estado) VALUES ('0193f3a0-0000-7000-8000-0000000009c1', 'repo.cfg@gmail.com', 'Repo', 'INTERNO', 'ACTIVO')`);
-    await ds.query(
+    await dataSource.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('0193f3a0-0000-7000-8000-0000000000c1', 'cfg-repo', 'Cfg repo', 'ACTIVO', 1)`);
+    await dataSource.query(`INSERT INTO seg.usuario (id, email, nombre, tipo, estado) VALUES ('0193f3a0-0000-7000-8000-0000000009c1', 'repo.cfg@gmail.com', 'Repo', 'INTERNO', 'ACTIVO')`);
+    await dataSource.query(
       `INSERT INTO cfg.parametro_valor (id, tenant_id, codigo, alcance, valor, modificado_por)
        VALUES ('0193f3a0-0000-7000-8000-00000000a0c1', '0193f3a0-0000-7000-8000-0000000000c1', 'rest.factura.moneda', 'TENANT', '"USD"', '0193f3a0-0000-7000-8000-0000000009c1')`,
     );

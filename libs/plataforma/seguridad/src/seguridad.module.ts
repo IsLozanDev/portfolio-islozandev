@@ -33,6 +33,8 @@ import { InvitacionesController } from './interface/invitaciones.controller.js';
 import { LIMITE_TASA, LimiteTasaGuard } from './interface/membresias.http.js';
 import { MembresiasController } from './interface/membresias.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
+import { AlcanceActorSeg } from './application/alcance-actor.js';
+import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 
@@ -135,6 +137,8 @@ export class SeguridadModule {
             new AceptarInvitacion(uow, ctx, reloj, eventos, repos),
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
         },
+        // Para cfg y los demás componentes que dependen de seg (spec 09).
+        { provide: ALCANCE_ACTOR, useFactory: (repositorios: ReposMembresias): AlcanceActor => new AlcanceActorSeg(repositorios), inject: [REPOS_MEMBRESIAS] },
         ciclo(SuspenderMembresia),
         ciclo(ReactivarMembresia),
         ciclo(FinalizarMembresia),
@@ -191,7 +195,7 @@ export class SeguridadModule {
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR],
     };
   }
 }

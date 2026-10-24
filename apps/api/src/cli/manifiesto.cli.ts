@@ -4,6 +4,7 @@ import { DomainError } from '@vitrina/plataforma/kernel';
 import { uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import {
   DefinicionesRepositorioTypeOrm,
+  ENTIDADES_CFG,
   RegistrarDefiniciones,
   ValidadorEsquemaAjv,
   type EntradaDefiniciones,
@@ -50,7 +51,7 @@ export async function aplicarManifiestoCli(args: readonly string[], env: NodeJS.
     return 1;
   }
 
-  const dataSource = new DataSource({ type: 'postgres', url });
+  const dataSource = new DataSource({ type: 'postgres', url, entities: ENTIDADES_CFG });
   const conectar = async (): Promise<DataSource> => (dataSource.isInitialized ? dataSource : dataSource.initialize());
   const repositorio: RepositorioManifiestos = {
     transaccion: async (trabajo) => new ManifiestoRepositorioTypeOrm(await conectar(), { next: uuidV7 }).transaccion(trabajo),
