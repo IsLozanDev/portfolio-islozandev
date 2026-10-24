@@ -45,9 +45,9 @@ Historias del backlog: **S-04**. Estimado: 11-13 h (el plan dice 4 h; el roadmap
 - **Puertos** nuevos en `application/ports/` y adaptadores en `infrastructure/typeorm/` y `infrastructure/supabase/`.
 - **Adaptador** `infrastructure/supabase/supabase-admin.proveedor.ts` con `@supabase/supabase-js` y la secret key.
 - **Interfaz**: `interface/invitaciones.controller.ts` y `interface/membresias.controller.ts`, con DTO y OpenAPI.
-- **Límite de tasa** con `@nestjs/throttler` en memoria, solo en las rutas de invitación sin `@Permiso`.
+- **Límite de tasa** con un guard propio en memoria (`LimiteTasaGuard`), solo en las rutas de invitación sin `@Permiso`.
 - **Manifiesto PLAT** `1.1.0`: permisos `plat.usuario.invitar` y `plat.asignacion.revocar`, opción de menú «Usuarios» y ambos en `PLAT_ADMIN_SEGURIDAD`.
-- **Dependencias**: `@supabase/supabase-js` `2.118.0` y `@nestjs/throttler` `6.7.1`.
+- **Dependencias**: `@supabase/supabase-js` `2.118.0`.
 - **`apps/api`**: `SUPABASE_SECRET_KEY`, `SEG_URL_INVITACION` y `SEG_INVITACION_HORAS` en `config/env.ts` y `.env.example`.
 - **`supabase/config.toml`**: `otp_expiry = 86400` y la URL de invitación local en `additional_redirect_urls`.
 - **Pruebas**: dominio (Jest), integración con PostgreSQL 16 y Redis 7 reales y proveedor de identidad falso, HTTP con supertest.
@@ -87,7 +87,7 @@ Fuente: `docs/Plataforma_Plan_Mermaid_Estructura_Codigo/Plataforma_Plan/codigo/`
 - `MembresiasLectura` (spec 06) queda y su `EstadoMembresia` suma `FINALIZADO`.
 - Nombres de eventos con la convención de `org` (`membresia.invitada`), no `seg.membresia.invitada` de PL-06.
 
-**No existe en el código base** y se escribe desde cero: agregado `Membresia`, invitación, los 7 casos de uso, el adaptador de Supabase Admin, los controladores, el throttler y las pruebas.
+**No existe en el código base** y se escribe desde cero: agregado `Membresia`, invitación, los 7 casos de uso, el adaptador de Supabase Admin, los controladores, el límite de tasa y las pruebas.
 
 ## Modelo de datos
 
@@ -183,6 +183,8 @@ Errores de dominio nuevos:
 | `TransicionMembresiaError(de, accion)` | `TRANSICION_INVALIDA` | 409 | No se puede `<accion>` una membresía `<de>` |
 | `PropietarioUnicoError` | `PROPIETARIO_UNICO` | 409 | «El tenant debe tener al menos un propietario activo» (TR-CA-040) |
 | `AsignacionYaRevocadaError` | `ASIGNACION_YA_REVOCADA` | 409 | La asignación ya estaba revocada |
+| `ActorSinAlcanceError` | `ACTOR_SIN_ALCANCE` | 403 | No tiene alcance sobre todos los accesos de este usuario (agregado en el paso 7) |
+| `IdentidadNoDisponibleError(causa)` | `IDENTIDAD_NO_DISPONIBLE` | 503 | El proveedor de identidad no respondió (agregado en el paso 4) |
 | `MotivoInvalidoError` | `MOTIVO_INVALIDO` | 400 | El motivo debe tener entre 4 y 300 caracteres |
 | `ConfirmacionRequeridaError` | `CONFIRMACION_REQUERIDA` | 400 | La acción exige `confirmar: true` (TR-RNF-021) |
 
@@ -275,8 +277,8 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
 | Método y ruta | Guardas | Cuerpo | Éxito |
 | --- | --- | --- | --- |
 | `POST /v1/seg/invitaciones` | `@Permiso('plat.usuario.invitar')` | `{ correo, nombre, rol_id?, perfil_id?, alcance, empresa_id?, sucursal_id?, unidad_id?, vigente_hasta? }` | 201 `{ membresia_id, invitacion_id, expira_en, usuario_nuevo, correo_enviado }` |
-| `GET /v1/seg/invitaciones/{token}` | `@Publico`, throttler | — | 200 `{ estado: 'VIGENTE', tenant_nombre, expira_en }` |
-| `POST /v1/seg/invitaciones/aceptar` | autenticado sin tenant, throttler | `{ token }` | 200 `{ tenant_id, membresia_id, refrescar_sesion: true }` |
+| `GET /v1/seg/invitaciones/{token}` | `@Publico`, límite de tasa | — | 200 `{ estado: 'VIGENTE', tenant_nombre, expira_en }` |
+| `POST /v1/seg/invitaciones/aceptar` | autenticado sin tenant, límite de tasa | `{ token }` | 200 `{ tenant_id, membresia_id, refrescar_sesion: true }` |
 | `POST /v1/seg/membresias/{id}/suspender` | `@Permiso('plat.asignacion.revocar')` | `{ motivo, confirmar: true }` | 200 `{ estado: 'SUSPENDIDO' }` |
 | `POST /v1/seg/membresias/{id}/reactivar` | ídem | `{ motivo, confirmar: true }` | 200 `{ estado: 'ACTIVO' }` |
 | `POST /v1/seg/membresias/{id}/finalizar` | ídem | `{ motivo, confirmar: true }` | 200 `{ estado: 'FINALIZADO', asignaciones_revocadas }` |
@@ -284,7 +286,7 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
 
 - Errores con `{ codigo, mensaje }` según la tabla de errores. Un `id` de otro tenant da 404 (no se distingue de inexistente).
 - Throttler: 10 peticiones por minuto por IP en las dos rutas de aceptar; 429 `{ codigo: 'DEMASIADAS_SOLICITUDES' }` con `Retry-After`. El token nunca va al log (la ruta se registra como `/v1/seg/invitaciones/:token`).
-- OpenAPI: `@ApiBearerAuth()` salvo el `GET`, DTO de entrada con `class-validator` y de salida, y los códigos de error por ruta.
+- OpenAPI: `@ApiBearerAuth()` salvo el `GET`, validación de entrada con zod (400 `SOLICITUD_INVALIDA` con los campos), DTO de OpenAPI y de salida, y los códigos de error por ruta.
 
 ### Configuración
 
@@ -324,8 +326,8 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
    - Los cuatro casos de uso.
    - Pruebas: TR-CA-039 (Pedro con «Cese»: tras finalizar, `@Permiso` responde 403 en la siguiente petición y el hook no le pone el tenant); TR-CA-040 (Ana, única propietaria, se suspende a sí misma); dos propietarios en paralelo que se suspenden mutuamente: uno falla; sin `confirmar`; reactivar devuelve los permisos; finalizar revoca asignaciones y un reingreso no las revive; revocar una asignación deja las demás; actor sin alcance sobre la asignación.
    - Verificar: `pnpm nx test seguridad`.
-8. **Controladores, throttler y manifiesto.**
-   - `invitaciones.controller.ts`, `membresias.controller.ts`, DTO, `@nestjs/throttler@6.7.1` en `SeguridadModule`, manifiesto PLAT `1.1.0` y `PERMISOS_SEG`.
+8. **Controladores, límite de tasa y manifiesto.**
+   - `invitaciones.controller.ts`, `membresias.controller.ts`, DTO, `LimiteTasaGuard` en `SeguridadModule`, manifiesto PLAT `1.1.0` y `PERMISOS_SEG`.
    - Pruebas supertest: cada fila de la tabla HTTP; 11.ª petición en un minuto da 429; `suspender` con MFA de 40 min da 401 `MFA_REQUERIDA`; `id` de otro tenant da 404; aplicar el manifiesto dos veces da 0 cambios la segunda.
    - Verificar: `pnpm nx run-many -t lint test build` con código 0 y las rutas en `/v1/docs`.
 9. **Supabase local y nube, dev (manual).**
@@ -403,7 +405,11 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
 - **No:** declarar `publico.invitacion.aceptar`. No cumple el formato; el `GET` es `@Publico` y el `POST` solo autenticado.
 - **Sí:** `POST aceptar` autenticado y sin tenant, comparando `sub` con `membresia.usuario_id`. La invitación nació ligada al usuario de ese correo; otro correo es otro `sub` (TR-CA-030). Supabase confirma el correo al usar el enlace.
 - **Sí:** `seg.invitacion_por_token` `SECURITY DEFINER` como única lectura sin tenant. El invitado no tiene `tenant_id` en el token; la función solo devuelve la fila del hash.
-- **Sí:** throttler de `@nestjs/throttler` en memoria, 10/min por IP, solo en rutas de aceptar. Decisión del usuario. Una instancia en R1.
+- **Sí:** límite de tasa en memoria, 10/min por IP y ruta, solo en rutas de aceptar. Decisión del usuario. Una instancia en R1.
+- **No:** `@nestjs/throttler`. Decisión del usuario al implementar el paso 8: es CommonJS y Jest no lo carga junto a NestJS 12 (ESM). Se reemplaza por `LimiteTasaGuard` propio, con la misma respuesta 429 y `Retry-After`.
+- **Sí:** validación de cuerpos con zod, no `class-validator`. Decisión del usuario al implementar el paso 8: el repo ya usa zod y no tiene `ValidationPipe`.
+- **Sí:** filtro de errores propio en las rutas de membresías (`{ codigo, mensaje }`, 400, 404, 409, 403, 410, 503 y 401 step-up). Decisión del usuario al implementar el paso 8: el filtro global da 422 y otro formato; org no cambia.
+- **Sí:** un id que no es UUID responde 404 `NO_ENCONTRADO`, igual que uno de otro tenant.
 - **Sí:** bitácora con los tipos del SQL: `ASIGNACION_OTORGADA` al aceptar y reactivar, `ASIGNACION_REVOCADA` al suspender, finalizar y revocar, con `accion` y `motivo` en `detalle`. Al invitar no se escribe `ASIGNACION_OTORGADA`: el acceso empieza al aceptar (SRS RF-010).
 - **Sí:** TR-RN-010 en el caso de uso con `SELECT ... FOR UPDATE` de propietarios activos, sin trigger. Cubre la carrera de dos propietarios.
 - **Sí:** el actor de suspender, reactivar o finalizar debe cubrir todas las asignaciones vigentes del destino, salvo que sea propietario. Un admin de sucursal no saca a alguien con alcance de empresa.
@@ -423,7 +429,7 @@ Ningún payload lleva correo ni nombre (TR-RNF-026).
 | El JWT de un usuario finalizado sigue válido hasta 900 s en rutas sin `@Permiso` | Toda ruta de negocio lleva `@Permiso` (regla 5). Las excepciones (`mi-contexto`) no devuelven permisos sin membresía `ACTIVO`. |
 | `inviteUserByEmail` crea el usuario y la transacción falla después | Reintentar invitando reutiliza el `seg.usuario` existente; el correo sale por magic link. |
 | El token viaja en la URL y puede quedar en logs o historial | 32 bytes aleatorios, un solo uso, 72 h, solo el hash en la base y la ruta registrada sin el token. |
-| Detrás de un proxy el throttler ve una sola IP | Configurar `trust proxy` en `apps/api` al desplegar staging (spec 21). |
+| Detrás de un proxy el límite de tasa ve una sola IP | Configurar `trust proxy` en `apps/api` al desplegar staging (spec 21). |
 | El nombre del CHECK de `estado` en `seg.membresia` es autogenerado | Se lee de `pg_constraint` al escribir la migración; la prueba de `db:down` lo cubre. |
 | La API de `@supabase/supabase-js` 2.118 difiere de lo supuesto | Se consulta con context7 en el paso 4. El adaptador queda detrás de `ProveedorIdentidad`. |
 

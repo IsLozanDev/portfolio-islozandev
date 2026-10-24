@@ -96,7 +96,7 @@ describeConDb('Aislamiento entre tenants (TR-RNF-010)', () => {
     const modulo = await Test.createTestingModule({
       imports: [
         KernelInfraModule.register({ dataSource: appDs, validator: new InMemoryEventSchemaValidator() }),
-        SeguridadModule.register({ supabaseUrl: 'https://proyecto-prueba.supabase.co', mfaMaxEdadSeg: 900, dataSource: appDs, redisUrl: REDIS_URL, jwksUrl }),
+        SeguridadModule.register({ supabaseUrl: 'https://proyecto-prueba.supabase.co', mfaMaxEdadSeg: 900, dataSource: appDs, redisUrl: REDIS_URL, jwksUrl, invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' } }),
       ],
       controllers: [PruebaController],
     })

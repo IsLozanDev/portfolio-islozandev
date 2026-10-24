@@ -162,7 +162,7 @@ site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://127.0.0.1:4200/auth/invitacion"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 # 900: tokens cortos (TR-RNF-014); la API no revoca por session_id (spec 05).
 jwt_expiry = 900
@@ -235,7 +235,7 @@ max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+otp_expiry = 86400
 
 # SMTP propio (Resend) solo en la nube: se configura a mano en el panel (docs/ops/supabase-ambientes.md).
 # En local el correo cae en Mailpit.

@@ -1,13 +1,14 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "modulos": [{ "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 }],
   "opciones": [
     { "codigo": "plat.seguridad", "modulo": "seguridad", "padre": null, "nombre": "Seguridad", "icono": "admin_panel_settings", "orden": 1, "permisos": [] },
     { "codigo": "plat.seguridad.roles", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Roles", "ruta": "/admin/roles", "icono": "badge", "orden": 1, "permisos": ["plat.rol.gestionar"] },
     { "codigo": "plat.seguridad.perfiles", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Perfiles", "ruta": "/admin/perfiles", "icono": "groups", "orden": 2, "permisos": ["plat.perfil.gestionar"] },
-    { "codigo": "plat.seguridad.asignaciones", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Asignaciones", "ruta": "/admin/asignaciones", "icono": "assignment_ind", "orden": 3, "permisos": ["plat.asignacion.otorgar"] }
+    { "codigo": "plat.seguridad.asignaciones", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Asignaciones", "ruta": "/admin/asignaciones", "icono": "assignment_ind", "orden": 3, "permisos": ["plat.asignacion.otorgar"] },
+    { "codigo": "plat.seguridad.usuarios", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Usuarios", "ruta": "/admin/usuarios", "icono": "person_add", "orden": 4, "permisos": ["plat.usuario.invitar"] }
   ],
   "permisos": [
     { "codigo": "plat.manifiesto.aplicar", "descripcion": "Aplicar el manifiesto funcional de un producto", "alcance_minimo": "TENANT", "sensible": false },
@@ -15,13 +16,15 @@
     { "codigo": "plat.perfil.gestionar", "descripcion": "Gestionar perfiles de puesto", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.asignacion.otorgar", "descripcion": "Asignar roles o perfiles con alcance y vigencia", "alcance_minimo": "SUCURSAL", "sensible": true },
     { "codigo": "plat.permiso.consultar", "descripcion": "Consultar permisos efectivos de un usuario", "alcance_minimo": "TENANT", "sensible": false },
-    { "codigo": "plat.sesion.contexto", "descripcion": "Seleccionar empresa y sucursal de trabajo", "alcance_minimo": "UNIDAD", "sensible": false }
+    { "codigo": "plat.sesion.contexto", "descripcion": "Seleccionar empresa y sucursal de trabajo", "alcance_minimo": "UNIDAD", "sensible": false },
+    { "codigo": "plat.usuario.invitar", "descripcion": "Invitar usuarios al tenant", "alcance_minimo": "SUCURSAL", "sensible": false },
+    { "codigo": "plat.asignacion.revocar", "descripcion": "Revocar asignaciones y suspender, reactivar o finalizar membresías", "alcance_minimo": "SUCURSAL", "sensible": true }
   ],
   "roles_predefinidos": [
     {
       "codigo": "PLAT_ADMIN_SEGURIDAD",
       "nombre": "Administrador de seguridad",
-      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto"]
+      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar"]
     }
   ],
   "parametros": [],

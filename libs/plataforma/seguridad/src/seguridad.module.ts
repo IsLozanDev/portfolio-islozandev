@@ -1,8 +1,8 @@
 import { Logger, Module, type DynamicModule, type OnModuleDestroy } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR, Reflector } from '@nestjs/core';
 import type { Redis } from 'ioredis';
-import type { TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
-import { TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
+import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
+import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
 import { CACHE_PERMISOS, PERMISOS_REPOSITORIO, type CachePermisos, type PermisosRepositorio } from './application/ports/permisos.port.js';
 import { REGISTRO_ACCESO, type RegistroAcceso } from './application/ports/registro-acceso.port.js';
 import { VERIFICADOR_TOKEN, type VerificadorToken } from './application/ports/verificador-token.port.js';
@@ -20,6 +20,18 @@ import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm } from './infrastruct
 import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia-sucursal.repositorio.js';
 import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
 import { PermisoGuard } from './interface/permiso.guard.js';
+import { AceptarInvitacion, ConsultarInvitacion } from './application/aceptar-invitacion.js';
+import { InvitarUsuario } from './application/invitar-usuario.js';
+import { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMembresia } from './application/membresia.casos-de-uso.js';
+import { PROVEEDOR_IDENTIDAD, type ProveedorIdentidad } from './application/ports/proveedor-identidad.port.js';
+import { SupabaseAdminProveedor } from './infrastructure/supabase/supabase-admin.proveedor.js';
+import { AsignacionRepositorioTypeOrm, UbicacionesOrgTypeOrm } from './infrastructure/typeorm/asignacion.repositorio.js';
+import { InvitacionRepositorioTypeOrm, LimitesPlanTypeOrm, MembresiaRepositorioTypeOrm, UsuariosIdentidadTypeOrm } from './infrastructure/typeorm/membresia.repositorio.js';
+import { PerfilRepositorioTypeOrm } from './infrastructure/typeorm/perfil.repositorio.js';
+import { RolRepositorioTypeOrm } from './infrastructure/typeorm/rol.repositorio.js';
+import { InvitacionesController } from './interface/invitaciones.controller.js';
+import { LIMITE_TASA, LimiteTasaGuard } from './interface/membresias.http.js';
+import { MembresiasController } from './interface/membresias.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
@@ -44,17 +56,89 @@ export interface SeguridadOpciones {
   jwksUrl?: string;
   /** Solo pruebas. */
   enfriamientoMs?: number;
+  /** Invitaciones (spec 08). */
+  invitaciones: {
+    /** Secret key de Supabase para la Admin API. Solo apps/api (regla 9). */
+    supabaseSecretKey: string;
+    /** Página de aceptación; recibe `?token=`. */
+    url: string;
+    /** Vigencia del token propio; 72 por defecto. */
+    horas?: number;
+    /** TR-RNF-015: peticiones por minuto y por IP a las rutas públicas de aceptar; 10 por defecto. */
+    aceptarPorMinuto?: number;
+  };
 }
+
+/** Repositorios sobre la UoW activa: los del spec 06 más los de membresías. */
+function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource: DataSource) {
+  return {
+    ciclo: new MembresiaRepositorioTypeOrm(uow, ctx),
+    membresias: new MembresiasLecturaTypeOrm(uow, ctx),
+    invitaciones: new InvitacionRepositorioTypeOrm(uow, ctx, dataSource),
+    usuarios: new UsuariosIdentidadTypeOrm(uow, ctx),
+    limites: new LimitesPlanTypeOrm(uow, ctx),
+    asignaciones: new AsignacionRepositorioTypeOrm(uow, ctx),
+    roles: new RolRepositorioTypeOrm(uow, ctx),
+    perfiles: new PerfilRepositorioTypeOrm(uow, ctx),
+    catalogo: new CatalogoPermisosTypeOrm(uow, ctx),
+    ubicaciones: new UbicacionesOrgTypeOrm(uow, ctx),
+    bitacora: new BitacoraSeguridadTypeOrm(uow, ctx),
+  };
+}
+
+const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
+type ReposMembresias = ReturnType<typeof reposMembresias>;
+type CasoDeCiclo<T> = new (uow: UnitOfWork, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias) => T;
+
+/** Los cuatro casos de uso de ciclo de vida tienen la misma firma. */
+const ciclo = <T>(Clase: CasoDeCiclo<T>) => ({
+  provide: Clase,
+  useFactory: (uow: UnitOfWork, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias) => new Clase(uow, reloj, eventos, repos),
+  inject: [UNIT_OF_WORK, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+});
 
 // Usa los tokens de KernelInfraModule (global), que la app debe importar.
 @Module({})
 export class SeguridadModule {
   static register(op: SeguridadOpciones): DynamicModule {
     const logger = new Logger('Seguridad');
+    const inv = op.invitaciones;
     return {
       module: SeguridadModule,
-      controllers: [MiContextoController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController],
       providers: [
+        { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
+        LimiteTasaGuard,
+        {
+          provide: REPOS_MEMBRESIAS,
+          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext) => reposMembresias(uow, ctx, op.dataSource),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        {
+          provide: PROVEEDOR_IDENTIDAD,
+          useFactory: (): ProveedorIdentidad => new SupabaseAdminProveedor({ url: op.supabaseUrl, secretKey: inv.supabaseSecretKey }),
+        },
+        {
+          provide: InvitarUsuario,
+          useFactory: (uow: UnitOfWork, ctx: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias, proveedor: ProveedorIdentidad) =>
+            new InvitarUsuario(uow, ctx, ids, reloj, eventos, repos, proveedor, { urlInvitacion: inv.url, horas: inv.horas ?? 72, mfaMaxEdadSeg: op.mfaMaxEdadSeg }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PROVEEDOR_IDENTIDAD],
+        },
+        {
+          provide: ConsultarInvitacion,
+          useFactory: (repos: ReposMembresias, reloj: Clock) => new ConsultarInvitacion(repos.invitaciones, reloj),
+          inject: [REPOS_MEMBRESIAS, CLOCK],
+        },
+        {
+          provide: AceptarInvitacion,
+          useFactory: (uow: UnitOfWork, ctx: TenantContext, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias) =>
+            new AceptarInvitacion(uow, ctx, reloj, eventos, repos),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        ciclo(SuspenderMembresia),
+        ciclo(ReactivarMembresia),
+        ciclo(FinalizarMembresia),
+        ciclo(RevocarAsignacion),
         { provide: MFA_MAX_EDAD_SEG, useValue: op.mfaMaxEdadSeg },
         {
           provide: VERIFICADOR_TOKEN,
