@@ -242,7 +242,8 @@ describeConDb('Repositorios de membresías (PostgreSQL 16)', () => {
       });
 
       const [fila] = await e.dataSource.query('SELECT revocada_por, motivo_revocacion, version FROM seg.asignacion WHERE id = $1', [uno]);
-      expect(fila).toEqual({ revocada_por: admin.usuarioId, motivo_revocacion: 'Cambio de puesto', version: '2' });
+      // La semilla deja la versión por defecto (0); revocar la sube a 1.
+      expect(fila).toEqual({ revocada_por: admin.usuarioId, motivo_revocacion: 'Cambio de puesto', version: '1' });
       const hoy = new Date().toISOString().slice(0, 10);
       expect(await tx(() => e.repos.asignaciones.vigentesDe(m.membresiaId, hoy))).toEqual([]);
       expect((await tx(() => e.repos.asignaciones.noRevocadasDe(m.membresiaId))).map((a) => a.id)).toEqual([dos]);

@@ -17,6 +17,8 @@ const URL_INVITACION = 'https://app.vitrina.pe/auth/invitacion';
 
 interface Escenario {
   tenant: string;
+  /** Correo de Rosa propio del escenario: la base es una sola para todo el archivo. */
+  correo: string;
   sucursales: [string, string];
   cajero: string;
   supervisor: string;
@@ -32,7 +34,7 @@ describeConDb('InvitarUsuario (TR-RF-009, PostgreSQL 16)', () => {
   const invitar = (s: Escenario, cambios: Partial<InvitarUsuarioComando> = {}) =>
     e.en(s.tenant, () =>
       caso().ejecutar({
-        correo: 'rosa.huaman@gmail.com',
+        correo: s.correo,
         nombre: 'Rosa Huamán',
         rolId: s.cajero,
         perfilId: null,
@@ -62,7 +64,7 @@ describeConDb('InvitarUsuario (TR-RF-009, PostgreSQL 16)', () => {
     const cajero = await e.sembrar.rol(tenant, 'REST', 'CAJERO', ['rest.caja.cerrar']);
     const supervisor = await e.sembrar.rol(tenant, 'REST', 'SUPERVISOR', ['rest.pedido.anular']);
     const propietario = await e.sembrar.membresia(tenant, 'ACTIVO', true);
-    return { tenant, sucursales, cajero, supervisor, propietario };
+    return { tenant, correo: `rosa.huaman.${tenant.slice(-8)}@gmail.com`, sucursales, cajero, supervisor, propietario };
   };
   const activos = async (s: Escenario, n: number) => {
     for (let i = 0; i < n; i++) {
@@ -96,7 +98,7 @@ describeConDb('InvitarUsuario (TR-RF-009, PostgreSQL 16)', () => {
     const r = await invitar(s);
 
     expect(r).toEqual({ membresiaId: expect.any(String), invitacionId: expect.any(String), expiraEn: new Date('2026-10-25T15:00:00Z'), usuarioNuevo: true, correoEnviado: true });
-    expect(proveedor.llamadas).toEqual([{ tipo: 'invitar', correo: 'rosa.huaman@gmail.com', nombre: 'Rosa Huamán', redirectTo: expect.stringMatching(/^https:\/\/app\.vitrina\.pe\/auth\/invitacion\?token=[\w-]{43}$/) }]);
+    expect(proveedor.llamadas).toEqual([{ tipo: 'invitar', correo: s.correo, nombre: 'Rosa Huamán', redirectTo: expect.stringMatching(/^https:\/\/app\.vitrina\.pe\/auth\/invitacion\?token=[\w-]{43}$/) }]);
 
     const [membresia] = await e.dataSource.query('SELECT m.estado, m.invitado_por, u.tipo FROM seg.membresia m JOIN seg.usuario u ON u.id = m.usuario_id WHERE m.id = $1', [r.membresiaId]);
     expect(membresia).toEqual({ estado: 'INVITADO', invitado_por: s.propietario.usuarioId, tipo: 'INTERNO' });
@@ -116,7 +118,8 @@ describeConDb('InvitarUsuario (TR-RF-009, PostgreSQL 16)', () => {
   it('TR-CA-026: un actor con alcance SUCURSAL no invita con alcance TENANT y no se escribe nada', async () => {
     const s = await escenario();
     const jefe = await e.sembrar.membresia(s.tenant, 'ACTIVO');
-    await e.sembrar.asignacion(s.tenant, jefe.membresiaId, { rolId: s.cajero }, {}, { alcance: 'SUCURSAL', sucursalId: s.sucursales[0] });
+    // Vigente en AHORA, que es fijo.
+    await e.sembrar.asignacion(s.tenant, jefe.membresiaId, { rolId: s.cajero }, { desde: '2026-01-01' }, { alcance: 'SUCURSAL', sucursalId: s.sucursales[0] });
     const antes = await filas(s);
 
     const intento = invitar(s, { alcance: 'TENANT', sucursalId: null, otorgante: { usuarioId: jefe.usuarioId, mfaVigente: false } });
@@ -222,7 +225,7 @@ describeConDb('InvitarUsuario (TR-RF-009, PostgreSQL 16)', () => {
 
     await expect(invitar(s)).rejects.toThrow(IdentidadNoDisponibleError);
     expect(await filas(s)).toEqual(antes);
-    expect(await contar("SELECT count(*) AS n FROM seg.usuario WHERE email = 'rosa.huaman@gmail.com'", [])).toBe(0);
+    expect(await contar('SELECT count(*) AS n FROM seg.usuario WHERE email = $1', [s.correo])).toBe(0);
   });
 
   it('si el enlace a un usuario existente falla, la invitación queda y correoEnviado es false', async () => {

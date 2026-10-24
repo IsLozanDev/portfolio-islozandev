@@ -10,7 +10,8 @@ export interface ReposAlcance {
 
 /**
  * true si el actor, con membresía ACTIVO en el tenant del contexto, es propietario o tiene para
- * cada destino una asignación vigente propia que lo cubre (TR-RN-007, TR-CA-026).
+ * cada destino una asignación vigente propia que lo cubre (TR-RN-007, TR-CA-026). Sin destinos
+ * (miembro sin asignaciones) solo actúa quien tiene alcance TENANT: nada lo acota a una sucursal.
  */
 export async function actorCubre(repos: ReposAlcance, usuarioId: string, destinos: readonly Ambito[], hoy: Fecha): Promise<boolean> {
   const membresia = await repos.membresias.deUsuario(usuarioId);
@@ -20,5 +21,6 @@ export async function actorCubre(repos: ReposAlcance, usuarioId: string, destino
   const propias = await Promise.all(
     (await repos.asignaciones.vigentesDe(membresia.id, hoy)).map((a) => repos.ubicaciones.resolver(a.ubicacion)),
   );
+  if (destinos.length === 0) return propias.some((propia) => propia.alcance === 'TENANT');
   return destinos.every((destino) => propias.some((propia) => cubre(propia, destino)));
 }

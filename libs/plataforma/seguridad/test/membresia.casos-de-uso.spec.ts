@@ -166,6 +166,18 @@ describeConDb('Suspender, reactivar, finalizar y revocar (TR-RF-014, PostgreSQL 
     await expect(suspender(accion(deMiraflores.membresiaId, jefe.usuarioId, 'Su sucursal'))).resolves.toEqual({ estado: 'SUSPENDIDO' });
   });
 
+  it('un jefe de Miraflores no suspende a quien solo tiene una asignación futura en Surco ni a quien no tiene asignaciones', async () => {
+    const jefe = await cajeroEn(tenant, cajero, sucursales[0]);
+    const futuro = await e.sembrar.membresia(tenant, 'ACTIVO');
+    await e.sembrar.asignacion(tenant, futuro.membresiaId, { rolId: cajero }, { desde: '2099-01-01' }, { alcance: 'SUCURSAL', sucursalId: sucursales[1] });
+    const sinAsignaciones = await e.sembrar.membresia(tenant, 'ACTIVO');
+
+    await expect(suspender(accion(futuro.membresiaId, jefe.usuarioId, 'Fuera de su sucursal'))).rejects.toThrow(ActorSinAlcanceError);
+    await expect(suspender(accion(sinAsignaciones.membresiaId, jefe.usuarioId, 'Sin alcance'))).rejects.toThrow(ActorSinAlcanceError);
+    // La propietaria sí.
+    await expect(suspender(accion(sinAsignaciones.membresiaId, ana.usuarioId, 'Propietaria'))).resolves.toEqual({ estado: 'SUSPENDIDO' });
+  });
+
   it('finalizar en el tenant A no toca la membresía del mismo usuario en B', async () => {
     const tenantB = await e.sembrar.tenant();
     await e.sembrar.suscripcion(tenantB, 'REST');

@@ -238,7 +238,7 @@ ProveedorIdentidad     { invitar(correo, nombre, redirectTo): Promise<{ usuarioI
 **`SuspenderMembresia` / `FinalizarMembresia` / `ReactivarMembresia({ membresiaId, motivo, confirmar, actor })`**:
 
 1. `confirmar !== true` → `ConfirmacionRequeridaError`. Motivo de 4 a 300.
-2. Alcance del actor: propietario pasa; si no, debe `cubrir` cada asignación vigente de la membresía destino.
+2. Alcance del actor: propietario pasa; si no, debe `cubrir` cada asignación no revocada (vigente o futura) de la membresía destino. Si no tiene ninguna, solo actúa un actor con alcance `TENANT` (decisión tomada al revisar CI).
 3. TR-RN-010: si el destino es propietario `ACTIVO` y la acción lo saca de `ACTIVO`, `propietariosActivosParaActualizar()` bloquea las filas; si queda en 0, `PropietarioUnicoError`. Aplica también a uno mismo (TR-CA-040).
 4. Finalizar revoca en la misma transacción las asignaciones no revocadas (motivo de la finalización) y anula la invitación pendiente. Así un reingreso no revive accesos viejos.
 5. Bitácora: `ASIGNACION_REVOCADA` con `{ accion, motivo, membresia_id }` para suspender y finalizar; `ASIGNACION_OTORGADA` con `{ accion: 'REACTIVAR', motivo }` para reactivar.
