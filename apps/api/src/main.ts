@@ -24,6 +24,7 @@ const app = await NestFactory.create(
     supabaseUrl: config.SUPABASE_URL,
     mfaMaxEdadSeg: config.SEG_MFA_MAX_EDAD_SEG,
     redisUrl: config.REDIS_URL,
+    invitaciones: { supabaseSecretKey: config.SUPABASE_SECRET_KEY, url: config.SEG_URL_INVITACION, horas: config.SEG_INVITACION_HORAS },
   }),
 );
 configurarApp(app);

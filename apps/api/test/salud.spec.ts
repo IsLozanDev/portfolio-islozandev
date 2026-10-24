@@ -53,6 +53,7 @@ describe('api', () => {
       // lazyConnect: estas pruebas no usan la caché y no abren conexión.
       redisUrl: 'redis://127.0.0.1:6379',
       jwksUrl: `http://127.0.0.1:${port}/auth/v1/.well-known/jwks.json`,
+      invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
       .overrideProvider(REGISTRO_ACCESO)
@@ -100,6 +101,23 @@ describe('api', () => {
     expect(miContexto.security).toEqual([{ bearer: [] }]);
     expect(miContexto.parameters).toContainEqual(expect.objectContaining({ name: 'X-Sucursal-Id', in: 'header', required: false }));
     expect(res.body.components.securitySchemes.bearer).toMatchObject({ type: 'http', scheme: 'bearer' });
+  });
+
+  it('GET /v1/docs-json publica las 7 rutas de membresías (spec 08) y la pública no pide token', async () => {
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    for (const [ruta, metodo] of [
+      ['/v1/seg/invitaciones', 'post'],
+      ['/v1/seg/invitaciones/{token}', 'get'],
+      ['/v1/seg/invitaciones/aceptar', 'post'],
+      ['/v1/seg/membresias/{id}/suspender', 'post'],
+      ['/v1/seg/membresias/{id}/reactivar', 'post'],
+      ['/v1/seg/membresias/{id}/finalizar', 'post'],
+      ['/v1/seg/asignaciones/{id}/revocar', 'post'],
+    ]) {
+      expect(paths[ruta]?.[metodo]).toBeDefined();
+    }
+    expect(paths['/v1/seg/invitaciones/{token}'].get.security).toBeUndefined();
+    expect(paths['/v1/seg/invitaciones/aceptar'].post.responses['410']).toBeDefined();
   });
 
   it('OrgModule queda cableado: los casos de uso de org se resuelven', () => {

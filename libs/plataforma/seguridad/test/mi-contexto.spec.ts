@@ -79,7 +79,7 @@ describeConDb('GET /seg/mi-contexto (TR-CA-044 a 046, parte back)', () => {
     const modulo_ = await Test.createTestingModule({
       imports: [
         KernelInfraModule.register({ dataSource: e.dataSource, validator: new InMemoryEventSchemaValidator() }),
-        SeguridadModule.register({ supabaseUrl: 'https://proyecto-prueba.supabase.co', mfaMaxEdadSeg: 900, dataSource: e.dataSource, redisUrl: REDIS_URL, jwksUrl }),
+        SeguridadModule.register({ supabaseUrl: 'https://proyecto-prueba.supabase.co', mfaMaxEdadSeg: 900, dataSource: e.dataSource, redisUrl: REDIS_URL, jwksUrl, invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' } }),
       ],
     })
       .overrideProvider(REGISTRO_ACCESO)

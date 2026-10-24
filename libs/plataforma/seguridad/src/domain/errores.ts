@@ -262,3 +262,12 @@ export class IdentidadNoDisponibleError extends DomainError {
     super(`El proveedor de identidad no respondió (${causa})`);
   }
 }
+
+/** Suspender, reactivar, finalizar o revocar exige cubrir cada asignación vigente del destino. */
+export class ActorSinAlcanceError extends ForbiddenError {
+  override readonly code = 'ACTOR_SIN_ALCANCE';
+
+  constructor() {
+    super('No tiene alcance sobre todos los accesos de este usuario');
+  }
+}

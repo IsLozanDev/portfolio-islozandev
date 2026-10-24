@@ -6,4 +6,6 @@ export const PERMISOS_SEG = {
   asignacionOtorgar: 'plat.asignacion.otorgar',
   permisoConsultar: 'plat.permiso.consultar',
   sesionContexto: 'plat.sesion.contexto',
+  usuarioInvitar: 'plat.usuario.invitar',
+  asignacionRevocar: 'plat.asignacion.revocar',
 } as const;

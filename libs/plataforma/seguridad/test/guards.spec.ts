@@ -71,7 +71,7 @@ async function crearApp(registro: RegistroAcceso, op: Partial<SeguridadOpciones>
   const modulo = await Test.createTestingModule({
     imports: [
       KernelInfraModule.register({ dataSource, validator: new InMemoryEventSchemaValidator() }),
-      SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, dataSource, redisUrl: 'redis://127.0.0.1:6379', jwksUrl, ...op }),
+      SeguridadModule.register({ supabaseUrl: SUPABASE_URL, mfaMaxEdadSeg: 900, dataSource, redisUrl: 'redis://127.0.0.1:6379', jwksUrl, invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' }, ...op }),
     ],
     controllers: [PruebaController],
   })

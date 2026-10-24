@@ -133,7 +133,7 @@ export async function crearEntorno(): Promise<Entorno> {
       // FINALIZADO necesita `hasta` posterior a `desde` (ck_membresia_vigencia).
       await q(
         `INSERT INTO seg.membresia (id, usuario_id, tenant_id, estado, es_propietario, desde, hasta)
-         VALUES ($1, $2, $3, $4, $5, now() - interval '1 day', CASE WHEN $4 = 'FINALIZADO' THEN now() END)`,
+         VALUES ($1, $2, $3, $4::varchar, $5, now() - interval '1 day', CASE WHEN $4::varchar = 'FINALIZADO' THEN now() END)`,
         [membresiaId, usuarioId, tenantId, estado, esPropietario],
       );
       return { membresiaId, usuarioId };

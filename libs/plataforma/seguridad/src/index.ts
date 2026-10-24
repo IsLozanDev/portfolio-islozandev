@@ -70,3 +70,20 @@ export { SucursalNoAsignadaError } from './domain/errores.js';
 export { ObtenerMiContexto, type MiContexto, type MiContextoConsulta } from './application/obtener-mi-contexto.js';
 export type { PreferenciaSucursal } from './application/ports/repositorios.js';
 export { ESQUEMAS_SEG, registrarEsquemasSeg } from './infrastructure/event-schemas.js';
+
+// Membresías (spec 08).
+export {
+  ActorSinAlcanceError,
+  AlcanceSuperiorError,
+  IdentidadNoDisponibleError,
+  InvitacionExpiradaError,
+  InvitacionOtroCorreoError,
+  LimiteUsuariosError,
+  MembresiaExistenteError,
+  PropietarioUnicoError,
+} from './domain/errores.js';
+export type { EstadoMembresia } from './domain/membresia.js';
+export { PROVEEDOR_IDENTIDAD, type ProveedorIdentidad } from './application/ports/proveedor-identidad.port.js';
+export { InvitarUsuario, type InvitacionEmitida, type InvitarUsuarioComando } from './application/invitar-usuario.js';
+export { AceptarInvitacion, ConsultarInvitacion } from './application/aceptar-invitacion.js';
+export { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMembresia } from './application/membresia.casos-de-uso.js';

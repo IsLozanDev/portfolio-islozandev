@@ -45,14 +45,17 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
 
     const primera = await aplicar.ejecutar(plat);
-    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.0.0', yaAplicado: false });
-    expect(primera.cambios.permisos.insertados).toBe(6);
+    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.1.0', yaAplicado: false });
+    expect(primera.cambios.permisos.insertados).toBe(8);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);
     expect(segunda).toMatchObject({ yaAplicado: true, total: 0 });
     expect(await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'")).toBe(filas);
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.asignacion.otorgar'")).toEqual({ sensible: true });
+    // Spec 08: revocar y suspender son sensibles (TR-RN-009); invitar no.
+    expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.asignacion.revocar'")).toEqual({ sensible: true });
+    expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.usuario.invitar'")).toEqual({ sensible: false });
   });
 
   it('PERMISOS_SEG son exactamente los permisos del manifiesto PLAT', async () => {
