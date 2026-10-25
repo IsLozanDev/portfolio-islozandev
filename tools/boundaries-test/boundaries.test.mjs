@@ -19,6 +19,9 @@ const casos = [
   ['type:backend importa de type:domain', `${PLAT}/kernel-infra/src/probe.ts`, "import '@vitrina/plataforma/kernel';", null],
   // componente (PL-10)
   ['comp:cfg no importa de comp:aud', `${FX}/cfg/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
+  ['parametros (comp:cfg) no importa de org', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina/plataforma/org';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
+  ['parametros (comp:cfg) no importa de comp:aud', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
+  ['parametros (comp:cfg) importa de seguridad y kernel', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/kernel';", null],
   ['comp:aud importa de comp:evt', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/evt';", null],
   ['componente solo vía index (ruta relativa a otro proyecto)', `${FX}/aud/src/probe.ts`, "import '../../evt/src/index';", { regla: BOUNDARIES, mensaje: /relative or absolute path/ }],
   // capas

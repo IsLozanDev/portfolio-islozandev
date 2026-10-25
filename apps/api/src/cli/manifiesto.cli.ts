@@ -2,7 +2,18 @@ import { readFile } from 'node:fs/promises';
 import { DataSource } from 'typeorm';
 import { DomainError } from '@vitrina/plataforma/kernel';
 import { uuidV7 } from '@vitrina/plataforma/kernel-infra';
+import {
+  DefinicionesRepositorioTypeOrm,
+  ENTIDADES_CFG,
+  RegistrarDefiniciones,
+  ValidadorEsquemaAjv,
+  type EntradaDefiniciones,
+  type RepositorioDefiniciones,
+  type ResumenDefiniciones,
+} from '@vitrina/plataforma/parametros';
 import { AplicarManifiesto, ManifiestoRepositorioTypeOrm, type RepositorioManifiestos } from '@vitrina/plataforma/seguridad';
+
+const SIN_CAMBIOS_PARAMETROS: ResumenDefiniciones = { insertadas: 0, actualizadas: 0, obsoletas: 0, reactivadas: 0 };
 
 export interface Salida {
   log(mensaje: string): void;
@@ -10,7 +21,7 @@ export interface Salida {
 }
 
 /**
- * `pnpm manifiesto:aplicar <archivo.json> [--remoto]` (TR-RF-008). Devuelve el código de salida: 0 si
+ * `pnpm manifiesto:aplicar <archivo.json> [--remoto]` (TR-RF-008 y TR-RF-030). Devuelve el código de salida: 0 si
  * aplicó o no había cambios, 1 si el manifiesto es inválido o falla la base (el pipeline detiene el
  * despliegue). La conexión se abre recién después de validar: un manifiesto inválido no toca la base.
  */
@@ -42,16 +53,23 @@ export async function aplicarManifiestoCli(args: readonly string[], env: NodeJS.
     return 1;
   }
 
-  const dataSource = new DataSource({ type: 'postgres', url });
+  const dataSource = new DataSource({ type: 'postgres', url, entities: ENTIDADES_CFG });
+  const conectar = async (): Promise<DataSource> => (dataSource.isInitialized ? dataSource : dataSource.initialize());
   const repositorio: RepositorioManifiestos = {
-    transaccion: async (trabajo) => {
-      await dataSource.initialize();
-      return new ManifiestoRepositorioTypeOrm(dataSource, { next: uuidV7 }).transaccion(trabajo);
-    },
+    transaccion: async (trabajo) => new ManifiestoRepositorioTypeOrm(await conectar(), { next: uuidV7 }).transaccion(trabajo),
   };
+  const definiciones: RepositorioDefiniciones = {
+    transaccion: async (trabajo) => new DefinicionesRepositorioTypeOrm(await conectar()).transaccion(trabajo),
+  };
+  const registrar = new RegistrarDefiniciones(definiciones, new ValidadorEsquemaAjv());
+  const entrada = entradaParametros(json);
   try {
+    // Los parámetros se validan antes de tocar seg: un defecto inválido rechaza todo el manifiesto (TR-CA-079).
+    if (entrada) registrar.validar(entrada);
     const resultado = await new AplicarManifiesto(repositorio).ejecutar(json);
-    salida.log(JSON.stringify(resultado));
+    // Transacción propia después de seg (cfg.parametro_def apunta a seg.producto). Repetir el CLI completa.
+    const parametros = entrada ? await registrar.ejecutar(entrada) : SIN_CAMBIOS_PARAMETROS;
+    salida.log(JSON.stringify({ ...resultado, parametros }));
     return 0;
   } catch (error) {
     // Sin stack ni la URL: el mensaje de dominio ya nombra lo inválido (TR-CA-024).
@@ -60,4 +78,11 @@ export async function aplicarManifiestoCli(args: readonly string[], env: NodeJS.
   } finally {
     if (dataSource.isInitialized) await dataSource.destroy();
   }
+}
+
+/** Sin producto o sin arreglo de parámetros no hay nada que validar aquí: AplicarManifiesto informa el error. */
+function entradaParametros(json: unknown): EntradaDefiniciones | null {
+  const raiz = json as Record<string, unknown> | null;
+  if (typeof raiz?.producto_codigo !== 'string' || !Array.isArray(raiz.parametros)) return null;
+  return { productoCodigo: raiz.producto_codigo, parametros: raiz.parametros };
 }

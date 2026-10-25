@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
+import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
@@ -10,12 +11,13 @@ import { cargarConfig } from './config/env.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: ENTIDADES_CFG });
 await dataSource.initialize();
 
 const validator = new InMemoryEventSchemaValidator();
 registrarEsquemasOrg(validator);
 registrarEsquemasSeg(validator);
+registrarEsquemasCfg(validator);
 
 const app = await NestFactory.create(
   AppModule.register({

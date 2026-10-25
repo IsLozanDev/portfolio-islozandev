@@ -30,6 +30,9 @@
       "@vitrina/plataforma/seguridad": [
         "./libs/plataforma/seguridad/src/index.ts"
       ],
+      "@vitrina/plataforma/parametros": [
+        "./libs/plataforma/parametros/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

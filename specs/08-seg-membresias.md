@@ -1,6 +1,6 @@
 # SPEC 08 — Membresías: invitar, aceptar, suspender, reactivar, finalizar y revocar
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 04, SPEC 05, SPEC 06
 > **Date:** 2026-10-22
 > **Objective:** Agregar a `libs/plataforma/seguridad` el ciclo de vida de la membresía (invitación de un solo uso de 72 h con correo de Supabase, aceptación con el mismo usuario, suspensión, reactivación, finalización y revocación de asignaciones con motivo), expuesto en `/v1/seg` con `@Permiso`, OpenAPI y límite de tasa en lo público.

@@ -28,6 +28,14 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
 8. Los esquemas de plataforma no se exponen por la Data API de Supabase. Los frontends solo hablan con la API NestJS.
 9. Secretos solo por entorno. La secret key de Supabase solo en `apps/api` y scripts de migración.
 10. Integraciones externas detrás de puertos y adaptadores.
+11. Persistencia con ORM, desde el spec 10 en adelante (los specs 01 a 09 ya implementados conservan su SQL; migrarlos es un spec aparte, sin fecha). Los repositorios usan TypeORM: entidades en `infrastructure/typeorm`, `manager.getRepository` y `QueryBuilder` sobre el `EntityManager` de la transacción activa. Por defecto no se escribe SQL embebido en `SELECT`/`INSERT`/`UPDATE`/`DELETE`. Se permite SQL crudo solo cuando el ORM no lo expresa bien (funciones de base de datos, `set_config`, `FOR UPDATE` con lógica propia, agregaciones complejas, rendimiento medido), encapsulado en un método del adaptador y con la razón en el spec. Las entidades ORM son distintas del agregado de dominio y se mapean en el adaptador. Bloqueo optimista con la columna `version`. Las migraciones y funciones de base de datos siguen en SQL.
+
+## Código limpio (desde el spec 10; aplica a todo código nuevo)
+- Nombres que dicen qué son: `permisoEfectivo`, no `pe`; `tenantId`, no `t`; `contexto`, no `ctx`. Sin abreviaturas ni variables de una letra (salvo índices de bucle triviales y parámetros de lambdas de una línea). Nombres en español, como el dominio.
+- Funciones pequeñas con una sola responsabilidad; nombre con verbo. Sin números ni cadenas mágicas: constantes con nombre. Sin comentarios que repiten el código.
+- Clases y archivos con un solo motivo de cambio. Early return en vez de `if` anidados. Sin código muerto ni duplicado.
+- Cada spec lista en sus criterios de aceptación que el código nuevo sigue esta sección.
+- Antes de cerrar un spec, `/spec-impl` pasa el agente `code-simplifier:code-simplifier` sobre los archivos modificados y se revisa su diff como cualquier otro. Para renombrar y buscar referencias se prefiere la herramienta LSP de TypeScript si está disponible.
 
 ## RNF transversales que todo spec hereda
 RNF-001/002/003 (desempeño), 008 (idempotencia), 010 (aislamiento), 011 (cifrado y secretos), 012 (OWASP ASVS 2), 013 y 112 (auditoría inmutable), 024 y 119 (límites de módulos), 025 (cobertura dominio >= 70 %), 026 (logs estructurados sin datos personales), 101 (permisos con caché), 106 (outbox).

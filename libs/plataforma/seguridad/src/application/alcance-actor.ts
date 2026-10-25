@@ -1,5 +1,7 @@
 import { cubre, type Ambito } from '../domain/alcance.js';
 import type { Fecha } from '../domain/asignacion.js';
+import { fechaLocal } from './otorgar-asignacion.js';
+import type { AlcanceActor, DestinoAlcance } from './ports/alcance-actor.port.js';
 import type { MembresiasLectura, RepositorioAsignaciones, UbicacionesOrg } from './ports/repositorios.js';
 
 export interface ReposAlcance {
@@ -23,4 +25,14 @@ export async function actorCubre(repos: ReposAlcance, usuarioId: string, destino
   );
   if (destinos.length === 0) return propias.some((propia) => propia.alcance === 'TENANT');
   return destinos.every((destino) => propias.some((propia) => cubre(propia, destino)));
+}
+
+/** AlcanceActor para otros componentes (spec 09): completa la empresa de una sucursal y aplica actorCubre. */
+export class AlcanceActorSeg implements AlcanceActor {
+  constructor(private readonly repositorios: ReposAlcance) {}
+
+  async cubre(usuarioId: string, destino: DestinoAlcance, ahora: Date): Promise<boolean> {
+    const ambitoDestino = await this.repositorios.ubicaciones.resolver({ ...destino, unidadId: null });
+    return actorCubre(this.repositorios, usuarioId, [ambitoDestino], fechaLocal(ahora));
+  }
 }

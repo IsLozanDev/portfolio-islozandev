@@ -67,4 +67,21 @@ describe('CLI manifiesto:aplicar', () => {
     expect(s.errores).toEqual(['MANIFIESTO_INVALIDO: Manifiesto inválido: permisos[0].codigo: rest-caja-cerrar']);
     expect(s.logs).toEqual([]);
   });
+
+  it('TR-CA-079: un parámetro con defecto «treinta» sale con 1 antes de aplicar seg y no se conecta a la base', async () => {
+    const manifiesto = {
+      producto_codigo: 'PLAT',
+      nombre: 'Plataforma',
+      version: '1.2.0',
+      modulos: [],
+      opciones: [],
+      permisos: [],
+      roles_predefinidos: [],
+      parametros: [{ codigo: 'plat.sesion.minutos_inactividad', descripcion: 'Minutos de inactividad', tipo: 'NUMERO', valor_defecto: 'treinta', alcance_maximo: 'TENANT' }],
+    };
+    const s = salida();
+    expect(await aplicarManifiestoCli([await archivo('parametro-malo.json', JSON.stringify(manifiesto))], ENV, s)).toBe(1);
+    expect(s.errores).toEqual(['DEFINICION_INVALIDA: Definición de parámetro inválida: parametros[0].valor_defecto: Se esperaba un valor NUMERO']);
+    expect(s.logs).toEqual([]);
+  });
 });
