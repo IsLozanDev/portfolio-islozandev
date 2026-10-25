@@ -1,5 +1,7 @@
 // TR-CFG: parámetros jerárquicos (spec 09). Solo este archivo es público.
-export { DefinicionInvalidaError } from './domain/errores.js';
+export { DefinicionInvalidaError, ParametroNoDefinidoError } from './domain/errores.js';
+export type { OrigenValor } from './domain/tipos.js';
+export { PARAMETRO_PORT, type ContextoParametro, type ParametroPort } from './application/ports/parametro.port.js';
 export { RegistrarDefiniciones, type EntradaDefiniciones } from './application/registrar-definiciones.js';
 export type { RepositorioDefiniciones, ResumenDefiniciones } from './application/ports/repositorios.js';
 export { DefinicionesRepositorioTypeOrm } from './infrastructure/typeorm/definiciones.repositorio.js';
