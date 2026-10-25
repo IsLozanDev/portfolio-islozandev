@@ -1,7 +1,7 @@
 import type { Clock } from '@vitrina/plataforma/kernel';
 import type { EventoEntregado } from '../domain/evento-entregado.js';
 import type { Avisar } from './dependencias-entrega.js';
-import type { ColaEventos, CursorRelay, EntregaEncolada, LectorOutbox } from './ports/relay.js';
+import type { AvanceCursor, ColaEventos, CursorRelay, EntregaEncolada, LectorOutbox } from './ports/relay.js';
 import type { RegistroSuscripciones } from './ports/suscripciones.js';
 
 export const RELAY_PRINCIPAL = 'principal';
@@ -47,7 +47,7 @@ export class DespacharLote {
     return this.dependencias.cursor.conBloqueo(RELAY_PRINCIPAL, (cursor, lector) => this.despachar(cursor, lector));
   }
 
-  private async despachar(cursor: string, lector: LectorOutbox) {
+  private async despachar(cursor: string, lector: LectorOutbox): Promise<AvanceCursor<LoteDespachado>> {
     const { margenSeg, lote, ventanaSeg } = this.opciones;
     const ahoraMs = this.dependencias.reloj.now().getTime();
     const nuevos = await lector.leer(cursor, margenSeg, lote);

@@ -305,47 +305,47 @@ El relay es agnóstico del tipo. Este spec no publica eventos propios.
 
 **Despacho (TR-RF-093, TR-RN-034, TR-RN-035, TR-RNF-106):**
 
-- [ ] Con `prueba-a` y `prueba-b` suscritos a `cita.creada`, un `cita.creada` publicado se procesa una sola vez en cada uno (TR-CA-228).
-- [ ] Un evento entregado de nuevo tras procesarse no vuelve a ejecutar el manejador (TR-CA-229).
-- [ ] Con margen de 5 s, el evento 1001 confirmado 2 s después del 1002 se entrega y no se salta (TR-CA-230).
-- [ ] `sync.read_events` no devuelve filas con `created_at` dentro del margen.
-- [ ] Una transacción que confirma con `seq` menor al cursor se entrega en el siguiente re-barrido.
-- [ ] Un evento cuyo tipo no tiene suscriptores no se encola y el cursor avanza.
-- [ ] Con Redis caído, el cursor no avanza y al volver Redis se entregan los eventos pendientes.
-- [ ] Tras cerrar el worker a mitad de 200 eventos y arrancar otro, cada consumidor tiene 200 filas en `sync.evento_procesado` y el manejador corrió 200 veces.
-- [ ] Dos relays a la vez encolan cada evento una vez por consumidor y el cursor nunca retrocede (TR-RNF-028).
-- [ ] El efecto del manejador corre con `app.tenant_id` igual al `tenant_id` del evento.
-- [ ] El p95 del retraso en la prueba de humo de dev se reporta en `docs/ops/supabase-ambientes.md`; si no baja de 5 s, se registra como desviación.
+- [x] Con `prueba-a` y `prueba-b` suscritos a `cita.creada`, un `cita.creada` publicado se procesa una sola vez en cada uno (TR-CA-228).
+- [x] Un evento entregado de nuevo tras procesarse no vuelve a ejecutar el manejador (TR-CA-229).
+- [x] Con margen de 5 s, el evento 1001 confirmado 2 s después del 1002 se entrega y no se salta (TR-CA-230).
+- [x] `sync.read_events` no devuelve filas con `created_at` dentro del margen.
+- [x] Una transacción que confirma con `seq` menor al cursor se entrega en el siguiente re-barrido.
+- [x] Un evento cuyo tipo no tiene suscriptores no se encola y el cursor avanza.
+- [x] Con Redis caído, el cursor no avanza y al volver Redis se entregan los eventos pendientes.
+- [x] Tras cerrar el worker a mitad de 200 eventos y arrancar otro, cada consumidor tiene 200 filas en `sync.evento_procesado` y el manejador corrió 200 veces.
+- [x] Dos relays a la vez encolan cada evento una vez por consumidor y el cursor nunca retrocede (TR-RNF-028).
+- [x] El efecto del manejador corre con `app.tenant_id` igual al `tenant_id` del evento.
+- [x] El p95 del retraso en la prueba de humo de dev se reporta en `docs/ops/supabase-ambientes.md`; si no baja de 5 s, se registra como desviación.
 
 **Fallidos y reproceso (TR-RF-095):**
 
-- [ ] Un manejador que falla 8 veces deja una fila `FALLIDO` con `intentos = 8` y el último error, sin payload.
-- [ ] Reprocesar en lote 12 eventos fallidos tras corregir el error deja los 12 en `PROCESADO` y fuera de la lista por defecto (TR-CA-233).
-- [ ] Reprocesar un fallido ya procesado por otra vía lo marca `PROCESADO` sin ejecutar el manejador (TR-CA-234).
-- [ ] Un reproceso que vuelve a fallar queda `FALLIDO` con los intentos sumados.
-- [ ] Reprocesar guarda `reprocesado_por` y `reprocesado_en`; ids de otro tenant o que no están en `FALLIDO` vuelven en `omitidos` con su motivo.
-- [ ] `GET /v1/evt/fallidos` filtra por consumidor, tipo y estado y solo devuelve filas del tenant del token.
+- [x] Un manejador que falla 8 veces deja una fila `FALLIDO` con `intentos = 8` y el último error, sin payload.
+- [x] Reprocesar en lote 12 eventos fallidos tras corregir el error deja los 12 en `PROCESADO` y fuera de la lista por defecto (TR-CA-233).
+- [x] Reprocesar un fallido ya procesado por otra vía lo marca `PROCESADO` sin ejecutar el manejador (TR-CA-234).
+- [x] Un reproceso que vuelve a fallar queda `FALLIDO` con los intentos sumados.
+- [x] Reprocesar guarda `reprocesado_por` y `reprocesado_en`; ids de otro tenant o que no están en `FALLIDO` vuelven en `omitidos` con su motivo.
+- [x] `GET /v1/evt/fallidos` filtra por consumidor, tipo y estado y solo devuelve filas del tenant del token.
 
 **Aislamiento, seguridad, migraciones y calidad:**
 
-- [ ] Con `sync_test_app`, `SELECT` directo sobre `sync.outbox` sigue sin ver otro tenant; solo las funciones `read_events*` leen entre tenants.
-- [ ] `anon` y `authenticated` no pueden ejecutar `sync.read_events` ni `sync.read_events_ventana`.
-- [ ] Desde el tenant A no se lee ni escribe ninguna fila de `sync.evento_procesado` ni de `sync.evento_fallido` de B.
-- [ ] Sin `plat.evento.consultar` o `plat.evento.reprocesar` las rutas responden 403; reprocesar con aal1 responde 401 step-up.
-- [ ] Ningún log del relay, del worker ni de la api incluye el payload del evento.
+- [x] Con `sync_test_app`, `SELECT` directo sobre `sync.outbox` sigue sin ver otro tenant; solo las funciones `read_events*` leen entre tenants.
+- [x] `anon` y `authenticated` no pueden ejecutar `sync.read_events` ni `sync.read_events_ventana`.
+- [x] Desde el tenant A no se lee ni escribe ninguna fila de `sync.evento_procesado` ni de `sync.evento_fallido` de B.
+- [x] Sin `plat.evento.consultar` o `plat.evento.reprocesar` las rutas responden 403; reprocesar con aal1 responde 401 step-up.
+- [x] Ningún log del relay, del worker ni de la api incluye el payload del evento.
 - [ ] `db:up && db:down && db:up` termina con 0 en CI y `db:down` deja la base como la dejó el spec 10.
-- [ ] `src/domain` no importa `@nestjs/*`, `typeorm` ni `bullmq`. `eventos` no importa `seguridad`, `org`, `parametros` ni `correlativos` (Nx en CI).
-- [ ] `apps/worker` no lee `SUPABASE_SECRET_KEY`.
-- [ ] Cobertura de líneas de `src/domain/**` ≥ 70 %.
-- [ ] Las 2 rutas figuran en `/v1/docs` con sus códigos de error.
-- [ ] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md` y pasó por `code-simplifier`.
+- [x] `src/domain` no importa `@nestjs/*`, `typeorm` ni `bullmq`. `eventos` no importa `seguridad`, `org`, `parametros` ni `correlativos` (Nx en CI).
+- [x] `apps/worker` no lee `SUPABASE_SECRET_KEY`.
+- [x] Cobertura de líneas de `src/domain/**` ≥ 70 %.
+- [x] Las 2 rutas figuran en `/v1/docs` con sus códigos de error.
+- [x] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md` y pasó por `code-simplifier`.
 - [ ] `pnpm nx run-many -t lint test build` termina con código 0 y `nx affected` está en verde en CI.
 
 **Nube (verificación manual, evidencia en `docs/ops/supabase-ambientes.md`):**
 
-- [ ] En dev, `01e_sync_relay.sql` está aplicada y el manifiesto PLAT `1.4.0` figura en `seg.manifiesto_aplicado`.
-- [ ] En dev, `sync` no está expuesto en la Data API y `sync_lector` es `NOLOGIN` sin `BYPASSRLS`.
-- [ ] En dev, la prueba de humo entrega los 20 eventos, muestra y reprocesa el fallido, y los datos de prueba se borran.
+- [x] En dev, `01e_sync_relay.sql` está aplicada y el manifiesto PLAT `1.4.0` figura en `seg.manifiesto_aplicado`.
+- [x] En dev, `sync` no está expuesto en la Data API y `sync_lector` es `NOLOGIN` sin `BYPASSRLS`.
+- [x] En dev, la prueba de humo entrega los 20 eventos, muestra y reprocesa el fallido, y los datos de prueba se borran.
 - [ ] Las horas reales de E-02 quedan registradas en el plan.
 
 ## Decisiones

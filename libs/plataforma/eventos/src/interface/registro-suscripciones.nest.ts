@@ -39,6 +39,7 @@ export class RegistroSuscripcionesNest implements RegistroSuscripciones, OnModul
   }
 
   private registrar({ eventType, consumidor }: Suscripcion, manejador: Manejador): void {
+    // Valida al arrancar: un nombre que no sirve de cola rompe el inicio, no la primera entrega.
     NombreConsumidor.de(consumidor);
     const porTipo = this.manejadores.get(consumidor) ?? new Map<string, Manejador>();
     if (porTipo.has(eventType)) throw new SuscripcionDuplicadaError(consumidor, eventType);

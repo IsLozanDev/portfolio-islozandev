@@ -24,6 +24,7 @@ import { RegistroSuscripcionesNest } from './interface/registro-suscripciones.ne
 
 const MILISEGUNDOS_POR_SEGUNDO = 1000;
 const EVENTO_ERROR_REDIS = 'evt.redis.error';
+const CONTEXTO_LOG = 'Eventos';
 
 export interface OpcionesRelay {
   intervaloMs: number;
@@ -69,9 +70,8 @@ class CierreColaReprocesos implements OnModuleDestroy {
 export class EventosModule {
   /** Lecturas y reproceso de fallidos para el controlador de apps/api. Solo encola: no procesa. */
   static registrarApi(opciones: EventosApiOpciones): DynamicModule {
-    const logger = new Logger('Eventos');
-    // Solo el nombre del error: el mensaje de ioredis puede traer la URL (RNF-026).
-    const alFallarRedis = (error: Error) => logger.warn({ evento: EVENTO_ERROR_REDIS, error: error.name });
+    const logger = new Logger(CONTEXTO_LOG);
+    const alFallarRedis = avisarErrorRedis(logger);
     const conexion = crearConexionProductor(opciones.redisUrl, alFallarRedis);
     const cola = new ColaEventosBullMQ(conexion, opciones.reintentos, alFallarRedis);
     return {
@@ -125,13 +125,17 @@ export class EventosModule {
   }
 }
 
+/** Solo el nombre del error: el mensaje de ioredis puede traer la URL (RNF-026). */
+function avisarErrorRedis(logger: Logger): (error: Error) => void {
+  return (error) => logger.warn({ evento: EVENTO_ERROR_REDIS, error: error.name });
+}
+
 /** Los repositorios ORM necesitan la UoW de TypeORM, no el puerto. */
 type PiezasDelKernel = Omit<DependenciasEntrega, 'unidadDeTrabajo' | 'procesados' | 'fallidos' | 'avisar'> & { unidadDeTrabajo: TypeOrmUnitOfWork };
 
 function crearProcesoWorker(opciones: EventosWorkerOpciones, kernel: PiezasDelKernel): ProcesoWorker {
-  const logger = new Logger('Eventos');
-  // Solo el nombre del error: el mensaje de ioredis puede traer la URL (RNF-026).
-  const alFallarRedis = (error: Error) => logger.warn({ evento: EVENTO_ERROR_REDIS, error: error.name });
+  const logger = new Logger(CONTEXTO_LOG);
+  const alFallarRedis = avisarErrorRedis(logger);
   const conexionColas = crearConexionColas(opciones.redisUrl, alFallarRedis);
   const conexionProductor = crearConexionProductor(opciones.redisUrl, alFallarRedis);
   const cola = new ColaEventosBullMQ(conexionProductor, opciones.reintentos, alFallarRedis);
