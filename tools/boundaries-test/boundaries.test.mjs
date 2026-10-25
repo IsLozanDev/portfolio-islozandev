@@ -22,6 +22,10 @@ const casos = [
   ['parametros (comp:cfg) no importa de org', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina/plataforma/org';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
   ['parametros (comp:cfg) no importa de comp:aud', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
   ['parametros (comp:cfg) importa de seguridad y kernel', `${PLAT}/parametros/src/probe.ts`, "import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/kernel';", null],
+  ['correlativos (comp:seq) no importa de org', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina/plataforma/org';", { regla: BOUNDARIES, mensaje: /comp:seq/ }],
+  ['correlativos (comp:seq) no importa de comp:cfg', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina/plataforma/parametros';", { regla: BOUNDARIES, mensaje: /comp:seq/ }],
+  ['correlativos (comp:seq) no importa de comp:aud', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:seq/ }],
+  ['correlativos (comp:seq) importa de seguridad y kernel', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/kernel';", null],
   ['comp:aud importa de comp:evt', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/evt';", null],
   ['componente solo vía index (ruta relativa a otro proyecto)', `${FX}/aud/src/probe.ts`, "import '../../evt/src/index';", { regla: BOUNDARIES, mensaje: /relative or absolute path/ }],
   // capas

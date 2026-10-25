@@ -11,6 +11,7 @@ Componentes transversales (TR-*) que consumen todos los productos. Primer consum
 - Monorepo Nx + pnpm, Node 24 LTS, TypeScript 5.9 (ESM).
 - Backend: NestJS 12, hexagonal, PostgreSQL 16 (Supabase), Redis 7, BullMQ.
 - Frontend: **Angular 21** (standalone, signals, zoneless), Angular Material. Los docs dicen 22: decisión vigente es 21.
+- CSS: **Tailwind CSS 4** (4.x estable, última publicada 4.3.3) como motor principal. Se integra según la guía oficial para Angular: `tailwindcss`, `@tailwindcss/postcss` y `postcss`, con `.postcssrc.json` y `@import "tailwindcss";` en los estilos globales; configuración por CSS (`@theme`), sin `tailwind.config.js`. Angular Material aporta los componentes; Tailwind, el layout, el espaciado y los tokens de diseño. Se verifica en el spec de fundaciones del frontend (spec 13 o 15, el primero que cree una app Angular) que compila con Angular 21.
 - Auth: Supabase Auth autentica; TR-SEG autoriza (ADR-29). JWT ES256 verificado por JWKS. El token solo lleva `tenant_id` y `tipo_usuario` (ADR-32).
 - Supabase: un proyecto por ambiente. Acceso por MCP; credenciales las entrega el usuario cuando se pidan. Nunca en el repo.
 
