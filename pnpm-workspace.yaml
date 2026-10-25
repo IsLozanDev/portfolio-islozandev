@@ -10,6 +10,7 @@ allowBuilds:
   unrs-resolver: false
   "@scarf/scarf": false
   esbuild: false
+  msgpackr-extract: false
 
 minimumReleaseAgeExclude:
   - "@nestjs/common@12.2.0"

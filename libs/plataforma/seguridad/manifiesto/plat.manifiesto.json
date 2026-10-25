@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 }
@@ -29,7 +29,9 @@
     { "codigo": "plat.parametro.leer", "descripcion": "Ver parámetros y su herencia", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.parametro.editar", "descripcion": "Fijar y restablecer valores de parámetros", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.serie.gestionar", "descripcion": "Configurar y activar o desactivar series de numeración", "alcance_minimo": "SUCURSAL", "sensible": true },
-    { "codigo": "plat.serie.numerar", "descripcion": "Obtener el siguiente número de una serie", "alcance_minimo": "SUCURSAL", "sensible": false }
+    { "codigo": "plat.serie.numerar", "descripcion": "Obtener el siguiente número de una serie", "alcance_minimo": "SUCURSAL", "sensible": false },
+    { "codigo": "plat.evento.consultar", "descripcion": "Ver las entregas de eventos que agotaron sus reintentos", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.evento.reprocesar", "descripcion": "Volver a entregar eventos fallidos a su consumidor", "alcance_minimo": "TENANT", "sensible": true }
   ],
   "roles_predefinidos": [
     {
@@ -41,6 +43,11 @@
       "codigo": "PLAT_ADMIN_CONFIGURACION",
       "nombre": "Administrador de configuración",
       "permisos": ["plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto", "plat.serie.gestionar"]
+    },
+    {
+      "codigo": "PLAT_ADMIN_EVENTOS",
+      "nombre": "Administrador de eventos",
+      "permisos": ["plat.evento.consultar", "plat.evento.reprocesar", "plat.sesion.contexto"]
     }
   ],
   "parametros": [

@@ -26,6 +26,11 @@ const casos = [
   ['correlativos (comp:seq) no importa de comp:cfg', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina/plataforma/parametros';", { regla: BOUNDARIES, mensaje: /comp:seq/ }],
   ['correlativos (comp:seq) no importa de comp:aud', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:seq/ }],
   ['correlativos (comp:seq) importa de seguridad y kernel', `${PLAT}/correlativos/src/probe.ts`, "import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/kernel';", null],
+  ['eventos (comp:evt) no importa de seguridad', `${PLAT}/eventos/src/probe.ts`, "import '@vitrina/plataforma/seguridad';", { regla: BOUNDARIES, mensaje: /comp:evt/ }],
+  ['eventos (comp:evt) no importa de org', `${PLAT}/eventos/src/probe.ts`, "import '@vitrina/plataforma/org';", { regla: BOUNDARIES, mensaje: /comp:evt/ }],
+  ['eventos (comp:evt) no importa de comp:cfg', `${PLAT}/eventos/src/probe.ts`, "import '@vitrina/plataforma/parametros';", { regla: BOUNDARIES, mensaje: /comp:evt/ }],
+  ['eventos (comp:evt) no importa de comp:seq', `${PLAT}/eventos/src/probe.ts`, "import '@vitrina/plataforma/correlativos';", { regla: BOUNDARIES, mensaje: /comp:evt/ }],
+  ['eventos (comp:evt) importa de kernel y kernel-infra', `${PLAT}/eventos/src/probe.ts`, "import '@vitrina/plataforma/kernel'; import '@vitrina/plataforma/kernel-infra';", null],
   ['comp:aud importa de comp:evt', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/evt';", null],
   ['componente solo vía index (ruta relativa a otro proyecto)', `${FX}/aud/src/probe.ts`, "import '../../evt/src/index';", { regla: BOUNDARIES, mensaje: /relative or absolute path/ }],
   // capas

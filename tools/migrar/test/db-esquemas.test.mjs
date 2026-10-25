@@ -59,7 +59,8 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
-  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', 'seq_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
+  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -72,6 +73,7 @@ const CASOS = [
   { migracion: '01c_cfg.sql', esquema: 'cfg', prueba: 'tests/01c_cfg.test.sql' },
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
+  { migracion: '01e_sync_relay.sql', esquema: 'sync', prueba: 'tests/01e_sync_relay.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -124,6 +126,20 @@ const objetosMembresias = async () =>
 const estadoMembresia = async (id) =>
   (await ejecutar(urlDb, `SELECT estado FROM seg.membresia WHERE id = '${id}'`)).rows[0]?.estado;
 
+// Tablas, funciones y política que agrega 01e_sync_relay (7 en total).
+const objetosRelay = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'sync.' || relname AS o FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'sync' AND relname IN ('relay_cursor', 'evento_procesado', 'evento_fallido')
+       UNION ALL SELECT 'sync.' || proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'sync' AND proname IN ('read_events', 'read_events_ventana', 'validar_lectura_relay')
+       UNION ALL SELECT policyname FROM pg_policies WHERE schemaname = 'sync' AND policyname = 'outbox_relay_lectura'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
 const triggersSuscripcion = async () =>
   (
     await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
@@ -137,6 +153,13 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01e_sync_relay deja sync como lo dejó 01e_sync_outbox (con datos) y se puede reaplicar.
+    // Va primero: evento_fallido referencia seg.usuario.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01e_sync_relay.sql'), 'utf8'));
+    expect(await objetosRelay()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01e_sync_relay.sql'), 'utf8'));
+    expect(await objetosRelay()).toHaveLength(7);
 
     // El inverso de 01d_seq borra seq (con datos) y se puede reaplicar. Va primero: seq depende de org y seg.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01d_seq.sql'), 'utf8'));

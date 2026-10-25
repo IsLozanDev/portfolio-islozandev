@@ -36,6 +36,9 @@
       "@vitrina/plataforma/correlativos": [
         "./libs/plataforma/correlativos/src/index.ts"
       ],
+      "@vitrina/plataforma/eventos": [
+        "./libs/plataforma/eventos/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

@@ -14,6 +14,10 @@ const esquema = z.object({
   // Página de aceptación de invitaciones (spec 14); recibe ?token=.
   SEG_URL_INVITACION: z.url({ protocol: /^https?$/ }),
   SEG_INVITACION_HORAS: z.coerce.number().int().positive().default(72),
+  // Reproceso de fallidos (spec 11): la misma política de reintentos que el worker.
+  EVT_INTENTOS: z.coerce.number().int().positive().default(8),
+  EVT_BACKOFF_MS: z.coerce.number().int().positive().default(5000),
+  EVT_BACKOFF_MAX_MS: z.coerce.number().int().positive().default(600_000),
 });
 
 export type Config = z.infer<typeof esquema>;
