@@ -57,5 +57,38 @@ export const DefinicionAplicadaEntidad = new EntitySchema<FilaDefinicionAplicada
   },
 });
 
+export interface FilaValor {
+  id: string;
+  tenantId: string;
+  codigo: string;
+  alcance: AlcanceParametro;
+  empresaId: string | null;
+  sucursalId: string | null;
+  valor: ValorJson;
+  /** bigint: node-pg lo devuelve como string. */
+  version: string;
+  modificadoPor: string;
+  modificadoEn: Date;
+}
+
+export const ParametroValorEntidad = new EntitySchema<FilaValor>({
+  name: 'ParametroValor',
+  schema: 'cfg',
+  tableName: 'parametro_valor',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    codigo: { type: 'varchar', length: 80 },
+    alcance: { type: 'varchar', length: 8 },
+    empresaId: { name: 'empresa_id', type: 'uuid', nullable: true },
+    sucursalId: { name: 'sucursal_id', type: 'uuid', nullable: true },
+    valor: { type: 'jsonb' },
+    // Bloqueo optimista propio (WHERE version = previa): la versión la lleva el agregado, no TypeORM.
+    version: { type: 'bigint' },
+    modificadoPor: { name: 'modificado_por', type: 'uuid' },
+    modificadoEn: { name: 'modificado_en', type: 'timestamptz' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (CLI y apps/api). */
-export const ENTIDADES_CFG = [ParametroDefEntidad, DefinicionAplicadaEntidad];
+export const ENTIDADES_CFG = [ParametroDefEntidad, DefinicionAplicadaEntidad, ParametroValorEntidad];

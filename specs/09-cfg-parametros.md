@@ -246,7 +246,7 @@ CacheParametros         { leer(clave); guardar(clave, valor, ttlSeg) }
 ValidadorEsquema        { soporta(esquema): string[]; validar(esquema, valor): string | null }
 ```
 
-- `AlcanceActor` (de `seguridad`): `cubre(usuarioId, destino: AmbitoValor, hoy): Promise<boolean>`. Propietario pasa; alcance `TENANT` cubre todo; `EMPRESA` cubre esa empresa y sus sucursales; `SUCURSAL` solo esa sucursal.
+- `AlcanceActor` (de `seguridad`): `cubre(usuarioId, destino: DestinoAlcance, ahora: Date): Promise<boolean>`. `DestinoAlcance` tiene la misma forma que `AmbitoValor`. Propietario pasa; alcance `TENANT` cubre todo; `EMPRESA` cubre esa empresa y sus sucursales; `SUCURSAL` solo esa sucursal.
 - `CacheParametros` en `infrastructure/redis/cache-parametros.redis.ts` y una versión en memoria para pruebas.
 
 ### Casos de uso: puntos no obvios
@@ -470,6 +470,11 @@ Sin variables nuevas. `ParametrosModule.register({ dataSource, redisUrl })` crea
 - **Sí:** `cfg.parametro_def` y `cfg.definiciones_aplicadas` sin RLS, como el catálogo de seg. Decisión del usuario al implementar el paso 1: el texto original pedía RLS de solo lectura «igual que seg», pero seg no la tiene.
 - **Sí:** cambiar el `tipo` de una definición existente se rechaza con `DefinicionInvalidaError` y no se escribe nada. Decisión del usuario al implementar el paso 4: los valores guardados dejarían de cumplir el tipo; un tipo nuevo es un código nuevo.
 - **Sí:** `RepositorioDefiniciones` como `transaccion(sesion => { todasDe, aplicar })`, igual que `RepositorioManifiestos`. Corre con la conexión de migración; `buscar` va al puerto de lectura de la aplicación (paso 6).
+- **Sí:** repositorios con TypeORM (`EntitySchema` en `infrastructure/typeorm/entidades.ts`, `Repository` y `QueryBuilder`) en lugar de SQL a mano. Decisión del usuario al implementar el paso 4; aplica desde ese paso (`definiciones.repositorio.ts` se reescribió). SQL a mano solo para las funciones `cfg.valor` y `cfg.versiones`. Las entidades se registran en el `DataSource` con `ENTIDADES_CFG`; el esquema sigue saliendo de `db/` (sin `synchronize`).
+- **Sí:** al fallar la caché, `ResolverParametro` lee la definición (PK) antes de `cfg.valor`, y la entrada de caché guarda `obsoleto`. Al implementar el paso 7: así el aviso de obsoleto sale también con acierto de caché, y un código inexistente no llega a `cfg.valor`.
+- **Sí:** `seg` exporta `crearClienteRedis` y cfg lo reutiliza (mismo cliente sin cola offline, un intento y timeouts cortos). Al implementar el paso 7, para no duplicarlo.
+- **Sí:** un archivo por adaptador (`valores.repositorio.ts`, `lectura-definiciones.typeorm.ts`, `resolucion-sql.typeorm.ts`) y mapeo explícito entidad ↔ agregado en `mapeo.ts` (regla 11 y código limpio). Al implementar los pasos 6 y 7.
+- **Sí:** `AlcanceActor.cubre` recibe `ahora: Date` y no `hoy`. Al implementar el paso 5: la fecha local (zona de Lima) la calcula seg con su `fechaLocal`; cfg no conoce esa convención.
 - **Sí:** prueba de humo en dev con migración y manifiesto. Decisión del usuario.
 
 ## Riesgos

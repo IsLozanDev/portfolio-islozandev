@@ -92,3 +92,4 @@ export { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMem
 export { ALCANCE_ACTOR, type AlcanceActor, type DestinoAlcance } from './application/ports/alcance-actor.port.js';
 export { AlcanceActorSeg } from './application/alcance-actor.js';
 export { ConfirmacionRequeridaError } from './domain/errores.js';
+export { crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';

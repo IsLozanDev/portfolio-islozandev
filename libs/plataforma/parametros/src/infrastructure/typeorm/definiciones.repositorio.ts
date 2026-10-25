@@ -1,7 +1,8 @@
 import { In, type DataSource, type EntityManager, type Repository } from 'typeorm';
 import type { CambiosDefiniciones, RepositorioDefiniciones, ResumenDefiniciones, SesionDefiniciones } from '../../application/ports/repositorios.js';
-import { DefinicionParametro } from '../../domain/definicion-parametro.js';
+import type { DefinicionParametro } from '../../domain/definicion-parametro.js';
 import { DefinicionAplicadaEntidad, ParametroDefEntidad, type FilaDefinicion, type ValorJson } from './entidades.js';
+import { definicionDesdeFila } from './mapeo.js';
 
 /** Corre con la conexión de migración (dueña de las tablas): cfg.parametro_def es global. */
 export class DefinicionesRepositorioTypeOrm implements RepositorioDefiniciones {
@@ -21,7 +22,7 @@ class SesionDefinicionesTypeOrm implements SesionDefiniciones {
 
   async todasDe(productoCodigo: string): Promise<DefinicionParametro[]> {
     const filas = await this.definiciones.find({ where: { productoCodigo } });
-    return filas.map((fila) => DefinicionParametro.reconstituir(fila));
+    return filas.map(definicionDesdeFila);
   }
 
   async aplicar(productoCodigo: string, cambios: CambiosDefiniciones, resumen: ResumenDefiniciones): Promise<void> {

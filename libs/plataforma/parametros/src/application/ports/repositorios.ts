@@ -1,4 +1,46 @@
 import type { DefinicionParametro } from '../../domain/definicion-parametro.js';
+import type { AmbitoValor, OrigenValor } from '../../domain/tipos.js';
+import type { ValorParametro } from '../../domain/valor-parametro.js';
+
+/** Lectura de definiciones dentro de la UnitOfWork de la aplicación (incluye obsoletas). */
+export interface LecturaDefiniciones {
+  buscar(codigo: string): Promise<DefinicionParametro | null>;
+}
+
+/** Valores del tenant del contexto. Bloqueo optimista por `version`: un cambio concurrente da ConflictError. */
+export interface RepositorioValores {
+  buscar(codigo: string, ambito: AmbitoValor): Promise<ValorParametro | null>;
+  guardar(valor: ValorParametro): Promise<void>;
+  eliminar(valor: ValorParametro): Promise<void>;
+}
+
+export interface ValorEfectivo {
+  valor: unknown;
+  origen: OrigenValor;
+}
+
+/** vt sube con cada valor del tenant; vd, con cada registro de definiciones. Van en la clave de caché. */
+export interface VersionesParametros {
+  vt: number;
+  vd: number;
+}
+
+/** Resolución con las funciones cfg.valor (TR-RN-014) y cfg.versiones. */
+export interface ResolucionSql {
+  /** null si el código no existe. */
+  valor(codigo: string, tenantId: string, empresaId: string | null, sucursalId: string | null): Promise<ValorEfectivo | null>;
+  versiones(tenantId: string): Promise<VersionesParametros>;
+}
+
+/** Lo que se guarda en caché: el efectivo y si la definición está obsoleta (para avisar en cada acierto). */
+export interface ValorEnCache extends ValorEfectivo {
+  obsoleto: boolean;
+}
+
+export interface CacheParametros {
+  leer(clave: string): Promise<ValorEnCache | null>;
+  guardar(clave: string, valor: ValorEnCache, ttlSegundos: number): Promise<void>;
+}
 
 export interface ResumenDefiniciones {
   insertadas: number;
