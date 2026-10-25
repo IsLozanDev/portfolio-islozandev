@@ -1,6 +1,6 @@
 import { ConflictError, type TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
-import { IsNull, QueryFailedError, type Repository } from 'typeorm';
+import { IsNull, QueryFailedError, type FindOptionsWhere, type Repository } from 'typeorm';
 import type { RepositorioValores } from '../../application/ports/repositorios.js';
 import type { AmbitoValor } from '../../domain/tipos.js';
 import type { ValorParametro } from '../../domain/valor-parametro.js';
@@ -68,7 +68,7 @@ export class ValoresRepositorioTypeOrm implements RepositorioValores {
     }
   }
 
-  private criterioVersionado(valorParametro: ValorParametro, versionLeida: number) {
+  private criterioVersionado(valorParametro: ValorParametro, versionLeida: number): FindOptionsWhere<FilaValor> {
     return { id: valorParametro.id, tenantId: this.tenantId(), version: String(versionLeida) };
   }
 

@@ -1,6 +1,6 @@
 import { CodigoParametro } from './codigo-parametro.js';
 import { AlcanceNoPermitidoError, DefinicionInvalidaError, ValorInvalidoError } from './errores.js';
-import { igualJson } from './json.js';
+import { esObjeto, igualJson } from './json.js';
 import { ALCANCES_PARAMETRO, RANGO_ALCANCE, TIPOS_PARAMETRO, type AlcanceParametro, type TipoParametro } from './tipos.js';
 import type { ValidadorEsquema } from './validador-esquema.js';
 
@@ -17,6 +17,9 @@ export interface DatosDefinicion {
 export interface DefinicionProps extends DatosDefinicion {
   obsoleto: boolean;
 }
+
+const LONGITUD_MINIMA_DESCRIPCION = 3;
+const LONGITUD_MAXIMA_DESCRIPCION = 250;
 
 const CUMPLE_TIPO: Record<TipoParametro, (valor: unknown) => boolean> = {
   TEXTO: (valor) => typeof valor === 'string',
@@ -42,7 +45,9 @@ export class DefinicionParametro {
 
     anotar('codigo', () => CodigoParametro.de(datos.codigo, datos.productoCodigo));
     const descripcion = typeof datos.descripcion === 'string' ? datos.descripcion.trim() : '';
-    if (descripcion.length < 3 || descripcion.length > 250) detalles.push('descripcion: debe tener entre 3 y 250 caracteres');
+    if (descripcion.length < LONGITUD_MINIMA_DESCRIPCION || descripcion.length > LONGITUD_MAXIMA_DESCRIPCION) {
+      detalles.push(`descripcion: debe tener entre ${LONGITUD_MINIMA_DESCRIPCION} y ${LONGITUD_MAXIMA_DESCRIPCION} caracteres`);
+    }
     const tipoValido = TIPOS_PARAMETRO.includes(datos.tipo);
     if (!tipoValido) detalles.push(`tipo: debe ser uno de ${TIPOS_PARAMETRO.join(', ')}`);
     if (!ALCANCES_PARAMETRO.includes(datos.alcanceMaximo)) detalles.push(`alcance_maximo: debe ser uno de ${ALCANCES_PARAMETRO.join(', ')}`);
@@ -50,7 +55,7 @@ export class DefinicionParametro {
     const esquema = datos.esquema ?? null;
     let esquemaValido = true;
     if (esquema !== null) {
-      const problemas = typeof esquema === 'object' && !Array.isArray(esquema) ? esquemas.soporta(esquema) : ['debe ser un objeto'];
+      const problemas = esObjeto(esquema) ? esquemas.soporta(esquema) : ['debe ser un objeto'];
       esquemaValido = problemas.length === 0;
       for (const problema of problemas) detalles.push(`esquema: ${problema}`);
     }
@@ -106,9 +111,14 @@ export class DefinicionParametro {
     if (error !== null) throw new ValorInvalidoError(error);
   }
 
+  /** false si el alcance es más específico que el máximo (p. ej. tras bajar el máximo en el manifiesto). */
+  permiteAlcance(alcance: AlcanceParametro): boolean {
+    return RANGO_ALCANCE[alcance] >= RANGO_ALCANCE[this.props.alcanceMaximo];
+  }
+
   /** TR-RN-014: no se admite un valor en un alcance más específico que el máximo. */
   admite(alcance: AlcanceParametro): void {
-    if (RANGO_ALCANCE[alcance] < RANGO_ALCANCE[this.props.alcanceMaximo]) throw new AlcanceNoPermitidoError(this.props.alcanceMaximo);
+    if (!this.permiteAlcance(alcance)) throw new AlcanceNoPermitidoError(this.props.alcanceMaximo);
   }
 
   /** Campos que el manifiesto puede cambiar en una definición existente. */

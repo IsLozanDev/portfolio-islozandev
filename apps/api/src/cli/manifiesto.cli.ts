@@ -13,6 +13,8 @@ import {
 } from '@vitrina/plataforma/parametros';
 import { AplicarManifiesto, ManifiestoRepositorioTypeOrm, type RepositorioManifiestos } from '@vitrina/plataforma/seguridad';
 
+const SIN_CAMBIOS_PARAMETROS: ResumenDefiniciones = { insertadas: 0, actualizadas: 0, obsoletas: 0, reactivadas: 0 };
+
 export interface Salida {
   log(mensaje: string): void;
   error(mensaje: string): void;
@@ -66,7 +68,7 @@ export async function aplicarManifiestoCli(args: readonly string[], env: NodeJS.
     if (entrada) registrar.validar(entrada);
     const resultado = await new AplicarManifiesto(repositorio).ejecutar(json);
     // Transacción propia después de seg (cfg.parametro_def apunta a seg.producto). Repetir el CLI completa.
-    const parametros: ResumenDefiniciones = entrada ? await registrar.ejecutar(entrada) : { insertadas: 0, actualizadas: 0, obsoletas: 0, reactivadas: 0 };
+    const parametros = entrada ? await registrar.ejecutar(entrada) : SIN_CAMBIOS_PARAMETROS;
     salida.log(JSON.stringify({ ...resultado, parametros }));
     return 0;
   } catch (error) {

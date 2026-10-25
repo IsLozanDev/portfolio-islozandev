@@ -1,6 +1,7 @@
 import { EntitySchema } from 'typeorm';
 import type { AlcanceParametro, TipoParametro } from '../../domain/tipos.js';
 import type { ResumenDefiniciones } from '../../application/ports/repositorios.js';
+import { EmpresaNombreEntidad, SucursalNombreEntidad } from './entidades-org.js';
 
 // Mapeo ORM de las tablas de cfg. El esquema lo definen las migraciones de db/ (sin synchronize):
 // aquí solo se describe lo que ya existe.
@@ -91,4 +92,4 @@ export const ParametroValorEntidad = new EntitySchema<FilaValor>({
 });
 
 /** Se registran en el DataSource de quien use la lib (CLI y apps/api). */
-export const ENTIDADES_CFG = [ParametroDefEntidad, DefinicionAplicadaEntidad, ParametroValorEntidad];
+export const ENTIDADES_CFG = [ParametroDefEntidad, DefinicionAplicadaEntidad, ParametroValorEntidad, EmpresaNombreEntidad, SucursalNombreEntidad];

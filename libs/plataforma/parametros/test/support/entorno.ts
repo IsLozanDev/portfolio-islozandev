@@ -25,6 +25,7 @@ export interface Organizacion {
 export interface EntornoValores {
   dataSource: DataSource;
   contexto: AlsTenantContext;
+  unidadDeTrabajo: TypeOrmUnitOfWork;
   dependencias: DependenciasValores;
   /** El actor cubre todo salvo lo que diga `negar` (AlcanceActorSeg se prueba en seguridad). */
   negar: { alcances: Set<string> };
@@ -62,6 +63,7 @@ export async function crearEntornoValores(): Promise<EntornoValores> {
   return {
     dataSource,
     contexto,
+    unidadDeTrabajo,
     dependencias,
     negar,
     en: (tenantId, trabajo) => contexto.run({ tenantId }, trabajo),

@@ -1,5 +1,6 @@
 import type { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { EVENTOS_CFG } from '../domain/eventos.js';
+import { ALCANCES_PARAMETRO } from '../domain/tipos.js';
 
 // Ajv en modo estricto: sin `format` ni uniones de tipos en `type` (mismo criterio que org y seg).
 const texto = { type: 'string' };
@@ -20,7 +21,7 @@ const objeto = (properties: Record<string, object>) => ({
 export const ESQUEMAS_CFG: Readonly<Record<string, object>> = {
   [EVENTOS_CFG.parametroCambiado]: objeto({
     codigo: texto,
-    alcance: { enum: ['TENANT', 'EMPRESA', 'SUCURSAL'] },
+    alcance: { enum: [...ALCANCES_PARAMETRO] },
     empresa_id: uuidNulo,
     sucursal_id: uuidNulo,
     valor_anterior: cualquierJson,

@@ -7,6 +7,7 @@ import type { CacheParametros, LecturaDefiniciones, ResolucionSql, ValorEnCache,
 /** Respaldo: la invalidación normal es por versión en la clave, al commit (TR-RNF-101). */
 export const TTL_PARAMETROS_SEGUNDOS = 60;
 const SIN_NIVEL = '-';
+export const EVENTO_ERROR_CACHE = 'cfg.redis.error';
 
 export type Aviso = (mensaje: string, datos: Record<string, unknown>) => void;
 
@@ -48,10 +49,10 @@ export class ResolverParametro implements ParametroPort {
 
   /** Sin empresa ni sucursal explícitas, la sucursal del contexto (X-Sucursal-Id) si existe. */
   private consultaDesde(codigo: string, contexto: ContextoParametro): ConsultaParametro {
-    const alcance = this.contexto.current();
+    const contextoTenant = this.contexto.current();
     const empresaId = contexto.empresaId ?? null;
-    const sucursalId = contexto.sucursalId ?? (empresaId === null ? (alcance.branchId ?? null) : null);
-    return { tenantId: alcance.tenantId, codigo, empresaId, sucursalId };
+    const sucursalId = contexto.sucursalId ?? (empresaId === null ? (contextoTenant.branchId ?? null) : null);
+    return { tenantId: contextoTenant.tenantId, codigo, empresaId, sucursalId };
   }
 
   private async resolverYGuardar(consulta: ConsultaParametro, clave: string): Promise<ValorEnCache> {
@@ -67,7 +68,7 @@ export class ResolverParametro implements ParametroPort {
     try {
       return await this.cache.leer(clave);
     } catch (error) {
-      this.aviso('Caché de parámetros no disponible; se resuelve desde la base', { evento: 'cfg.redis.error', error: nombreError(error) });
+      this.aviso('Caché de parámetros no disponible; se resuelve desde la base', { evento: EVENTO_ERROR_CACHE, error: nombreError(error) });
       return null;
     }
   }
@@ -76,10 +77,12 @@ export class ResolverParametro implements ParametroPort {
     try {
       await this.cache.guardar(clave, valor, TTL_PARAMETROS_SEGUNDOS);
     } catch (error) {
-      this.aviso('No se pudo guardar en la caché de parámetros', { evento: 'cfg.redis.error', error: nombreError(error) });
+      this.aviso('No se pudo guardar en la caché de parámetros', { evento: EVENTO_ERROR_CACHE, error: nombreError(error) });
     }
   }
 }
 
 // Solo el nombre: el mensaje de un error de conexión puede traer la URL con la clave (RNF-026).
-const nombreError = (error: unknown) => (error instanceof Error ? error.name : typeof error);
+function nombreError(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}

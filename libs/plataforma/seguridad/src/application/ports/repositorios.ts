@@ -33,6 +33,9 @@ export interface CatalogoPermisos {
 }
 
 /** Productos con suscripción PRUEBA o ACTIVA vigente del tenant del contexto (TR-RN-006). */
+export const PRODUCTOS_CONTRATADOS = Symbol('ProductosContratados');
+
+/** Productos con suscripción PRUEBA o ACTIVA vigente del tenant del contexto. También lo usa cfg (spec 09). */
 export interface ProductosContratados {
   vigentes(): Promise<string[]>;
 }

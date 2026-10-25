@@ -1,6 +1,6 @@
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import type { ValidadorEsquema } from '../../domain/validador-esquema.js';
-import { jsonCanonico } from '../../domain/json.js';
+import { esObjeto, jsonCanonico } from '../../domain/json.js';
 
 /** Subconjunto de JSON Schema que admite una definición (TR-RN-015). Otra palabra clave la rechaza. */
 const PERMITIDAS = new Set(['minimum', 'maximum', 'enum', 'pattern', 'minLength', 'maxLength', 'type', 'properties', 'required', 'items']);
@@ -55,8 +55,6 @@ function noSoportadas(esquema: Esquema, ruta: string): string[] {
   }
   return fuera;
 }
-
-const esObjeto = (valor: unknown): valor is Esquema => valor !== null && typeof valor === 'object' && !Array.isArray(valor);
 
 function mensaje(error: ErrorObject | undefined): string {
   const padre = (error?.parentSchema ?? {}) as Esquema;

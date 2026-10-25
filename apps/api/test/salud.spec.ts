@@ -8,6 +8,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { RegistrarEmpresa } from '@vitrina/plataforma/org';
+import { PARAMETRO_PORT } from '@vitrina/plataforma/parametros';
 import { REGISTRO_ACCESO } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
 import { configurarApp } from '../src/app.setup.js';
@@ -122,6 +123,27 @@ describe('api', () => {
 
   it('OrgModule queda cableado: los casos de uso de org se resuelven', () => {
     expect(app.get(RegistrarEmpresa)).toBeInstanceOf(RegistrarEmpresa);
+  });
+
+  it('GET /v1/docs-json publica las 4 rutas de parámetros (spec 09) con bearer auth', async () => {
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    for (const [ruta, metodo] of [
+      ['/v1/cfg/parametros', 'get'],
+      ['/v1/cfg/parametros/{codigo}', 'get'],
+      ['/v1/cfg/parametros/{codigo}/valores', 'put'],
+      ['/v1/cfg/parametros/{codigo}/valores', 'delete'],
+    ]) {
+      expect(paths[ruta]?.[metodo]?.security).toEqual([{ bearer: [] }]);
+    }
+  });
+
+  it('ParametrosModule queda cableado: ParametroPort se resuelve con el AlcanceActor global de seg', () => {
+    expect(app.get(PARAMETRO_PORT)).toBeInstanceOf(Object);
+    expect(typeof app.get(PARAMETRO_PORT).valor).toBe('function');
+  });
+
+  it('GET /v1/cfg/parametros sin token responde 401', async () => {
+    expect((await request(app.getHttpServer()).get('/v1/cfg/parametros')).status).toBe(401);
   });
 
   it('cargarConfig rechaza un PORT inválido', () => {

@@ -16,7 +16,7 @@ import { ResolverPermisos } from './application/resolver-permisos.js';
 import { CachePermisosRedis, crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';
 import { PermisosSqlRepositorio } from './infrastructure/typeorm/permisos.sql.repositorio.js';
 import { BitacoraSeguridadTypeOrm } from './infrastructure/typeorm/asignacion.repositorio.js';
-import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm } from './infrastructure/typeorm/lecturas.js';
+import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm, ProductosContratadosTypeOrm } from './infrastructure/typeorm/lecturas.js';
 import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia-sucursal.repositorio.js';
 import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
 import { PermisoGuard } from './interface/permiso.guard.js';
@@ -35,6 +35,7 @@ import { MembresiasController } from './interface/membresias.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
+import { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 
@@ -107,6 +108,8 @@ export class SeguridadModule {
     const inv = op.invitaciones;
     return {
       module: SeguridadModule,
+      // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
+      global: true,
       controllers: [MiContextoController, InvitacionesController, MembresiasController],
       providers: [
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
@@ -139,6 +142,11 @@ export class SeguridadModule {
         },
         // Para cfg y los demás componentes que dependen de seg (spec 09).
         { provide: ALCANCE_ACTOR, useFactory: (repositorios: ReposMembresias): AlcanceActor => new AlcanceActorSeg(repositorios), inject: [REPOS_MEMBRESIAS] },
+        {
+          provide: PRODUCTOS_CONTRATADOS,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): ProductosContratados => new ProductosContratadosTypeOrm(unidadDeTrabajo, contexto),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
         ciclo(SuspenderMembresia),
         ciclo(ReactivarMembresia),
         ciclo(FinalizarMembresia),
@@ -195,7 +203,7 @@ export class SeguridadModule {
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS],
     };
   }
 }

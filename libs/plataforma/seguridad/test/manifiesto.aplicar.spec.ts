@@ -45,8 +45,9 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
 
     const primera = await aplicar.ejecutar(plat);
-    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.1.0', yaAplicado: false });
-    expect(primera.cambios.permisos.insertados).toBe(8);
+    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.2.0', yaAplicado: false });
+    // 8 de seg más 3 de cfg (spec 09).
+    expect(primera.cambios.permisos.insertados).toBe(11);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);
@@ -58,9 +59,11 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.usuario.invitar'")).toEqual({ sensible: false });
   });
 
-  it('PERMISOS_SEG son exactamente los permisos del manifiesto PLAT', async () => {
+  // Los plat.parametro.* son de cfg: los verifica PERMISOS_CFG en libs/plataforma/parametros.
+  it('PERMISOS_SEG son exactamente los permisos de seg del manifiesto PLAT', async () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
-    expect(plat.permisos.map((p: { codigo: string }) => p.codigo).sort()).toEqual(Object.values(PERMISOS_SEG).sort());
+    const deSeg = plat.permisos.map((p: { codigo: string }) => p.codigo).filter((codigo: string) => !codigo.startsWith('plat.parametro.'));
+    expect(deSeg.sort()).toEqual(Object.values(PERMISOS_SEG).sort());
   });
 
   it('TR-CA-022: con REST en 1.4.0, aplicar 1.5.0 registra rest.propina.configurar y la versión 1.5.0', async () => {

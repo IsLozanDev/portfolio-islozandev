@@ -27,7 +27,7 @@ export class FijarValor {
 
   ejecutar(comando: FijarValorComando): Promise<ValorFijado> {
     const ambito = ambitoValor(comando.alcance, comando.empresaId ?? null, comando.sucursalId ?? null);
-    const { unidadDeTrabajo, definiciones, esquemas, alcanceActor, reloj } = this.dependencias;
+    const { unidadDeTrabajo, definiciones, esquemas, alcanceActor, reloj, valores, eventos } = this.dependencias;
 
     return unidadDeTrabajo.run(async () => {
       const definicion = await exigirDefinicion(definiciones, comando.codigo);
@@ -37,13 +37,13 @@ export class FijarValor {
       const ahora = reloj.now();
       await exigirAlcance(alcanceActor, comando.actorId, ambito, ahora);
 
-      const existente = await this.dependencias.valores.buscar(comando.codigo, ambito);
-      if (existente && !existente.cambiar(comando.valor, comando.actorId, ahora)) return respuesta(existente, false);
+      const existente = await valores.buscar(comando.codigo, ambito);
+      if (existente && !existente.cambiar(comando.valor, comando.actorId, ahora)) return valorFijado(existente, false);
 
       const valorParametro = existente ?? this.crear(comando, ambito, ahora);
-      await this.dependencias.valores.guardar(valorParametro);
-      await publicarEventos(this.dependencias.eventos, valorParametro);
-      return respuesta(valorParametro, true);
+      await valores.guardar(valorParametro);
+      await publicarEventos(eventos, valorParametro);
+      return valorFijado(valorParametro, true);
     });
   }
 
@@ -60,6 +60,6 @@ export class FijarValor {
   }
 }
 
-function respuesta(valorParametro: ValorParametro, cambiado: boolean): ValorFijado {
+function valorFijado(valorParametro: ValorParametro, cambiado: boolean): ValorFijado {
   return { ...valorParametro.ambito, valor: valorParametro.valor, modificadoEn: valorParametro.modificadoEn, cambiado };
 }

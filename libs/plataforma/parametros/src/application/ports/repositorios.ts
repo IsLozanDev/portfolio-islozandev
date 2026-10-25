@@ -2,9 +2,35 @@ import type { DefinicionParametro } from '../../domain/definicion-parametro.js';
 import type { AmbitoValor, OrigenValor } from '../../domain/tipos.js';
 import type { ValorParametro } from '../../domain/valor-parametro.js';
 
-/** Lectura de definiciones dentro de la UnitOfWork de la aplicación (incluye obsoletas). */
+export interface FiltroDefiniciones {
+  /** Productos visibles para el tenant (PLAT y los contratados). */
+  productos: readonly string[];
+  /** Busca en código y descripción, sin distinguir mayúsculas. */
+  texto?: string;
+  incluirObsoletas: boolean;
+}
+
+/** Lectura de una definición dentro de la UnitOfWork de la aplicación (incluye obsoletas). */
 export interface LecturaDefiniciones {
   buscar(codigo: string): Promise<DefinicionParametro | null>;
+}
+
+export interface BusquedaDefiniciones {
+  /** Ordenadas por código. */
+  listar(filtro: FiltroDefiniciones): Promise<DefinicionParametro[]>;
+}
+
+/** Un valor configurado del tenant, con el nombre de su empresa o sucursal (null en el nivel tenant). */
+export interface NivelValor extends AmbitoValor {
+  entidadNombre: string | null;
+  valor: unknown;
+  modificadoPor: string;
+  modificadoEn: Date;
+}
+
+export interface LecturaNiveles {
+  /** Tenant, luego empresas y sucursales por nombre. */
+  deCodigo(codigo: string): Promise<NivelValor[]>;
 }
 
 /** Valores del tenant del contexto. Bloqueo optimista por `version`: un cambio concurrente da ConflictError. */

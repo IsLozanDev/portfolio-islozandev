@@ -474,6 +474,12 @@ Sin variables nuevas. `ParametrosModule.register({ dataSource, redisUrl })` crea
 - **Sí:** al fallar la caché, `ResolverParametro` lee la definición (PK) antes de `cfg.valor`, y la entrada de caché guarda `obsoleto`. Al implementar el paso 7: así el aviso de obsoleto sale también con acierto de caché, y un código inexistente no llega a `cfg.valor`.
 - **Sí:** `seg` exporta `crearClienteRedis` y cfg lo reutiliza (mismo cliente sin cola offline, un intento y timeouts cortos). Al implementar el paso 7, para no duplicarlo.
 - **Sí:** un archivo por adaptador (`valores.repositorio.ts`, `lectura-definiciones.typeorm.ts`, `resolucion-sql.typeorm.ts`) y mapeo explícito entidad ↔ agregado en `mapeo.ts` (regla 11 y código limpio). Al implementar los pasos 6 y 7.
+- **Sí:** `SeguridadModule` pasa a `global: true` (como `KernelInfraModule`) y exporta `ALCANCE_ACTOR` y `PRODUCTOS_CONTRATADOS`. Al implementar el paso 8: `ParametrosModule` (y luego SEQ y CAT) inyectan los puertos de seg sin volver a registrarlo.
+- **Sí:** `ListarParametros` usa `ProductosContratados` de seg para mostrar solo `PLAT` y lo contratado. Al implementar el paso 8; no se duplica la consulta a `org.suscripcion`.
+- **Sí:** `BusquedaDefiniciones` (listar) separado de `LecturaDefiniciones` (buscar). Al implementar el paso 8: los casos de uso que solo buscan no cargan con `listar`.
+- **Sí:** nombres de empresa y sucursal de la tabla de herencia con entidades ORM de solo lectura sobre `org.empresa` y `org.sucursal` (`entidades-org.ts`). Al implementar el paso 8; org sigue siendo dueño de esas tablas.
+- **Sí:** filtro de errores y `validar` propios de cfg en `interface/parametros.http.ts`. Al implementar el paso 8: los de seg son de membresías y no se exportan; no se acopla el HTTP entre componentes.
+- **Sí:** el listado resuelve el efectivo con una llamada a `cfg.valor` por parámetro. Al implementar el paso 8: un producto declara decenas de parámetros, no miles; si llega a pesar, se agrega una función SQL que resuelva varios códigos.
 - **Sí:** `AlcanceActor.cubre` recibe `ahora: Date` y no `hoy`. Al implementar el paso 5: la fecha local (zona de Lima) la calcula seg con su `fechaLocal`; cfg no conoce esa convención.
 - **Sí:** prueba de humo en dev con migración y manifiesto. Decisión del usuario.
 
@@ -486,6 +492,7 @@ Sin variables nuevas. `ParametrosModule.register({ dataSource, redisUrl })` crea
 | Un consumidor guarda el valor y no vuelve a resolver | `ParametroPort` es la única vía (TR-RNF-119); el consumidor llama por operación y la caché responde. |
 | `UNIQUE NULLS NOT DISTINCT` no existe antes de PostgreSQL 15 | CI y Supabase usan 16; la prueba de unicidad lo cubre. |
 | Las palabras clave de Ajv y el subconjunto se desalinean | El adaptador lista las permitidas y rechaza el resto al registrar; API de Ajv consultada con context7 en el paso 3. |
+| Vigencia de asignaciones: `seg.permisos_efectivos` usa `current_date` (UTC) y `AlcanceActor` usa `fechaLocal` (Lima). Una asignación con `vigente_desde` en fecha UTC da permisos pero no alcance de 19:00 a 24:00 de Lima (hallado en el humo del paso 9) | `OtorgarAsignacion` fija la fecha de Lima, así que el flujo normal no lo sufre. Unificar la fecha de vigencia queda para un spec de seg (anotado en `docs/ops/supabase-ambientes.md`). |
 | El admin de sucursal ve en `GET` los valores de otras sucursales del tenant | Solo lectura dentro del mismo tenant; se acepta en R1. Filtrar por alcance del lector entra con la pantalla si se pide. |
 
 ## Lo que **no** está en este spec
