@@ -32,9 +32,11 @@ export interface EntornoSeries {
   cerrar(): Promise<void>;
 }
 
-export async function crearEntornoSeries(): Promise<EntornoSeries> {
+/** `conexiones`: tamaño del pool, para las pruebas de concurrencia (por defecto el de node-pg, 10). */
+export async function crearEntornoSeries(opciones: { conexiones?: number } = {}): Promise<EntornoSeries> {
   const baseTemporal: TempDb = await createTempDb();
-  const dataSource = new DataSource({ type: 'postgres', url: baseTemporal.url, entities: ENTIDADES_SEQ });
+  const extra = opciones.conexiones ? { max: opciones.conexiones } : undefined;
+  const dataSource = new DataSource({ type: 'postgres', url: baseTemporal.url, entities: ENTIDADES_SEQ, extra });
   await dataSource.initialize();
   const contexto = new AlsTenantContext();
   const unidadDeTrabajo = new TypeOrmUnitOfWork(dataSource, contexto);

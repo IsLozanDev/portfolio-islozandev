@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
+import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
@@ -11,13 +12,14 @@ import { cargarConfig } from './config/env.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: ENTIDADES_CFG });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ] });
 await dataSource.initialize();
 
 const validator = new InMemoryEventSchemaValidator();
 registrarEsquemasOrg(validator);
 registrarEsquemasSeg(validator);
 registrarEsquemasCfg(validator);
+registrarEsquemasSeq(validator);
 
 const app = await NestFactory.create(
   AppModule.register({

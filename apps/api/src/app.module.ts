@@ -1,4 +1,5 @@
 import { Module, type DynamicModule } from '@nestjs/common';
+import { CorrelativosModule } from '@vitrina/plataforma/correlativos';
 import { KernelInfraModule, type KernelInfraOptions } from '@vitrina/plataforma/kernel-infra';
 import { OrgModule } from '@vitrina/plataforma/org';
 import { ParametrosModule } from '@vitrina/plataforma/parametros';
@@ -18,6 +19,7 @@ export class AppModule {
         OrgModule,
         SeguridadModule.register({ ...seguridad, dataSource }),
         ParametrosModule.register({ redisUrl: seguridad.redisUrl }),
+        CorrelativosModule.register(),
       ],
       controllers: [SaludController],
     };

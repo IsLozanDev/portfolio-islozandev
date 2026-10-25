@@ -1,6 +1,6 @@
 import { EntitySchema } from 'typeorm';
 import type { Reinicio, TipoDocumento } from '../../domain/tipos.js';
-import { SucursalSerieEntidad, UnidadSerieEntidad } from './entidades-org.js';
+import { EmpresaSerieEntidad, SucursalSerieEntidad, UnidadSerieEntidad } from './entidades-org.js';
 
 // Mapeo ORM de las tablas de seq. El esquema lo definen las migraciones de db/ (sin synchronize):
 // aquí solo se describe lo que ya existe.
@@ -56,4 +56,4 @@ export const SerieEntidad = new EntitySchema<FilaSerie>({
 });
 
 /** Se registran en el DataSource de quien use la lib (apps/api). */
-export const ENTIDADES_SEQ = [SerieEntidad, SucursalSerieEntidad, UnidadSerieEntidad];
+export const ENTIDADES_SEQ = [SerieEntidad, EmpresaSerieEntidad, SucursalSerieEntidad, UnidadSerieEntidad];
