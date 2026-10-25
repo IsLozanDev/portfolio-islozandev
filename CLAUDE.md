@@ -38,6 +38,11 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
 - Cada spec lista en sus criterios de aceptación que el código nuevo sigue esta sección.
 - Antes de cerrar un spec, `/spec-impl` pasa el agente `code-simplifier:code-simplifier` sobre los archivos modificados y se revisa su diff como cualquier otro. Para renombrar y buscar referencias se prefiere la herramienta LSP de TypeScript si está disponible.
 
+## Verificación del frontend (MCP Playwright)
+- Todo spec que toque una app Angular se verifica en el navegador real con el MCP `playwright`, además de las pruebas unitarias.
+- `/spec-impl` lo usa al final de la implementación, con la app levantada (`nx serve`): recorre los criterios GWT de UI del spec, revisa la consola sin errores y toma capturas de las pantallas nuevas o modificadas.
+- Si el MCP no está disponible o la app no levanta, se dice así de claro en el cierre del spec; no se da por verificada la UI.
+
 ## RNF transversales que todo spec hereda
 RNF-001/002/003 (desempeño), 008 (idempotencia), 010 (aislamiento), 011 (cifrado y secretos), 012 (OWASP ASVS 2), 013 y 112 (auditoría inmutable), 024 y 119 (límites de módulos), 025 (cobertura dominio >= 70 %), 026 (logs estructurados sin datos personales), 101 (permisos con caché), 106 (outbox).
 
