@@ -1,6 +1,6 @@
 # SPEC 09 — Parámetros jerárquicos: definiciones, valores por alcance y resolución efectiva
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 03, SPEC 04, SPEC 06
 > **Date:** 2026-10-24
 > **Objective:** Crear `libs/plataforma/parametros` (TR-CFG) con el esquema `cfg`, el registro de definiciones desde el manifiesto, los valores por tenant, empresa y sucursal con restablecer, y `ParametroPort` que resuelve el valor efectivo con su origen y caché Redis versionada, expuesto en `/v1/cfg` con `@Permiso` y OpenAPI.
