@@ -48,6 +48,8 @@ export interface EntornoEntrega {
   suscripciones: SuscripcionesEnMemoria;
   dependencias: DependenciasEntrega;
   entregar: EntregarEvento;
+  /** La misma pila con otras suscripciones. */
+  entregarCon(suscripciones: RegistroSuscripciones): EntregarEvento;
   avisos: { mensaje: string; datos: Record<string, unknown> }[];
   procesados(eventId: string): Promise<string[]>;
   fallidos(eventId: string): Promise<FilaFallido[]>;
@@ -79,7 +81,8 @@ export async function crearEntornoEntrega(): Promise<EntornoEntrega> {
     unidadDeTrabajo,
     suscripciones,
     dependencias,
-    entregar: new EntregarEvento(dependencias, new RegistrarFallo(dependencias)),
+    entregar: entregarCon(dependencias),
+    entregarCon: (otras) => entregarCon({ ...dependencias, suscripciones: otras }),
     avisos,
     procesados: async (eventId) =>
       (await dataSource.query(`SELECT consumidor FROM sync.evento_procesado WHERE event_id = $1 ORDER BY consumidor`, [eventId])).map(
@@ -94,6 +97,10 @@ export async function crearEntornoEntrega(): Promise<EntornoEntrega> {
       await baseTemporal.drop();
     },
   };
+}
+
+function entregarCon(dependencias: DependenciasEntrega): EntregarEvento {
+  return new EntregarEvento(dependencias, new RegistrarFallo(dependencias));
 }
 
 export function citaCreada(cambios: Partial<EventoEntregado> = {}): EventoEntregado {

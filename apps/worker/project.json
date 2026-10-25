@@ -1,0 +1,23 @@
+{
+  "name": "worker",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/worker/src",
+  "projectType": "application",
+  "tags": ["scope:app", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -b apps/worker/tsconfig.json && node apps/worker/esbuild.mjs", "cwd": "{workspaceRoot}" },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/main.js", "cwd": "{workspaceRoot}" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node --experimental-vm-modules node_modules/jest/bin/jest.js -c apps/worker/jest.config.mjs", "cwd": "{workspaceRoot}" }
+    }
+  }
+}

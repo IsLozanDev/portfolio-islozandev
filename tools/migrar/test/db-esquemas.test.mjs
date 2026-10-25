@@ -59,7 +59,8 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
-  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'sync_lector', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
+  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest

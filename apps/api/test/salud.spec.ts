@@ -55,6 +55,7 @@ describe('api', () => {
       redisUrl: 'redis://127.0.0.1:6379',
       jwksUrl: `http://127.0.0.1:${port}/auth/v1/.well-known/jwks.json`,
       invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
+      reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
       .overrideProvider(REGISTRO_ACCESO)

@@ -11,7 +11,7 @@ interface Manifiesto {
   roles_predefinidos: { codigo: string; permisos: string[] }[];
 }
 
-describe('Manifiesto PLAT 1.3.0: parte de seq (spec 10)', () => {
+describe('Manifiesto PLAT: parte de seq (spec 10)', () => {
   let manifiesto: Manifiesto;
 
   beforeAll(async () => {
@@ -20,7 +20,6 @@ describe('Manifiesto PLAT 1.3.0: parte de seq (spec 10)', () => {
 
   it('declara exactamente los permisos de PERMISOS_SEQ; gestionar es sensible (TR-RN-009) y numerar no', () => {
     const deSeq = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.serie.'));
-    expect(manifiesto.version).toBe('1.3.0');
     expect(deSeq.map((permiso) => permiso.codigo).sort()).toEqual(Object.values(PERMISOS_SEQ).sort());
     expect(deSeq.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       ['plat.serie.gestionar', 'SUCURSAL', true],

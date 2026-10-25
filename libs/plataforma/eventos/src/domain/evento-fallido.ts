@@ -1,7 +1,8 @@
 import { EventoNoFallidoError, IntentosInvalidosError } from './errores.js';
 import type { EventoEntregado } from './evento-entregado.js';
 
-export type EstadoFallido = 'FALLIDO' | 'REPROCESANDO' | 'PROCESADO';
+export const ESTADOS_FALLIDO = ['FALLIDO', 'REPROCESANDO', 'PROCESADO'] as const;
+export type EstadoFallido = (typeof ESTADOS_FALLIDO)[number];
 
 /** `sync.evento_fallido.error` es varchar(1000). */
 export const LONGITUD_MAXIMA_ERROR = 1000;

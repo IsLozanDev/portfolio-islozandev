@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "outDir": "dist/tsc", "rootDir": "src", "tsBuildInfoFile": "dist/tsc/tsconfig.tsbuildinfo" },
+  "include": ["src/**/*.ts"],
+  "references": [{ "path": "../../libs/plataforma/kernel" }, { "path": "../../libs/plataforma/kernel-infra" }, { "path": "../../libs/plataforma/eventos" }]
+}

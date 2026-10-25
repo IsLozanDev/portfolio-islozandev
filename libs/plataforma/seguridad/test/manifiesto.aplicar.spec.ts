@@ -45,9 +45,9 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
 
     const primera = await aplicar.ejecutar(plat);
-    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.3.0', yaAplicado: false });
-    // 8 de seg, 3 de cfg (spec 09) y 2 de seq (spec 10).
-    expect(primera.cambios.permisos.insertados).toBe(13);
+    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.4.0', yaAplicado: false });
+    // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10) y 2 de evt (spec 11).
+    expect(primera.cambios.permisos.insertados).toBe(15);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);
@@ -59,10 +59,10 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.usuario.invitar'")).toEqual({ sensible: false });
   });
 
-  // Los plat.parametro.* son de cfg y los plat.serie.* de seq: los verifican PERMISOS_CFG y PERMISOS_SEQ en sus libs.
+  // Los plat.parametro.* son de cfg, los plat.serie.* de seq y los plat.evento.* de evt: los verifican sus libs.
   it('PERMISOS_SEG son exactamente los permisos de seg del manifiesto PLAT', async () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
-    const deSeg = plat.permisos.map((p: { codigo: string }) => p.codigo).filter((codigo: string) => !codigo.startsWith('plat.parametro.') && !codigo.startsWith('plat.serie.'));
+    const deSeg = plat.permisos.map((p: { codigo: string }) => p.codigo).filter((codigo: string) => !codigo.startsWith('plat.parametro.') && !codigo.startsWith('plat.serie.') && !codigo.startsWith('plat.evento.'));
     expect(deSeg.sort()).toEqual(Object.values(PERMISOS_SEG).sort());
   });
 

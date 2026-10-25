@@ -1,7 +1,7 @@
 import { ConflictError, type TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { FindOptionsWhere, Repository } from 'typeorm';
-import type { RepositorioFallidos } from '../../application/ports/repositorios.js';
+import type { FiltroFallidos, RepositorioFallidos } from '../../application/ports/repositorios.js';
 import type { EventoFallido } from '../../domain/evento-fallido.js';
 import { EventoFallidoEntidad, type FilaEventoFallido } from './entidades.js';
 import { fallidoDesdeFila, filaDesdeFallido } from './mapeo.js';
@@ -41,9 +41,20 @@ export class FallidosRepositorioTypeOrm implements RepositorioFallidos {
     this.versionesLeidas.set(fallido, versionNueva);
   }
 
+  async listar({ consumidor, eventType, estado, limite }: FiltroFallidos): Promise<EventoFallido[]> {
+    const criterio: FindOptionsWhere<FilaEventoFallido> = { tenantId: this.tenantId(), estado };
+    if (consumidor) criterio.consumidor = consumidor;
+    if (eventType) criterio.eventType = eventType;
+    const filas = await this.fallidos().find({ where: criterio, order: { fallidoEn: 'DESC' }, take: limite });
+    return filas.map((fila) => this.recordar(fila));
+  }
+
   private async leer(criterio: FindOptionsWhere<FilaEventoFallido>): Promise<EventoFallido | null> {
     const fila = await this.fallidos().findOneBy(criterio);
-    if (!fila) return null;
+    return fila && this.recordar(fila);
+  }
+
+  private recordar(fila: FilaEventoFallido): EventoFallido {
     const fallido = fallidoDesdeFila(fila);
     this.versionesLeidas.set(fallido, fallido.version);
     return fallido;

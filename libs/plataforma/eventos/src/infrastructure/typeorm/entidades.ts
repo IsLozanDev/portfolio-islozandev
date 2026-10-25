@@ -1,4 +1,5 @@
 import { EntitySchema } from 'typeorm';
+import type { OrigenEvento } from '../../domain/evento-entregado.js';
 import type { EstadoFallido } from '../../domain/evento-fallido.js';
 
 // Mapeo ORM de las tablas del relay en sync. El esquema lo definen las migraciones de db/ (sin synchronize).
@@ -64,5 +65,60 @@ export const EventoFallidoEntidad = new EntitySchema<FilaEventoFallido>({
   },
 });
 
+export interface FilaRelayCursor {
+  relay: string;
+  /** bigint: node-pg lo devuelve como string. */
+  ultimoSeq: string;
+  actualizadoEn: Date;
+}
+
+export const RelayCursorEntidad = new EntitySchema<FilaRelayCursor>({
+  name: 'RelayCursor',
+  schema: 'sync',
+  tableName: 'relay_cursor',
+  columns: {
+    relay: { type: 'varchar', length: 40, primary: true },
+    ultimoSeq: { name: 'ultimo_seq', type: 'bigint' },
+    actualizadoEn: { name: 'actualizado_en', type: 'timestamptz' },
+  },
+});
+
+export interface FilaOutbox {
+  eventId: string;
+  /** bigint: node-pg lo devuelve como string. */
+  seq: string;
+  tenantId: string;
+  sedeId: string | null;
+  aggregateType: string;
+  aggregateId: string;
+  eventType: string;
+  version: string;
+  origin: OrigenEvento;
+  payload: unknown;
+  schemaVersion: number;
+  occurredAt: Date;
+}
+
+/** Solo lectura: escribe el outbox `OutboxPublisher` de kernel-infra. */
+export const OutboxEntidad = new EntitySchema<FilaOutbox>({
+  name: 'EventoOutbox',
+  schema: 'sync',
+  tableName: 'outbox',
+  columns: {
+    eventId: { name: 'event_id', type: 'uuid', primary: true },
+    seq: { type: 'bigint', insert: false, update: false },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    sedeId: { name: 'sede_id', type: 'uuid', nullable: true },
+    aggregateType: { name: 'aggregate_type', type: 'text' },
+    aggregateId: { name: 'aggregate_id', type: 'uuid' },
+    eventType: { name: 'event_type', type: 'text' },
+    version: { type: 'bigint' },
+    origin: { type: 'text' },
+    payload: { type: 'jsonb' },
+    schemaVersion: { name: 'schema_version', type: 'smallint' },
+    occurredAt: { name: 'occurred_at', type: 'timestamptz' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (apps/api y apps/worker). */
-export const ENTIDADES_EVT = [EventoProcesadoEntidad, EventoFallidoEntidad];
+export const ENTIDADES_EVT = [EventoProcesadoEntidad, EventoFallidoEntidad, RelayCursorEntidad, OutboxEntidad];

@@ -1,5 +1,6 @@
+import type { EventoEntregado } from '../../domain/evento-entregado.js';
 import { EventoFallido } from '../../domain/evento-fallido.js';
-import type { FilaEventoFallido } from './entidades.js';
+import type { FilaEventoFallido, FilaOutbox } from './entidades.js';
 
 // Las entidades ORM no son los agregados: el paso de una a otro va aquí, campo por campo.
 
@@ -37,4 +38,8 @@ export function filaDesdeFallido(fallido: EventoFallido, version: number): FilaE
     reprocesadoEn: fallido.reprocesadoEn,
     version: String(version),
   };
+}
+
+export function eventoDesdeOutbox(fila: FilaOutbox): EventoEntregado {
+  return { ...fila, occurredAt: fila.occurredAt.toISOString() };
 }

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
+import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
@@ -12,7 +13,7 @@ import { cargarConfig } from './config/env.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ] });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT] });
 await dataSource.initialize();
 
 const validator = new InMemoryEventSchemaValidator();
@@ -29,6 +30,7 @@ const app = await NestFactory.create(
     mfaMaxEdadSeg: config.SEG_MFA_MAX_EDAD_SEG,
     redisUrl: config.REDIS_URL,
     invitaciones: { supabaseSecretKey: config.SUPABASE_SECRET_KEY, url: config.SEG_URL_INVITACION, horas: config.SEG_INVITACION_HORAS },
+    reintentosEventos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
   }),
 );
 configurarApp(app);
