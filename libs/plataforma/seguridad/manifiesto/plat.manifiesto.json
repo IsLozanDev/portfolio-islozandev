@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 }
@@ -13,7 +13,8 @@
     { "codigo": "plat.seguridad.asignaciones", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Asignaciones", "ruta": "/admin/asignaciones", "icono": "assignment_ind", "orden": 3, "permisos": ["plat.asignacion.otorgar"] },
     { "codigo": "plat.seguridad.usuarios", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Usuarios", "ruta": "/admin/usuarios", "icono": "person_add", "orden": 4, "permisos": ["plat.usuario.invitar"] },
     { "codigo": "plat.configuracion", "modulo": "configuracion", "padre": null, "nombre": "Configuración", "icono": "settings", "orden": 2, "permisos": [] },
-    { "codigo": "plat.configuracion.parametros", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Parámetros", "ruta": "/admin/parametros", "icono": "tune", "orden": 1, "permisos": ["plat.parametro.leer"] }
+    { "codigo": "plat.configuracion.parametros", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Parámetros", "ruta": "/admin/parametros", "icono": "tune", "orden": 1, "permisos": ["plat.parametro.leer"] },
+    { "codigo": "plat.configuracion.series", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Series", "ruta": "/admin/series", "icono": "format_list_numbered", "orden": 2, "permisos": ["plat.serie.gestionar"] }
   ],
   "permisos": [
     { "codigo": "plat.manifiesto.aplicar", "descripcion": "Aplicar el manifiesto funcional de un producto", "alcance_minimo": "TENANT", "sensible": false },
@@ -26,7 +27,9 @@
     { "codigo": "plat.asignacion.revocar", "descripcion": "Revocar asignaciones y suspender, reactivar o finalizar membresías", "alcance_minimo": "SUCURSAL", "sensible": true },
     { "codigo": "plat.parametro.definir", "descripcion": "Registrar definiciones de parámetros desde el manifiesto", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.parametro.leer", "descripcion": "Ver parámetros y su herencia", "alcance_minimo": "SUCURSAL", "sensible": false },
-    { "codigo": "plat.parametro.editar", "descripcion": "Fijar y restablecer valores de parámetros", "alcance_minimo": "SUCURSAL", "sensible": false }
+    { "codigo": "plat.parametro.editar", "descripcion": "Fijar y restablecer valores de parámetros", "alcance_minimo": "SUCURSAL", "sensible": false },
+    { "codigo": "plat.serie.gestionar", "descripcion": "Configurar y activar o desactivar series de numeración", "alcance_minimo": "SUCURSAL", "sensible": true },
+    { "codigo": "plat.serie.numerar", "descripcion": "Obtener el siguiente número de una serie", "alcance_minimo": "SUCURSAL", "sensible": false }
   ],
   "roles_predefinidos": [
     {
@@ -37,7 +40,7 @@
     {
       "codigo": "PLAT_ADMIN_CONFIGURACION",
       "nombre": "Administrador de configuración",
-      "permisos": ["plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto"]
+      "permisos": ["plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto", "plat.serie.gestionar"]
     }
   ],
   "parametros": [

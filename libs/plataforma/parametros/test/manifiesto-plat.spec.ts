@@ -14,7 +14,7 @@ interface Manifiesto {
   parametros: unknown[];
 }
 
-describe('Manifiesto PLAT 1.2.0: parte de cfg (spec 09)', () => {
+describe('Manifiesto PLAT: parte de cfg (spec 09)', () => {
   let manifiesto: Manifiesto;
 
   beforeAll(async () => {
@@ -23,7 +23,6 @@ describe('Manifiesto PLAT 1.2.0: parte de cfg (spec 09)', () => {
 
   it('declara exactamente los permisos de PERMISOS_CFG, ninguno sensible', () => {
     const deCfg = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.parametro.'));
-    expect(manifiesto.version).toBe('1.2.0');
     expect(deCfg.map((permiso) => permiso.codigo).sort()).toEqual(Object.values(PERMISOS_CFG).sort());
     expect(deCfg.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       ['plat.parametro.definir', 'TENANT', false],
@@ -38,6 +37,8 @@ describe('Manifiesto PLAT 1.2.0: parte de cfg (spec 09)', () => {
       'plat.parametro.leer',
       'plat.parametro.editar',
       'plat.sesion.contexto',
+      // Spec 10: el mismo rol configura las series.
+      'plat.serie.gestionar',
     ]);
   });
 

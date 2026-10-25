@@ -1,6 +1,6 @@
 # SPEC 10 — Correlativos: series por empresa y numeración atómica con reinicio por periodo
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 03, SPEC 06, SPEC 09
 > **Date:** 2026-10-24
 > **Objective:** Crear `libs/plataforma/correlativos` (TR-SEQ) con el esquema `seq`, la administración de series por empresa, sucursal o unidad en `/v1/seq`, y `CorrelativoPort.siguiente` que entrega dentro de la transacción del producto un número sin duplicados ni huecos, con reinicio anual o diario en la zona horaria de la sucursal.

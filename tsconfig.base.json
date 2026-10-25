@@ -33,6 +33,9 @@
       "@vitrina/plataforma/parametros": [
         "./libs/plataforma/parametros/src/index.ts"
       ],
+      "@vitrina/plataforma/correlativos": [
+        "./libs/plataforma/correlativos/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],
