@@ -1,9 +1,5 @@
 /* Sin source(none), Tailwind recorre todo el monorepo desde la raíz (specs, docs, backend). */
 @import "tailwindcss" source(none);
+@import "../../../libs/shared/ui/src/estilos/tema.css";
 @source "./";
 @source "../../../libs/shared";
-
-@theme {
-  --font-sans: Roboto, "Helvetica Neue", sans-serif;
-  --color-marca: #005cbb;
-}

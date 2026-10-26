@@ -1,0 +1,11 @@
+@use '@angular/material' as mat;
+
+/* Tema Material 3 único de la plataforma; la app lo aplica en `html`. */
+@mixin aplicar-tema() {
+  color-scheme: light;
+  @include mat.theme((
+    color: mat.$azure-palette,
+    typography: Roboto,
+    density: 0,
+  ));
+}

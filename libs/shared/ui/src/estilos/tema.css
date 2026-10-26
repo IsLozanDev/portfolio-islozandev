@@ -1,0 +1,17 @@
+/* Tokens de Tailwind sobre las variables del tema Material: un solo origen de color. */
+@theme {
+  --font-sans: Roboto, "Helvetica Neue", sans-serif;
+  --color-primario: var(--mat-sys-primary);
+  --color-sobre-primario: var(--mat-sys-on-primary);
+  --color-superficie: var(--mat-sys-surface);
+  --color-superficie-contenedor: var(--mat-sys-surface-container);
+  --color-sobre-superficie: var(--mat-sys-on-surface);
+  --color-sobre-superficie-variante: var(--mat-sys-on-surface-variant);
+  --color-contenedor-secundario: var(--mat-sys-secondary-container);
+  --color-sobre-contenedor-secundario: var(--mat-sys-on-secondary-container);
+  --color-error: var(--mat-sys-error);
+  --color-contenedor-error: var(--mat-sys-error-container);
+  --color-sobre-contenedor-error: var(--mat-sys-on-error-container);
+  --color-borde: var(--mat-sys-outline-variant);
+  --radius-tarjeta: var(--mat-sys-corner-medium);
+}
