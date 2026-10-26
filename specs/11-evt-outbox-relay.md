@@ -1,6 +1,6 @@
 # SPEC 11 — Eventos: relay del outbox en el worker, suscriptores idempotentes y reproceso de fallidos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 06, SPEC 10
 > **Date:** 2026-10-25
 > **Objective:** Crear `libs/plataforma/eventos` (TR-EVT) y `apps/worker`, donde un relay lee `sync.outbox` por cursor con margen de seguridad y lo entrega por colas BullMQ a los consumidores declarados con `@SuscribirEvento`, al menos una vez e idempotente por `event_id`, con cola de fallidos en PostgreSQL y reproceso por `/v1/evt/fallidos`.

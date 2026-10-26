@@ -60,13 +60,14 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
 // en paralelo los crearían y borrarían a la vez.
 const CASOS = [
   { migracion: '01a_org.sql', esquema: 'org', prueba: 'tests/01a_org.test.sql' },
+  { migracion: '01a_org_alta.sql', esquema: 'org', prueba: 'tests/01a_org_alta.test.sql' },
   { migracion: '01b_seg.sql', esquema: 'seg', prueba: 'tests/01b_seg.test.sql' },
   { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01b_seg_membresias.sql', esquema: 'seg', prueba: 'tests/01b_seg_membresias.test.sql' },
@@ -140,6 +141,19 @@ const objetosRelay = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Tabla, función y políticas que agrega 01a_org_alta (4 en total).
+const objetosAlta = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'org.aviso_vencimiento' AS o WHERE to_regclass('org.aviso_vencimiento') IS NOT NULL
+       UNION ALL SELECT 'org.suscripciones_a_revisar' WHERE to_regprocedure('org.suscripciones_a_revisar(date)') IS NOT NULL
+       UNION ALL SELECT policyname FROM pg_policies
+        WHERE schemaname = 'org' AND policyname IN ('suscripcion_vencimientos', 'tenant_vencimientos')
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
 const triggersSuscripcion = async () =>
   (
     await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
@@ -188,6 +202,12 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await funcionesAutorizacion()).toHaveLength(6);
     await ejecutar(urlDb, await readFile(rutaDb('01b_seg_membresias.sql'), 'utf8'));
     expect(await objetosMembresias()).toHaveLength(9);
+
+    // El inverso de 01a_org_alta deja org como lo dejó 01a_org (con datos) y se puede reaplicar.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01a_org_alta.sql'), 'utf8'));
+    expect(await objetosAlta()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01a_org_alta.sql'), 'utf8'));
+    expect(await objetosAlta()).toHaveLength(4);
 
     // supabase/migrations necesita auth.users y los roles de Supabase.
     const dirSupabase = rutaSupabase('migrations');

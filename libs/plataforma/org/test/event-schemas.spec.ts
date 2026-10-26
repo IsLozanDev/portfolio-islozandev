@@ -20,6 +20,8 @@ function eventosDelDominio(): DomainEvent[] {
 
   const datos = { edicion: null, plan: 'BASICO', estado: 'PRUEBA', limiteSucursales: 2, limiteUsuarios: null, vigenteHasta: '2026-12-31' } as const;
   const suscripcion = Suscripcion.crear(ID, ID, 'REST', datos, { sucursalesActivas: 0, usuariosActivos: 0 });
+  suscripcion.avisarVencimiento('2026-12-28');
+  suscripcion.vencer('2027-01-01');
 
   const e = Empresa.crear(ID, ID, '20512345671', { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null });
   e.editar({ ...e.datos, nombreComercial: 'Sabores' });
