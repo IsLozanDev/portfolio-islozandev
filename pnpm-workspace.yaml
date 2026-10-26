@@ -11,6 +11,7 @@ allowBuilds:
   "@scarf/scarf": false
   esbuild: false
   msgpackr-extract: false
+  lmdb: false
 
 minimumReleaseAgeExclude:
   - "@nestjs/common@12.2.0"

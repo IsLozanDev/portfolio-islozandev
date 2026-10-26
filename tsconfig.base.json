@@ -50,6 +50,9 @@
       ],
       "@vitrina-fixtures/psi": [
         "./tools/boundaries-test/fixtures/psi/src/index.ts"
+      ],
+      "@vitrina/shared/auth": [
+        "./libs/shared/auth/src/index.ts"
       ]
     }
   }
