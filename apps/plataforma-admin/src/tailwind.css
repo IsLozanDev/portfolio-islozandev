@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Roboto, "Helvetica Neue", sans-serif;
+  --color-marca: #005cbb;
+}

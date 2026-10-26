@@ -53,6 +53,7 @@ export const CONFIG_DE_PRUEBA: ConfigAuth = {
 };
 
 type RespuestaVacia = { data: object; error: AuthError | null };
+type RespuestaSesion = { data: { session: Session | null }; error: AuthError | null };
 type OyenteSesion = (evento: AuthChangeEvent, sesion: Session | null) => void;
 
 export function sesionDePrueba(token = 'token-aal1'): Session {
@@ -80,6 +81,11 @@ export class DobleSupabase {
     signInWithOAuth: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
     resetPasswordForEmail: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
     updateUser: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
+    verifyOtp: vi.fn<(parametros: { token_hash: string; type: string }) => Promise<RespuestaSesion>>(async () => ({
+      data: { session: sesionDePrueba('token-enlace') },
+      error: null,
+    })),
+    refreshSession: vi.fn<() => Promise<RespuestaSesion>>(async () => ({ data: { session: sesionDePrueba('token-refrescado') }, error: null })),
     signOut: vi.fn(async () => ({ error: null })),
     mfa: {
       getAuthenticatorAssuranceLevel: vi.fn(async () => ({

@@ -187,6 +187,46 @@ describe('SesionService (sesión)', () => {
     });
   });
 
+  describe('verificarEnlace', () => {
+    it('canjea el token_hash con verifyOtp y deja la sesión del enlace', async () => {
+      await servicio.verificarEnlace('hash-123', 'recovery');
+
+      expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({ token_hash: 'hash-123', type: 'recovery' });
+      expect(servicio.token()).toBe('token-enlace');
+    });
+
+    it('un enlace vencido da ENLACE_INVALIDO', async () => {
+      supabase.auth.verifyOtp.mockResolvedValueOnce({
+        data: { session: null },
+        error: new AuthApiError('Email link is invalid or has expired', 403, 'otp_expired'),
+      });
+
+      await expect(servicio.verificarEnlace('hash-viejo', 'invite')).rejects.toMatchObject({
+        codigo: 'ENLACE_INVALIDO',
+        message: MENSAJES_AUTH.ENLACE_INVALIDO,
+      });
+      expect(servicio.autenticado()).toBe(false);
+    });
+  });
+
+  describe('refrescarSesion', () => {
+    it('pide un token nuevo y luego recarga mi-contexto', async () => {
+      await iniciarConSesion();
+
+      await Promise.all([servicio.refrescarSesion(), responderMiContexto(http)]);
+
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(servicio.token()).toBe('token-refrescado');
+    });
+
+    it('si Supabase no renueva, propaga el error sin pedir el contexto', async () => {
+      await iniciarConSesion();
+      supabase.auth.refreshSession.mockResolvedValueOnce({ data: { session: null }, error: new AuthRetryableFetchError('red', 0) });
+
+      await expect(servicio.refrescarSesion()).rejects.toMatchObject({ codigo: 'SIN_CONEXION' });
+    });
+  });
+
   describe('salir', () => {
     it('cierra la sesión local y limpia el estado', async () => {
       await iniciarConSesion();

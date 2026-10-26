@@ -55,6 +55,7 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
   | `utils/` | Funciones puras sin estado ni DI | `<nombre>.ts` |
 
 - Un artefacto Angular por archivo: no se juntan varios guards o servicios en un archivo.
+- Componentes y páginas en archivos separados, nunca `template` ni `styles` inline: `<nombre>.component.ts` + `.component.html` + `.component.css` (en páginas, `.page.ts` + `.page.html` + `.page.css`), con `templateUrl` y `styleUrl`. El `.css` solo se crea si el componente tiene estilos propios (sin archivos vacíos); lo general va con utilidades de Tailwind en el `.html`. Estilos de componente en CSS, no Sass: Sass solo en el `styles.scss` global del tema de Material. Los generadores de `nx.json` ya vienen así.
 - Rutas lazy de una lib feature en `src/lib/<lib>.routes.ts`.
 - La prueba va junto a su archivo (`sesion.service.ts` + `sesion.service.spec.ts`), como espera `@angular/build:unit-test`. Dobles y arneses de prueba compartidos en `src/testing/`, excluido del build en `tsconfig.lib.json`.
 - `src/index.ts` es la única API pública; exporta por ruta explícita, sin `export *`.

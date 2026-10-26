@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
-import type { AuthChangeEvent, AuthError, Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, AuthError, EmailOtpType, Session } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { CONFIG_AUTH } from '../config/config';
 import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
@@ -8,6 +8,8 @@ import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from
 import { SupabaseCliente } from './supabase.cliente';
 
 export type ProveedorExterno = 'google' | 'azure';
+/** Tipos de enlace de correo que llegan con `token_hash` (invitación, enlace mágico, recuperación). */
+export type TipoEnlace = Extract<EmailOtpType, 'invite' | 'email' | 'recovery'>;
 
 export const CABECERA_SUCURSAL = 'X-Sucursal-Id';
 const RUTA_MI_CONTEXTO = '/seg/mi-contexto';
@@ -96,6 +98,22 @@ export class SesionService {
     if (!error) return;
     const errorAuth = aErrorAuth(error);
     if (ERRORES_VISIBLES_AL_RECUPERAR.includes(errorAuth.codigo)) throw errorAuth;
+  }
+
+  /** Canjea el `token_hash` de un correo por una sesión. Cualquier fallo es un enlace inválido. */
+  async verificarEnlace(tokenHash: string, tipo: TipoEnlace): Promise<void> {
+    await this.iniciar();
+    const { data, error } = await this.supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo });
+    if (error || !data.session) throw new ErrorAuth('ENLACE_INVALIDO', { cause: error });
+    this.sesionActual.set(data.session);
+  }
+
+  /** Token nuevo para que el hook ponga el `tenant_id` recién aceptado; luego recarga el contexto. */
+  async refrescarSesion(): Promise<void> {
+    const { data, error } = await this.supabase.auth.refreshSession();
+    if (error || !data.session) throw aErrorAuth(error);
+    this.sesionActual.set(data.session);
+    await this.cargarContexto();
   }
 
   async actualizarClave(nueva: string): Promise<void> {

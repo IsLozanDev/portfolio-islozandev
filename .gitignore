@@ -10,3 +10,5 @@ out.json
 .angular
 
 __screenshots__/
+
+.playwright-mcp/

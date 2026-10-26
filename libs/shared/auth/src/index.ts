@@ -8,5 +8,6 @@ export { autenticadoGuard } from './lib/guards/autenticado.guard';
 export { anonimoGuard } from './lib/guards/anonimo.guard';
 export { aal2Guard } from './lib/guards/aal2.guard';
 export { permisoGuard } from './lib/guards/permiso.guard';
+export { sesionGuard } from './lib/guards/sesion.guard';
 export { authInterceptor } from './lib/interceptors/auth.interceptor';
 export { SiPermisoDirective } from './lib/directives/si-permiso.directive';
