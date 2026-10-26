@@ -1,6 +1,6 @@
 import { DestroyRef, DOCUMENT, effect, inject, Injectable, untracked } from '@angular/core';
 import { Router } from '@angular/router';
-import { CONFIG_AUTH } from './config';
+import { CONFIG_AUTH } from '../config/config';
 import { SesionService } from './sesion.service';
 
 export const CLAVE_ULTIMA_ACTIVIDAD = 'vitrina.auth.ultima-actividad';

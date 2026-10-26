@@ -1,5 +1,5 @@
 import { Directive, effect, inject, input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { SesionService } from './sesion.service';
+import { SesionService } from '../services/sesion.service';
 
 /**
  * Muestra el contenido solo si el usuario tiene el permiso; con una lista, cualquiera (OR).

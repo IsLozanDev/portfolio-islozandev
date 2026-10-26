@@ -2,9 +2,9 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
 import type { AuthChangeEvent, AuthError, Session } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
-import { CONFIG_AUTH } from './config';
-import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from './errores';
-import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from './mi-contexto';
+import { CONFIG_AUTH } from '../config/config';
+import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
+import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from '../models/mi-contexto';
 import { SupabaseCliente } from './supabase.cliente';
 
 export type ProveedorExterno = 'google' | 'azure';

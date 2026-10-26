@@ -9,7 +9,7 @@ import {
   responderMiContexto,
   sesionDePrueba,
   SURCO,
-} from '../testing/doble-supabase';
+} from '../../testing/doble-supabase';
 import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
 
 describe('SesionService (contexto y sucursal, TR-RF-016)', () => {

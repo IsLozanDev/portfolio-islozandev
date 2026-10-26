@@ -3,12 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationInitStatus } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { CONFIG_DE_PRUEBA, DobleSupabase, responderMiContexto, sesionDePrueba } from '../testing/doble-supabase';
+import { CONFIG_DE_PRUEBA, DobleSupabase, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
 import { CONFIG_AUTH, RUTAS_AUTH_POR_DEFECTO } from './config';
-import { CLAVE_ULTIMA_ACTIVIDAD } from './inactividad.service';
+import { CLAVE_ULTIMA_ACTIVIDAD } from '../services/inactividad.service';
 import { provideAuth } from './provide-auth';
-import { SesionService } from './sesion.service';
-import { SupabaseCliente } from './supabase.cliente';
+import { SesionService } from '../services/sesion.service';
+import { SupabaseCliente } from '../services/supabase.cliente';
 
 describe('provideAuth', () => {
   let supabase: DobleSupabase;

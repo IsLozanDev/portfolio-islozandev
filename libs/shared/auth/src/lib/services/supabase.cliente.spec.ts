@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { CONFIG_AUTH, resolverConfigAuth } from './config';
+import { CONFIG_AUTH, resolverConfigAuth } from '../config/config';
 import { opcionesCookie, SupabaseCliente } from './supabase.cliente';
-import { CONFIG_DE_PRUEBA } from '../testing/doble-supabase';
+import { CONFIG_DE_PRUEBA } from '../../testing/doble-supabase';
 
 describe('opcionesCookie', () => {
   it('lleva secure solo en https:', () => {

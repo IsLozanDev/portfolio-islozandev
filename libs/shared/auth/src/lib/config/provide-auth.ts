@@ -6,8 +6,8 @@ import {
   type EnvironmentProviders,
 } from '@angular/core';
 import { CONFIG_AUTH, resolverConfigAuth, type ConfigAuth } from './config';
-import { InactividadService } from './inactividad.service';
-import { SesionService } from './sesion.service';
+import { InactividadService } from '../services/inactividad.service';
+import { SesionService } from '../services/sesion.service';
 
 /**
  * Registra la configuración, lee la sesión antes del primer ruteo y vigila la inactividad.

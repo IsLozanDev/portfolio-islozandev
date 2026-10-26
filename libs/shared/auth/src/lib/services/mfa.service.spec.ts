@@ -1,8 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError } from '@supabase/supabase-js';
-import { contextoDePrueba, DobleSupabase, proveerAuthDePrueba, responderMiContexto } from '../testing/doble-supabase';
-import { MENSAJES_AUTH } from './errores';
+import { contextoDePrueba, DobleSupabase, proveerAuthDePrueba, responderMiContexto } from '../../testing/doble-supabase';
+import { MENSAJES_AUTH } from '../models/errores';
 import { MfaService } from './mfa.service';
 import { SesionService } from './sesion.service';
 

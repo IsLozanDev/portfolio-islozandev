@@ -1,8 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { contextoDePrueba, DobleSupabase, proveerAuthDePrueba, responderMiContexto } from '../testing/doble-supabase';
-import { SesionService } from './sesion.service';
+import { contextoDePrueba, DobleSupabase, proveerAuthDePrueba, responderMiContexto } from '../../testing/doble-supabase';
+import { SesionService } from '../services/sesion.service';
 import { SiPermisoDirective } from './si-permiso.directive';
 
 @Component({

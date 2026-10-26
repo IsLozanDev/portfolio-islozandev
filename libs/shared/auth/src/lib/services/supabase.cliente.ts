@@ -1,7 +1,7 @@
 import { DOCUMENT, inject, Injectable } from '@angular/core';
 import { createBrowserClient, type CookieOptionsWithName } from '@supabase/ssr';
 import type { InitializeResult, SupabaseClient } from '@supabase/supabase-js';
-import { CONFIG_AUTH } from './config';
+import { CONFIG_AUTH } from '../config/config';
 
 const PROTOCOLO_SEGURO = 'https:';
 

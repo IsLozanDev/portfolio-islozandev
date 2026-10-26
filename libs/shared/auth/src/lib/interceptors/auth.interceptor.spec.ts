@@ -14,9 +14,9 @@ import {
   sesionDePrueba,
   SURCO,
   URL_MI_CONTEXTO,
-} from '../testing/doble-supabase';
+} from '../../testing/doble-supabase';
 import { authInterceptor, esDeLaApi } from './auth.interceptor';
-import { SesionService } from './sesion.service';
+import { SesionService } from '../services/sesion.service';
 
 @Component({ template: '' })
 class PaginaVacia {}

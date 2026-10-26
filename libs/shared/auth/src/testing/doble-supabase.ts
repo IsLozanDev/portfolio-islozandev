@@ -3,9 +3,9 @@ import { HttpTestingController, provideHttpClientTesting, type TestRequest } fro
 import type { EnvironmentProviders, Provider } from '@angular/core';
 import type { AuthChangeEvent, AuthError, Session } from '@supabase/supabase-js';
 import { vi } from 'vitest';
-import { CONFIG_AUTH, resolverConfigAuth, type ConfigAuth } from '../lib/config';
-import type { MiContextoRespuesta } from '../lib/mi-contexto';
-import { SupabaseCliente } from '../lib/supabase.cliente';
+import { CONFIG_AUTH, resolverConfigAuth, type ConfigAuth } from '../lib/config/config';
+import type { MiContextoRespuesta } from '../lib/models/mi-contexto';
+import { SupabaseCliente } from '../lib/services/supabase.cliente';
 
 export const API_URL = 'https://api.test/v1';
 export const URL_MI_CONTEXTO = `${API_URL}/seg/mi-contexto`;

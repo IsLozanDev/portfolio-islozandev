@@ -1,8 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError, AuthRetryableFetchError, AuthWeakPasswordError } from '@supabase/supabase-js';
-import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../testing/doble-supabase';
-import { ErrorAuth, MENSAJES_AUTH } from './errores';
+import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
+import { ErrorAuth, MENSAJES_AUTH } from '../models/errores';
 import { SesionService } from './sesion.service';
 
 describe('SesionService (sesión)', () => {

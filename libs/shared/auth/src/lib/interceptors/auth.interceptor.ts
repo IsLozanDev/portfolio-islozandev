@@ -2,9 +2,9 @@ import { HttpErrorResponse, type HttpInterceptorFn, type HttpRequest } from '@an
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { CONFIG_AUTH, type ConfigAuthResuelta } from './config';
-import { estaEn, rutaConRetorno } from './navegacion';
-import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
+import { CONFIG_AUTH, type ConfigAuthResuelta } from '../config/config';
+import { estaEn, rutaConRetorno } from '../utils/navegacion';
+import { CABECERA_SUCURSAL, SesionService } from '../services/sesion.service';
 
 const HTTP_NO_AUTORIZADO = 401;
 const CODIGO_MFA_REQUERIDA = 'MFA_REQUERIDA';

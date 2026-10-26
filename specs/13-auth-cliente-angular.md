@@ -46,17 +46,19 @@ Historias del backlog: **A-04** completa y la parte cliente de **A-05**. Estimad
 
 - **Workspace**: Angular 21 (`@angular/core`, `common`, `router`, `platform-browser`, `compiler`, `compiler-cli`, `@angular/build`), `@nx/angular@23.3.0`, `ng-packagr` 21, `@supabase/ssr@0.12.7`, Vitest para Angular. Sin Angular Material ni Tailwind (no hay pantallas).
 - **Lib `libs/shared/auth`** (`shared-auth`, alias `@vitrina/shared/auth`, tags `scope:shared` y `type:data-access`), construible con `ng-packagr-lite` y con Vitest:
-  - `config.ts`: `ConfigAuth`, `CONFIG_AUTH`, valores por defecto de rutas e inactividad.
-  - `provide-auth.ts`: `provideAuth(config)`, que registra la configuración, inicia la sesión antes del primer ruteo e inicia la vigilancia de inactividad.
-  - `supabase.cliente.ts`: `createBrowserClient` con PKCE y cookie.
-  - `sesion.service.ts`: estado con signals, ingreso, recuperación, nueva clave, callback, contexto, sucursal y salida.
-  - `mfa.service.ts`: estado AAL, enrolar y verificar TOTP.
-  - `inactividad.service.ts`: cierre de sesión tras N minutos sin actividad.
-  - `auth.interceptor.ts`: Bearer y `X-Sucursal-Id` hacia `apiUrl`; 401 `MFA_REQUERIDA` y `TOKEN_INVALIDO`.
-  - `guards.ts`: `autenticadoGuard`, `anonimoGuard`, `aal2Guard`, `permisoGuard(permiso | permisos)`.
-  - `si-permiso.directive.ts`: `*siPermiso` con cadena o lista (OR).
-  - `errores.ts`: `ErrorAuth` y mensajes en español de Perú.
-  - `mi-contexto.ts`: tipo de la respuesta de la API y su mapeo a `ContextoUsuario`.
+  - `config/config.ts`: `ConfigAuth`, `CONFIG_AUTH`, valores por defecto de rutas e inactividad.
+  - `config/provide-auth.ts`: `provideAuth(config)`, que registra la configuración, inicia la sesión antes del primer ruteo e inicia la vigilancia de inactividad.
+  - `services/supabase.cliente.ts`: `createBrowserClient` con PKCE y cookie.
+  - `services/sesion.service.ts`: estado con signals, ingreso, recuperación, nueva clave, callback, contexto, sucursal y salida.
+  - `services/mfa.service.ts`: estado AAL, enrolar y verificar TOTP.
+  - `services/inactividad.service.ts`: cierre de sesión tras N minutos sin actividad.
+  - `interceptors/auth.interceptor.ts`: Bearer y `X-Sucursal-Id` hacia `apiUrl`; 401 `MFA_REQUERIDA` y `TOKEN_INVALIDO`.
+  - `guards/autenticado.guard.ts`, `guards/anonimo.guard.ts`, `guards/aal2.guard.ts`, `guards/permiso.guard.ts` (`permisoGuard(permiso | permisos)`).
+  - `directives/si-permiso.directive.ts`: `*siPermiso` con cadena o lista (OR).
+  - `models/errores.ts`: `ErrorAuth` y mensajes en español de Perú.
+  - `models/mi-contexto.ts`: tipo de la respuesta de la API y su mapeo a `ContextoUsuario`.
+  - `utils/navegacion.ts`: rutas con `returnUrl`, compartidas por guards e interceptor.
+  - Pruebas junto a cada archivo; dobles y arneses en `src/testing/`.
 
 **Out of scope (for future specs):**
 
@@ -307,6 +309,8 @@ Verificación declarada:
 - **Sí:** `DOCUMENT` en vez de `location`. Deja la lib lista para pruebas y SSR.
 - **No:** puerto sobre Supabase en el front. `SupabaseCliente` ya es el único punto de contacto (P8 del contexto).
 - **No:** `angular-eslint` aquí. La lib no tiene plantillas; entra con la primera app.
+- **Sí:** `src/lib/` por tipo de artefacto (`config/`, `models/`, `services/`, `guards/`, `interceptors/`, `directives/`, `utils/`), un guard por archivo y pruebas junto a su archivo. Decisión del usuario durante la implementación; queda como regla en `CLAUDE.md` ("Estructura de libs Angular") para las libs siguientes.
+- **No:** `src/lib/` plano como en `estructura_frontend.txt`, ni agrupar por funcionalidad. Plano mezcla tipos; por funcionalidad reparte piezas chicas en libs data-access.
 
 ## Riesgos
 

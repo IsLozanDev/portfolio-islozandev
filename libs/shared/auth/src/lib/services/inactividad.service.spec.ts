@@ -2,8 +2,8 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import type { ConfigAuth } from './config';
-import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../testing/doble-supabase';
+import type { ConfigAuth } from '../config/config';
+import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
 import { CLAVE_ULTIMA_ACTIVIDAD, InactividadService } from './inactividad.service';
 import { SesionService } from './sesion.service';
 

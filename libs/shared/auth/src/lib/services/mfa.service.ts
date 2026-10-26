@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { aErrorAuth } from './errores';
+import { aErrorAuth } from '../models/errores';
 import { SesionService } from './sesion.service';
 import { SupabaseCliente } from './supabase.cliente';
 
