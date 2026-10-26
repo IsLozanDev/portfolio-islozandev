@@ -23,6 +23,8 @@
     "manifiesto:aplicar": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js",
     "manifiesto:aplicar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js --remoto",
     "plataforma:sembrar": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/sembrar-plataforma.js",
+    "vencimientos:ejecutar": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-vencimientos.js",
+    "vencimientos:ejecutar:remoto": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-vencimientos.js --remoto",
     "plataforma:sembrar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/sembrar-plataforma.js --remoto"
   },
   "devDependencies": {

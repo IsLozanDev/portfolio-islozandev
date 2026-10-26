@@ -1,6 +1,6 @@
 # SPEC 12 — Org: alta transaccional de tenant con propietario y series, y tarea diaria de vencimiento
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 06, SPEC 08, SPEC 09, SPEC 10, SPEC 11
 > **Date:** 2026-10-25
 > **Objective:** Dar de alta un tenant en una sola transacción (tenant, suscripción, empresa, sucursal principal, series B001/F001 y propietario invitado con `PLAT_PROPIETARIO`) desde `POST /v1/org/tenants`, llamado por un administrador del tenant operador `plataforma`, y vencer suscripciones con una tarea diaria en el worker que avisa, pasa a `VENCIDA` y suspende al agotar la gracia.
