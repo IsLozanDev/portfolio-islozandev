@@ -21,6 +21,7 @@ import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia
 import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
 import { PermisoGuard } from './interface/permiso.guard.js';
 import { AceptarInvitacion, ConsultarInvitacion } from './application/aceptar-invitacion.js';
+import { InvitarPropietario } from './application/invitar-propietario.js';
 import { InvitarUsuario } from './application/invitar-usuario.js';
 import { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMembresia } from './application/membresia.casos-de-uso.js';
 import { PROVEEDOR_IDENTIDAD, type ProveedorIdentidad } from './application/ports/proveedor-identidad.port.js';
@@ -130,6 +131,12 @@ export class SeguridadModule {
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PROVEEDOR_IDENTIDAD],
         },
         {
+          provide: InvitarPropietario,
+          useFactory: (uow: UnitOfWork, ctx: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias, proveedor: ProveedorIdentidad) =>
+            new InvitarPropietario(uow, ctx, ids, reloj, eventos, repos, proveedor, { urlInvitacion: inv.url, horas: inv.horas ?? 72 }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PROVEEDOR_IDENTIDAD],
+        },
+        {
           provide: ConsultarInvitacion,
           useFactory: (repos: ReposMembresias, reloj: Clock) => new ConsultarInvitacion(repos.invitaciones, reloj),
           inject: [REPOS_MEMBRESIAS, CLOCK],
@@ -203,7 +210,7 @@ export class SeguridadModule {
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario],
     };
   }
 }
