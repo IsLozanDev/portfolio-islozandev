@@ -29,6 +29,9 @@
         "styles": [
           "apps/plataforma-admin/src/tailwind.css",
           "apps/plataforma-admin/src/styles.scss"
+        ],
+        "allowedCommonJsDependencies": [
+          "cookie"
         ]
       },
       "configurations": {

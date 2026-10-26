@@ -53,6 +53,9 @@
       ],
       "@vitrina/shared/auth": [
         "./libs/shared/auth/src/index.ts"
+      ],
+      "@vitrina/shared/auth-ui": [
+        "./libs/shared/auth-ui/src/index.ts"
       ]
     }
   }
