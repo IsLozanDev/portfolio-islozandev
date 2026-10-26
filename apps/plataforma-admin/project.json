@@ -28,10 +28,13 @@
         ],
         "styles": [
           "apps/plataforma-admin/src/tailwind.css",
+          "node_modules/sweetalert2/dist/sweetalert2.css",
+          "libs/shared/ui/src/estilos/sweetalert.css",
           "apps/plataforma-admin/src/styles.scss"
         ],
         "allowedCommonJsDependencies": [
-          "cookie"
+          "cookie",
+          "sweetalert2"
         ]
       },
       "configurations": {

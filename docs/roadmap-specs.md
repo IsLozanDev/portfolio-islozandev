@@ -25,8 +25,11 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 |
 | 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth (Google real; Microsoft pendiente), MFA, recuperar, nueva clave e invitación (pantalla del spec 08). Primera app `plataforma-admin` con Material y Tailwind 4. Sin historia en el plan; se agrega | 12-13 | 13, 08 | 13 |
 | 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI) | 8 | 13 | 15 |
-| 16 | admin-usuarios-roles | U-03, U-04 | 10 | 08, 15 | — |
-| 17 | consola-y-admin-org | O-04, U-05, U-06 | 11 | 12, 15 | — |
+| 16a | usuarios-asignaciones | U-03 (RF 009, 013, 014) y su back: listar y detalle de miembros, `POST /asignaciones`. Agrega a `confirmarDestructiva` del 15 la opción `longitudMinimaMotivo` (por defecto 10) y la usa con 4 para SEG | 9 | 08, 15, 17a | 16a |
+| 16b | roles-perfiles | U-04 (RF 011, 012), controladores de roles y perfiles y catálogo de permisos en árbol | 8-9 | 16a | 16b |
+| 17a | org-http | Back de ORG sin UI: tenants (lista, detalle, estado; `SECURITY DEFINER` para la lista) y empresas, sucursales y unidades. Permisos ORG al manifiesto y a `PLAT_PROPIETARIO`. Operador vs. cliente por permiso (`OPERADOR_REQUERIDO`), no por `tipo_usuario` | 7 | 12 | 17a |
+| 17b | consola-plataforma | O-04 (RF 001, 006): app `plataforma-consola`, solo front | 7 | 15, 17a | 17b |
+| 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida), solo front | 7 | 16a, 17a | 17c |
 | 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
 | 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
 | 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |
@@ -43,7 +46,7 @@ Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/
 
 Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09 conservan SQL embebido en sus repositorios; migrarlos a TypeORM es un spec de refactor aparte (~6-8 h, sin número ni fecha). Los specs 10 SEQ (`FOR UPDATE`) y 20 AUD (hash encadenado) pueden justificar SQL puntual.
 
-Los specs 16, 17, 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
+16 y 17 se partieron en 16a/16b y 17a/17b/17c: el plan contaba solo las horas de front y la capa HTTP del back no existía. Longitud del motivo: se respeta lo implementado (SEG 4-300, ORG 10-500); la UI la recibe por opción en vez de fijarla. Los specs 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
 ## Cambios respecto a la versión 1
 
@@ -68,7 +71,7 @@ Total estimado: unos 41 specs (27 en R0 y R1).
 - Ola 3: 04, luego 05 y 06 en paralelo.
 - Ola 4: 07, luego 08 y 13.
 - Ola 5: 09, 10, 14, 20.
-- Ola 6: 12, 15, 18, 19, 21, luego 16 y 17.
+- Ola 6: 12, 15, 18, 19, 21; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a).
 - SazónPOS (22 a 26) y 27 al final.
 
 Máximo 2 o 3 frentes a la vez: la revisión de diffs es el cuello de botella.
