@@ -1,0 +1,58 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 p-4">
+  <h1 class="text-2xl font-medium">Nueva contraseña</h1>
+
+  @switch (estado()) {
+    @case ('verificando') {
+      <div class="flex items-center gap-3" role="status">
+        <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+        Validando el enlace…
+      </div>
+    }
+    @case ('enlace-invalido') {
+      <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+        {{ error() }}
+      </p>
+      <a class="self-start text-sm text-(--mat-sys-primary) underline" routerLink="../recuperar">Solicitar un enlace nuevo</a>
+    }
+    @case ('formulario') {
+      @if (error(); as mensaje) {
+        <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+          {{ mensaje }}
+        </p>
+      }
+
+      <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña nueva</mat-label>
+          <input matInput type="password" formControlName="clave" autocomplete="new-password" required />
+          <mat-hint>Al menos {{ longitudMinima }} caracteres.</mat-hint>
+          @if (formulario.controls.clave.hasError('required')) {
+            <mat-error>Ingrese la contraseña nueva.</mat-error>
+          } @else if (formulario.controls.clave.hasError('minlength')) {
+            <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Repita la contraseña</mat-label>
+          <input matInput type="password" formControlName="confirmacion" autocomplete="new-password" required />
+          @if (formulario.controls.confirmacion.hasError('required')) {
+            <mat-error>Repita la contraseña.</mat-error>
+          }
+        </mat-form-field>
+
+        @if (formulario.hasError(errorClavesDistintas) && formulario.controls.confirmacion.touched) {
+          <p role="alert" class="text-sm text-(--mat-sys-error)">Las contraseñas no coinciden.</p>
+        }
+
+        <button mat-flat-button type="submit" [disabled]="enviando()">
+          @if (enviando()) {
+            <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
+          } @else {
+            Guardar contraseña
+          }
+        </button>
+      </form>
+    }
+  }
+</main>

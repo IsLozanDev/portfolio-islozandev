@@ -249,7 +249,7 @@ Navegador (MCP `playwright`, `nx serve plataforma-admin` y `nx serve api` contra
 - [ ] Recuperar con el correo de la cuenta Resend envía el correo; el enlace abre `/auth/nueva-clave`, la clave nueva sirve para ingresar.
 - [ ] Usuario sin asignaciones vigentes llega a `/sin-accesos` con «No tiene accesos vigentes; contacte a su administrador» (**TR-CA-046**).
 - [ ] Invitación real (spec 08) a un correo nuevo: el enlace abre `/auth/invitacion`, pide la clave, acepta, el token refrescado trae `tenant_id` y la membresía queda `ACTIVO` (**TR-CA-028**, sin el menú de perfil, que es del spec 15). Datos de prueba borrados.
-- [ ] La consola del navegador no tiene errores en ninguna página `/auth` ni en `/`.
+- [ ] La consola del navegador no tiene errores de la app en ninguna página `/auth` ni en `/`. Los 4xx de red esperados (p. ej. el 400 de `/auth/v1/token` con clave errónea) los registra el navegador y no cuentan.
 - [ ] axe-core inyectado en cada página `/auth` reporta 0 violaciones `critical` y `serious`.
 - [ ] Capturas a 360 px y a 1280 px de las seis páginas `/auth` sin desborde horizontal.
 - [ ] «Continuar con Google» con un correo de prueba ya existente en Supabase pasa por Google, vuelve a `/auth/callback` y llega a `/` con sesión; en `auth.identities` el usuario tiene la identidad `google`.
@@ -294,6 +294,7 @@ Código limpio:
 - **No:** CORS en la API en este spec. Hace falta cuando app y API estén en dominios distintos (staging o producción).
 - **Sí:** `127.0.0.1:4200`, no `localhost`. Coincide con `SEG_URL_INVITACION` y con la cookie del host.
 - **Sí:** `returnUrl` validado como ruta interna. Evita redirección abierta (TR-RNF-012).
+- **Sí:** presupuesto de aviso del bundle inicial en 600 kB (error en 1 MB). supabase-js entra en el arranque porque `provideAuth` lee la sesión antes del primer ruteo; con Angular y Material el inicial queda en ~521 kB (~131 kB comprimido). Decisión del usuario; se revisa si crece.
 - **Sí:** axe-core manual en Playwright, con evidencia. Decisión del usuario; en CI entra con el spec 27.
 - **Sí:** verificación contra Supabase dev y la API local. El usuario crea el usuario de prueba y carga las URLs de retorno y las plantillas en el panel.
 

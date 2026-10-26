@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { CONFIG_AUTH } from '../config/config';
 import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
 import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from '../models/mi-contexto';
+import { PARAMETRO_RETORNO } from '../utils/navegacion';
 import { SupabaseCliente } from './supabase.cliente';
 
 export type ProveedorExterno = 'google' | 'azure';
@@ -75,10 +76,11 @@ export class SesionService {
     if (error) throw aErrorAuth(error);
   }
 
-  async ingresarConProveedor(proveedor: ProveedorExterno): Promise<void> {
+  /** `retorno` viaja como `?returnUrl=` en `redirectTo` y Supabase lo devuelve tal cual al callback. */
+  async ingresarConProveedor(proveedor: ProveedorExterno, retorno?: string): Promise<void> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: proveedor,
-      options: { redirectTo: this.urlAbsoluta(this.config.rutas.callback) },
+      options: { redirectTo: this.urlDeCallback(retorno) },
     });
     if (error) throw aErrorAuth(error);
   }
@@ -160,6 +162,12 @@ export class SesionService {
 
   private urlAbsoluta(ruta: string): string {
     return this.documento.location.origin + ruta;
+  }
+
+  private urlDeCallback(retorno?: string): string {
+    const url = new URL(this.urlAbsoluta(this.config.rutas.callback));
+    if (retorno) url.searchParams.set(PARAMETRO_RETORNO, retorno);
+    return url.toString();
   }
 
   private urlTraeError(): boolean {

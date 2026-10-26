@@ -8,4 +8,17 @@ export const AUTH_UI_ROUTES: Routes = [
     canActivate: [anonimoGuard],
     loadComponent: () => import('./pages/ingresar/ingresar.page').then((modulo) => modulo.IngresarPage),
   },
+  {
+    path: 'callback',
+    loadComponent: () => import('./pages/callback/callback.page').then((modulo) => modulo.CallbackPage),
+  },
+  {
+    path: 'recuperar',
+    canActivate: [anonimoGuard],
+    loadComponent: () => import('./pages/recuperar/recuperar.page').then((modulo) => modulo.RecuperarPage),
+  },
+  {
+    path: 'nueva-clave',
+    loadComponent: () => import('./pages/nueva-clave/nueva-clave.page').then((modulo) => modulo.NuevaClavePage),
+  },
 ];

@@ -1,0 +1,12 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col items-center justify-center gap-4 p-4 text-center">
+  @if (error(); as mensaje) {
+    <h1 class="text-2xl font-medium">No se pudo ingresar</h1>
+    <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+      {{ mensaje }}
+    </p>
+    <a class="text-sm text-(--mat-sys-primary) underline" routerLink="../ingresar">Volver a ingresar</a>
+  } @else {
+    <mat-progress-spinner mode="indeterminate" diameter="40" aria-label="Validando su ingreso" />
+    <p role="status">Validando su ingreso…</p>
+  }
+</main>

@@ -2,7 +2,7 @@ export { CONFIG_AUTH, type ConfigAuth, type RutasAuth } from './lib/config/confi
 export { provideAuth } from './lib/config/provide-auth';
 export { ErrorAuth, MENSAJES_AUTH } from './lib/models/errores';
 export type { ContextoUsuario } from './lib/models/mi-contexto';
-export { SesionService } from './lib/services/sesion.service';
+export { SesionService, type ProveedorExterno } from './lib/services/sesion.service';
 export { MfaService } from './lib/services/mfa.service';
 export { autenticadoGuard } from './lib/guards/autenticado.guard';
 export { anonimoGuard } from './lib/guards/anonimo.guard';

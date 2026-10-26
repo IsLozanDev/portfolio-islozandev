@@ -1,3 +1,4 @@
+export const PARAMETRO_RETORNO = 'returnUrl';
 const INICIO_DE_RUTA_INTERNA = '/';
 /** `//otro.sitio` y `/\otro.sitio` los navegadores los leen como otro origen. */
 const PREFIJOS_DE_OTRO_ORIGEN = ['//', '/\\'];

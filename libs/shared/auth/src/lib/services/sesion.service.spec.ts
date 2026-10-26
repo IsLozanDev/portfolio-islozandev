@@ -115,6 +115,18 @@ describe('SesionService (sesión)', () => {
     });
   });
 
+  describe('ingresarConProveedor con retorno', () => {
+    it('agrega returnUrl codificado al redirectTo', async () => {
+      await servicio.ingresarConProveedor('google', '/caja?turno=1');
+
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: { redirectTo: `${window.location.origin}/auth/callback?returnUrl=%2Fcaja%3Fturno%3D1` },
+        }),
+      );
+    });
+  });
+
   describe('completarCallback', () => {
     it('con sesión canjeada resuelve', async () => {
       await iniciarConSesion();
