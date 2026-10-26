@@ -6,3 +6,7 @@ out.json
 .env
 .env.*
 !.env.example
+
+.angular
+
+__screenshots__/

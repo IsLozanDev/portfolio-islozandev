@@ -40,6 +40,35 @@
         "^production"
       ],
       "cache": true
+    },
+    "@nx/angular:ng-packagr-lite": {
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
+    },
+    "@nx/angular:unit-test": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production"
+      ]
+    }
+  },
+  "generators": {
+    "@nx/angular:library": {
+      "linter": "eslint",
+      "unitTestRunner": "vitest-angular",
+      "strict": true,
+      "buildable": true,
+      "style": "none"
+    },
+    "@nx/angular:component": {
+      "style": "none"
     }
   },
   "plugins": [

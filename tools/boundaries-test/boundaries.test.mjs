@@ -15,7 +15,8 @@ const casos = [
   ['scope:plataforma no importa de un producto', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/psi';", { regla: BOUNDARIES, mensaje: /scope:plataforma/ }],
   ['scope:plataforma importa de shared', `${FX}/aud/src/probe.ts`, "import '@vitrina/shared/util';", null],
   // type
-  ['type:domain no importa de type:backend', `${PLAT}/kernel/src/probe.ts`, "import '@vitrina/plataforma/kernel-infra';", { regla: BOUNDARIES, mensaje: /type:domain/ }],
+  // Fixture sin dependencia inversa: con kernel-infra la regla reporta el ciclo y no llega a evaluar los tags.
+  ['type:domain no importa de type:backend', `${PLAT}/kernel/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /type:domain/ }],
   ['type:backend importa de type:domain', `${PLAT}/kernel-infra/src/probe.ts`, "import '@vitrina/plataforma/kernel';", null],
   // componente (PL-10)
   ['comp:cfg no importa de comp:aud', `${FX}/cfg/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],

@@ -38,6 +38,28 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
 - Cada spec lista en sus criterios de aceptación que el código nuevo sigue esta sección.
 - Antes de cerrar un spec, `/spec-impl` pasa el agente `code-simplifier:code-simplifier` sobre los archivos modificados y se revisa su diff como cualquier otro. Para renombrar y buscar referencias se prefiere la herramienta LSP de TypeScript si está disponible.
 
+## Estructura de libs Angular (desde el spec 13)
+- Dentro de `src/lib/` se agrupa por tipo de artefacto, una carpeta por tipo. Solo se crean las carpetas que la lib usa:
+
+  | Carpeta | Contiene | Sufijo del archivo |
+  |---|---|---|
+  | `config/` | Tokens de configuración, valores por defecto y `provide<Lib>()` | `config.ts`, `provide-<lib>.ts` |
+  | `models/` | Interfaces, tipos, DTO de la API, sus mapeos y errores propios | `<nombre>.ts` |
+  | `services/` | Clases `@Injectable` (estado con signals, clientes externos) | `.service.ts`, `.cliente.ts` |
+  | `guards/` | Un guard por archivo | `.guard.ts` |
+  | `interceptors/` | Un interceptor por archivo | `.interceptor.ts` |
+  | `directives/` | Una directiva por archivo | `.directive.ts` |
+  | `pipes/` | Un pipe por archivo | `.pipe.ts` |
+  | `components/` | Componentes reutilizables, carpeta por componente | `<nombre>/<nombre>.component.ts` |
+  | `pages/` | Componentes de ruta (libs `type:feature`), carpeta por página | `<nombre>/<nombre>.page.ts` |
+  | `utils/` | Funciones puras sin estado ni DI | `<nombre>.ts` |
+
+- Un artefacto Angular por archivo: no se juntan varios guards o servicios en un archivo.
+- Rutas lazy de una lib feature en `src/lib/<lib>.routes.ts`.
+- La prueba va junto a su archivo (`sesion.service.ts` + `sesion.service.spec.ts`), como espera `@angular/build:unit-test`. Dobles y arneses de prueba compartidos en `src/testing/`, excluido del build en `tsconfig.lib.json`.
+- `src/index.ts` es la única API pública; exporta por ruta explícita, sin `export *`.
+- Referencia: `libs/shared/auth`.
+
 ## Verificación del frontend (MCP Playwright)
 - Todo spec que toque una app Angular se verifica en el navegador real con el MCP `playwright`, además de las pruebas unitarias.
 - `/spec-impl` lo usa al final de la implementación, con la app levantada (`nx serve`): recorre los criterios GWT de UI del spec, revisa la consola sin errores y toma capturas de las pantallas nuevas o modificadas.
