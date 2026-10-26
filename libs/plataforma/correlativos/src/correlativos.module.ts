@@ -7,6 +7,7 @@ import { CrearSerie } from './application/crear-serie.js';
 import type { DependenciasSeries } from './application/dependencias-series.js';
 import { ConsultarSerie, ListarSeries, type DependenciasLectura } from './application/lecturas-series.js';
 import { ObtenerSiguiente } from './application/obtener-siguiente.js';
+import { SembrarSeriesIniciales } from './application/sembrar-series-iniciales.js';
 import { CORRELATIVO_PORT, type CorrelativoPort } from './application/ports/correlativo.port.js';
 import { LecturaSeriesTypeOrm } from './infrastructure/typeorm/lectura-series.typeorm.js';
 import { NumeracionSqlTypeOrm } from './infrastructure/typeorm/numeracion-sql.typeorm.js';
@@ -59,6 +60,11 @@ export class CorrelativosModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
         },
         { provide: CrearSerie, useFactory: (dependencias: DependenciasSeries) => new CrearSerie(dependencias), inject: [DEPENDENCIAS_SERIES] },
+        {
+          provide: SembrarSeriesIniciales,
+          useFactory: (dependencias: DependenciasSeries) => new SembrarSeriesIniciales(dependencias),
+          inject: [DEPENDENCIAS_SERIES],
+        },
         { provide: CambiarEstadoSerie, useFactory: (dependencias: DependenciasSeries) => new CambiarEstadoSerie(dependencias), inject: [DEPENDENCIAS_SERIES] },
         { provide: ListarSeries, useFactory: (dependencias: DependenciasLectura) => new ListarSeries(dependencias), inject: [DEPENDENCIAS_LECTURA] },
         { provide: ConsultarSerie, useFactory: (dependencias: DependenciasLectura) => new ConsultarSerie(dependencias), inject: [DEPENDENCIAS_LECTURA] },
@@ -69,7 +75,7 @@ export class CorrelativosModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
         },
       ],
-      exports: [CORRELATIVO_PORT, CrearSerie],
+      exports: [CORRELATIVO_PORT, CrearSerie, SembrarSeriesIniciales],
     };
   }
 }

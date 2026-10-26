@@ -85,6 +85,14 @@ export {
 export type { EstadoMembresia } from './domain/membresia.js';
 export { PROVEEDOR_IDENTIDAD, type ProveedorIdentidad } from './application/ports/proveedor-identidad.port.js';
 export { InvitarUsuario, type InvitacionEmitida, type InvitarUsuarioComando } from './application/invitar-usuario.js';
+export {
+  InvitarPropietario,
+  ROL_PROPIETARIO,
+  type IdentidadPropietario,
+  type OpcionesPropietario,
+  type PropietarioRegistrado,
+  type PropietarioRepos,
+} from './application/invitar-propietario.js';
 export { AceptarInvitacion, ConsultarInvitacion } from './application/aceptar-invitacion.js';
 export { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMembresia } from './application/membresia.casos-de-uso.js';
 

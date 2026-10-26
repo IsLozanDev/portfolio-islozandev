@@ -9,6 +9,8 @@ export interface DatosInvitacionMembresia {
   usuarioId: string;
   tenantId: string;
   invitadoPor: string;
+  /** Solo el alta de tenant invita al propietario (spec 12). Por defecto, false. */
+  esPropietario?: boolean;
 }
 
 export interface MembresiaProps {
@@ -41,7 +43,7 @@ export class Membresia extends AggregateRoot {
       usuarioId: datos.usuarioId,
       tenantId: datos.tenantId,
       estado: 'INVITADO',
-      esPropietario: false,
+      esPropietario: datos.esPropietario ?? false,
       invitadoPor: datos.invitadoPor,
       desde: ahora,
       hasta: null,

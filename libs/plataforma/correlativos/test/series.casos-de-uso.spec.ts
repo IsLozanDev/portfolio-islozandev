@@ -1,7 +1,8 @@
-import { NotFoundError, type DomainEvent, type TenantScope } from '@vitrina/plataforma/kernel';
+import { MissingTenantContextError, NotFoundError, type DomainEvent, type TenantScope } from '@vitrina/plataforma/kernel';
 import { ActorSinAlcanceError, type DestinoAlcance } from '@vitrina/plataforma/seguridad';
 import { CambiarEstadoSerie } from '../src/application/cambiar-estado-serie.js';
 import { CrearSerie, type CrearSerieComando } from '../src/application/crear-serie.js';
+import { SembrarSeriesIniciales } from '../src/application/sembrar-series-iniciales.js';
 import type { DependenciasSeries } from '../src/application/dependencias-series.js';
 import type { RepositorioSeries, UbicacionUnidad } from '../src/application/ports/repositorios.js';
 import { AmbitoSerieInvalidoError, SerieInvalidaError, SerieNoEncontradaError } from '../src/domain/errores.js';
@@ -214,5 +215,39 @@ describe('CambiarEstadoSerie', () => {
     await expect(new CambiarEstadoSerie(entorno.dependencias).ejecutar({ serieId: serie.id, activa: false, actorId: ANA })).rejects.toThrow(ActorSinAlcanceError);
     expect(entorno.series.escrituras).toBe(0);
     expect(serie.activa).toBe(true);
+  });
+});
+
+describe('SembrarSeriesIniciales (alta de tenant, spec 12)', () => {
+  it('crea BOLETA B001 y FACTURA F001 de 8 dígitos en la sucursal, sin consultar el alcance del actor', async () => {
+    const entorno = escenario({ actorCubre: () => false });
+
+    const series = await new SembrarSeriesIniciales(entorno.dependencias).ejecutar({ empresaId: EMPRESA, sucursalId: CENTRAL, creadoPor: ANA });
+
+    expect(series.map((serie) => [serie.tipo, serie.codigo, serie.digitos, serie.reinicio, serie.ultimoNumero])).toEqual([
+      ['BOLETA', 'B001', 8, 'NUNCA', 0],
+      ['FACTURA', 'F001', 8, 'NUNCA', 0],
+    ]);
+    expect(series.every((serie) => serie.ambito.sucursalId === CENTRAL && serie.creadoPor === ANA && serie.tenantId === TENANT)).toBe(true);
+    expect(entorno.publicados.map((evento) => evento.eventType)).toEqual(['serie.creada', 'serie.creada']);
+    expect(entorno.destinos).toEqual([]);
+  });
+
+  it('sin tenant en el contexto falla y no escribe', async () => {
+    const entorno = escenario();
+    const sinTenant = {
+      ...entorno.dependencias,
+      contexto: {
+        current: () => {
+          throw new MissingTenantContextError();
+        },
+        run: entorno.dependencias.contexto.run,
+      },
+    };
+
+    await expect(new SembrarSeriesIniciales(sinTenant).ejecutar({ empresaId: EMPRESA, sucursalId: CENTRAL, creadoPor: ANA })).rejects.toThrow(
+      MissingTenantContextError,
+    );
+    expect(entorno.series.escrituras).toBe(0);
   });
 });

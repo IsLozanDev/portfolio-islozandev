@@ -2,6 +2,7 @@ import { NotFoundError } from '@vitrina/plataforma/kernel';
 import { ActorSinAlcanceError } from '@vitrina/plataforma/seguridad';
 import { CambiarEstadoSerie } from '../src/application/cambiar-estado-serie.js';
 import { CrearSerie, type CrearSerieComando } from '../src/application/crear-serie.js';
+import { SembrarSeriesIniciales } from '../src/application/sembrar-series-iniciales.js';
 import { AmbitoSerieInvalidoError, SerieDuplicadaError } from '../src/domain/errores.js';
 import { crearEntornoSeries, type EntornoSeries, type Organizacion } from './support/entorno.js';
 import { describeConDb } from './support/temp-db.js';
@@ -105,5 +106,29 @@ describeConDb('CrearSerie y CambiarEstadoSerie (TR-RF-035, PostgreSQL 16)', () =
     await enTransaccion(() => series.guardarEstado(leida));
 
     expect(await fila(serie.id)).toMatchObject({ ultimo_numero: '125', activa: false });
+  });
+
+  describe('SembrarSeriesIniciales (alta de tenant, spec 12)', () => {
+    it('crea B001 y F001 de 8 dígitos en la sucursal, con serie.creada; repetirlo da SERIE_DUPLICADA sin escribir', async () => {
+      const nueva = await entorno.organizacion();
+      const sembrar = new SembrarSeriesIniciales(entorno.dependencias);
+      const comandoSiembra = { empresaId: nueva.empresaId, sucursalId: nueva.central, creadoPor: nueva.usuarioId };
+
+      const series = await entorno.en(nueva.tenantId, () => sembrar.ejecutar(comandoSiembra));
+
+      const filas = await entorno.dataSource.query(
+        `SELECT tipo, serie, digitos, reinicio, ultimo_numero, sucursal_id FROM seq.serie WHERE tenant_id = $1 ORDER BY serie`,
+        [nueva.tenantId],
+      );
+      expect(filas).toEqual([
+        { tipo: 'BOLETA', serie: 'B001', digitos: 8, reinicio: 'NUNCA', ultimo_numero: '0', sucursal_id: nueva.central },
+        { tipo: 'FACTURA', serie: 'F001', digitos: 8, reinicio: 'NUNCA', ultimo_numero: '0', sucursal_id: nueva.central },
+      ]);
+      for (const serie of series) expect((await entorno.eventosDe(serie.id)).map((evento) => evento.event_type)).toEqual(['serie.creada']);
+
+      await expect(entorno.en(nueva.tenantId, () => sembrar.ejecutar(comandoSiembra))).rejects.toThrow(SerieDuplicadaError);
+      const [{ total }] = await entorno.dataSource.query(`SELECT count(*)::int AS total FROM seq.serie WHERE tenant_id = $1`, [nueva.tenantId]);
+      expect(total).toBe(2);
+    });
   });
 });

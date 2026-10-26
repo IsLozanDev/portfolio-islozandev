@@ -18,6 +18,8 @@ const esquema = z.object({
   EVT_INTENTOS: z.coerce.number().int().positive().default(8),
   EVT_BACKOFF_MS: z.coerce.number().int().positive().default(5000),
   EVT_BACKOFF_MAX_MS: z.coerce.number().int().positive().default(600_000),
+  // Código del tenant operador: el único que da de alta tenants (spec 12).
+  ORG_TENANT_OPERADOR: z.string().min(3).max(30).default('plataforma'),
 });
 
 export type Config = z.infer<typeof esquema>;

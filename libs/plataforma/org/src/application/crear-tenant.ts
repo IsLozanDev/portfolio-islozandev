@@ -4,13 +4,15 @@ import type { RepositorioTenants } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
 
 export interface CrearTenantComando {
+  /** El alta (spec 12) lo genera antes para abrir la transacción en el contexto del tenant nuevo. */
+  id?: string;
   codigo: string;
   nombre: string;
   estado: 'PRUEBA' | 'ACTIVO';
 }
 
 /**
- * Alta mínima: sin asistente, sin siembra y sin invitar al propietario (eso es del spec 12).
+ * Alta mínima: el alta completa con siembra y propietario la orquesta `apps/api` (spec 12).
  * Corre en el contexto del tenant nuevo porque la RLS de org.tenant es por id.
  */
 export class CrearTenant {
@@ -23,7 +25,8 @@ export class CrearTenant {
   ) {}
 
   async ejecutar(comando: CrearTenantComando): Promise<{ tenantId: string }> {
-    const tenant = Tenant.crear({ id: this.ids.next(), ...comando });
+    const { id = this.ids.next(), ...datos } = comando;
+    const tenant = Tenant.crear({ id, ...datos });
     await this.contexto.run({ tenantId: tenant.id }, () =>
       this.uow.run(async () => {
         await this.tenants.guardar(tenant);

@@ -1,4 +1,4 @@
-import { Logger, Module, type DynamicModule, type OnModuleDestroy } from '@nestjs/common';
+import { Logger, Module, type DynamicModule, type OnModuleDestroy, type Provider } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
@@ -36,22 +36,42 @@ class CierreRedisCfg implements OnModuleDestroy {
   }
 }
 
-// Usa los tokens de KernelInfraModule y SeguridadModule (ambos globales), que la app debe importar.
+/** Cliente Redis de la caché y ParametroPort: lo único que necesita quien solo lee parámetros. */
+function proveedoresLectura(opciones: ParametrosOpciones, logger: Logger): Provider[] {
+  const avisar = (mensaje: string, datos: Record<string, unknown>) => logger.warn({ mensaje, ...datos });
+  return [
+    {
+      provide: CLIENTE_REDIS_CFG,
+      // Solo el nombre del error: el mensaje puede traer la URL con la clave (RNF-026).
+      useFactory: (): Redis => crearClienteRedis(opciones.redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_CACHE, error: error.name })),
+    },
+    { provide: CierreRedisCfg, useFactory: (redis: Redis) => new CierreRedisCfg(redis), inject: [CLIENTE_REDIS_CFG] },
+    {
+      provide: PARAMETRO_PORT,
+      useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, redis: Redis): ParametroPort =>
+        new ResolverParametro(
+          unidadDeTrabajo,
+          contexto,
+          new LecturaDefinicionesTypeOrm(unidadDeTrabajo),
+          new ResolucionSqlTypeOrm(unidadDeTrabajo),
+          new CacheParametrosRedis(redis),
+          avisar,
+        ),
+      inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLIENTE_REDIS_CFG],
+    },
+  ];
+}
+
+// register usa los tokens de KernelInfraModule y SeguridadModule (ambos globales), que la app debe importar.
 @Module({})
 export class ParametrosModule {
   static register(opciones: ParametrosOpciones): DynamicModule {
     const logger = new Logger('Parametros');
-    const avisar = (mensaje: string, datos: Record<string, unknown>) => logger.warn({ mensaje, ...datos });
     return {
       module: ParametrosModule,
       controllers: [ParametrosController],
       providers: [
-        {
-          provide: CLIENTE_REDIS_CFG,
-          // Solo el nombre del error: el mensaje puede traer la URL con la clave (RNF-026).
-          useFactory: (): Redis => crearClienteRedis(opciones.redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_CACHE, error: error.name })),
-        },
-        { provide: CierreRedisCfg, useFactory: (redis: Redis) => new CierreRedisCfg(redis), inject: [CLIENTE_REDIS_CFG] },
+        ...proveedoresLectura(opciones, logger),
         {
           provide: DEPENDENCIAS_VALORES,
           useFactory: (
@@ -99,21 +119,16 @@ export class ParametrosModule {
             }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
-        {
-          provide: PARAMETRO_PORT,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, redis: Redis): ParametroPort =>
-            new ResolverParametro(
-              unidadDeTrabajo,
-              contexto,
-              new LecturaDefinicionesTypeOrm(unidadDeTrabajo),
-              new ResolucionSqlTypeOrm(unidadDeTrabajo),
-              new CacheParametrosRedis(redis),
-              avisar,
-            ),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLIENTE_REDIS_CFG],
-        },
       ],
       exports: [PARAMETRO_PORT],
     };
+  }
+
+  /**
+   * Solo ParametroPort, sin rutas ni dependencias de seguridad: para apps/worker, que no recibe la
+   * secret key (regla 9). Necesita KernelInfraModule.
+   */
+  static registrarLectura(opciones: ParametrosOpciones): DynamicModule {
+    return { module: ParametrosModule, providers: proveedoresLectura(opciones, new Logger('Parametros')), exports: [PARAMETRO_PORT] };
   }
 }

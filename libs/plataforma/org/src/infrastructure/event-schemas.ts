@@ -7,6 +7,8 @@ const textoNulo = { anyOf: [texto, nulo] };
 const uuid = { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' };
 const enteroNulo = { anyOf: [{ type: 'integer', minimum: 1 }, nulo] };
 const estadoTenant = { enum: ['PRUEBA', 'ACTIVO', 'SUSPENDIDO', 'BAJA'] };
+const productoCodigo = { enum: ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] };
+const fecha = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' };
 
 const objeto = (properties: Record<string, object>) => ({
   type: 'object',
@@ -33,13 +35,19 @@ export const ESQUEMAS_ORG: Readonly<Record<string, object>> = {
   'tenant.reactivado': cambioEstado,
   'tenant.dado_de_baja': cambioEstado,
   'suscripcion.cambiada': objeto({
-    producto_codigo: { enum: ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] },
+    producto_codigo: productoCodigo,
     plan: { enum: ['BASICO', 'PRO', 'EMPRESA'] },
     estado: { enum: ['PRUEBA', 'ACTIVA', 'VENCIDA', 'CANCELADA'] },
     limite_sucursales: enteroNulo,
     limite_usuarios: enteroNulo,
     vigente_hasta: textoNulo,
     nueva: { type: 'boolean' },
+  }),
+  'suscripcion.por_vencer': objeto({ producto_codigo: productoCodigo, vigente_hasta: fecha, dias_antes: { enum: [7, 3, 1] } }),
+  'suscripcion.vencida': objeto({
+    producto_codigo: productoCodigo,
+    vigente_hasta: fecha,
+    estado_anterior: { enum: ['PRUEBA', 'ACTIVA'] },
   }),
   'empresa.creada': empresa,
   'empresa.actualizada': empresa,

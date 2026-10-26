@@ -31,6 +31,7 @@ const app = await NestFactory.create(
     redisUrl: config.REDIS_URL,
     invitaciones: { supabaseSecretKey: config.SUPABASE_SECRET_KEY, url: config.SEG_URL_INVITACION, horas: config.SEG_INVITACION_HORAS },
     reintentosEventos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
+    tenantOperador: config.ORG_TENANT_OPERADOR,
   }),
 );
 configurarApp(app);

@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '../../src/infrastructure/event-schemas.js';
+import { ENTIDADES_ORG } from '../../src/infrastructure/typeorm/entidades.js';
 import { EmpresaRepositorioTypeOrm } from '../../src/infrastructure/typeorm/empresa.repositorio.js';
 import { SucursalRepositorioTypeOrm } from '../../src/infrastructure/typeorm/sucursal.repositorio.js';
 import { SuscripcionRepositorioTypeOrm } from '../../src/infrastructure/typeorm/suscripcion.repositorio.js';
@@ -32,7 +33,7 @@ export interface Entorno {
 
 export async function crearEntorno(): Promise<Entorno> {
   const db = await createTempDb();
-  const dataSource = new DataSource({ type: 'postgres', url: db.url });
+  const dataSource = new DataSource({ type: 'postgres', url: db.url, entities: ENTIDADES_ORG });
   await dataSource.initialize();
   const contexto = new AlsTenantContext();
   const uow = new TypeOrmUnitOfWork(dataSource, contexto);

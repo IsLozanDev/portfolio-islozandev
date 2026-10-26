@@ -1,7 +1,11 @@
+export { DIAS_AVISO, type AvisoVencimiento, type DiasAviso } from './domain/aviso-vencimiento.js';
 export { CodigoTenant } from './domain/codigo-tenant.js';
 export { exigirCupo, topeSucursales, type CupoSucursales } from './domain/cupo-sucursales.js';
+export { diasEntre, fechaCalendarioDe, sumarDias, ZONA_VENCIMIENTOS, type FechaCalendario } from './domain/fecha-calendario.js';
 export { Empresa, type DatosEmpresa, type EmpresaProps } from './domain/empresa.js';
 export { Sucursal, type DatosSucursal, type SucursalProps } from './domain/sucursal.js';
+export { PERMISOS_ORG } from './domain/permisos-org.js';
+export { debeSuspenderse, MOTIVO_FIN_DE_GRACIA } from './domain/regla-gracia.js';
 export {
   ESTADOS_SUSCRIPCION,
   PLANES,
@@ -72,6 +76,24 @@ export {
   type CambiarEstadoTenantComando,
   type GestionarSuscripcionComando,
 } from './application/tenant.casos-de-uso.js';
+export {
+  ProcesarVencimientosTenant,
+  RevisarVencimientos,
+  type DependenciasVencimiento,
+  type ResultadoTenant,
+  type ResultadoVencimientos,
+} from './application/vencimientos.js';
+export type {
+  DiasGracia,
+  Informar,
+  RepositorioAvisos,
+  SuscripcionARevisar,
+  SuscripcionesARevisar,
+} from './application/ports/vencimientos.js';
+export { ENTIDADES_ORG } from './infrastructure/typeorm/entidades.js';
+export { RepositorioAvisosTypeOrm, SuscripcionesARevisarTypeOrm } from './infrastructure/typeorm/vencimientos.typeorm.js';
+export { SuscripcionRepositorioTypeOrm } from './infrastructure/typeorm/suscripcion.repositorio.js';
+export { TenantRepositorioTypeOrm } from './infrastructure/typeorm/tenant.repositorio.js';
 export type { UsoUsuariosPort } from './application/ports/uso-usuarios.port.js';
 export { UsoUsuariosProvisional } from './infrastructure/uso-usuarios.provisional.js';
 export { OrgModule, PADRON_RUC, USO_USUARIOS } from './infrastructure/org.module.js';

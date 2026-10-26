@@ -1,4 +1,6 @@
 import { AggregateRoot, ValidationError } from '@vitrina/plataforma/kernel';
+import { esDiaDeAviso, type DiasAviso } from './aviso-vencimiento.js';
+import { diasEntre, type FechaCalendario } from './fecha-calendario.js';
 import { textoOpcional } from './texto.js';
 
 export const PRODUCTOS = ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] as const;
@@ -74,6 +76,50 @@ export class Suscripcion extends AggregateRoot {
     const limpios = validarDatos(datos, this.props.estado, uso);
     this.props = { ...this.props, ...limpios };
     this.publicarCambio(false);
+  }
+
+  /** Días hasta `vigente_hasta`, el último día con servicio; null sin fecha. */
+  diasParaVencer(fecha: FechaCalendario): number | null {
+    return this.props.vigenteHasta === null ? null : diasEntre(fecha, this.props.vigenteHasta);
+  }
+
+  /** Días desde `vigente_hasta` si ya pasó; null si no venció o no tiene fecha. */
+  diasVencida(fecha: FechaCalendario): number | null {
+    const dias = this.diasParaVencer(fecha);
+    return dias !== null && dias < 0 ? -dias : null;
+  }
+
+  /** Días de aviso (7, 3 o 1) si hoy toca avisar; null si no. */
+  diaDeAviso(fecha: FechaCalendario): DiasAviso | null {
+    const dias = this.diasParaVencer(fecha);
+    return this.vigente && esDiaDeAviso(dias) ? dias : null;
+  }
+
+  /** Levanta `suscripcion.por_vencer` si hoy toca aviso. Devuelve los días o null. */
+  avisarVencimiento(fecha: FechaCalendario): DiasAviso | null {
+    const dias = this.diaDeAviso(fecha);
+    if (dias === null) return null;
+    this.raise({
+      eventType: 'suscripcion.por_vencer',
+      aggregateType: 'suscripcion',
+      schemaVersion: 1,
+      payload: { producto_codigo: this.props.productoCodigo, vigente_hasta: this.props.vigenteHasta, dias_antes: dias },
+    });
+    return dias;
+  }
+
+  /** PRUEBA o ACTIVA pasa a VENCIDA si la fecha superó `vigente_hasta`. Devuelve false si no cambió. */
+  vencer(fecha: FechaCalendario): boolean {
+    if (!this.vigente || this.diasVencida(fecha) === null) return false;
+    const estadoAnterior = this.props.estado;
+    this.props = { ...this.props, estado: 'VENCIDA' };
+    this.raise({
+      eventType: 'suscripcion.vencida',
+      aggregateType: 'suscripcion',
+      schemaVersion: 1,
+      payload: { producto_codigo: this.props.productoCodigo, vigente_hasta: this.props.vigenteHasta, estado_anterior: estadoAnterior },
+    });
+    return true;
   }
 
   private publicarCambio(nueva: boolean): void {

@@ -11,7 +11,7 @@ interface Manifiesto {
   roles_predefinidos: { codigo: string; permisos: string[] }[];
 }
 
-describe('Manifiesto PLAT 1.4.0: parte de evt (spec 11)', () => {
+describe('Manifiesto PLAT: parte de evt (spec 11)', () => {
   let manifiesto: Manifiesto;
 
   beforeAll(async () => {
@@ -20,7 +20,6 @@ describe('Manifiesto PLAT 1.4.0: parte de evt (spec 11)', () => {
 
   it('declara exactamente los permisos de PERMISOS_EVT; reprocesar es sensible (TR-RN-009) y consultar no', () => {
     const deEvt = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.evento.'));
-    expect(manifiesto.version).toBe('1.4.0');
     expect(deEvt.map((permiso) => permiso.codigo).sort()).toEqual(Object.values(PERMISOS_EVT).sort());
     expect(deEvt.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       ['plat.evento.consultar', 'TENANT', false],
