@@ -53,7 +53,7 @@ export const CONFIG_DE_PRUEBA: ConfigAuth = {
 };
 
 type RespuestaVacia = { data: object; error: AuthError | null };
-type OyenteSesion =(evento: AuthChangeEvent, sesion: Session | null) => void;
+type OyenteSesion = (evento: AuthChangeEvent, sesion: Session | null) => void;
 
 export function sesionDePrueba(token = 'token-aal1'): Session {
   return { access_token: token, refresh_token: 'r', expires_in: 3600, token_type: 'bearer', user: { id: 'u-1' } } as Session;
@@ -64,6 +64,9 @@ export class DobleSupabase {
   private oyentes: OyenteSesion[] = [];
   sesionGuardada: Session | null = null;
   errorDeInicio: AuthError | null = null;
+  nivelActual: 'aal1' | 'aal2' = 'aal1';
+  nivelSiguiente: 'aal1' | 'aal2' = 'aal1';
+  factores: { id: string; factor_type: 'totp'; status: 'verified' | 'unverified' }[] = [];
 
   readonly inicializar = vi.fn(async () => ({ error: this.errorDeInicio }));
 
@@ -98,10 +101,6 @@ export class DobleSupabase {
       })),
     },
   };
-
-  nivelActual: 'aal1' | 'aal2' = 'aal1';
-  nivelSiguiente: 'aal1' | 'aal2' = 'aal1';
-  factores: { id: string; factor_type: 'totp'; status: 'verified' | 'unverified' }[] = [];
 
   emitir(evento: AuthChangeEvent, sesion: Session | null): void {
     this.oyentes.forEach((oyente) => oyente(evento, sesion));

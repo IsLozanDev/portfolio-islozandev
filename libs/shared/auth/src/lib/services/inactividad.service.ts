@@ -65,7 +65,7 @@ export class InactividadService {
     this.ultimaActividadLocal = ahora;
     if (!forzar && ahora - this.ultimaEscritura < MS_ENTRE_ESCRITURAS) return;
     this.ultimaEscritura = ahora;
-    escribirAlmacen(this.documento, String(ahora));
+    escribirUltimaActividadCompartida(this.documento, ahora);
   }
 
   /** Devuelve `true` si cerró la sesión. */
@@ -92,9 +92,9 @@ function leerUltimaActividadCompartida(documento: Document): number {
   }
 }
 
-function escribirAlmacen(documento: Document, valor: string): void {
+function escribirUltimaActividadCompartida(documento: Document, momento: number): void {
   try {
-    documento.defaultView?.localStorage.setItem(CLAVE_ULTIMA_ACTIVIDAD, valor);
+    documento.defaultView?.localStorage.setItem(CLAVE_ULTIMA_ACTIVIDAD, String(momento));
   } catch {
     // Sin almacenamiento compartido la vigilancia sigue con la actividad de esta pestaña.
   }

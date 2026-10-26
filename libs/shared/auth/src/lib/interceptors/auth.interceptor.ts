@@ -3,10 +3,11 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { CONFIG_AUTH, type ConfigAuthResuelta } from '../config/config';
-import { estaEn, rutaConRetorno } from '../utils/navegacion';
 import { CABECERA_SUCURSAL, SesionService } from '../services/sesion.service';
+import { estaEn, rutaConRetorno } from '../utils/navegacion';
 
 const HTTP_NO_AUTORIZADO = 401;
+const CABECERA_AUTORIZACION = 'Authorization';
 const CODIGO_MFA_REQUERIDA = 'MFA_REQUERIDA';
 const CODIGO_TOKEN_INVALIDO = 'TOKEN_INVALIDO';
 
@@ -38,7 +39,7 @@ function conCredenciales(peticion: HttpRequest<unknown>, sesion: SesionService):
   const token = sesion.token();
   const sucursalId = sesion.sucursalId();
   const cabeceras: Record<string, string> = {};
-  if (token) cabeceras['Authorization'] = `Bearer ${token}`;
+  if (token) cabeceras[CABECERA_AUTORIZACION] = `Bearer ${token}`;
   if (sucursalId && !peticion.headers.has(CABECERA_SUCURSAL)) cabeceras[CABECERA_SUCURSAL] = sucursalId;
   return peticion.clone({ setHeaders: cabeceras });
 }

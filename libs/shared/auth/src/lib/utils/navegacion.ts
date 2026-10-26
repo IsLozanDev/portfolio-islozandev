@@ -1,4 +1,4 @@
-import type { Router, UrlTree } from '@angular/router';
+import { PRIMARY_OUTLET, type Router, type UrlTree } from '@angular/router';
 
 export const PARAMETRO_RETORNO = 'returnUrl';
 
@@ -10,6 +10,6 @@ export function rutaConRetorno(router: Router, ruta: string, retorno: string): U
 /** Evita encadenar `?returnUrl=` si ya se está en esa ruta. */
 export function estaEn(router: Router, ruta: string): boolean {
   const actual = router.parseUrl(router.url);
-  const rutaActual = '/' + (actual.root.children['primary']?.segments.map((segmento) => segmento.path).join('/') ?? '');
+  const rutaActual = '/' + (actual.root.children[PRIMARY_OUTLET]?.segments.map((segmento) => segmento.path).join('/') ?? '');
   return rutaActual === ruta;
 }
