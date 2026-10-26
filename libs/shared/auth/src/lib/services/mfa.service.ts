@@ -62,11 +62,11 @@ export class MfaService {
     return { factorId: data.id, qr: data.totp.qr_code, secreto: data.totp.secret };
   }
 
-  /** El token nuevo ya es aal2: se recarga el contexto para reflejar `mfaVigente`. */
+  /** El token nuevo ya es aal2: se recarga el contexto para reflejar `mfaVigente`; si eso falla, el MFA igual quedó hecho. */
   async verificarTotp(factorId: string, codigo: string): Promise<void> {
     const { error } = await this.supabase.auth.mfa.challengeAndVerify({ factorId, code: codigo });
     if (error) throw aErrorAuth(error);
-    await this.sesion.cargarContexto();
+    await this.sesion.intentarCargarContexto();
   }
 
   private async listarFactores() {

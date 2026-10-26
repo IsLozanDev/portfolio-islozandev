@@ -2,8 +2,9 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError, AuthRetryableFetchError, AuthWeakPasswordError } from '@supabase/supabase-js';
 import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
+import { authInterceptor } from '../interceptors/auth.interceptor';
 import { ErrorAuth, MENSAJES_AUTH } from '../models/errores';
-import { SesionService } from './sesion.service';
+import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
 
 describe('SesionService (sesión)', () => {
   let supabase: DobleSupabase;
@@ -229,6 +230,19 @@ describe('SesionService (sesión)', () => {
 
       expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
       expect(servicio.token()).toBe('token-refrescado');
+    });
+
+    it('con el interceptor, recarga mi-contexto sin la sucursal del tenant anterior', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: proveerAuthDePrueba(supabase, {}, [authInterceptor]) });
+      servicio = TestBed.inject(SesionService);
+      http = TestBed.inject(HttpTestingController);
+      await iniciarConSesion();
+      expect(servicio.sucursalId()).not.toBeNull();
+
+      const [, peticion] = await Promise.all([servicio.refrescarSesion(), responderMiContexto(http)]);
+
+      expect(peticion.request.headers.has(CABECERA_SUCURSAL)).toBe(false);
     });
 
     it('si Supabase no renueva, propaga el error sin pedir el contexto', async () => {

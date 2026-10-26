@@ -38,6 +38,33 @@ describe('autenticadoGuard', () => {
     expect(await rutas.navegarConSesion('/caja', sinAccesos)).toBe('/sin-accesos');
   });
 
+  it('sin tenant (403 SIN_TENANT de mi-contexto) también va a /sin-accesos', async () => {
+    rutas.supabase.sesionGuardada = sesionDePrueba();
+    rutas.configurar();
+    const harness = await RouterTestingHarness.create();
+    const navegacion = harness.navigateByUrl('/caja');
+    const sinTenant = { status: 403, statusText: 'Forbidden' };
+
+    (await esperarMiContexto(rutas.api)).flush({ codigo: 'SIN_TENANT' }, sinTenant);
+    (await esperarMiContexto(rutas.api)).flush({ codigo: 'SIN_TENANT' }, sinTenant);
+
+    await navegacion;
+    expect(TestBed.inject(Router).url).toBe('/sin-accesos');
+  });
+
+  it('otro 403 de mi-contexto no se confunde con sin tenant', async () => {
+    rutas.supabase.sesionGuardada = sesionDePrueba();
+    rutas.configurar();
+    const harness = await RouterTestingHarness.create();
+    const navegacion = harness.navigateByUrl('/caja');
+    const prohibido = { status: 403, statusText: 'Forbidden' };
+
+    (await esperarMiContexto(rutas.api)).flush({ codigo: 'SIN_PERMISO' }, prohibido);
+    (await esperarMiContexto(rutas.api)).flush({ codigo: 'SIN_PERMISO' }, prohibido);
+
+    await expect(navegacion).rejects.toMatchObject({ status: 403 });
+  });
+
   it('con varias sucursales y ninguna elegida va a /seleccionar-sucursal?returnUrl', async () => {
     const varias = contextoDePrueba({ sucursales: [MIRAFLORES, SURCO], sucursal_actual: null, requiere_seleccion: true });
 

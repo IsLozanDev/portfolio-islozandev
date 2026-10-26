@@ -23,7 +23,7 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | 11 |
 | 12 | org-alta-tenant-vencimiento | O-02 y vencimiento de O-03 (RF 001, 007): alta transaccional, siembra, invitación al propietario, tarea diaria. IDN y NOT van por puertos con adaptador nulo hasta R2 | 9 | 08, 09, 10, 11 | 03 |
 | 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 |
-| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth, MFA, recuperar y nueva clave. Sin historia en el plan; se agrega | 4-5 | 13 | 13 |
+| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth (Google real; Microsoft pendiente), MFA, recuperar, nueva clave e invitación (pantalla del spec 08). Primera app `plataforma-admin` con Material y Tailwind 4. Sin historia en el plan; se agrega | 12-13 | 13, 08 | 13 |
 | 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI) | 8 | 13 | 15 |
 | 16 | admin-usuarios-roles | U-03, U-04 | 10 | 08, 15 | — |
 | 17 | consola-y-admin-org | O-04, U-05, U-06 | 11 | 12, 15 | — |

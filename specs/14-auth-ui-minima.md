@@ -298,6 +298,18 @@ Código limpio:
 - **Sí:** axe-core manual en Playwright, con evidencia. Decisión del usuario; en CI entra con el spec 27.
 - **Sí:** verificación contra Supabase dev y la API local. El usuario crea el usuario de prueba y carga las URLs de retorno y las plantillas en el panel.
 
+### Hallazgos de la verificación en navegador (paso 10)
+
+Las pruebas con dobles no los veían; salieron contra Supabase dev y la API real. Cada uno tiene su prueba.
+
+- **Sí:** `autenticadoGuard` trata un 403 `SIN_TENANT` de `mi-contexto` como sin accesos y lleva a `/sin-accesos`. Un usuario sin membresía activa (invitado sin aceptar, membresía finalizada) no tiene `tenant_id` en el token. Decisión del usuario.
+- **No:** una página aparte `/sin-empresa`. Para el usuario es lo mismo: no tiene accesos vigentes.
+- **Sí:** `MfaService.verificarTotp` recarga el contexto con `intentarCargarContexto` (ahora público en `SesionService`): si la recarga falla, el MFA igual quedó hecho y el guard lo vuelve a pedir.
+- **Sí:** recuperación con TOTP activo. Supabase exige `aal2` para `updateUser` (`insufficient_aal`). `nueva-clave` canjea el enlace y, si falta el segundo factor, pasa por `/auth/mfa?returnUrl=/auth/nueva-clave`; de vuelta, sin `token_hash` pero con sesión, muestra el formulario. `insufficient_aal` se mapea a `SEGUNDO_FACTOR_REQUERIDO`. Decisión del usuario.
+- **No:** pedir el código TOTP dentro de `nueva-clave`. Duplica la página de MFA.
+- **Sí:** `refrescarSesion` limpia el contexto antes de recargarlo. Si no, el interceptor envía la sucursal del tenant anterior y la API responde 403 `SUCURSAL_NO_ASIGNADA`.
+- **Sí:** el caso «usuario nuevo» de la invitación (`type=invite`) solo se cubre con pruebas de componente. Resend sin dominio verificado solo entrega al dueño de la cuenta y la API no devuelve el token de la invitación.
+
 ## Riesgos
 
 | Riesgo | Mitigación |

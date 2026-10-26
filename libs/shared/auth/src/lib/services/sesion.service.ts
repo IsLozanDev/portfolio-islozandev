@@ -110,11 +110,15 @@ export class SesionService {
     this.sesionActual.set(data.session);
   }
 
-  /** Token nuevo para que el hook ponga el `tenant_id` recién aceptado; luego recarga el contexto. */
+  /**
+   * Token nuevo para que el hook ponga el `tenant_id` recién aceptado; luego recarga el contexto.
+   * El contexto se limpia antes: si no, el interceptor enviaría la sucursal del tenant anterior (403 `SUCURSAL_NO_ASIGNADA`).
+   */
   async refrescarSesion(): Promise<void> {
     const { data, error } = await this.supabase.auth.refreshSession();
     if (error || !data.session) throw aErrorAuth(error);
     this.sesionActual.set(data.session);
+    this.contextoActual.set(null);
     await this.cargarContexto();
   }
 
@@ -137,8 +141,8 @@ export class SesionService {
     if (data.session) await this.intentarCargarContexto();
   }
 
-  /** Un fallo de la API no debe tumbar el arranque: `autenticadoGuard` vuelve a pedirlo. */
-  private async intentarCargarContexto(): Promise<void> {
+  /** Un fallo de la API (caída o `SIN_TENANT`) no debe tumbar el arranque ni el MFA: `autenticadoGuard` vuelve a pedirlo. */
+  async intentarCargarContexto(): Promise<void> {
     try {
       await this.cargarContexto();
     } catch {

@@ -106,7 +106,8 @@ export class InvitacionPage implements OnInit {
 
   /** El token nuevo trae el `tenant_id` recién aceptado (hook de Supabase) y recarga el contexto. */
   private async aceptarYEntrar(): Promise<void> {
-    await this.cliente.aceptar(this.token as string);
+    if (!this.token) throw new ErrorInvitacion('INVITACION_NO_ENCONTRADA');
+    await this.cliente.aceptar(this.token);
     await this.sesion.refrescarSesion();
     await this.router.navigateByUrl(this.rutas.inicio);
   }

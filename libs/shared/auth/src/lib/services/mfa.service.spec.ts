@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError } from '@supabase/supabase-js';
-import { contextoDePrueba, DobleSupabase, proveerAuthDePrueba, responderMiContexto } from '../../testing/doble-supabase';
+import { contextoDePrueba, DobleSupabase, esperarMiContexto, proveerAuthDePrueba, responderMiContexto } from '../../testing/doble-supabase';
 import { MENSAJES_AUTH } from '../models/errores';
 import { MfaService } from './mfa.service';
 import { SesionService } from './sesion.service';
@@ -92,6 +92,15 @@ describe('MfaService (TR-RF-017)', () => {
 
       expect(supabase.auth.mfa.challengeAndVerify).toHaveBeenCalledWith({ factorId: 'factor-1', code: '123456' });
       expect(TestBed.inject(SesionService).contexto()?.mfaVigente).toBe(true);
+    });
+
+    it('si mi-contexto responde SIN_TENANT, la verificación igual resuelve y el contexto queda en null', async () => {
+      const verificacion = mfa.verificarTotp('factor-1', '123456');
+
+      (await esperarMiContexto(http)).flush({ codigo: 'SIN_TENANT' }, { status: 403, statusText: 'Forbidden' });
+
+      await expect(verificacion).resolves.toBeUndefined();
+      expect(TestBed.inject(SesionService).contexto()).toBeNull();
     });
   });
 });

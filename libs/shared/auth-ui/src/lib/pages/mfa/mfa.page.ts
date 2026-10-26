@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CONFIG_AUTH, type EnrolamientoTotp, MfaService, PARAMETRO_RETORNO, rutaDeRetorno, SesionService } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, MfaService, PARAMETRO_RETORNO, rutaDeRetorno, SesionService, type EnrolamientoTotp } from '@vitrina/shared/auth';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
 
 const PATRON_CODIGO_TOTP = /^\d{6}$/;

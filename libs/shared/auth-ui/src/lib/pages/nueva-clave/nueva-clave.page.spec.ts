@@ -65,6 +65,25 @@ describe('NuevaClavePage', () => {
     expect(pagina.elemento.querySelector('a')?.getAttribute('href')).toBe('/auth/recuperar');
   });
 
+  it('con TOTP activo, tras canjear el enlace pasa por /auth/mfa y vuelve aquí', async () => {
+    pagina.mfa.requiereVerificacion.mockResolvedValueOnce(true);
+
+    await abrirDesdeElCorreo();
+
+    expect(pagina.sesion.verificarEnlace).toHaveBeenCalledWith('hash-123', 'recovery');
+    expect(pagina.urlActual()).toBe('/auth/mfa?returnUrl=%2Fauth%2Fnueva-clave');
+  });
+
+  it('de vuelta de /auth/mfa (sin token pero con sesión) muestra el formulario', async () => {
+    pagina.sesion.autenticado.set(true);
+
+    await pagina.abrir('/auth/nueva-clave');
+    await pagina.estable();
+
+    expect(pagina.sesion.verificarEnlace).not.toHaveBeenCalled();
+    expect(pagina.elemento.querySelector('form')).not.toBeNull();
+  });
+
   it.each(['/auth/nueva-clave', '/auth/nueva-clave?token_hash=hash-123&type=invite'])(
     'sin token de recuperación (%s) no canjea nada',
     async (url) => {
