@@ -25,6 +25,8 @@ export class TablaComponent<Fila extends object> {
   readonly filas = input.required<readonly Fila[]>();
   readonly total = input.required<number>();
   readonly cargando = input<boolean>(false);
+  /** Lo fija quien consume, p. ej. a 0 al cambiar un filtro, para que el paginador no quede desfasado del servidor. */
+  readonly indicePagina = input<number>(0);
   readonly tamanosPagina = input<number[]>(TAMANOS_PAGINA_POR_DEFECTO);
   readonly textoVacio = input<string>(MENSAJES_UI.sinRegistros);
   readonly pagina = output<CambioPagina>();

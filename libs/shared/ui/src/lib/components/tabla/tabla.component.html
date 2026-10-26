@@ -29,5 +29,5 @@
     }
   </div>
 
-  <mat-paginator [length]="total()" [pageSize]="tamanosPagina()[0]" [pageSizeOptions]="tamanosPagina()" (page)="cambiarPagina($event)" />
+  <mat-paginator [length]="total()" [pageIndex]="indicePagina()" [pageSize]="tamanosPagina()[0]" [pageSizeOptions]="tamanosPagina()" (page)="cambiarPagina($event)" />
 </div>

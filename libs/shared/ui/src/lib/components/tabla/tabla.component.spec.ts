@@ -23,7 +23,7 @@ const USUARIOS: Usuario[] = Array.from({ length: 10 }, (_, indice) => ({
 @Component({
   imports: [TablaComponent, AccionesFilaDirective],
   template: `
-    <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="total()" [cargando]="cargando()" (pagina)="paginas.push($event)" (orden)="ordenes.push($event)">
+    <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="total()" [cargando]="cargando()" [indicePagina]="indicePagina()" (pagina)="paginas.push($event)" (orden)="ordenes.push($event)">
       <ng-template vitAccionesFila let-fila>
         <button type="button">Editar {{ fila.nombre }}</button>
       </ng-template>
@@ -38,6 +38,7 @@ class TablaDePrueba {
   readonly filas = signal<Usuario[]>(USUARIOS);
   readonly total = signal(TOTAL_USUARIOS);
   readonly cargando = signal(false);
+  readonly indicePagina = signal(0);
   readonly paginas: CambioPagina[] = [];
   readonly ordenes: CambioOrden[] = [];
 }
@@ -91,6 +92,17 @@ describe('TablaComponent', () => {
     await paginador.goToNextPage();
     expect(anfitrion.paginas).toEqual([{ indice: 1, tamano: 10 }]);
     expect(await paginador.getRangeLabel()).toBe('11 – 20 de 37');
+  });
+
+  it('indicePagina vuelve el paginador a la primera página', async () => {
+    const paginador = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
+    anfitrion.indicePagina.set(2);
+    await fixture.whenStable();
+    expect(await paginador.getRangeLabel()).toBe('21 – 30 de 37');
+
+    anfitrion.indicePagina.set(0);
+    await fixture.whenStable();
+    expect(await paginador.getRangeLabel()).toBe('1 – 10 de 37');
   });
 
   it('una cabecera ordenable emite orden; una no ordenable no', async () => {

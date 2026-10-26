@@ -59,6 +59,9 @@
       ],
       "@vitrina/shared/ui": [
         "./libs/shared/ui/src/index.ts"
+      ],
+      "@vitrina/shared/shell": [
+        "./libs/shared/shell/src/index.ts"
       ]
     }
   }

@@ -1,8 +1,8 @@
 <main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-4 p-4">
-  <h1 class="text-2xl font-medium">Elija su sucursal</h1>
+  <h1 class="text-2xl font-medium">{{ mensajes.elijaSucursal }}</h1>
 
   @if (error(); as mensaje) {
-    <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">{{ mensaje }}</p>
+    <p role="alert" class="rounded-md bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensaje }}</p>
   }
 
   @if (sucursales(); as lista) {
@@ -23,9 +23,6 @@
       }
     </ul>
   } @else if (!error()) {
-    <div class="flex items-center gap-3" role="status">
-      <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
-      Cargando sus sucursales…
-    </div>
+    <vit-cargando [texto]="mensajes.cargandoSucursales" />
   }
 </main>

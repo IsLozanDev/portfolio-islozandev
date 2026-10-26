@@ -1,17 +1,16 @@
 import { Component, inject, signal, type OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CONFIG_AUTH, PARAMETRO_RETORNO, rutaDeRetorno, SesionService, type ContextoUsuario } from '@vitrina/shared/auth';
+import { CargandoComponent } from '@vitrina/shared/ui';
+import { MENSAJES_SHELL } from '../../models/mensajes-shell';
 
 type Sucursal = ContextoUsuario['sucursales'][number];
 
-export const ERROR_CARGAR_SUCURSALES = 'No se pudieron cargar sus sucursales. Inténtelo de nuevo.';
-
-/** Selector provisional (TR-RF-016); el real, con la última usada preseleccionada en el encabezado, es del spec 15. */
+/** TR-RF-016: la sucursal actual es la última que recuerda el servidor y sale marcada. */
 @Component({
   selector: 'vit-seleccionar-sucursal',
-  imports: [MatButtonModule, MatProgressSpinnerModule],
+  imports: [MatButtonModule, CargandoComponent],
   templateUrl: './seleccionar-sucursal.page.html',
 })
 export class SeleccionarSucursalPage implements OnInit {
@@ -20,6 +19,7 @@ export class SeleccionarSucursalPage implements OnInit {
   private readonly rutas = inject(CONFIG_AUTH).rutas;
   private readonly retorno = inject(ActivatedRoute).snapshot.queryParamMap.get(PARAMETRO_RETORNO);
 
+  protected readonly mensajes = MENSAJES_SHELL;
   protected readonly sucursales = signal<Sucursal[] | null>(null);
   protected readonly sucursalActual = signal<string | null>(null);
   protected readonly eligiendo = signal<string | null>(null);
@@ -35,7 +35,7 @@ export class SeleccionarSucursalPage implements OnInit {
       this.sucursales.set(contexto.sucursales);
       this.sucursalActual.set(contexto.sucursalActual);
     } catch {
-      this.error.set(ERROR_CARGAR_SUCURSALES);
+      this.error.set(MENSAJES_SHELL.errorCargarSucursales);
     }
   }
 
@@ -46,7 +46,7 @@ export class SeleccionarSucursalPage implements OnInit {
       await this.sesion.seleccionarSucursal(sucursalId);
       await this.router.navigateByUrl(rutaDeRetorno(this.retorno, this.rutas.inicio));
     } catch {
-      this.error.set(ERROR_CARGAR_SUCURSALES);
+      this.error.set(MENSAJES_SHELL.errorCargarSucursales);
     } finally {
       this.eligiendo.set(null);
     }

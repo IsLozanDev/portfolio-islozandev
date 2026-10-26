@@ -1,5 +1,6 @@
 import { contextoDePrueba, PaginaDePrueba, SURCO } from '../../../testing/pagina-de-prueba';
-import { ERROR_CARGAR_SUCURSALES, SeleccionarSucursalPage } from './seleccionar-sucursal.page';
+import { MENSAJES_SHELL } from '../../models/mensajes-shell';
+import { SeleccionarSucursalPage } from './seleccionar-sucursal.page';
 
 describe('SeleccionarSucursalPage', () => {
   let pagina: PaginaDePrueba;
@@ -56,6 +57,6 @@ describe('SeleccionarSucursalPage', () => {
 
     await pagina.abrir('/seleccionar-sucursal');
 
-    expect(pagina.textoDe('[role=alert]')).toBe(ERROR_CARGAR_SUCURSALES);
+    expect(pagina.textoDe('[role=alert]')).toBe(MENSAJES_SHELL.errorCargarSucursales);
   });
 });

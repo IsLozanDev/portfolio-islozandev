@@ -1,0 +1,11 @@
+<button mat-icon-button type="button" [matMenuTriggerFor]="menuDeUsuario" [attr.aria-label]="mensajes.menuUsuario">
+  <mat-icon aria-hidden="true">account_circle</mat-icon>
+</button>
+
+<mat-menu #menuDeUsuario="matMenu" xPosition="before">
+  <p class="max-w-64 truncate px-4 py-2 text-sm text-sobre-superficie-variante">{{ correo() }}</p>
+  <button mat-menu-item type="button" (click)="salir()">
+    <mat-icon aria-hidden="true">logout</mat-icon>
+    <span>{{ mensajes.salir }}</span>
+  </button>
+</mat-menu>

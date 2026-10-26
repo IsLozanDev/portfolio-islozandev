@@ -1,4 +1,4 @@
-<main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-4 p-4">
+<section class="flex max-w-md flex-col gap-4">
   <h1 class="text-2xl font-medium">Plataforma</h1>
   <p>Sesión iniciada como <strong>{{ correo() }}</strong>.</p>
   @if (sucursalActual(); as sucursal) {
@@ -10,4 +10,4 @@
     }
     <button mat-flat-button type="button" (click)="salir()">Salir</button>
   </div>
-</main>
+</section>
