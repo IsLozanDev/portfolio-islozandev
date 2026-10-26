@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { anonimoGuard } from '@vitrina/shared/auth';
+import { anonimoGuard, sesionGuard } from '@vitrina/shared/auth';
 
 /** Rutas bajo `/auth`; coinciden con `RUTAS_AUTH_POR_DEFECTO` de `shared/auth`. */
 export const AUTH_UI_ROUTES: Routes = [
@@ -20,5 +20,14 @@ export const AUTH_UI_ROUTES: Routes = [
   {
     path: 'nueva-clave',
     loadComponent: () => import('./pages/nueva-clave/nueva-clave.page').then((modulo) => modulo.NuevaClavePage),
+  },
+  {
+    path: 'mfa',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./pages/mfa/mfa.page').then((modulo) => modulo.MfaPage),
+  },
+  {
+    path: 'invitacion',
+    loadComponent: () => import('./pages/invitacion/invitacion.page').then((modulo) => modulo.InvitacionPage),
   },
 ];

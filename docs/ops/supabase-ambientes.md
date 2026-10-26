@@ -105,6 +105,28 @@ Orden: `pnpm db:up:remoto` (aplica `01b_seg_autorizacion.sql`) y luego `pnpm man
 - [ ] (dev) Rotar la secret key `sb_secret_j5xz…`: se pegó en el chat el 2026-10-21.
 - [ ] (prod) Mismas migraciones y manifiesto cuando exista el proyecto.
 
+### 12. Páginas /auth, enlaces de correo y Google (SPEC 14)
+
+La app `plataforma-admin` corre en `http://127.0.0.1:4200` (no `localhost`: la cookie es del host). Los correos llevan `token_hash` y la página destino llama a `verifyOtp`, porque el cliente es PKCE y `{{ .ConfirmationURL }}` entrega la sesión en el fragmento (`#access_token`), que PKCE no acepta.
+
+| Plantilla (panel) | Archivo | Asunto | Enlace |
+| --- | --- | --- | --- |
+| Invite user | `supabase/templates/invite.html` | Te invitaron a Vitrina | `{{ .RedirectTo }}&token_hash=…&type=invite` (`RedirectTo` ya trae `?token=`) |
+| Magic Link | `supabase/templates/magic-link.html` | Tu enlace de acceso a Vitrina | `{{ .RedirectTo }}&token_hash=…&type=email` (solo la invitación a quien ya tiene cuenta) |
+| Reset Password | `supabase/templates/recovery.html` | Recupera tu clave de Vitrina | `{{ .RedirectTo }}?token_hash=…&type=recovery` (`RedirectTo` = origen + `/auth/nueva-clave`) |
+
+Si otro flujo empieza a usar el enlace mágico (`signInWithOtp`), hay que revisar la plantilla: hoy asume que `RedirectTo` ya trae query.
+
+- [x] (dev) Google Cloud: pantalla de consentimiento externa en modo prueba, con el correo de prueba en «Usuarios de prueba»; cliente OAuth «Aplicación web» con la URI de redirección `https://ebkwqvuynccawujsaedh.supabase.co/auth/v1/callback`. Client ID y secret solo en el panel de Supabase.
+- [x] (dev) Panel: *Authentication → URL Configuration*: Site URL `http://127.0.0.1:4200` y Redirect URLs `http://127.0.0.1:4200/**`.
+- [x] (dev) Panel: *Authentication → Sign In / Providers → Google* activado con client ID y secret.
+- [x] (dev) Panel: *Authentication → Emails → Templates*: pegar `invite.html`, `magic-link.html` y `recovery.html` con los asuntos de la tabla.
+- [x] (dev) Usuarios de prueba: el dueño de Resend (operador `plataforma`, ya existente) y `+sinaccesos` (clave, correo confirmado, sin asignaciones) para TR-CA-046.
+- [ ] (dev) Microsoft (Azure/Entra ID): pendiente. El botón existe y usa `azure`; falta la app de proveedor y activarlo.
+- [ ] (prod) Site URL, Redirect URLs, plantillas y proveedores con el dominio de producción.
+
+Google con el registro abierto desactivado: solo ingresan correos que ya existen en Supabase; la identidad `google` se vincula sola al usuario con ese correo verificado. Un correo desconocido vuelve a `/auth/callback` con error.
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |

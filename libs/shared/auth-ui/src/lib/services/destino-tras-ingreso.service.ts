@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { CONFIG_AUTH, MfaService } from '@vitrina/shared/auth';
-import { PARAMETRO_RETORNO, rutaDeRetorno } from '../utils/ruta-retorno';
+import { CONFIG_AUTH, MfaService, PARAMETRO_RETORNO, rutaDeRetorno } from '@vitrina/shared/auth';
 
 /** Tras ingresar (clave, OAuth o enlace): segundo factor si falta; si no, `returnUrl` o la portada. */
 @Injectable({ providedIn: 'root' })

@@ -1,10 +1,9 @@
 import { Component, inject, signal, type OnInit } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { SesionService } from '@vitrina/shared/auth';
+import { PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/auth';
 import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
-import { PARAMETRO_RETORNO } from '../../utils/ruta-retorno';
 
 /** Regreso de Google o Microsoft: el canje PKCE ya ocurrió al iniciar la sesión. */
 @Component({

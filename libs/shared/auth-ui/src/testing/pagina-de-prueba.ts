@@ -1,9 +1,11 @@
-import { Component, type Type } from '@angular/core';
+import { Component, signal, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { CONFIG_AUTH, MfaService, SesionService, type RutasAuth } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, MfaService, SesionService, type EnrolamientoTotp, type RutasAuth } from '@vitrina/shared/auth';
 import { vi } from 'vitest';
+import type { EstadoInvitacion, InvitacionAceptada } from '../lib/models/invitacion';
+import { InvitacionCliente } from '../lib/services/invitacion.cliente';
 
 const RUTAS_DE_PRUEBA: RutasAuth = {
   ingresar: '/auth/ingresar',
@@ -21,22 +23,50 @@ class DestinoDePrueba {}
 
 /** Doble de `SesionService` con solo lo que usan las páginas. */
 export class DobleSesion {
+  readonly autenticado = signal(false);
   readonly ingresarConClave = vi.fn<(correo: string, clave: string) => Promise<void>>(async () => undefined);
   readonly ingresarConProveedor = vi.fn<(proveedor: string, retorno?: string) => Promise<void>>(async () => undefined);
   readonly completarCallback = vi.fn(async (): Promise<void> => undefined);
   readonly recuperarClave = vi.fn<(correo: string) => Promise<void>>(async () => undefined);
   readonly verificarEnlace = vi.fn<(tokenHash: string, tipo: string) => Promise<void>>(async () => undefined);
   readonly actualizarClave = vi.fn<(nueva: string) => Promise<void>>(async () => undefined);
+  readonly salir = vi.fn(async (): Promise<void> => undefined);
+  readonly refrescarSesion = vi.fn(async (): Promise<void> => undefined);
+}
+
+export const ENROLAMIENTO_DE_PRUEBA: EnrolamientoTotp = {
+  factorId: 'factor-nuevo',
+  qr: 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>',
+  secreto: 'JBSWY3DPEHPK3PXP',
+};
+
+export const INVITACION_DE_PRUEBA: EstadoInvitacion = {
+  estado: 'VIGENTE',
+  tenantNombre: 'Sazón Miraflores',
+  expiraEn: new Date('2026-10-29T15:00:00.000Z'),
+};
+
+export class DobleInvitacion {
+  readonly consultar = vi.fn<(token: string) => Promise<EstadoInvitacion>>(async () => INVITACION_DE_PRUEBA);
+  readonly aceptar = vi.fn<(token: string) => Promise<InvitacionAceptada>>(async () => ({
+    tenantId: 't-1',
+    membresiaId: 'm-1',
+    refrescarSesion: true,
+  }));
 }
 
 export class DobleMfa {
   readonly requiereVerificacion = vi.fn(async (): Promise<boolean> => false);
+  readonly estado = vi.fn(async () => ({ nivelActual: 'aal1', nivelSiguiente: 'aal2', factorTotpId: 'factor-1' as string | null }));
+  readonly enrolarTotp = vi.fn(async (): Promise<EnrolamientoTotp> => ENROLAMIENTO_DE_PRUEBA);
+  readonly verificarTotp = vi.fn<(factorId: string, codigo: string) => Promise<void>>(async () => undefined);
 }
 
 /** Monta una página en su ruta real con dobles de sesión y MFA; el resto de rutas cae en una página vacía. */
 export class PaginaDePrueba {
   readonly sesion = new DobleSesion();
   readonly mfa = new DobleMfa();
+  readonly invitaciones = new DobleInvitacion();
   private harness: RouterTestingHarness | null = null;
 
   constructor(
@@ -53,6 +83,7 @@ export class PaginaDePrueba {
         ]),
         { provide: SesionService, useValue: this.sesion },
         { provide: MfaService, useValue: this.mfa },
+        { provide: InvitacionCliente, useValue: this.invitaciones },
         { provide: CONFIG_AUTH, useValue: { rutas: RUTAS_DE_PRUEBA } },
       ],
     });

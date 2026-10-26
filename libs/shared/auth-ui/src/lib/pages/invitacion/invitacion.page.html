@@ -1,0 +1,73 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 p-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">Invitación</h1>
+    @if (invitacion(); as datos) {
+      <p class="text-sm text-(--mat-sys-on-surface-variant)">
+        Lo invitaron a unirse a <strong class="text-(--mat-sys-on-surface)">{{ datos.tenantNombre }}</strong>.
+      </p>
+    }
+  </header>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+      {{ mensaje }}
+    </p>
+  }
+
+  @switch (estado()) {
+    @case ('cargando') {
+      <div class="flex items-center gap-3" role="status">
+        <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+        Revisando la invitación…
+      </div>
+    }
+    @case ('sin-sesion') {
+      <p>Ingrese con el correo al que llegó la invitación para aceptarla.</p>
+      <a mat-flat-button [routerLink]="rutaIngresar" [queryParams]="parametrosIngresar">Ingresar para aceptar</a>
+    }
+    @case ('clave') {
+      <p>Elija una contraseña para su cuenta.</p>
+      <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="guardarClaveYAceptar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input matInput type="password" formControlName="clave" autocomplete="new-password" required />
+          <mat-hint>Al menos {{ longitudMinima }} caracteres.</mat-hint>
+          @if (formulario.controls.clave.hasError('required')) {
+            <mat-error>Ingrese una contraseña.</mat-error>
+          } @else if (formulario.controls.clave.hasError('minlength')) {
+            <mat-error>Debe tener al menos {{ longitudMinima }} caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Repita la contraseña</mat-label>
+          <input matInput type="password" formControlName="confirmacion" autocomplete="new-password" required />
+          @if (formulario.controls.confirmacion.hasError('required')) {
+            <mat-error>Repita la contraseña.</mat-error>
+          }
+        </mat-form-field>
+
+        @if (formulario.hasError(errorClavesDistintas) && formulario.controls.confirmacion.touched) {
+          <p role="alert" class="text-sm text-(--mat-sys-error)">Las contraseñas no coinciden.</p>
+        }
+
+        <button mat-flat-button type="submit" [disabled]="enviando()">
+          @if (enviando()) {
+            <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Aceptando" />
+          } @else {
+            Guardar contraseña y aceptar
+          }
+        </button>
+      </form>
+    }
+    @case ('aceptar') {
+      <button mat-flat-button type="button" [disabled]="enviando()" (click)="aceptar()">
+        @if (enviando()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Aceptando" />
+        } @else {
+          Aceptar invitación a {{ invitacion()?.tenantNombre }}
+        }
+      </button>
+    }
+  }
+</main>

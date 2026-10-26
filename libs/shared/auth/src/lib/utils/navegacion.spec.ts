@@ -1,4 +1,4 @@
-import { rutaDeRetorno } from './ruta-retorno';
+import { rutaDeRetorno } from './navegacion';
 
 describe('rutaDeRetorno', () => {
   it('acepta una ruta interna con su query', () => {

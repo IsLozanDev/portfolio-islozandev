@@ -5,10 +5,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { SesionService, type ProveedorExterno } from '@vitrina/shared/auth';
+import { PARAMETRO_RETORNO, type ProveedorExterno, rutaDeRetorno, SesionService } from '@vitrina/shared/auth';
 import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
-import { PARAMETRO_RETORNO, rutaDeRetorno } from '../../utils/ruta-retorno';
 
 const PARAMETRO_MOTIVO = 'motivo';
 const MOTIVO_INACTIVIDAD = 'inactividad';

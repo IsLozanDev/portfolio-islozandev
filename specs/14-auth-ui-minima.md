@@ -160,7 +160,7 @@ Flujo de `InvitacionPage`:
 
 ### `returnUrl`
 
-`utils/ruta-retorno.ts`: `rutaDeRetorno(valor, porDefecto)` devuelve `valor` solo si empieza por `/`, no por `//` ni `/\`, y no contiene `:` antes del primer `/`. En otro caso, `porDefecto`. Todas las páginas lo usan antes de navegar.
+`rutaDeRetorno(valor, porDefecto)` vive en `libs/shared/auth/src/lib/utils/navegacion.ts` (junto a `PARAMETRO_RETORNO`) y se exporta desde `@vitrina/shared/auth`, porque también la usa el selector de sucursal de la app. Decisión del usuario en el paso 7. Antes: `auth-ui/utils/ruta-retorno.ts`. `rutaDeRetorno` devuelve `valor` solo si empieza por `/`, no por `//` ni `/\`, y no contiene `:` antes del primer `/`. En otro caso, `porDefecto`. Todas las páginas lo usan antes de navegar.
 
 ### Configuración de la app
 
@@ -215,7 +215,7 @@ Workspace y build:
 - [ ] `nx test shared-auth-ui`, `nx test shared-auth` y `nx test plataforma-admin` pasan con Vitest sin zone.js.
 - [ ] Cobertura de líneas de `shared-auth-ui` >= 70 %.
 - [ ] `nx lint` pasa en las tres; `shared-auth-ui` solo importa `scope:shared` con `type:feature`, `type:ui`, `type:data-access` o `type:util`.
-- [ ] `index.ts` de `auth-ui` exporta solo `AUTH_UI_ROUTES`; el de `auth` suma solo `sesionGuard`.
+- [ ] `index.ts` de `auth-ui` exporta solo `AUTH_UI_ROUTES`; el de `auth` suma `sesionGuard`, `rutaDeRetorno`, `PARAMETRO_RETORNO` y los tipos `ProveedorExterno` y `EnrolamientoTotp`.
 - [ ] `nx affected -t lint,test,build` verde, incluido el backend.
 - [ ] `git grep` de `sb_secret` no da resultados; `environment.ts` solo tiene la publishable key.
 

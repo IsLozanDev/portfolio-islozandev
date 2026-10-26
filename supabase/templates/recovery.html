@@ -3,7 +3,7 @@
   <body style="font-family: Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.5;">
     <h2>Recupera tu clave</h2>
     <p>Recibimos una solicitud para restablecer la clave de tu cuenta de Vitrina.</p>
-    <p><a href="{{ .ConfirmationURL }}">Elegir una clave nueva</a></p>
+    <p><a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery">Elegir una clave nueva</a></p>
     <p>Si no fuiste tú, ignora este correo: tu clave actual sigue funcionando.</p>
   </body>
 </html>

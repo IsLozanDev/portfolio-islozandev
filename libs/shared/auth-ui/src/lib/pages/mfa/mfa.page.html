@@ -1,0 +1,74 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 p-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">Verificación en dos pasos</h1>
+    @switch (estado()) {
+      @case ('verificar') {
+        <p class="text-sm text-(--mat-sys-on-surface-variant)">Ingrese el código de 6 dígitos de su app autenticadora.</p>
+      }
+      @case ('enrolar') {
+        <p class="text-sm text-(--mat-sys-on-surface-variant)">
+          Escanee el código QR con su app autenticadora (Google Authenticator, Microsoft Authenticator u otra) y luego ingrese el código
+          que muestra.
+        </p>
+      }
+    }
+  </header>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+      {{ mensaje }}
+    </p>
+  }
+
+  @switch (estado()) {
+    @case ('cargando') {
+      <div class="flex items-center gap-3" role="status">
+        <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+        Preparando la verificación…
+      </div>
+    }
+    @case ('enrolar') {
+      @if (enrolamiento(); as datos) {
+        <section class="flex flex-col items-center gap-3" aria-label="Configurar app autenticadora">
+          <img class="h-48 w-48 rounded-md bg-white p-2" [src]="datos.qr" alt="Código QR para configurar la app autenticadora" />
+          <p class="text-center text-sm text-(--mat-sys-on-surface-variant)">¿No puede escanearlo? Ingrese esta clave en la app:</p>
+          <code class="break-all rounded-md bg-(--mat-sys-surface-container) px-3 py-2 text-center text-sm">{{ datos.secreto }}</code>
+          <button mat-stroked-button type="button" [cdkCopyToClipboard]="datos.secreto" (cdkCopyToClipboardCopied)="secretoCopiado.set($event)">
+            {{ secretoCopiado() ? 'Clave copiada' : 'Copiar clave' }}
+          </button>
+        </section>
+      }
+    }
+  }
+
+  @if (estado() === 'verificar' || estado() === 'enrolar') {
+    <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="verificar()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Código de verificación</mat-label>
+        <input
+          matInput
+          formControlName="codigo"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          required
+        />
+        @if (formulario.controls.codigo.hasError('required')) {
+          <mat-error>Ingrese el código.</mat-error>
+        } @else if (formulario.controls.codigo.hasError('pattern')) {
+          <mat-error>El código tiene 6 dígitos.</mat-error>
+        }
+      </mat-form-field>
+
+      <button mat-flat-button type="submit" [disabled]="enviando()">
+        @if (enviando()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Verificando" />
+        } @else {
+          Verificar
+        }
+      </button>
+    </form>
+  }
+
+  <button mat-button type="button" class="self-start" (click)="salir()">Salir</button>
+</main>

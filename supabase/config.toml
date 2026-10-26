@@ -158,11 +158,12 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "http://127.0.0.1:4200"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000", "http://127.0.0.1:4200/auth/invitacion"]
+# plataforma-admin (spec 14): callback OAuth, nueva clave e invitación.
+additional_redirect_urls = ["http://127.0.0.1:4200/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 # 900: tokens cortos (TR-RNF-014); la API no revoca por session_id (spec 05).
 jwt_expiry = 900
@@ -253,6 +254,10 @@ otp_expiry = 86400
 subject = "Te invitaron a Vitrina"
 content_path = "./supabase/templates/invite.html"
 
+[auth.email.template.magic_link]
+subject = "Tu enlace de acceso a Vitrina"
+content_path = "./supabase/templates/magic-link.html"
+
 [auth.email.template.recovery]
 subject = "Recupera tu clave de Vitrina"
 content_path = "./supabase/templates/recovery.html"
@@ -333,6 +338,16 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack`, `spotify`, `workos`, `zoom`.
+# Google (spec 14). Client ID y secret solo por entorno; en dev se cargan en el panel.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
 [auth.external.apple]
 enabled = false
 client_id = ""
