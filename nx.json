@@ -57,6 +57,23 @@
         "default",
         "^production"
       ]
+    },
+    "@angular/build:application": {
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
+    },
+    "@angular/build:unit-test": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^production"
+      ]
     }
   },
   "generators": {
@@ -68,7 +85,15 @@
       "style": "none"
     },
     "@nx/angular:component": {
-      "style": "none"
+      "style": "css",
+      "inlineTemplate": false,
+      "inlineStyle": false
+    },
+    "@nx/angular:application": {
+      "e2eTestRunner": "none",
+      "linter": "eslint",
+      "style": "scss",
+      "unitTestRunner": "vitest-angular"
     }
   },
   "plugins": [

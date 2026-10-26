@@ -1,13 +1,16 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
-import type { AuthChangeEvent, AuthError, Session } from '@supabase/supabase-js';
+import type { AuthChangeEvent, AuthError, EmailOtpType, Session } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { CONFIG_AUTH } from '../config/config';
 import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
 import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from '../models/mi-contexto';
+import { PARAMETRO_RETORNO } from '../utils/navegacion';
 import { SupabaseCliente } from './supabase.cliente';
 
 export type ProveedorExterno = 'google' | 'azure';
+/** Tipos de enlace de correo que llegan con `token_hash` (invitación, enlace mágico, recuperación). */
+export type TipoEnlace = Extract<EmailOtpType, 'invite' | 'email' | 'recovery'>;
 
 export const CABECERA_SUCURSAL = 'X-Sucursal-Id';
 const RUTA_MI_CONTEXTO = '/seg/mi-contexto';
@@ -73,10 +76,11 @@ export class SesionService {
     if (error) throw aErrorAuth(error);
   }
 
-  async ingresarConProveedor(proveedor: ProveedorExterno): Promise<void> {
+  /** `retorno` viaja como `?returnUrl=` en `redirectTo` y Supabase lo devuelve tal cual al callback. */
+  async ingresarConProveedor(proveedor: ProveedorExterno, retorno?: string): Promise<void> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: proveedor,
-      options: { redirectTo: this.urlAbsoluta(this.config.rutas.callback) },
+      options: { redirectTo: this.urlDeCallback(retorno) },
     });
     if (error) throw aErrorAuth(error);
   }
@@ -98,6 +102,26 @@ export class SesionService {
     if (ERRORES_VISIBLES_AL_RECUPERAR.includes(errorAuth.codigo)) throw errorAuth;
   }
 
+  /** Canjea el `token_hash` de un correo por una sesión. Cualquier fallo es un enlace inválido. */
+  async verificarEnlace(tokenHash: string, tipo: TipoEnlace): Promise<void> {
+    await this.iniciar();
+    const { data, error } = await this.supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo });
+    if (error || !data.session) throw new ErrorAuth('ENLACE_INVALIDO', { cause: error });
+    this.sesionActual.set(data.session);
+  }
+
+  /**
+   * Token nuevo para que el hook ponga el `tenant_id` recién aceptado; luego recarga el contexto.
+   * El contexto se limpia antes: si no, el interceptor enviaría la sucursal del tenant anterior (403 `SUCURSAL_NO_ASIGNADA`).
+   */
+  async refrescarSesion(): Promise<void> {
+    const { data, error } = await this.supabase.auth.refreshSession();
+    if (error || !data.session) throw aErrorAuth(error);
+    this.sesionActual.set(data.session);
+    this.contextoActual.set(null);
+    await this.cargarContexto();
+  }
+
   async actualizarClave(nueva: string): Promise<void> {
     const { error } = await this.supabase.auth.updateUser({ password: nueva });
     if (error) throw aErrorAuth(error);
@@ -117,8 +141,8 @@ export class SesionService {
     if (data.session) await this.intentarCargarContexto();
   }
 
-  /** Un fallo de la API no debe tumbar el arranque: `autenticadoGuard` vuelve a pedirlo. */
-  private async intentarCargarContexto(): Promise<void> {
+  /** Un fallo de la API (caída o `SIN_TENANT`) no debe tumbar el arranque ni el MFA: `autenticadoGuard` vuelve a pedirlo. */
+  async intentarCargarContexto(): Promise<void> {
     try {
       await this.cargarContexto();
     } catch {
@@ -142,6 +166,12 @@ export class SesionService {
 
   private urlAbsoluta(ruta: string): string {
     return this.documento.location.origin + ruta;
+  }
+
+  private urlDeCallback(retorno?: string): string {
+    const url = new URL(this.urlAbsoluta(this.config.rutas.callback));
+    if (retorno) url.searchParams.set(PARAMETRO_RETORNO, retorno);
+    return url.toString();
   }
 
   private urlTraeError(): boolean {

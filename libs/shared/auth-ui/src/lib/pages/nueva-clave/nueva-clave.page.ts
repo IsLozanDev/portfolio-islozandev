@@ -1,0 +1,101 @@
+import { Component, inject, signal, type OnInit } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CONFIG_AUTH, ErrorAuth, MfaService, PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/auth';
+import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
+import { mensajeDeError } from '../../utils/mensaje-de-error';
+import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
+
+const PARAMETRO_TOKEN_HASH = 'token_hash';
+const PARAMETRO_TIPO = 'type';
+const TIPO_RECUPERACION = 'recovery';
+
+type EstadoNuevaClave = 'verificando' | 'formulario' | 'enlace-invalido';
+
+/**
+ * Destino del correo de recuperación: canjea el `token_hash` y pide la clave nueva.
+ * Con TOTP activo, Supabase exige aal2 para cambiar la clave: pasa antes por `/auth/mfa` y vuelve aquí ya con sesión.
+ */
+@Component({
+  selector: 'vit-nueva-clave',
+  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  templateUrl: './nueva-clave.page.html',
+})
+export class NuevaClavePage implements OnInit {
+  private readonly sesion = inject(SesionService);
+  private readonly mfa = inject(MfaService);
+  private readonly rutas = inject(CONFIG_AUTH).rutas;
+  private readonly destino = inject(DestinoTrasIngresoService);
+  private readonly router = inject(Router);
+  private readonly ruta = inject(ActivatedRoute);
+
+  protected readonly longitudMinima = LONGITUD_MINIMA_CLAVE;
+  protected readonly errorClavesDistintas = ERROR_CLAVES_DISTINTAS;
+  protected readonly estado = signal<EstadoNuevaClave>('verificando');
+  protected readonly enviando = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly formulario = inject(NonNullableFormBuilder).group(
+    {
+      clave: ['', [Validators.required, Validators.minLength(LONGITUD_MINIMA_CLAVE)]],
+      confirmacion: ['', Validators.required],
+    },
+    { validators: clavesCoinciden },
+  );
+
+  async ngOnInit(): Promise<void> {
+    try {
+      await this.prepararSesionDeRecuperacion();
+      if (await this.mfa.requiereVerificacion()) {
+        await this.pasarPorSegundoFactor();
+        return;
+      }
+      this.estado.set('formulario');
+    } catch (error) {
+      this.error.set(mensajeDeError(error));
+      this.estado.set('enlace-invalido');
+    }
+  }
+
+  protected async guardar(): Promise<void> {
+    if (this.formulario.invalid) {
+      this.formulario.markAllAsTouched();
+      return;
+    }
+    this.enviando.set(true);
+    this.error.set(null);
+    try {
+      await this.sesion.actualizarClave(this.formulario.getRawValue().clave);
+      await this.destino.irAlDestino(null);
+    } catch (error) {
+      this.error.set(mensajeDeError(error));
+    } finally {
+      this.enviando.set(false);
+    }
+  }
+
+  /** Con `token_hash`, lo canjea. Sin él, solo vale si ya hay sesión: es la vuelta desde `/auth/mfa`. */
+  private async prepararSesionDeRecuperacion(): Promise<void> {
+    const parametros = this.ruta.snapshot.queryParamMap;
+    const tokenHash = parametros.get(PARAMETRO_TOKEN_HASH);
+    if (!tokenHash) {
+      if (this.sesion.autenticado()) return;
+      throw new ErrorAuth('ENLACE_INVALIDO');
+    }
+    if (parametros.get(PARAMETRO_TIPO) !== TIPO_RECUPERACION) throw new ErrorAuth('ENLACE_INVALIDO');
+    await this.sesion.verificarEnlace(tokenHash, TIPO_RECUPERACION);
+    await this.quitarTokenDeLaUrl();
+  }
+
+  private pasarPorSegundoFactor(): Promise<boolean> {
+    return this.router.navigate([this.rutas.mfa], { queryParams: { [PARAMETRO_RETORNO]: this.rutas.nuevaClave }, replaceUrl: true });
+  }
+
+  /** El `token_hash` ya se usó: que no quede en el historial ni en capturas. */
+  private quitarTokenDeLaUrl(): Promise<boolean> {
+    return this.router.navigate([], { relativeTo: this.ruta, queryParams: {}, replaceUrl: true });
+  }
+}

@@ -3,7 +3,7 @@
   <body style="font-family: Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.5;">
     <h2>Te invitaron a Vitrina</h2>
     <p>Recibiste una invitación para unirte a Vitrina.</p>
-    <p><a href="{{ .ConfirmationURL }}">Aceptar la invitación</a></p>
+    <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=invite">Aceptar la invitación</a></p>
     <p>Si no esperabas este correo, puedes ignorarlo.</p>
   </body>
 </html>

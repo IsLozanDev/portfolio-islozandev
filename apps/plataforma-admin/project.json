@@ -1,0 +1,101 @@
+{
+  "name": "plataforma-admin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "vit",
+  "sourceRoot": "apps/plataforma-admin/src",
+  "tags": [
+    "scope:app",
+    "type:app"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/plataforma-admin",
+        "browser": "apps/plataforma-admin/src/main.ts",
+        "tsConfig": "apps/plataforma-admin/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/plataforma-admin/public"
+          }
+        ],
+        "styles": [
+          "apps/plataforma-admin/src/tailwind.css",
+          "apps/plataforma-admin/src/styles.scss"
+        ],
+        "allowedCommonJsDependencies": [
+          "cookie"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "600kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/plataforma-admin/src/environments/environment.ts",
+              "with": "apps/plataforma-admin/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "host": "127.0.0.1",
+        "port": 4200,
+        "proxyConfig": "apps/plataforma-admin/proxy.conf.json"
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "plataforma-admin:build:production"
+        },
+        "development": {
+          "buildTarget": "plataforma-admin:build:development"
+        }
+      }
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "watch": false
+      }
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "plataforma-admin:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/plataforma-admin/browser",
+        "spa": true
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ export type CodigoErrorAuth =
   | 'DEMASIADOS_INTENTOS'
   | 'CODIGO_MFA_INVALIDO'
   | 'CLAVE_DEBIL'
+  | 'SEGUNDO_FACTOR_REQUERIDO'
   | 'ENLACE_INVALIDO'
   | 'SIN_CONEXION'
   | 'DESCONOCIDO';
@@ -15,6 +16,7 @@ export const MENSAJES_AUTH: Readonly<Record<CodigoErrorAuth, string>> = {
   DEMASIADOS_INTENTOS: 'Demasiados intentos. Espere unos minutos e inténtelo de nuevo.',
   CODIGO_MFA_INVALIDO: 'El código no es válido o ya expiró.',
   CLAVE_DEBIL: 'La contraseña no cumple los requisitos de seguridad.',
+  SEGUNDO_FACTOR_REQUERIDO: 'Confirme primero su código de verificación en dos pasos.',
   ENLACE_INVALIDO: 'El enlace no es válido o ya expiró. Solicite uno nuevo.',
   SIN_CONEXION: 'No se pudo conectar. Revise su conexión.',
   DESCONOCIDO: 'Ocurrió un error. Inténtelo de nuevo.',
@@ -43,6 +45,7 @@ const CODIGO_POR_ERROR_SUPABASE: Readonly<Record<string, CodigoErrorAuth>> = {
   mfa_challenge_expired: 'CODIGO_MFA_INVALIDO',
   weak_password: 'CLAVE_DEBIL',
   same_password: 'CLAVE_DEBIL',
+  insufficient_aal: 'SEGUNDO_FACTOR_REQUERIDO',
   otp_expired: 'ENLACE_INVALIDO',
   flow_state_expired: 'ENLACE_INVALIDO',
   flow_state_not_found: 'ENLACE_INVALIDO',

@@ -1,0 +1,40 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 p-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">Recuperar contraseña</h1>
+    <p class="text-sm text-(--mat-sys-on-surface-variant)">Le enviaremos un enlace para elegir una contraseña nueva.</p>
+  </header>
+
+  @if (enviado()) {
+    <p role="status" class="rounded-md bg-(--mat-sys-secondary-container) p-3 text-sm text-(--mat-sys-on-secondary-container)">
+      {{ confirmacion }}
+    </p>
+  } @else {
+    @if (error(); as mensaje) {
+      <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+        {{ mensaje }}
+      </p>
+    }
+
+    <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Correo</mat-label>
+        <input matInput type="email" formControlName="correo" autocomplete="email" required />
+        @if (formulario.controls.correo.hasError('required')) {
+          <mat-error>Ingrese su correo.</mat-error>
+        } @else if (formulario.controls.correo.hasError('email')) {
+          <mat-error>Ingrese un correo válido.</mat-error>
+        }
+      </mat-form-field>
+
+      <button mat-flat-button type="submit" [disabled]="enviando()">
+        @if (enviando()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Enviando" />
+        } @else {
+          Enviar enlace
+        }
+      </button>
+    </form>
+  }
+
+  <a class="self-start text-sm text-(--mat-sys-primary) underline" routerLink="../ingresar">Volver a ingresar</a>
+</main>

@@ -9,6 +9,7 @@ describe('aErrorAuth', () => {
     ['over_request_rate_limit', 'DEMASIADOS_INTENTOS'],
     ['mfa_verification_failed', 'CODIGO_MFA_INVALIDO'],
     ['weak_password', 'CLAVE_DEBIL'],
+    ['insufficient_aal', 'SEGUNDO_FACTOR_REQUERIDO'],
     ['otp_expired', 'ENLACE_INVALIDO'],
     ['bad_code_verifier', 'ENLACE_INVALIDO'],
     ['codigo_que_no_existe', 'DESCONOCIDO'],

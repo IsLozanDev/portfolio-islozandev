@@ -2,11 +2,13 @@ export { CONFIG_AUTH, type ConfigAuth, type RutasAuth } from './lib/config/confi
 export { provideAuth } from './lib/config/provide-auth';
 export { ErrorAuth, MENSAJES_AUTH } from './lib/models/errores';
 export type { ContextoUsuario } from './lib/models/mi-contexto';
-export { SesionService } from './lib/services/sesion.service';
-export { MfaService } from './lib/services/mfa.service';
+export { SesionService, type ProveedorExterno } from './lib/services/sesion.service';
+export { MfaService, type EnrolamientoTotp } from './lib/services/mfa.service';
 export { autenticadoGuard } from './lib/guards/autenticado.guard';
 export { anonimoGuard } from './lib/guards/anonimo.guard';
 export { aal2Guard } from './lib/guards/aal2.guard';
 export { permisoGuard } from './lib/guards/permiso.guard';
+export { sesionGuard } from './lib/guards/sesion.guard';
 export { authInterceptor } from './lib/interceptors/auth.interceptor';
 export { SiPermisoDirective } from './lib/directives/si-permiso.directive';
+export { PARAMETRO_RETORNO, rutaDeRetorno } from './lib/utils/navegacion';

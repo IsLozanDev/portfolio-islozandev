@@ -1,0 +1,59 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-6 p-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">Ingresar</h1>
+    <p class="text-sm text-(--mat-sys-on-surface-variant)">Use su correo y contraseña, o su cuenta de Google o Microsoft.</p>
+  </header>
+
+  @if (cerradaPorInactividad) {
+    <p role="status" class="rounded-md bg-(--mat-sys-secondary-container) p-3 text-sm text-(--mat-sys-on-secondary-container)">
+      {{ avisoInactividad }}
+    </p>
+  }
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="rounded-md bg-(--mat-sys-error-container) p-3 text-sm text-(--mat-sys-on-error-container)">
+      {{ mensaje }}
+    </p>
+  }
+
+  <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="ingresar()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>Correo</mat-label>
+      <input matInput type="email" formControlName="correo" autocomplete="username" required />
+      @if (formulario.controls.correo.hasError('required')) {
+        <mat-error>Ingrese su correo.</mat-error>
+      } @else if (formulario.controls.correo.hasError('email')) {
+        <mat-error>Ingrese un correo válido.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Contraseña</mat-label>
+      <input matInput type="password" formControlName="clave" autocomplete="current-password" required />
+      @if (formulario.controls.clave.hasError('required')) {
+        <mat-error>Ingrese su contraseña.</mat-error>
+      }
+    </mat-form-field>
+
+    <button mat-flat-button type="submit" [disabled]="enviando()">
+      @if (enviando()) {
+        <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Ingresando" />
+      } @else {
+        Ingresar
+      }
+    </button>
+  </form>
+
+  <a class="self-start text-sm text-(--mat-sys-primary) underline" routerLink="../recuperar">¿Olvidó su contraseña?</a>
+
+  <div class="flex items-center gap-3 text-sm text-(--mat-sys-on-surface-variant)" aria-hidden="true">
+    <span class="h-px flex-1 bg-(--mat-sys-outline-variant)"></span>
+    o
+    <span class="h-px flex-1 bg-(--mat-sys-outline-variant)"></span>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <button mat-stroked-button type="button" [disabled]="enviando()" (click)="ingresarCon('google')">Continuar con Google</button>
+    <button mat-stroked-button type="button" [disabled]="enviando()" (click)="ingresarCon('azure')">Continuar con Microsoft</button>
+  </div>
+</main>

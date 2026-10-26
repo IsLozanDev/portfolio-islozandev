@@ -2,8 +2,9 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError, AuthRetryableFetchError, AuthWeakPasswordError } from '@supabase/supabase-js';
 import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
+import { authInterceptor } from '../interceptors/auth.interceptor';
 import { ErrorAuth, MENSAJES_AUTH } from '../models/errores';
-import { SesionService } from './sesion.service';
+import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
 
 describe('SesionService (sesión)', () => {
   let supabase: DobleSupabase;
@@ -115,6 +116,18 @@ describe('SesionService (sesión)', () => {
     });
   });
 
+  describe('ingresarConProveedor con retorno', () => {
+    it('agrega returnUrl codificado al redirectTo', async () => {
+      await servicio.ingresarConProveedor('google', '/caja?turno=1');
+
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: { redirectTo: `${window.location.origin}/auth/callback?returnUrl=%2Fcaja%3Fturno%3D1` },
+        }),
+      );
+    });
+  });
+
   describe('completarCallback', () => {
     it('con sesión canjeada resuelve', async () => {
       await iniciarConSesion();
@@ -184,6 +197,59 @@ describe('SesionService (sesión)', () => {
         codigo: 'CLAVE_DEBIL',
         message: MENSAJES_AUTH.CLAVE_DEBIL,
       });
+    });
+  });
+
+  describe('verificarEnlace', () => {
+    it('canjea el token_hash con verifyOtp y deja la sesión del enlace', async () => {
+      await servicio.verificarEnlace('hash-123', 'recovery');
+
+      expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({ token_hash: 'hash-123', type: 'recovery' });
+      expect(servicio.token()).toBe('token-enlace');
+    });
+
+    it('un enlace vencido da ENLACE_INVALIDO', async () => {
+      supabase.auth.verifyOtp.mockResolvedValueOnce({
+        data: { session: null },
+        error: new AuthApiError('Email link is invalid or has expired', 403, 'otp_expired'),
+      });
+
+      await expect(servicio.verificarEnlace('hash-viejo', 'invite')).rejects.toMatchObject({
+        codigo: 'ENLACE_INVALIDO',
+        message: MENSAJES_AUTH.ENLACE_INVALIDO,
+      });
+      expect(servicio.autenticado()).toBe(false);
+    });
+  });
+
+  describe('refrescarSesion', () => {
+    it('pide un token nuevo y luego recarga mi-contexto', async () => {
+      await iniciarConSesion();
+
+      await Promise.all([servicio.refrescarSesion(), responderMiContexto(http)]);
+
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(servicio.token()).toBe('token-refrescado');
+    });
+
+    it('con el interceptor, recarga mi-contexto sin la sucursal del tenant anterior', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: proveerAuthDePrueba(supabase, {}, [authInterceptor]) });
+      servicio = TestBed.inject(SesionService);
+      http = TestBed.inject(HttpTestingController);
+      await iniciarConSesion();
+      expect(servicio.sucursalId()).not.toBeNull();
+
+      const [, peticion] = await Promise.all([servicio.refrescarSesion(), responderMiContexto(http)]);
+
+      expect(peticion.request.headers.has(CABECERA_SUCURSAL)).toBe(false);
+    });
+
+    it('si Supabase no renueva, propaga el error sin pedir el contexto', async () => {
+      await iniciarConSesion();
+      supabase.auth.refreshSession.mockResolvedValueOnce({ data: { session: null }, error: new AuthRetryableFetchError('red', 0) });
+
+      await expect(servicio.refrescarSesion()).rejects.toMatchObject({ codigo: 'SIN_CONEXION' });
     });
   });
 
