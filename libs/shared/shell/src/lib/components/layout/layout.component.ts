@@ -13,6 +13,7 @@ import { MENSAJES_SHELL } from '../../models/mensajes-shell';
 import { construirArbolMenu } from '../../utils/arbol-menu';
 import { MenuLateralComponent } from '../menu-lateral/menu-lateral.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
+import { SelectorSucursalComponent } from '../selector-sucursal/selector-sucursal.component';
 
 export const ANCHO_ESCRITORIO_PX = 1024;
 const CONSULTA_ESCRITORIO = `(min-width: ${ANCHO_ESCRITORIO_PX}px)`;
@@ -20,7 +21,7 @@ const CONSULTA_ESCRITORIO = `(min-width: ${ANCHO_ESCRITORIO_PX}px)`;
 /** Marco de las páginas con sesión y contexto: barra superior, menú lateral y contenido. */
 @Component({
   selector: 'vit-layout',
-  imports: [RouterOutlet, MatButtonModule, MatIconModule, MatSidenavModule, MatToolbarModule, MenuLateralComponent, MenuUsuarioComponent],
+  imports: [RouterOutlet, MatButtonModule, MatIconModule, MatSidenavModule, MatToolbarModule, MenuLateralComponent, MenuUsuarioComponent, SelectorSucursalComponent],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent {

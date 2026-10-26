@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import type { Session } from '@supabase/supabase-js';
-import { CONFIG_AUTH, SesionService, type ContextoUsuario, type RutasAuth } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, SesionService, type ContextoUsuario, type OpcionesCargaContexto, type RutasAuth } from '@vitrina/shared/auth';
 import { vi } from 'vitest';
 
 export const RUTAS_DE_PRUEBA: RutasAuth = {
@@ -46,8 +46,8 @@ export class DobleSesion {
   readonly sesion = signal<Session | null>({ user: { email: 'carmen@correo.pe' } } as Session);
   readonly contexto = signal<ContextoUsuario | null>(contextoDePrueba());
   readonly salir = vi.fn(async (): Promise<void> => undefined);
-  readonly cargarContexto = vi.fn(async (): Promise<ContextoUsuario> => contextoDePrueba());
-  readonly seleccionarSucursal = vi.fn<(sucursalId: string) => Promise<void>>(async () => undefined);
+  readonly cargarContexto = vi.fn<(sucursalId?: string, opciones?: OpcionesCargaContexto) => Promise<ContextoUsuario>>(async () => contextoDePrueba());
+  readonly seleccionarSucursal = vi.fn<(sucursalId: string, opciones?: OpcionesCargaContexto) => Promise<void>>(async () => undefined);
 }
 
 /** Monta una página de la app en su ruta con el doble de sesión; el resto de rutas cae en una página vacía. */

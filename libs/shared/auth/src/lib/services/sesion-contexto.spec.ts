@@ -10,6 +10,7 @@ import {
   sesionDePrueba,
   SURCO,
 } from '../../testing/doble-supabase';
+import { OMITIR_AVISO_ERROR } from '../models/omitir-aviso-error';
 import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
 
 describe('SesionService (contexto y sucursal, TR-RF-016)', () => {
@@ -34,6 +35,19 @@ describe('SesionService (contexto y sucursal, TR-RF-016)', () => {
     expect(peticion.request.method).toBe('GET');
     expect(peticion.request.headers.has(CABECERA_SUCURSAL)).toBe(false);
     expect(servicio.contexto()?.tenantId).toBe('t-1');
+  });
+
+  it('por defecto la petición no omite el aviso de error del shell', async () => {
+    const [, peticion] = await Promise.all([servicio.cargarContexto(), responderMiContexto(http)]);
+
+    expect(peticion.request.context.get(OMITIR_AVISO_ERROR)).toBe(false);
+  });
+
+  it('seleccionarSucursal con omitirAvisoError marca la petición y manda la sucursal', async () => {
+    const [, peticion] = await Promise.all([servicio.seleccionarSucursal(SURCO.id, { omitirAvisoError: true }), responderMiContexto(http)]);
+
+    expect(peticion.request.context.get(OMITIR_AVISO_ERROR)).toBe(true);
+    expect(peticion.request.headers.get(CABECERA_SUCURSAL)).toBe(SURCO.id);
   });
 
   it('iniciar sin sesión no pide el contexto', async () => {

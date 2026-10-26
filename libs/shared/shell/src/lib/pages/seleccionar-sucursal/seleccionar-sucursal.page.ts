@@ -7,6 +7,9 @@ import { MENSAJES_SHELL } from '../../models/mensajes-shell';
 
 type Sucursal = ContextoUsuario['sucursales'][number];
 
+/** La página muestra su propio error: el interceptor no abre su modal. */
+const ERROR_PROPIO = { omitirAvisoError: true };
+
 /** TR-RF-016: la sucursal actual es la última que recuerda el servidor y sale marcada. */
 @Component({
   selector: 'vit-seleccionar-sucursal',
@@ -27,7 +30,7 @@ export class SeleccionarSucursalPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const contexto = this.sesion.contexto() ?? (await this.sesion.cargarContexto());
+      const contexto = this.sesion.contexto() ?? (await this.sesion.cargarContexto(undefined, ERROR_PROPIO));
       if (contexto.sinAccesos) {
         await this.router.navigateByUrl(this.rutas.sinAccesos);
         return;
@@ -43,7 +46,7 @@ export class SeleccionarSucursalPage implements OnInit {
     this.eligiendo.set(sucursalId);
     this.error.set(null);
     try {
-      await this.sesion.seleccionarSucursal(sucursalId);
+      await this.sesion.seleccionarSucursal(sucursalId, ERROR_PROPIO);
       await this.router.navigateByUrl(rutaDeRetorno(this.retorno, this.rutas.inicio));
     } catch {
       this.error.set(MENSAJES_SHELL.errorCargarSucursales);

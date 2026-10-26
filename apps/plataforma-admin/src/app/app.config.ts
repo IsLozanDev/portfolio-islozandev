@@ -3,6 +3,7 @@ import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalE
 import { MatIconRegistry } from '@angular/material/icon';
 import { provideRouter } from '@angular/router';
 import { authInterceptor, provideAuth } from '@vitrina/shared/auth';
+import { erroresHttpInterceptor } from '@vitrina/shared/shell';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 
@@ -13,7 +14,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, erroresHttpInterceptor])),
     provideAuth(environment.auth),
     provideAppInitializer(() => {
       inject(MatIconRegistry).setDefaultFontSetClass(CLASE_FUENTE_ICONOS);

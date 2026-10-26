@@ -22,7 +22,7 @@ describe('SeleccionarSucursalPage', () => {
 
     await pagina.pulsar('Surco');
 
-    expect(pagina.sesion.seleccionarSucursal).toHaveBeenCalledWith(SURCO.id);
+    expect(pagina.sesion.seleccionarSucursal).toHaveBeenCalledWith(SURCO.id, { omitirAvisoError: true });
     expect(pagina.urlActual()).toBe('/caja');
   });
 
@@ -39,7 +39,7 @@ describe('SeleccionarSucursalPage', () => {
 
     await pagina.abrir('/seleccionar-sucursal');
 
-    expect(pagina.sesion.cargarContexto).toHaveBeenCalledTimes(1);
+    expect(pagina.sesion.cargarContexto).toHaveBeenCalledExactlyOnceWith(undefined, { omitirAvisoError: true });
     expect(pagina.texto()).toContain('Surco');
   });
 

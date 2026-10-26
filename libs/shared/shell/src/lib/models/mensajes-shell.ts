@@ -14,4 +14,15 @@ export const MENSAJES_SHELL = {
   menuPrincipal: 'Menú principal',
   menuUsuario: 'Menú de usuario',
   sinOpcionesMenu: 'No tiene opciones de menú',
+  sucursalActual: 'Sucursal actual',
+  errorCambiarSucursal: 'No se pudo cambiar de sucursal. Inténtelo de nuevo.',
+  tituloSinConexion: 'Sin conexión',
+  sinConexion: 'No se pudo conectar. Revise su conexión.',
+  tituloErrorServidor: 'Error del servidor',
+  errorServidor: 'Ocurrió un error en el servidor. Inténtelo de nuevo.',
 } as const;
+
+/** Toast tras cambiar de sucursal desde el encabezado (TR-CA-045). */
+export function mensajeAhoraTrabajaEn(sucursal: string): string {
+  return `Ahora trabaja en ${sucursal}`;
+}
