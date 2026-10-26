@@ -9,6 +9,7 @@ const AHORA = new Date('2026-10-25T15:00:00Z');
 const RELOJ = { now: () => AHORA };
 const URL_INVITACION = 'https://app.vitrina.pe/auth/invitacion';
 const PERMISO_DEL_ROL = 'plat.usuario.invitar';
+const ROL_ADMIN_TENANTS = 'PLAT_ADMIN_TENANTS';
 
 describeConDb('InvitarPropietario (alta de tenant, spec 12, PostgreSQL 16)', () => {
   let e: Entorno;
@@ -28,6 +29,7 @@ describeConDb('InvitarPropietario (alta de tenant, spec 12, PostgreSQL 16)', () 
     e = await crearEntorno();
     await e.sembrar.permiso(PERMISO_DEL_ROL, { alcanceMinimo: 'SUCURSAL' });
     await e.sembrar.rol(null, 'PLAT', ROL_PROPIETARIO, [PERMISO_DEL_ROL]);
+    await e.sembrar.rol(null, 'PLAT', ROL_ADMIN_TENANTS, [PERMISO_DEL_ROL]);
     operador = (await e.sembrar.membresia(await e.sembrar.tenant(), 'ACTIVO')).usuarioId;
   });
 
@@ -113,5 +115,31 @@ describeConDb('InvitarPropietario (alta de tenant, spec 12, PostgreSQL 16)', () 
     } finally {
       await e.dataSource.query(`UPDATE seg.rol SET activo = true WHERE codigo = $1 AND tenant_id IS NULL`, [ROL_PROPIETARIO]);
     }
+  });
+
+  it('roles adicionales: la misma membresía recibe también PLAT_ADMIN_TENANTS con alcance TENANT (CLI del operador)', async () => {
+    const tenant = await e.sembrar.tenant();
+    const identidad = await e.en(tenant, () => caso().prepararIdentidad('operadora@vitrina.pe', 'Operadora Uno'));
+
+    const registrado = await e.en(tenant, () => e.uow.run(() => caso().registrar(identidad, identidad.usuarioId, [ROL_ADMIN_TENANTS])));
+
+    const roles = await e.dataSource.query(
+      'SELECT r.codigo, a.alcance FROM seg.asignacion a JOIN seg.rol r ON r.id = a.rol_id WHERE a.membresia_id = $1 ORDER BY r.codigo',
+      [registrado.membresiaId],
+    );
+    expect(roles).toEqual([
+      { codigo: ROL_ADMIN_TENANTS, alcance: 'TENANT' },
+      { codigo: ROL_PROPIETARIO, alcance: 'TENANT' },
+    ]);
+  });
+
+  it('esMiembro: true para un correo con membresía en el tenant del contexto, false en otro tenant o sin usuario', async () => {
+    const tenant = await e.sembrar.tenant();
+    const otro = await e.sembrar.tenant();
+    await invitar(tenant, 'miembro@vitrina.pe');
+
+    expect(await e.en(tenant, () => caso().esMiembro(' Miembro@Vitrina.pe '))).toBe(true);
+    expect(await e.en(otro, () => caso().esMiembro('miembro@vitrina.pe'))).toBe(false);
+    expect(await e.en(tenant, () => caso().esMiembro('nadie.aqui@vitrina.pe'))).toBe(false);
   });
 });

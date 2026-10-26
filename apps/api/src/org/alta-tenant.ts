@@ -75,9 +75,9 @@ export interface TenantDadoDeAlta {
   correoEnviado: boolean;
 }
 
-/** ¿Hay un tenant con ese código? Pregunta entre tenants, por `org.codigo_tenant_existe`. */
-export interface CodigosDeTenant {
-  existe(codigo: string): Promise<boolean>;
+/** Id del tenant con ese código, o null. Busca entre tenants, por `org.tenant_por_codigo`. */
+export interface TenantsPorCodigo {
+  idDe(codigo: string): Promise<string | null>;
 }
 
 export interface DependenciasAlta {
@@ -86,7 +86,7 @@ export interface DependenciasAlta {
   ids: IdGenerator;
   reloj: Clock;
   tenants: Pick<RepositorioTenants, 'buscar'>;
-  codigos: CodigosDeTenant;
+  tenantsPorCodigo: TenantsPorCodigo;
   parametros: Pick<ParametroPort, 'valor'>;
   crearTenant: Pick<CrearTenant, 'ejecutar'>;
   gestionarSuscripcion: Pick<GestionarSuscripcion, 'ejecutar'>;
@@ -109,7 +109,7 @@ export class AltaTenant {
     await this.exigirOperador(comando.actor);
     const hoy = fechaCalendarioDe(this.dependencias.reloj.now());
     validarComando(comando, hoy);
-    if (await this.dependencias.codigos.existe(comando.codigo)) throw new TenantDuplicadoError();
+    if ((await this.dependencias.tenantsPorCodigo.idDe(comando.codigo)) !== null) throw new TenantDuplicadoError();
 
     const tenantId = this.dependencias.ids.next();
     return this.dependencias.contexto.run({ tenantId }, async () => {

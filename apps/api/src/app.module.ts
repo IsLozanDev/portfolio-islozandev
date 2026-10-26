@@ -9,7 +9,7 @@ import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vi
 import { FallidosController } from './eventos/fallidos.controller.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
-import { CodigosDeTenantTypeOrm } from './org/codigos-de-tenant.typeorm.js';
+import { TenantsPorCodigoTypeOrm } from './org/tenants-por-codigo.typeorm.js';
 import { SaludController } from './salud/salud.controller.js';
 
 export type AppOpciones = KernelInfraOptions &
@@ -56,7 +56,7 @@ export class AppModule {
               ids,
               reloj,
               tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto),
-              codigos: new CodigosDeTenantTypeOrm(dataSource),
+              tenantsPorCodigo: new TenantsPorCodigoTypeOrm(dataSource),
               parametros,
               crearTenant,
               gestionarSuscripcion,

@@ -63,7 +63,7 @@ function escenario(): Escenario {
     ids: { next: () => NUEVO },
     reloj: { now: () => AHORA },
     tenants: { buscar: async (id) => ({ codigo: id === OPERADOR ? 'plataforma' : 'cliente-x' }) as never },
-    codigos: { existe: async (codigo) => codigosOcupados.has(codigo) },
+    tenantsPorCodigo: { idDe: async (codigo) => (codigosOcupados.has(codigo) ? OPERADOR : null) },
     parametros: { valor: async <T>() => ({ valor: 15 as T, origen: 'DEFECTO' as const }) },
     crearTenant: { ejecutar: async () => (await anotar('crearTenant'), { tenantId: NUEVO }) },
     gestionarSuscripcion: { ejecutar: async () => (await anotar('gestionarSuscripcion'), { suscripcionId: 's-1', nueva: true }) },

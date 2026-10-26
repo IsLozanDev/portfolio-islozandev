@@ -21,7 +21,7 @@ import {
 } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
 import { AltaTenant, OperadorRequeridoError, TenantDuplicadoError, type AltaTenantComando, type DependenciasAlta } from '../src/org/alta-tenant.js';
-import { CodigosDeTenantTypeOrm } from '../src/org/codigos-de-tenant.typeorm.js';
+import { TenantsPorCodigoTypeOrm } from '../src/org/tenants-por-codigo.typeorm.js';
 import { crearBaseTemporal, describeConDb, type BaseTemporal } from './support/temp-db.js';
 
 const DIAS_PRUEBA = 15;
@@ -124,7 +124,7 @@ describeConDb('AltaTenant contra PostgreSQL 16 (TR-RF-001)', () => {
       ids: app.get(ID_GENERATOR),
       reloj: app.get(CLOCK),
       tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto),
-      codigos: new CodigosDeTenantTypeOrm(dataSource),
+      tenantsPorCodigo: new TenantsPorCodigoTypeOrm(dataSource),
       parametros: app.get(PARAMETRO_PORT),
       crearTenant: app.get(CrearTenant),
       gestionarSuscripcion: app.get(GestionarSuscripcion),

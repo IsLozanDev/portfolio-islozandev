@@ -21,7 +21,9 @@
     "db:up:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs up supabase/migrations --remoto",
     "db:down:supabase:remoto": "node --env-file-if-exists=.env tools/migrar/cli.mjs down supabase/migrations --remoto",
     "manifiesto:aplicar": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js",
-    "manifiesto:aplicar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js --remoto"
+    "manifiesto:aplicar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/aplicar-manifiesto.js --remoto",
+    "plataforma:sembrar": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/sembrar-plataforma.js",
+    "plataforma:sembrar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/sembrar-plataforma.js --remoto"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",

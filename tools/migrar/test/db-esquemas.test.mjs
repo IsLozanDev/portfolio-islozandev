@@ -148,7 +148,7 @@ const objetosAlta = async () =>
       urlDb,
       `SELECT 'org.aviso_vencimiento' AS o WHERE to_regclass('org.aviso_vencimiento') IS NOT NULL
        UNION ALL SELECT 'org.suscripciones_a_revisar' WHERE to_regprocedure('org.suscripciones_a_revisar(date)') IS NOT NULL
-       UNION ALL SELECT 'org.codigo_tenant_existe' WHERE to_regprocedure('org.codigo_tenant_existe(varchar)') IS NOT NULL
+       UNION ALL SELECT 'org.tenant_por_codigo' WHERE to_regprocedure('org.tenant_por_codigo(varchar)') IS NOT NULL
        UNION ALL SELECT policyname FROM pg_policies
         WHERE schemaname = 'org' AND policyname IN ('suscripcion_vencimientos', 'tenant_vencimientos')
        ORDER BY 1`,

@@ -13,7 +13,7 @@ END $$;
 GRANT USAGE ON SCHEMA org TO org_alta_test_app, org_alta_test_sin_permiso;
 GRANT SELECT, INSERT, UPDATE, DELETE ON org.aviso_vencimiento TO org_alta_test_app;
 GRANT SELECT ON org.suscripcion, org.tenant TO org_alta_test_app;
-GRANT EXECUTE ON FUNCTION org.suscripciones_a_revisar(date), org.codigo_tenant_existe(varchar) TO org_alta_test_app;
+GRANT EXECUTE ON FUNCTION org.suscripciones_a_revisar(date), org.tenant_por_codigo(varchar) TO org_alta_test_app;
 
 -- Datos como superusuario. Fecha de referencia: 10/10/2026.
 -- A (PRUEBA): s1 vence el 13/10 (entra), s2 CANCELADA (fuera), s3 sin vigente_hasta (fuera), s4 vence el 30/10 (fuera, > 7 días).
@@ -56,11 +56,11 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- codigo_tenant_existe ve códigos de otros tenants sin exponer sus filas.
+-- tenant_por_codigo encuentra el id de otro tenant sin exponer sus filas.
 DO $$ BEGIN
-  IF NOT org.codigo_tenant_existe('alta-prueba-b') THEN RAISE EXCEPTION 'debía ver el código de B'; END IF;
-  IF org.codigo_tenant_existe('alta-prueba-z') THEN RAISE EXCEPTION 'alta-prueba-z no existe'; END IF;
-  IF org.codigo_tenant_existe(NULL) IS NOT NULL THEN RAISE EXCEPTION 'con NULL debía devolver NULL'; END IF;
+  IF org.tenant_por_codigo('alta-prueba-b') IS DISTINCT FROM '12000000-0000-0000-0000-00000000000b' THEN RAISE EXCEPTION 'debía devolver el id de B'; END IF;
+  IF org.tenant_por_codigo('alta-prueba-z') IS NOT NULL THEN RAISE EXCEPTION 'alta-prueba-z no existe'; END IF;
+  IF org.tenant_por_codigo(NULL) IS NOT NULL THEN RAISE EXCEPTION 'con NULL debía devolver NULL'; END IF;
   IF EXISTS (SELECT 1 FROM org.tenant WHERE codigo = 'alta-prueba-b') THEN RAISE EXCEPTION 'el SELECT directo no debía ver a B'; END IF;
 END $$;
 
@@ -128,8 +128,8 @@ DO $$ BEGIN
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 DO $$ BEGIN
-  PERFORM org.codigo_tenant_existe('alta-prueba-a');
-  RAISE EXCEPTION 'sin EXECUTE codigo_tenant_existe debía fallar';
+  PERFORM org.tenant_por_codigo('alta-prueba-a');
+  RAISE EXCEPTION 'sin EXECUTE tenant_por_codigo debía fallar';
 EXCEPTION WHEN insufficient_privilege THEN NULL;
 END $$;
 RESET ROLE;
@@ -140,10 +140,10 @@ DO $$ BEGIN
     RAISE EXCEPTION 'org_lector debe ser NOLOGIN sin BYPASSRLS';
   END IF;
   IF (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-       WHERE n.nspname = 'org' AND p.proname IN ('suscripciones_a_revisar', 'codigo_tenant_existe')
+       WHERE n.nspname = 'org' AND p.proname IN ('suscripciones_a_revisar', 'tenant_por_codigo')
          AND p.prosecdef AND pg_get_userbyid(p.proowner) = 'org_lector'
          AND p.proconfig @> ARRAY['search_path=""']) <> 2 THEN
-    RAISE EXCEPTION 'suscripciones_a_revisar y codigo_tenant_existe deben ser SECURITY DEFINER de org_lector con search_path vacío';
+    RAISE EXCEPTION 'suscripciones_a_revisar y tenant_por_codigo deben ser SECURITY DEFINER de org_lector con search_path vacío';
   END IF;
 END $$;
 
@@ -152,8 +152,8 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
     IF has_function_privilege('anon', 'org.suscripciones_a_revisar(date)', 'EXECUTE')
        OR has_function_privilege('authenticated', 'org.suscripciones_a_revisar(date)', 'EXECUTE')
-       OR has_function_privilege('anon', 'org.codigo_tenant_existe(varchar)', 'EXECUTE')
-       OR has_function_privilege('authenticated', 'org.codigo_tenant_existe(varchar)', 'EXECUTE') THEN
+       OR has_function_privilege('anon', 'org.tenant_por_codigo(varchar)', 'EXECUTE')
+       OR has_function_privilege('authenticated', 'org.tenant_por_codigo(varchar)', 'EXECUTE') THEN
       RAISE EXCEPTION 'anon/authenticated no deben ejecutar las funciones de org';
     END IF;
     IF has_table_privilege('anon', 'org.aviso_vencimiento', 'SELECT')

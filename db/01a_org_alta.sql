@@ -62,25 +62,25 @@ LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path = '' AS $$
 $$;
 
 -- ---------------------------------------------------------------------
--- 4. ¿Código de tenant ocupado? El alta lo pregunta antes de llamar a Supabase (TR-CA-002):
---    la RLS de org.tenant no deja buscar otro tenant por código. Solo devuelve sí o no.
+-- 4. Id del tenant con ese código, o NULL. El alta lo pregunta antes de llamar a Supabase (TR-CA-002)
+--    y el CLI del operador para ser idempotente: la RLS de org.tenant no deja buscar por código.
 -- ---------------------------------------------------------------------
-CREATE FUNCTION org.codigo_tenant_existe(p_codigo varchar)
-RETURNS boolean
+CREATE FUNCTION org.tenant_por_codigo(p_codigo varchar)
+RETURNS uuid
 LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path = '' AS $$
-  SELECT EXISTS (SELECT 1 FROM org.tenant WHERE codigo = p_codigo);
+  SELECT id FROM org.tenant WHERE codigo = p_codigo;
 $$;
 
 ALTER FUNCTION org.suscripciones_a_revisar(date) OWNER TO org_lector;
-ALTER FUNCTION org.codigo_tenant_existe(varchar) OWNER TO org_lector;
+ALTER FUNCTION org.tenant_por_codigo(varchar) OWNER TO org_lector;
 REVOKE EXECUTE ON FUNCTION org.suscripciones_a_revisar(date) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION org.codigo_tenant_existe(varchar) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION org.tenant_por_codigo(varchar) FROM PUBLIC;
 
 -- Solo el rol que corre la migración (en dev, postgres: el mismo de la api y del worker).
 DO $$
 BEGIN
   EXECUTE format('GRANT EXECUTE ON FUNCTION org.suscripciones_a_revisar(date) TO %I', current_user);
-  EXECUTE format('GRANT EXECUTE ON FUNCTION org.codigo_tenant_existe(varchar) TO %I', current_user);
+  EXECUTE format('GRANT EXECUTE ON FUNCTION org.tenant_por_codigo(varchar) TO %I', current_user);
 END
 $$;
 
@@ -92,7 +92,7 @@ BEGIN
      AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
     REVOKE ALL ON org.aviso_vencimiento FROM anon, authenticated;
     REVOKE ALL ON FUNCTION org.suscripciones_a_revisar(date) FROM anon, authenticated;
-    REVOKE ALL ON FUNCTION org.codigo_tenant_existe(varchar) FROM anon, authenticated;
+    REVOKE ALL ON FUNCTION org.tenant_por_codigo(varchar) FROM anon, authenticated;
   END IF;
 END
 $$;

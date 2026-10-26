@@ -85,8 +85,20 @@ export class InvitarPropietario {
     return { correo, usuarioId, usuarioNuevo: true, token, redirectTo };
   }
 
-  /** Dentro de la transacción del alta. */
-  registrar(identidad: IdentidadPropietario, invitadoPor: string): Promise<PropietarioRegistrado> {
+  /** Con el tenant en el contexto. El CLI del operador lo usa para no invitar dos veces (spec 12). */
+  esMiembro(correoIngresado: string): Promise<boolean> {
+    const correo = normalizarCorreo(correoIngresado);
+    return this.unidadDeTrabajo.run(async () => {
+      const usuario = await this.repos.usuarios.porCorreo(correo);
+      return usuario !== null && (await this.repos.ciclo.deUsuario(usuario.id)) !== null;
+    });
+  }
+
+  /**
+   * Dentro de la transacción del alta. `rolesAdicionales` son códigos de roles predefinidos que se
+   * otorgan con el mismo alcance TENANT (el CLI del operador suma PLAT_ADMIN_TENANTS).
+   */
+  registrar(identidad: IdentidadPropietario, invitadoPor: string, rolesAdicionales: readonly string[] = []): Promise<PropietarioRegistrado> {
     return this.unidadDeTrabajo.run(async () => {
       const { tenantId } = this.contexto.current();
       const ahora = this.reloj.now();
@@ -96,7 +108,10 @@ export class InvitarPropietario {
       const membresia = Membresia.invitar(this.ids.next(), { usuarioId: identidad.usuarioId, tenantId, invitadoPor, esPropietario: true }, ahora, expiraEn);
       await this.repos.ciclo.guardar(membresia);
 
-      const asignacion = await this.asignarRolPropietario(tenantId, membresia.id, invitadoPor, ahora);
+      const asignaciones: Asignacion[] = [];
+      for (const codigoRol of [ROL_PROPIETARIO, ...rolesAdicionales]) {
+        asignaciones.push(await this.asignarRol(codigoRol, tenantId, membresia.id, invitadoPor, ahora));
+      }
       const invitacion = Invitacion.emitir(this.ids.next(), {
         tenantId,
         membresiaId: membresia.id,
@@ -107,7 +122,7 @@ export class InvitarPropietario {
       });
       await this.repos.invitaciones.guardar(invitacion);
 
-      await publicarEventos(this.eventos, membresia, asignacion);
+      await publicarEventos(this.eventos, membresia, ...asignaciones);
       return { membresiaId: membresia.id, invitacionId: invitacion.id, expiraEn: invitacion.expiraEn };
     });
   }
@@ -124,9 +139,9 @@ export class InvitarPropietario {
     }
   }
 
-  private async asignarRolPropietario(tenantId: string, membresiaId: string, otorgadoPor: string, ahora: Date): Promise<Asignacion> {
-    const rol = await this.repos.roles.buscarPorCodigo(ROL_PROPIETARIO);
-    if (!rol?.activo) throw new ConflictError(`El rol ${ROL_PROPIETARIO} no existe; aplique el manifiesto PLAT`);
+  private async asignarRol(codigoRol: string, tenantId: string, membresiaId: string, otorgadoPor: string, ahora: Date): Promise<Asignacion> {
+    const rol = await this.repos.roles.buscarPorCodigo(codigoRol);
+    if (!rol?.activo || !rol.esPredefinido) throw new ConflictError(`El rol ${codigoRol} no existe; aplique el manifiesto PLAT`);
     const asignacion = Asignacion.otorgar(
       this.ids.next(),
       tenantId,
