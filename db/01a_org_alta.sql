@@ -1,4 +1,4 @@
--- 01a_org_alta · Avisos y lectura de la tarea diaria de vencimientos TR-ORG (spec 12). PostgreSQL 16.
+-- 01a_org_alta · Alta de tenant y tarea diaria de vencimientos TR-ORG (spec 12). PostgreSQL 16.
 -- Reversible: rollback/01a_org_alta.sql. Ordena después de 01a_org.sql y no referencia seg.
 
 -- ---------------------------------------------------------------------
@@ -61,13 +61,26 @@ LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path = '' AS $$
    ORDER BY s.tenant_id, s.id;
 $$;
 
-ALTER FUNCTION org.suscripciones_a_revisar(date) OWNER TO org_lector;
-REVOKE EXECUTE ON FUNCTION org.suscripciones_a_revisar(date) FROM PUBLIC;
+-- ---------------------------------------------------------------------
+-- 4. ¿Código de tenant ocupado? El alta lo pregunta antes de llamar a Supabase (TR-CA-002):
+--    la RLS de org.tenant no deja buscar otro tenant por código. Solo devuelve sí o no.
+-- ---------------------------------------------------------------------
+CREATE FUNCTION org.codigo_tenant_existe(p_codigo varchar)
+RETURNS boolean
+LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path = '' AS $$
+  SELECT EXISTS (SELECT 1 FROM org.tenant WHERE codigo = p_codigo);
+$$;
 
--- Solo el rol que corre la migración (en dev, postgres: el mismo del worker).
+ALTER FUNCTION org.suscripciones_a_revisar(date) OWNER TO org_lector;
+ALTER FUNCTION org.codigo_tenant_existe(varchar) OWNER TO org_lector;
+REVOKE EXECUTE ON FUNCTION org.suscripciones_a_revisar(date) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION org.codigo_tenant_existe(varchar) FROM PUBLIC;
+
+-- Solo el rol que corre la migración (en dev, postgres: el mismo de la api y del worker).
 DO $$
 BEGIN
   EXECUTE format('GRANT EXECUTE ON FUNCTION org.suscripciones_a_revisar(date) TO %I', current_user);
+  EXECUTE format('GRANT EXECUTE ON FUNCTION org.codigo_tenant_existe(varchar) TO %I', current_user);
 END
 $$;
 
@@ -79,6 +92,7 @@ BEGIN
      AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
     REVOKE ALL ON org.aviso_vencimiento FROM anon, authenticated;
     REVOKE ALL ON FUNCTION org.suscripciones_a_revisar(date) FROM anon, authenticated;
+    REVOKE ALL ON FUNCTION org.codigo_tenant_existe(varchar) FROM anon, authenticated;
   END IF;
 END
 $$;

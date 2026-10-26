@@ -126,6 +126,9 @@ CREATE POLICY tenant_vencimientos      ON org.tenant      FOR SELECT TO org_lect
 -- Filas con estado IN ('PRUEBA','ACTIVA','VENCIDA'), vigente_hasta NOT NULL,
 -- vigente_hasta <= p_fecha + 7 y tenant en estado PRUEBA o ACTIVO.
 org.suscripciones_a_revisar(p_fecha date) RETURNS TABLE (...)
+
+-- SECURITY DEFINER, dueño org_lector, SET search_path = ''. Solo sí o no (agregado al implementar el paso 7).
+org.codigo_tenant_existe(p_codigo varchar) RETURNS boolean
 ```
 
 - `REVOKE EXECUTE ... FROM PUBLIC`, `anon` y `authenticated`; `GRANT EXECUTE` al rol que corre la migración y, en la prueba SQL, al rol de prueba.
@@ -194,7 +197,7 @@ SQL crudo justificado por la regla 11: la llamada a `org.suscripciones_a_revisar
 ```
 
 1. El tenant del actor debe ser el operador (`codigo = ORG_TENANT_OPERADOR`); si no, `OperadorRequeridoError` (403). Un propietario de cliente puede asignarse `PLAT_ADMIN_TENANTS` (los predefinidos son globales); esta comprobación lo frena.
-2. Validaciones antes de tocar Supabase: `CodigoTenant`, `validarRuc` (TR-CA-003, «RUC inválido»), producto distinto de `PLAT`, `ACTIVO` exige `vigenteHasta` futuro, correo y nombre (3-150). Si el `codigo` ya existe: `TenantDuplicadoError` «El código de tenant ya existe» (TR-CA-002).
+2. Validaciones antes de tocar Supabase: `CodigoTenant`, `validarRuc` (TR-CA-003, «RUC inválido»), producto distinto de `PLAT`, `ACTIVO` exige `vigenteHasta` futuro, correo y nombre (3-150). Si el `codigo` ya existe (`org.codigo_tenant_existe`): `TenantDuplicadoError` «El código de tenant ya existe» (TR-CA-002).
 3. `vigenteHasta` en `PRUEBA` sin valor: hoy + `plat.suscripcion.dias_prueba` (`ParametroPort` sin tenant de cliente, resuelve el defecto).
 4. `InvitarPropietario.prepararIdentidad(correo, nombre)`: si el correo no tiene `seg.usuario`, `ProveedorIdentidad.invitar` (crea `auth.users`; el trigger crea `seg.usuario`). Va antes de la transacción, como en el spec 08.
 5. `id` nuevo con `IdGenerator`; `TenantContext.run({ tenantId: id })` y **una** `UnitOfWork.run`:
@@ -393,6 +396,8 @@ Con la conexión de migración (sin `--remoto`, `DATABASE_URL`) y la secret key:
 - **Sí:** suspender solo si ninguna suscripción está vigente y la última vencida agotó la gracia. Decisión del usuario. Un producto vencido no apaga a los demás; RN-006 ya le quita los permisos.
 - **Sí:** la tarea no reactiva ni renueva. `VENCIDA → ACTIVA` y `SUSPENDIDO → ACTIVO` siguen por `GestionarSuscripcion` y `CambiarEstadoTenant`.
 - **Sí:** lectura entre tenants con `org.suscripciones_a_revisar` `SECURITY DEFINER`, dueño `org_lector`. Mismo patrón que el relay del spec 11. Devuelve solo ids y fechas; el resto se lee con la RLS del tenant.
+- **Sí:** `org.codigo_tenant_existe` `SECURITY DEFINER`, dueño `org_lector`. Decisión del usuario al implementar el paso 7. La RLS de `org.tenant` (por `id`) no deja buscar otro tenant por código, y TR-CA-002 exige rechazar el duplicado antes de llamar a Supabase. Devuelve solo sí o no.
+- **No:** dejar que el duplicado choque en el `INSERT`. Llamaría a Supabase y podría dejar un `auth.users` sin tenant.
 - **Sí:** un tenant por transacción en la tarea. El fallo de uno no revierte a los demás.
 - **Sí:** job scheduler de BullMQ en el worker con zona `America/Lima`. Una sola ejecución por disparo con varias instancias.
 - **Sí:** CLI `pnpm vencimientos:ejecutar` para la reejecución manual de CA-021 y para dev.

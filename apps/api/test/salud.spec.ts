@@ -11,6 +11,7 @@ import { RegistrarEmpresa } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT } from '@vitrina/plataforma/parametros';
 import { REGISTRO_ACCESO } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
+import { AltaTenant } from '../src/org/alta-tenant.js';
 import { configurarApp } from '../src/app.setup.js';
 import { cargarConfig } from '../src/config/env.js';
 
@@ -56,6 +57,7 @@ describe('api', () => {
       jwksUrl: `http://127.0.0.1:${port}/auth/v1/.well-known/jwks.json`,
       invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
       reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
+      tenantOperador: 'plataforma',
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
       .overrideProvider(REGISTRO_ACCESO)
@@ -124,6 +126,22 @@ describe('api', () => {
 
   it('OrgModule queda cableado: los casos de uso de org se resuelven', () => {
     expect(app.get(RegistrarEmpresa)).toBeInstanceOf(RegistrarEmpresa);
+  });
+
+  it('GET /v1/docs-json publica POST /v1/org/tenants (spec 12) con bearer auth y sus códigos de error', async () => {
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    const alta = paths['/v1/org/tenants']?.post;
+    expect(alta?.security).toEqual([{ bearer: [] }]);
+    expect(Object.keys(alta.responses).sort()).toEqual(['201', '400', '401', '403', '409', '503']);
+  });
+
+  it('AltaTenant queda cableado con org, seguridad, correlativos y parámetros', () => {
+    expect(app.get(AltaTenant)).toBeInstanceOf(AltaTenant);
+  });
+
+  it('cargarConfig toma plataforma como tenant operador por defecto', () => {
+    expect(cargarConfig(ENV_MINIMO).ORG_TENANT_OPERADOR).toBe('plataforma');
+    expect(cargarConfig({ ...ENV_MINIMO, ORG_TENANT_OPERADOR: 'operador-dev' }).ORG_TENANT_OPERADOR).toBe('operador-dev');
   });
 
   it('GET /v1/docs-json publica las 4 rutas de parámetros (spec 09) con bearer auth', async () => {

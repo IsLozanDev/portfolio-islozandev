@@ -141,13 +141,14 @@ const objetosRelay = async () =>
     )
   ).rows.map((r) => r.o);
 
-// Tabla, función y políticas que agrega 01a_org_alta (4 en total).
+// Tabla, funciones y políticas que agrega 01a_org_alta (5 en total).
 const objetosAlta = async () =>
   (
     await ejecutar(
       urlDb,
       `SELECT 'org.aviso_vencimiento' AS o WHERE to_regclass('org.aviso_vencimiento') IS NOT NULL
        UNION ALL SELECT 'org.suscripciones_a_revisar' WHERE to_regprocedure('org.suscripciones_a_revisar(date)') IS NOT NULL
+       UNION ALL SELECT 'org.codigo_tenant_existe' WHERE to_regprocedure('org.codigo_tenant_existe(varchar)') IS NOT NULL
        UNION ALL SELECT policyname FROM pg_policies
         WHERE schemaname = 'org' AND policyname IN ('suscripcion_vencimientos', 'tenant_vencimientos')
        ORDER BY 1`,
@@ -207,7 +208,7 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01a_org_alta.sql'), 'utf8'));
     expect(await objetosAlta()).toEqual([]);
     await ejecutar(urlDb, await readFile(rutaDb('01a_org_alta.sql'), 'utf8'));
-    expect(await objetosAlta()).toHaveLength(4);
+    expect(await objetosAlta()).toHaveLength(5);
 
     // supabase/migrations necesita auth.users y los roles de Supabase.
     const dirSupabase = rutaSupabase('migrations');
