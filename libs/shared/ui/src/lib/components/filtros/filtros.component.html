@@ -1,0 +1,21 @@
+<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+  <mat-form-field class="sm:min-w-64 sm:flex-1" appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ placeholderBusqueda() }}</mat-label>
+    <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+    <input #campoBusqueda matInput type="search" [value]="busqueda()" (input)="escribirBusqueda(campoBusqueda.value)" />
+  </mat-form-field>
+
+  @for (definicion of definiciones(); track definicion.clave) {
+    <mat-form-field class="sm:w-48" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ definicion.etiqueta }}</mat-label>
+      <mat-select [value]="selecciones()[definicion.clave] ?? null" (selectionChange)="elegir(definicion.clave, $event.value)">
+        <mat-option [value]="null">{{ textoTodos }}</mat-option>
+        @for (opcion of definicion.opciones; track opcion.valor) {
+          <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  <button class="self-start sm:self-center" mat-button type="button" (click)="limpiar()">{{ textoLimpiar }}</button>
+</div>

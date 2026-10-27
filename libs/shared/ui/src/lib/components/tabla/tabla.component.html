@@ -1,0 +1,33 @@
+<div class="flex flex-col">
+  <div class="relative overflow-x-auto rounded-tarjeta border border-borde">
+    <table mat-table class="w-full" [dataSource]="filas()" matSort (matSortChange)="cambiarOrden($event)">
+      @for (columna of columnas(); track columna.clave) {
+        <ng-container [matColumnDef]="columna.clave">
+          <th *matHeaderCellDef mat-header-cell mat-sort-header [disabled]="!columna.ordenable">{{ columna.titulo }}</th>
+          <td *matCellDef="let fila" mat-cell>{{ valorDe(fila, columna.clave) }}</td>
+        </ng-container>
+      }
+      @if (accionesFila(); as acciones) {
+        <ng-container [matColumnDef]="columnaAcciones">
+          <th *matHeaderCellDef mat-header-cell>{{ tituloAcciones }}</th>
+          <td *matCellDef="let fila" mat-cell>
+            <ng-container *ngTemplateOutlet="acciones.plantilla; context: { $implicit: fila }" />
+          </td>
+        </ng-container>
+      }
+      <tr *matHeaderRowDef="columnasVisibles()" mat-header-row></tr>
+      <tr *matRowDef="let fila; columns: columnasVisibles()" mat-row></tr>
+    </table>
+
+    @if (!cargando() && filas().length === 0) {
+      <vit-estado-vacio [titulo]="textoVacio()" />
+    }
+    @if (cargando()) {
+      <div class="absolute inset-0 flex items-center justify-center bg-superficie/70">
+        <vit-cargando />
+      </div>
+    }
+  </div>
+
+  <mat-paginator [length]="total()" [pageIndex]="indicePagina()" [pageSize]="tamanosPagina()[0]" [pageSizeOptions]="tamanosPagina()" (page)="cambiarPagina($event)" />
+</div>

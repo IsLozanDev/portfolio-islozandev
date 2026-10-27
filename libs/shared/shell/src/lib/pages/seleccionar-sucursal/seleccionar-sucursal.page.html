@@ -1,0 +1,28 @@
+<main class="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center gap-4 p-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.elijaSucursal }}</h1>
+
+  @if (error(); as mensaje) {
+    <p role="alert" class="rounded-md bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensaje }}</p>
+  }
+
+  @if (sucursales(); as lista) {
+    <ul class="flex flex-col gap-2" aria-label="Sucursales accesibles">
+      @for (sucursal of lista; track sucursal.id) {
+        <li>
+          <button
+            class="w-full"
+            type="button"
+            [matButton]="sucursal.id === sucursalActual() ? 'filled' : 'outlined'"
+            [attr.aria-current]="sucursal.id === sucursalActual() ? 'true' : null"
+            [disabled]="eligiendo() !== null"
+            (click)="elegir(sucursal.id)"
+          >
+            {{ sucursal.nombre }}
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (!error()) {
+    <vit-cargando [texto]="mensajes.cargandoSucursales" />
+  }
+</main>

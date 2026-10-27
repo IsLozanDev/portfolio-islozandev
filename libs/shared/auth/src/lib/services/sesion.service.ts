@@ -1,10 +1,11 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
 import type { AuthChangeEvent, AuthError, EmailOtpType, Session } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { CONFIG_AUTH } from '../config/config';
 import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
 import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from '../models/mi-contexto';
+import { OMITIR_AVISO_ERROR, type OpcionesCargaContexto } from '../models/omitir-aviso-error';
 import { PARAMETRO_RETORNO } from '../utils/navegacion';
 import { SupabaseCliente } from './supabase.cliente';
 
@@ -56,10 +57,11 @@ export class SesionService {
   }
 
   /** La API elige la sucursal actual (la indicada, la única o la última usada) y la recuerda. */
-  async cargarContexto(sucursalId?: string): Promise<ContextoUsuario> {
+  async cargarContexto(sucursalId?: string, opciones: OpcionesCargaContexto = {}): Promise<ContextoUsuario> {
     const headers = sucursalId ? new HttpHeaders({ [CABECERA_SUCURSAL]: sucursalId }) : undefined;
+    const context = new HttpContext().set(OMITIR_AVISO_ERROR, opciones.omitirAvisoError ?? false);
     const respuesta = await firstValueFrom(
-      this.http.get<MiContextoRespuesta>(this.config.apiUrl + RUTA_MI_CONTEXTO, { headers }),
+      this.http.get<MiContextoRespuesta>(this.config.apiUrl + RUTA_MI_CONTEXTO, { headers, context }),
     );
     const contexto = aContextoUsuario(respuesta);
     this.contextoActual.set(contexto);
@@ -67,8 +69,8 @@ export class SesionService {
   }
 
   /** TR-CA-045: recarga permisos y menú con la nueva sucursal, sin volver a autenticar. */
-  async seleccionarSucursal(sucursalId: string): Promise<void> {
-    await this.cargarContexto(sucursalId);
+  async seleccionarSucursal(sucursalId: string, opciones: OpcionesCargaContexto = {}): Promise<void> {
+    await this.cargarContexto(sucursalId, opciones);
   }
 
   async ingresarConClave(correo: string, clave: string): Promise<void> {

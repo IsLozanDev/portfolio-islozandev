@@ -1,13 +1,7 @@
-<main class="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-4 p-4">
-  <h1 class="text-2xl font-medium">Plataforma</h1>
+<section class="flex max-w-md flex-col gap-4">
+  <h1 class="text-2xl font-medium">Inicio</h1>
   <p>Sesión iniciada como <strong>{{ correo() }}</strong>.</p>
   @if (sucursalActual(); as sucursal) {
     <p>Sucursal: <strong>{{ sucursal.nombre }}</strong></p>
   }
-  <div class="flex flex-wrap gap-2">
-    @if (puedeCambiarSucursal()) {
-      <a mat-stroked-button [routerLink]="rutaSelector">Cambiar sucursal</a>
-    }
-    <button mat-flat-button type="button" (click)="salir()">Salir</button>
-  </div>
-</main>
+</section>

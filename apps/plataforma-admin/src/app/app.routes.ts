@@ -1,28 +1,16 @@
 import { Route } from '@angular/router';
-import { autenticadoGuard, sesionGuard } from '@vitrina/shared/auth';
+import { rutasDelShell } from '@vitrina/shared/shell';
+import { environment } from '../environments/environment';
 
-/** `seleccionar-sucursal`, `sin-accesos` y `403` usan `sesionGuard`: con `autenticadoGuard` se redirigirían a sí mismas. */
+/** Muestra de `shared/ui` para verificar en navegador; no existe en el build de producción. */
+const RUTAS_DE_DESARROLLO: Route[] = [
+  { path: 'dev/componentes', loadComponent: () => import('./pages/componentes/componentes.page').then((modulo) => modulo.ComponentesPage) },
+];
+
 export const appRoutes: Route[] = [
   { path: 'auth', loadChildren: () => import('@vitrina/shared/auth-ui').then((modulo) => modulo.AUTH_UI_ROUTES) },
-  {
-    path: 'seleccionar-sucursal',
-    canActivate: [sesionGuard],
-    loadComponent: () => import('./pages/seleccionar-sucursal/seleccionar-sucursal.page').then((modulo) => modulo.SeleccionarSucursalPage),
-  },
-  {
-    path: 'sin-accesos',
-    canActivate: [sesionGuard],
-    loadComponent: () => import('./pages/sin-accesos/sin-accesos.page').then((modulo) => modulo.SinAccesosPage),
-  },
-  {
-    path: '403',
-    canActivate: [sesionGuard],
-    loadComponent: () => import('./pages/prohibido/prohibido.page').then((modulo) => modulo.ProhibidoPage),
-  },
-  {
-    path: '',
-    pathMatch: 'full',
-    canActivate: [autenticadoGuard],
-    loadComponent: () => import('./pages/inicio/inicio.page').then((modulo) => modulo.InicioPage),
-  },
+  ...rutasDelShell([
+    { path: '', pathMatch: 'full', loadComponent: () => import('./pages/inicio/inicio.page').then((modulo) => modulo.InicioPage) },
+    ...(environment.production ? [] : RUTAS_DE_DESARROLLO),
+  ]),
 ];

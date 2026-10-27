@@ -1,12 +1,7 @@
-@use '@angular/material' as mat;
+@use '../../../libs/shared/ui/src/estilos/material' as tema-vitrina;
 
 html {
-  color-scheme: light;
-  @include mat.theme((
-    color: mat.$azure-palette,
-    typography: Roboto,
-    density: 0,
-  ));
+  @include tema-vitrina.aplicar-tema();
 }
 
 body {

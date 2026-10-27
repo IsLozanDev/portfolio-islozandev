@@ -1,0 +1,21 @@
+/** Textos por defecto de los componentes y avisos de `shared/ui`, en español de Perú. */
+export const MENSAJES_UI = {
+  aceptar: 'Aceptar',
+  cancelar: 'Cancelar',
+  eliminar: 'Eliminar',
+  motivo: 'Motivo',
+  motivoMuyCorto: 'Ingrese un motivo de al menos 10 caracteres.',
+  cargando: 'Cargando…',
+  guardar: 'Guardar',
+  guardando: 'Guardando',
+  sinRegistros: 'No hay registros.',
+  acciones: 'Acciones',
+  buscar: 'Buscar',
+  limpiar: 'Limpiar',
+  todos: 'Todos',
+  filasPorPagina: 'Filas por página',
+  primeraPagina: 'Primera página',
+  paginaAnterior: 'Página anterior',
+  paginaSiguiente: 'Página siguiente',
+  ultimaPagina: 'Última página',
+} as const;

@@ -1,0 +1,71 @@
+<div class="flex flex-col gap-8">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">Componentes</h1>
+    <p class="text-sm text-sobre-superficie-variante">Muestra de <code>shared/ui</code>. Solo existe fuera de producción.</p>
+  </header>
+
+  <section class="flex flex-col gap-3" aria-labelledby="titulo-avisos">
+    <h2 id="titulo-avisos" class="text-lg font-medium">Avisos</h2>
+    <div class="flex flex-wrap gap-2">
+      @for (tipo of tiposDeAviso; track tipo) {
+        <button mat-stroked-button type="button" (click)="mostrarAviso(tipo)">Modal {{ tipo }}</button>
+      }
+      <button mat-stroked-button type="button" (click)="confirmar()">Confirmar</button>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      @for (tipo of tiposDeAviso; track tipo) {
+        <button mat-button type="button" (click)="mostrarToast(tipo)">Toast {{ tipo }}</button>
+      }
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-3" aria-labelledby="titulo-tabla">
+    <h2 id="titulo-tabla" class="text-lg font-medium">Filtros y tabla</h2>
+    <vit-filtros [definiciones]="definicionesFiltro" placeholderBusqueda="Buscar por nombre o correo" (cambio)="filtrar($event)" />
+    <vit-tabla
+      [columnas]="columnas"
+      [filas]="filas()"
+      [total]="total()"
+      [indicePagina]="pagina().indice"
+      (pagina)="pagina.set($event)"
+      (orden)="orden.set($event)"
+    >
+      <ng-template vitAccionesFila let-usuario>
+        <button mat-icon-button type="button" [attr.aria-label]="'Suspender a ' + usuario.nombre" (click)="eliminar(usuario)">
+          <mat-icon aria-hidden="true">block</mat-icon>
+        </button>
+      </ng-template>
+    </vit-tabla>
+  </section>
+
+  <section class="flex max-w-md flex-col gap-3" aria-labelledby="titulo-formulario">
+    <h2 id="titulo-formulario" class="text-lg font-medium">Formulario</h2>
+    <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" autocomplete="name" required />
+        <mat-error>{{ formulario.controls.nombre.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Correo</mat-label>
+        <input matInput type="email" formControlName="correo" autocomplete="email" required />
+        <mat-error>{{ formulario.controls.correo.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+      <vit-acciones-formulario [guardando]="guardando()" (cancelar)="cancelar()" />
+    </form>
+  </section>
+
+  <section class="flex flex-col gap-3" aria-labelledby="titulo-estados">
+    <h2 id="titulo-estados" class="text-lg font-medium">Estados</h2>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="rounded-tarjeta border border-borde">
+        <vit-estado-vacio icono="group" titulo="No hay usuarios" texto="Invite al primero para empezar.">
+          <button mat-flat-button type="button">Invitar</button>
+        </vit-estado-vacio>
+      </div>
+      <div class="flex items-center justify-center rounded-tarjeta border border-borde p-8">
+        <vit-cargando texto="Cargando usuarios…" />
+      </div>
+    </div>
+  </section>
+</div>

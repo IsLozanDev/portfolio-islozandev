@@ -1,6 +1,6 @@
 # SPEC 14 — Auth UI mínima: páginas `/auth` y primera app Angular (`plataforma-admin`)
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 13, SPEC 08, SPEC 06
 > **Date:** 2026-10-26
 > **Objective:** Crear `libs/shared/auth-ui` con las páginas `/auth` (ingresar, callback OAuth, recuperar, nueva clave, MFA e invitación) montadas en una primera app `apps/plataforma-admin` con Angular Material y Tailwind 4, verificadas en navegador contra Supabase dev.

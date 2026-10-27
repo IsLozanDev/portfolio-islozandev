@@ -1,0 +1,10 @@
+<div class="flex flex-wrap justify-end gap-2">
+  <button mat-stroked-button type="button" (click)="cancelar.emit()">{{ textoCancelar }}</button>
+  <button mat-flat-button type="submit" [disabled]="guardando()" [attr.aria-busy]="guardando()">
+    @if (guardando()) {
+      <mat-progress-spinner mode="indeterminate" diameter="18" [attr.aria-label]="textoGuardando" />
+    } @else {
+      {{ textoGuardar() }}
+    }
+  </button>
+</div>

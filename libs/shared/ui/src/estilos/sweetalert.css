@@ -1,0 +1,45 @@
+/* SweetAlert2 con los tokens del tema Material; se carga después de sweetalert2.css. */
+:root {
+  --swal2-background: var(--mat-sys-surface-container-high);
+  --swal2-color: var(--mat-sys-on-surface);
+  --swal2-border-radius: var(--mat-sys-corner-extra-large);
+  --swal2-confirm-button-background-color: var(--mat-sys-primary);
+  --swal2-confirm-button-color: var(--mat-sys-on-primary);
+  --swal2-confirm-button-border-radius: var(--mat-sys-corner-full);
+  --swal2-cancel-button-background-color: transparent;
+  --swal2-cancel-button-color: var(--mat-sys-primary);
+  --swal2-cancel-button-border-radius: var(--mat-sys-corner-full);
+  --swal2-input-border: 1px solid var(--mat-sys-outline);
+  --swal2-input-border-radius: var(--mat-sys-corner-extra-small);
+  --swal2-input-focus-border: 1px solid var(--mat-sys-primary);
+  --swal2-validation-message-background: var(--mat-sys-error-container);
+  --swal2-validation-message-color: var(--mat-sys-on-error-container);
+  --swal2-timer-progress-bar-background: var(--mat-sys-primary);
+}
+
+.vit-aviso .swal2-title {
+  font: var(--mat-sys-headline-small);
+}
+
+.vit-aviso .swal2-html-container,
+.vit-aviso .swal2-input-label {
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.vit-aviso .swal2-styled {
+  font: var(--mat-sys-label-large);
+}
+
+.vit-aviso .swal2-cancel {
+  border: 1px solid var(--mat-sys-outline);
+}
+
+.vit-aviso-destructivo {
+  --swal2-confirm-button-background-color: var(--mat-sys-error);
+  --swal2-confirm-button-color: var(--mat-sys-on-error);
+}
+
+.vit-aviso.swal2-toast .swal2-title {
+  font: var(--mat-sys-body-medium);
+}

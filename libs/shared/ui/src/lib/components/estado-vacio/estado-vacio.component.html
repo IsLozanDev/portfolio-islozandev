@@ -1,0 +1,8 @@
+<section class="flex flex-col items-center gap-2 p-8 text-center">
+  <mat-icon class="text-sobre-superficie-variante" aria-hidden="true">{{ icono() }}</mat-icon>
+  <p class="text-lg font-medium">{{ titulo() }}</p>
+  @if (texto(); as detalle) {
+    <p class="text-sm text-sobre-superficie-variante">{{ detalle }}</p>
+  }
+  <ng-content />
+</section>
