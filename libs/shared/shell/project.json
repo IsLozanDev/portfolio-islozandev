@@ -29,7 +29,10 @@
     "test": {
       "executor": "@nx/angular:unit-test",
       "options": {
-        "watch": false
+        "watch": false,
+        "coverageInclude": [
+          "libs/shared/shell/src/lib/**/*.ts"
+        ]
       }
     }
   }

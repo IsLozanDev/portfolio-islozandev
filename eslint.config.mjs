@@ -27,6 +27,9 @@ export default [
         'error',
         {
           enforceBuildableLibDependency: false,
+          // El interceptor de errores del shell carga `shared/ui` con import() para no meter SweetAlert2
+          // en el bundle inicial; el resto del shell la importa estáticamente desde rutas lazy.
+          checkDynamicDependenciesExceptions: ['@vitrina/shared/ui'],
           allow: [],
           depConstraints: [
             // Alcance: la plataforma nunca usa productos; shared no usa nada fuera de shared.

@@ -1,37 +1,47 @@
 @if (nodos().length === 0) {
   <vit-estado-vacio [icono]="iconoSinOpciones" [titulo]="mensajes.sinOpcionesMenu" />
 } @else {
-  <nav [attr.aria-label]="mensajes.menuPrincipal">
+  <!-- Una sola lista para todos los niveles: cada mat-nav-list es una región «navigation» y anidarlas las repite sin nombre. -->
+  <mat-nav-list [attr.aria-label]="mensajes.menuPrincipal">
     <ng-container *ngTemplateOutlet="nivelDelMenu; context: { $implicit: nodos(), nivel: 0 }" />
-  </nav>
+  </mat-nav-list>
 }
 
 <ng-template #nivelDelMenu let-nodosDelNivel let-nivel="nivel">
-  <mat-nav-list [style.padding-inline-start.rem]="nivel">
-    @for (nodo of nodosDelNivel; track nodo.codigo) {
-      @if (nodo.hijos.length > 0) {
-        <button mat-list-item type="button" [attr.aria-expanded]="estaExpandido(nodo.codigo)" (click)="alternar(nodo.codigo)">
-          <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
-          <span matListItemTitle>{{ nodo.nombre }}</span>
-          <mat-icon matListItemMeta aria-hidden="true">{{ estaExpandido(nodo.codigo) ? 'expand_less' : 'expand_more' }}</mat-icon>
-        </button>
-        @if (estaExpandido(nodo.codigo)) {
-          <ng-container *ngTemplateOutlet="nivelDelMenu; context: { $implicit: nodo.hijos, nivel: nivel + 1 }" />
-        }
-      } @else {
-        <a
-          mat-list-item
-          [routerLink]="nodo.ruta"
-          routerLinkActive
-          #enlace="routerLinkActive"
-          [routerLinkActiveOptions]="{ exact: esRutaExacta(nodo.ruta) }"
-          ariaCurrentWhenActive="page"
-          [activated]="enlace.isActive"
-        >
-          <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
-          <span matListItemTitle>{{ nodo.nombre }}</span>
-        </a>
+  @for (nodo of nodosDelNivel; track nodo.codigo) {
+    @if (nodo.hijos.length > 0) {
+      <button
+        mat-list-item
+        class="text-start"
+        type="button"
+        [style.padding-inline-start.rem]="sangria(nivel)"
+        [attr.aria-expanded]="estaExpandido(nodo.codigo)"
+        (click)="alternar(nodo.codigo)"
+      >
+        <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+        <span matListItemTitle>{{ nodo.nombre }}</span>
+        <!-- El span recibe la tipografía del slot final; directo en mat-icon, esa tipografía le quita la fuente de iconos. -->
+        <span matListItemMeta>
+          <mat-icon aria-hidden="true">{{ estaExpandido(nodo.codigo) ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </span>
+      </button>
+      @if (estaExpandido(nodo.codigo)) {
+        <ng-container *ngTemplateOutlet="nivelDelMenu; context: { $implicit: nodo.hijos, nivel: nivel + 1 }" />
       }
+    } @else {
+      <a
+        mat-list-item
+        [style.padding-inline-start.rem]="sangria(nivel)"
+        [routerLink]="nodo.ruta"
+        routerLinkActive
+        #enlace="routerLinkActive"
+        [routerLinkActiveOptions]="{ exact: esRutaExacta(nodo.ruta) }"
+        ariaCurrentWhenActive="page"
+        [activated]="enlace.isActive"
+      >
+        <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+        <span matListItemTitle>{{ nodo.nombre }}</span>
+      </a>
     }
-  </mat-nav-list>
+  }
 </ng-template>

@@ -84,7 +84,7 @@ Historias del backlog: **U-01** y **U-02**. Estimado: 13-14 h (el roadmap dice 8
 ## Base de código reutilizada
 
 - No hay código base de `shared/ui` ni `shared/shell` en `docs/.../codigo/`.
-- `libs/shared/auth` (spec 13): `SesionService`, `CONFIG_AUTH`, guards, `*siPermiso` y `rutaDeRetorno` se usan tal cual. Sin cambios.
+- `libs/shared/auth` (spec 13): `SesionService`, `CONFIG_AUTH`, guards, `*siPermiso` y `rutaDeRetorno` se usan tal cual. Cambio en el paso 8 (decisión del usuario): `OMITIR_AVISO_ERROR` y la opción `omitirAvisoError` de `cargarContexto` y `seleccionarSucursal`; se exporta `esDeLaApi`. Ver «Hallazgos de la implementación».
 - `apps/plataforma-admin/src/app/pages/seleccionar-sucursal`: se conserva la lógica (carga, `sinAccesos`, `returnUrl`, sucursal actual marcada con `aria-current`) y se mueve a `shared/shell`. Cambia: usa `vit-cargando` y el texto de `mensajes-shell.ts`.
 - `pages/sin-accesos` y `pages/prohibido`: se conservan los textos (TR-CA-046) y se mueven. Suman botón «Salir» y «Volver al inicio».
 - `styles.scss`: la paleta azure y la tipografía pasan al mixin de `shared/ui`.
@@ -325,6 +325,8 @@ Script `menu-prueba.sql` en el scratchpad (no se versiona). Inserta, para el pro
 
 `menu-prueba-borrar.sql` deja la base como estaba. Si el MCP de Supabase es de solo lectura, el usuario los ejecuta en el editor SQL de dev. La caché Redis de permisos se invalida o se espera su vencimiento antes de verificar.
 
+Al implementar no hizo falta sembrar el menú (ver «Hallazgos de la implementación»): se usaron `spec15-sembrar.sql` y `spec15-borrar.sql`, que solo agregan y quitan la sucursal «Surco» en `humo-14` y suben `seg.version_seguridad` para invalidar la caché.
+
 ## Plan de implementación
 
 1. **Lib `shared/ui` y estilos.** Generar `libs/shared/ui` (construible, Vitest, tags, alias). `estilos/material.scss`, `estilos/tema.css`; la app los usa en `styles.scss` y `tailwind.css` (se quita `--color-marca`). Fuente Material Symbols en `index.html`. Verificar: `nx build plataforma-admin` y `/auth/ingresar` se ve igual que antes.
@@ -349,7 +351,7 @@ Workspace y build:
 - [ ] Cobertura de líneas >= 70 % en `shared-ui` y en `shared-shell`.
 - [ ] `nx lint` pasa en las tres; `shared-ui` solo importa `type:ui` o `type:util`; `shared-shell` no importa fuera de `scope:shared`.
 - [ ] `sweetalert2` solo se importa en `avisos.service.ts` (`git grep "from 'sweetalert2'"` da un archivo).
-- [ ] `index.ts` de `shared-ui` exporta solo `AvisosService`, los tipos de `aviso.ts`, `columna-tabla.ts` y `filtro.ts`, `MENSAJES_UI`, los cinco componentes, `mensajeDeValidacion` y `MensajeValidacionPipe`.
+- [ ] `index.ts` de `shared-ui` exporta solo `AvisosService`, los tipos de `aviso.ts`, `columna-tabla.ts` y `filtro.ts`, `MENSAJES_UI`, los cinco componentes, `AccionesFilaDirective` (la plantilla de acciones de `vit-tabla`), `mensajeDeValidacion` y `MensajeValidacionPipe`.
 - [ ] `index.ts` de `shared-shell` exporta solo `rutasDelShell`, `erroresHttpInterceptor` y `OMITIR_AVISO_ERROR`.
 - [ ] `apps/plataforma-admin/src/app/pages/` ya no tiene `seleccionar-sucursal`, `sin-accesos` ni `prohibido`.
 - [ ] `nx affected -t lint,test,build` verde, incluido el backend.
@@ -384,8 +386,8 @@ Shell (pruebas de `shared-shell`):
 
 Navegador (MCP `playwright`, `nx serve plataforma-admin` y `nx serve api` contra Supabase dev, con los datos de prueba):
 
-- [ ] Tras ingresar, el layout muestra el menú sembrado: «Administración» (con «Usuarios» y «Roles») e «Inicio», con sus iconos.
-- [ ] «Roles» lleva a la página 404 dentro del layout, con el menú visible.
+- [ ] Tras ingresar, el layout muestra el menú de dev (manifiesto de plataforma): «Seguridad» (Roles, Perfiles, Asignaciones, Usuarios) y «Configuración» (Parámetros, Series), con sus iconos.
+- [ ] «Roles» (`/admin/roles`, sin registrar en la app) lleva a la página 404 dentro del layout, con el menú visible.
 - [ ] **TR-CA-044**: el usuario con una sola sucursal entra a `/` sin ver el selector.
 - [ ] **TR-CA-045**: el usuario con dos sucursales cambia desde el encabezado; la petición a `mi-contexto` lleva el `X-Sucursal-Id` nuevo, el menú se recarga, llega a `/` y no pasa por `/auth`.
 - [ ] Al recargar la página, la sucursal elegida sigue siendo la actual (la recuerda el servidor).
@@ -443,6 +445,26 @@ Código limpio:
 - **Sí:** datos de prueba del menú sembrados en dev y borrados al terminar. Decisión del usuario; prueba la cadena real `seg.opcion` → `mi-contexto` → menú.
 - **No:** mock de `mi-contexto` en Playwright. No prueba la API.
 - **Sí:** un solo spec de 13-14 h. Decisión del usuario; rompe el tope de 10 h a sabiendas.
+
+### Hallazgos de la implementación
+
+- **Sí:** `vit-tabla` suma `indicePagina = input(0)`. Sin él, quien consume no puede volver a la página 1 al filtrar y el paginador queda desfasado del servidor. Decisión del usuario en el paso 4.
+- **Sí:** `rutasDelShell(hijas, nombreApp)`. El layout lee el nombre de `data` de su ruta, que arma el shell; la app no tenía dónde ponerlo.
+- **Sí:** `OMITIR_AVISO_ERROR` vive en `shared/auth` y `SesionService.cargarContexto` y `seleccionarSucursal` aceptan `{ omitirAvisoError }`. El selector y la página de selección no hacen la petición: sin la opción, un 5xx mostraba el modal del interceptor y además su propio error. Decisión del usuario en el paso 8. El shell lo reexporta.
+- **No:** dejar el doble aviso, ni quitar el error propio del selector.
+- **Sí:** el interceptor carga `@vitrina/shared/ui` con `import()` al primer error. Con import estático, el barrel metía todo `shared/ui` y SweetAlert2 en el arranque: el bundle inicial pasó a 1,05 MB (error del presupuesto). Queda en 593 kB.
+- **Sí:** `checkDynamicDependenciesExceptions: ['@vitrina/shared/ui']` en `eslint.config.mjs`. La regla de Nx prohíbe importar estáticamente una lib que en otro lado se carga dinámicamente.
+- **Sí:** `MatIconRegistry.setDefaultFontSetClass('material-symbols-outlined')` en el constructor del layout, no en `app.config.ts`. En el arranque sumaba unos 23 kB y los iconos solo se pintan dentro del layout.
+- **Sí:** SweetAlert2 desde `sweetalert2/dist/sweetalert2.js` (sin CSS inyectado) con tipos de `sweetalert2`, y `sweetalert2.css` más `estilos/sweetalert.css` en `styles`. `Swal.fire` devuelve un thenable sin `catch`: se envuelve con `Promise.resolve`.
+- **Sí:** el toast espera a que se cierre el modal abierto. SweetAlert2 muestra un popup a la vez y un toast lo reemplazaría.
+- **Sí:** `src/testing/sweetalert-en-jsdom.ts` emula `matchMedia`, `innerText` y `offsetWidth` solo en pruebas. jsdom no los tiene y SweetAlert2 los usa para abrir, escribir el título y elegir el foco.
+- **Sí:** cobertura de `shared-shell` limitada a sus fuentes (`coverageInclude`). Sin eso contaba `shared/auth` y `shared/ui` y daba 53 %; con eso, 99 %.
+- **Sí:** menú lateral con un solo `mat-nav-list` y sangría por nivel, y barra superior dentro de `<header>`. axe marcaba `landmark-unique` (cada lista anidada es otra región «navigation») y `region`.
+- **Sí:** el icono de expandir de los grupos va dentro de `<span matListItemMeta>`. Directo en `mat-icon`, la tipografía del slot le quitaba la fuente de iconos y se veía el texto «expa».
+- **Sí:** ancho del menú por `--mat-sidenav-container-width` (18rem). La clase `w-72` perdía contra el CSS de Material y el panel medía 360 px.
+- **Sí:** no se sembró el menú. Dev ya tenía el del manifiesto de plataforma (Seguridad y Configuración, rutas `/admin/*`); solo se agregó y luego se borró una segunda sucursal en `humo-14` para TR-CA-045. El MCP de Supabase sí escribe (no es de solo lectura).
+- **Sí:** el chunk de `/dev/componentes` se emite en producción aunque la ruta no se registra; no es alcanzable.
+- Pendiente menor: el toast arriba a la derecha tapa unos 3 s el menú de usuario. Chrome advierte «Blocked aria-hidden» al abrir un modal de SweetAlert2 (lo pone en el fondo antes de mover el foco); es interno de la librería y axe no lo marca.
 
 ## Riesgos
 

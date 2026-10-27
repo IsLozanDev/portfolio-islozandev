@@ -43,14 +43,14 @@ describe('erroresHttpInterceptor', () => {
   it('un 503 de la API abre «Error del servidor» y propaga el error', async () => {
     const error = await fallar(`${API_URL}/seg/usuarios`, 503);
 
-    expect(avisos.error).toHaveBeenCalledWith(MENSAJES_SHELL.tituloErrorServidor, MENSAJES_SHELL.errorServidor);
+    await vi.waitFor(() => expect(avisos.error).toHaveBeenCalledWith(MENSAJES_SHELL.tituloErrorServidor, MENSAJES_SHELL.errorServidor));
     expect(error).toMatchObject({ status: 503 });
   });
 
   it('sin conexión abre «Sin conexión»', async () => {
     const error = await fallar(`${API_URL}/seg/usuarios`, 0);
 
-    expect(avisos.error).toHaveBeenCalledWith(MENSAJES_SHELL.tituloSinConexion, MENSAJES_SHELL.sinConexion);
+    await vi.waitFor(() => expect(avisos.error).toHaveBeenCalledWith(MENSAJES_SHELL.tituloSinConexion, MENSAJES_SHELL.sinConexion));
     expect(error).toMatchObject({ status: 0 });
   });
 

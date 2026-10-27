@@ -9,6 +9,9 @@ import type { NodoMenu } from '../../models/nodo-menu';
 
 const RUTA_RAIZ = '/';
 const ICONO_SIN_OPCIONES = 'menu_open';
+/** Relleno inicial de `mat-list-item` (16 px) más un escalón por nivel de anidación. */
+const SANGRIA_BASE_REM = 1;
+const SANGRIA_POR_NIVEL_REM = 1;
 
 /** Pinta el árbol del menú tal como lo entrega la API: no decide permisos. */
 @Component({
@@ -33,6 +36,10 @@ export class MenuLateralComponent {
       if (!siguientes.delete(codigo)) siguientes.add(codigo);
       return siguientes;
     });
+  }
+
+  protected sangria(nivel: number): number {
+    return SANGRIA_BASE_REM + nivel * SANGRIA_POR_NIVEL_REM;
   }
 
   /** La raíz solo está activa en sí misma; el resto también en sus subrutas. */

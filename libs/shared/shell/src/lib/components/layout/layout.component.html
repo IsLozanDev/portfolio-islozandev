@@ -1,20 +1,23 @@
-<mat-sidenav-container class="h-dvh">
-  <mat-sidenav #menuLateralRef class="w-72" [mode]="escritorio() ? 'side' : 'over'" [opened]="escritorio()">
+<!-- Ancho por la variable de Material: una clase de ancho de Tailwind pierde contra su CSS, que carga después. -->
+<mat-sidenav-container class="h-dvh [--mat-sidenav-container-width:18rem]">
+  <mat-sidenav #menuLateralRef [mode]="escritorio() ? 'side' : 'over'" [opened]="escritorio()">
     <vit-menu-lateral [nodos]="menu()" />
   </mat-sidenav>
 
   <mat-sidenav-content class="flex flex-col">
-    <mat-toolbar class="sticky top-0 z-10 gap-2">
-      @if (!escritorio()) {
-        <button mat-icon-button type="button" [attr.aria-label]="mensajes.abrirMenu" (click)="menuLateralRef.toggle()">
-          <mat-icon aria-hidden="true">menu</mat-icon>
-        </button>
-      }
-      <span class="truncate text-lg">{{ nombreApp }}</span>
-      <span class="flex-1"></span>
-      <vit-selector-sucursal />
-      <vit-menu-usuario />
-    </mat-toolbar>
+    <header class="sticky top-0 z-10">
+      <mat-toolbar class="gap-2">
+        @if (!escritorio()) {
+          <button mat-icon-button type="button" [attr.aria-label]="mensajes.abrirMenu" (click)="menuLateralRef.toggle()">
+            <mat-icon aria-hidden="true">menu</mat-icon>
+          </button>
+        }
+        <span class="truncate text-lg">{{ nombreApp }}</span>
+        <span class="flex-1"></span>
+        <vit-selector-sucursal />
+        <vit-menu-usuario />
+      </mat-toolbar>
+    </header>
 
     <main class="flex-1 p-4">
       <router-outlet />
