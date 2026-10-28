@@ -163,7 +163,7 @@ describe('UsuariosInvitarPage', () => {
     llenarRosa('rol:r-supervisor');
     await pulsarInvitar();
 
-    expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_INVITAR)}`);
+    await vi.waitFor(() => expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_INVITAR)}`));
   });
 
   it('un rol sensible con MFA vigente sí envía', async () => {

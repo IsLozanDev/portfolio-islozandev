@@ -1,3 +1,4 @@
+import { MENSAJES_SHELL } from '@vitrina/shared/shell';
 import type { Alcance } from './asignacion';
 import type { EstadoAsignacion, EstadoMembresia } from './miembro';
 
@@ -21,8 +22,6 @@ export const MENSAJES_ADMIN = {
   tituloAsignar: 'Asignar rol o perfil',
   asignar: 'Asignar',
   asignacionOtorgada: 'Asignación otorgada',
-  tituloMfaRequerida: 'Verificación requerida',
-  mfaRequerida: 'Esta acción es sensible. Verifique su identidad con el segundo factor y vuelva a intentarlo.',
 } as const;
 
 export const MENSAJES_DETALLE = {
@@ -122,7 +121,7 @@ export const ETIQUETAS_ESTADO_MEMBRESIA: Readonly<Record<EstadoMembresia, string
  */
 export const MENSAJES_POR_CODIGO: Readonly<Record<string, string>> = {
   SOLICITUD_INVALIDA: 'Revise los datos del formulario.',
-  MFA_REQUERIDA: MENSAJES_ADMIN.mfaRequerida,
+  MFA_REQUERIDA: MENSAJES_SHELL.mfaRequerida,
   SIN_PERMISO: 'No tiene permiso para esta acción.',
   SUCURSAL_NO_ASIGNADA: 'No tiene acceso a la sucursal seleccionada.',
 };

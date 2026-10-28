@@ -195,7 +195,7 @@ describe('UsuarioDetallePage', () => {
     await pulsar(MENSAJES_DETALLE.suspender);
 
     expect(avisos.confirmarDestructiva).not.toHaveBeenCalled();
-    expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_PEDRO)}`);
+    await vi.waitFor(() => expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_PEDRO)}`));
   });
 
   it('asignar con MFA vigente abre el formulario de asignación', async () => {

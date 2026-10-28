@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { autenticadoGuard, sesionGuard } from '@vitrina/shared/auth';
 import { LayoutComponent } from './components/layout/layout.component';
-import { CLAVE_NOMBRE_APP } from './models/datos-ruta-shell';
+import { CLAVE_NOMBRE_APP, CLAVE_PREFIJO_MENU } from './models/datos-ruta-shell';
 import { NoEncontradoPage } from './pages/no-encontrado/no-encontrado.page';
 import { ProhibidoPage } from './pages/prohibido/prohibido.page';
 import { SeleccionarSucursalPage } from './pages/seleccionar-sucursal/seleccionar-sucursal.page';
@@ -27,6 +27,11 @@ describe('rutasDelShell', () => {
   it('el nombre de la app viaja en data del layout', () => {
     const [, , layoutPropio] = rutasDelShell([], 'SazónPOS');
     expect(layoutPropio.data).toEqual({ [CLAVE_NOMBRE_APP]: 'SazónPOS' });
+  });
+
+  it('el prefijo del menú viaja en data del layout solo si se pasa', () => {
+    const [, , layoutConsola] = rutasDelShell([], 'Consola de plataforma', '/consola');
+    expect(layoutConsola.data).toEqual({ [CLAVE_NOMBRE_APP]: 'Consola de plataforma', [CLAVE_PREFIJO_MENU]: '/consola' });
   });
 
   it('cada ruta lazy carga su componente', async () => {
