@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -68,6 +68,7 @@ afterAll(async () => {
 const CASOS = [
   { migracion: '01a_org.sql', esquema: 'org', prueba: 'tests/01a_org.test.sql' },
   { migracion: '01a_org_alta.sql', esquema: 'org', prueba: 'tests/01a_org_alta.test.sql' },
+  { migracion: '01a_org_consola.sql', esquema: 'org', prueba: 'tests/01a_org_consola.test.sql' },
   { migracion: '01b_seg.sql', esquema: 'seg', prueba: 'tests/01b_seg.test.sql' },
   { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01b_seg_membresias.sql', esquema: 'seg', prueba: 'tests/01b_seg_membresias.test.sql' },
@@ -155,6 +156,19 @@ const objetosAlta = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Funciones y políticas que agrega 01a_org_consola (5 en total).
+const objetosConsola = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'org.tenants_listar' AS o WHERE to_regprocedure('org.tenants_listar(varchar, varchar, varchar, int, int)') IS NOT NULL
+       UNION ALL SELECT 'org.tenant_detalle' WHERE to_regprocedure('org.tenant_detalle(uuid)') IS NOT NULL
+       UNION ALL SELECT policyname FROM pg_policies
+        WHERE schemaname = 'org' AND policyname IN ('empresa_consola', 'sucursal_consola', 'historial_consola')
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
 const triggersSuscripcion = async () =>
   (
     await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
@@ -203,6 +217,13 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await funcionesAutorizacion()).toHaveLength(6);
     await ejecutar(urlDb, await readFile(rutaDb('01b_seg_membresias.sql'), 'utf8'));
     expect(await objetosMembresias()).toHaveLength(9);
+
+    // El inverso de 01a_org_consola deja org como lo dejó 01a_org_alta y se puede reaplicar. Va antes que el de 01a_org_alta.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01a_org_consola.sql'), 'utf8'));
+    expect(await objetosConsola()).toEqual([]);
+    expect(await objetosAlta()).toHaveLength(5);
+    await ejecutar(urlDb, await readFile(rutaDb('01a_org_consola.sql'), 'utf8'));
+    expect(await objetosConsola()).toHaveLength(5);
 
     // El inverso de 01a_org_alta deja org como lo dejó 01a_org (con datos) y se puede reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01a_org_alta.sql'), 'utf8'));

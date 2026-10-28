@@ -6,6 +6,7 @@ import { buscarTenant, cupoSucursales, existe } from './comunes.js';
 import type { PadronRucPort } from './ports/padron-ruc.port.js';
 import type { RepositorioEmpresas, RepositorioSucursales, RepositorioSuscripciones, RepositorioTenants } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
+import { exigirVersion } from './version-obsoleta.js';
 
 export interface RegistrarEmpresaComando {
   ruc: string;
@@ -18,6 +19,8 @@ export interface RegistrarEmpresaComando {
 
 export interface EditarEmpresaComando extends DatosEmpresa {
   empresaId: string;
+  /** La que leyó el cliente. */
+  version: number;
 }
 
 export interface EmpresaRepos {
@@ -68,10 +71,11 @@ export class EditarEmpresa {
     private readonly repos: Pick<EmpresaRepos, 'tenants' | 'empresas'>,
   ) {}
 
-  async ejecutar({ empresaId, ...datos }: EditarEmpresaComando): Promise<void> {
+  async ejecutar({ empresaId, version, ...datos }: EditarEmpresaComando): Promise<void> {
     await this.uow.run(async () => {
       (await buscarTenant(this.repos.tenants, this.contexto)).exigirOperativo();
       const empresa = existe(await this.repos.empresas.buscar(empresaId), 'La empresa no existe');
+      exigirVersion(empresa, version);
 
       empresa.editar(datos);
       await this.repos.empresas.guardar(empresa);

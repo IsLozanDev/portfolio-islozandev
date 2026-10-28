@@ -71,6 +71,25 @@ export {
   type UnidadRepos,
 } from './application/unidad.casos-de-uso.js';
 export {
+  ListarEmpresas,
+  ListarSucursales,
+  ListarUnidades,
+  type DependenciasLecturaOrganizacion,
+} from './application/lecturas-organizacion.js';
+export type {
+  EmpresaListada,
+  FiltroEmpresas,
+  FiltroSucursales,
+  FiltroUnidades,
+  LecturaOrganizacion,
+  Listado,
+  Pagina,
+  SucursalListada,
+  UnidadListada,
+} from './application/ports/lectura-organizacion.js';
+export { LecturaOrganizacionTypeOrm } from './infrastructure/typeorm/lectura-organizacion.typeorm.js';
+export { exigirVersion, VersionObsoletaError } from './application/version-obsoleta.js';
+export {
   CambiarEstadoTenant,
   GestionarSuscripcion,
   type CambiarEstadoTenantComando,

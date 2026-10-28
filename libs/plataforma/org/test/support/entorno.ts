@@ -28,6 +28,8 @@ export interface Entorno {
   en<T>(tenantId: string, fn: () => Promise<T>): Promise<T>;
   /** Tipos de evento en el outbox para un agregado, en orden. */
   eventosDe(aggregateId: string): Promise<string[]>;
+  /** Versión guardada de una fila de org, como la leería el cliente antes de editar. */
+  versionDe(tabla: 'empresa' | 'sucursal' | 'unidad_operativa', id: string): Promise<number>;
   cerrar(): Promise<void>;
 }
 
@@ -60,6 +62,7 @@ export async function crearEntorno(): Promise<Entorno> {
       (await dataSource.query('SELECT event_type FROM sync.outbox WHERE aggregate_id = $1 ORDER BY seq', [aggregateId])).map(
         (f: { event_type: string }) => f.event_type,
       ),
+    versionDe: async (tabla, id) => Number((await dataSource.query(`SELECT version FROM org.${tabla} WHERE id = $1`, [id]))[0].version),
     cerrar: async () => {
       await dataSource.destroy();
       await db.drop();

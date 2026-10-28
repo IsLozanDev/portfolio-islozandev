@@ -3,6 +3,7 @@ import { Sucursal, type DatosSucursal } from '../domain/sucursal.js';
 import { buscarTenant, cupoSucursales, existe } from './comunes.js';
 import type { RepositorioEmpresas, RepositorioSucursales, RepositorioSuscripciones, RepositorioTenants } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
+import { exigirVersion } from './version-obsoleta.js';
 
 export interface SucursalRepos {
   tenants: RepositorioTenants;
@@ -17,6 +18,8 @@ export interface RegistrarSucursalComando extends DatosSucursal {
 
 export interface EditarSucursalComando extends DatosSucursal {
   sucursalId: string;
+  /** La que leyó el cliente. */
+  version: number;
   /** true reactiva (exige cupo del plan), false inactiva; sin valor no cambia. */
   activo?: boolean;
 }
@@ -60,9 +63,10 @@ export class RegistrarSucursal extends CasoSucursal {
 }
 
 export class EditarSucursal extends CasoSucursal {
-  ejecutar({ sucursalId, activo, ...datos }: EditarSucursalComando): Promise<void> {
+  ejecutar({ sucursalId, version, activo, ...datos }: EditarSucursalComando): Promise<void> {
     return this.enTransaccion(async () => {
       const sucursal = await this.sucursal(sucursalId);
+      exigirVersion(sucursal, version);
       sucursal.editar(datos);
       if (activo === true) sucursal.reactivar(await cupoSucursales(this.repos));
       if (activo === false) sucursal.inactivar();

@@ -108,7 +108,8 @@ describeConDb('Casos de uso de unidad operativa (PostgreSQL 16)', () => {
     const { unidadId: b } = await almacen('B', a);
     const { unidadId: c } = await almacen('C', b);
 
-    await expect(e.en(tenantId, () => casos.editar.ejecutar({ unidadId: a, codigo: 'A', nombre: 'Almacén A', atributos: {}, padreId: c }))).rejects.toThrow(
+    const version = await e.versionDe('unidad_operativa', a);
+    await expect(e.en(tenantId, () => casos.editar.ejecutar({ unidadId: a, version, codigo: 'A', nombre: 'Almacén A', atributos: {}, padreId: c }))).rejects.toThrow(
       new ValidationError('La unidad padre no puede ser la propia unidad ni una de sus descendientes'),
     );
     expect(await unidad(a)).toMatchObject({ padre_id: null });
@@ -119,7 +120,8 @@ describeConDb('Casos de uso de unidad operativa (PostgreSQL 16)', () => {
     const { unidadId: almacenId } = await e.en(tenantId, () => casos.registrar.ejecutar(comando({ empresaId, tipo: 'ALMACEN', codigo: 'ALM' })));
     const { unidadId } = await e.en(tenantId, () => casos.registrar.ejecutar(comando({ empresaId, sucursalId: caymaId })));
 
-    await e.en(tenantId, () => casos.editar.ejecutar({ unidadId, codigo: 'CAJA-01', nombre: 'Caja principal', atributos: { piso: 1 }, padreId: almacenId }));
+    const version = await e.versionDe('unidad_operativa', unidadId);
+    await e.en(tenantId, () => casos.editar.ejecutar({ unidadId, version, codigo: 'CAJA-01', nombre: 'Caja principal', atributos: { piso: 1 }, padreId: almacenId }));
     await e.en(tenantId, () => casos.inactivar.ejecutar({ unidadId }));
 
     expect(await unidad(unidadId)).toMatchObject({ padre_id: almacenId, activo: false });

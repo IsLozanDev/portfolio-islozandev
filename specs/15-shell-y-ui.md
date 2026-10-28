@@ -1,6 +1,6 @@
 # SPEC 15 — Shell y UI: sistema de diseño, avisos con SweetAlert2, layout, menú y selector de sucursal
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 13, SPEC 14, SPEC 06
 > **Date:** 2026-10-26
 > **Objective:** Crear `libs/shared/ui` (tokens, avisos centralizados con SweetAlert2, tabla, filtros, formulario, carga y estado vacío) y `libs/shared/shell` (layout, menú desde `mi-contexto`, selector de sucursal y páginas de sistema), montados en `plataforma-admin` y verificados en navegador.

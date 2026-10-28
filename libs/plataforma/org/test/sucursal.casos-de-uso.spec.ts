@@ -45,7 +45,7 @@ describeConDb('Casos de uso de sucursal (PostgreSQL 16)', () => {
         direccionFiscal: null,
         ubigeo: '040101',
       });
-      await casos.editar.ejecutar({ sucursalId: sucursalPrincipalId, ...datosSucursal({ codigo: 'CENTRO', nombre: 'Centro', codigoEstablecimientoSunat: '0000' }) });
+      await casos.editar.ejecutar({ sucursalId: sucursalPrincipalId, version: await e.versionDe('sucursal', sucursalPrincipalId), ...datosSucursal({ codigo: 'CENTRO', nombre: 'Centro', codigoEstablecimientoSunat: '0000' }) });
       return { tenantId, empresaId, centroId: sucursalPrincipalId };
     });
   }
@@ -110,7 +110,10 @@ describeConDb('Casos de uso de sucursal (PostgreSQL 16)', () => {
     await e.en(tenantId, () => casos.inactivar.ejecutar({ sucursalId: cayma }));
     await e.en(tenantId, () => casos.registrar.ejecutar({ empresaId, ...datosSucursal({ codigo: 'YANAHUARA', nombre: 'Yanahuara', codigoEstablecimientoSunat: '0003' }) }));
 
-    await expect(e.en(tenantId, () => casos.editar.ejecutar({ sucursalId: cayma, ...datosSucursal(), activo: true }))).rejects.toThrow(ConflictError);
+    const version = await e.versionDe('sucursal', cayma);
+    await expect(e.en(tenantId, () => casos.editar.ejecutar({ sucursalId: cayma, version, ...datosSucursal(), activo: true }))).rejects.toThrow(
+      new ConflictError('Su plan permite 2 sucursales; amplíe su plan'),
+    );
     expect(await sucursal(cayma)).toMatchObject({ activo: false });
   });
 
