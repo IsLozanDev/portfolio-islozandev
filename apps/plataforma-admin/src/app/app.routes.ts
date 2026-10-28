@@ -11,6 +11,7 @@ export const appRoutes: Route[] = [
   { path: 'auth', loadChildren: () => import('@vitrina/shared/auth-ui').then((modulo) => modulo.AUTH_UI_ROUTES) },
   ...rutasDelShell([
     { path: '', pathMatch: 'full', loadComponent: () => import('./pages/inicio/inicio.page').then((modulo) => modulo.InicioPage) },
+    { path: 'admin', loadChildren: () => import('@vitrina/plataforma/admin-cliente').then((modulo) => modulo.ADMIN_CLIENTE_ROUTES) },
     ...(environment.production ? [] : RUTAS_DE_DESARROLLO),
   ]),
 ];

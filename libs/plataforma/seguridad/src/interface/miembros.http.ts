@@ -20,6 +20,27 @@ const DIRECCIONES = ['asc', 'desc'] as const;
 /** Igual que `seg.usuario.email`, la columna más larga en la que se busca. */
 const LONGITUD_MAXIMA_BUSQUEDA = 255;
 
+const uuidNulo = z.uuid().nullable().optional().default(null);
+// Solo la forma: la fecha calendario y TR-RN-008 las valida el dominio, con sus mensajes.
+const fechaNula = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .nullable()
+  .optional()
+  .default(null);
+
+export const EsquemaOtorgarAsignacion = z.object({
+  membresia_id: z.uuid(),
+  rol_id: uuidNulo,
+  perfil_id: uuidNulo,
+  alcance: z.enum(ALCANCES),
+  empresa_id: uuidNulo,
+  sucursal_id: uuidNulo,
+  unidad_id: uuidNulo,
+  vigente_desde: fechaNula,
+  vigente_hasta: fechaNula,
+});
+
 export const EsquemaListarMiembros = z.object({
   estado: z.enum(ESTADOS_MEMBRESIA).optional(),
   busqueda: z.string().trim().max(LONGITUD_MAXIMA_BUSQUEDA).optional(),
@@ -156,6 +177,40 @@ export class AsignablesDto {
 
   @ApiProperty({ type: [PerfilAsignableDto] })
   perfiles!: PerfilAsignableDto[];
+}
+
+export class OtorgarAsignacionDto {
+  @ApiProperty({ format: 'uuid' })
+  membresia_id!: string;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String, description: 'Rol o perfil, uno de los dos (TR-RN-008)' })
+  rol_id?: string | null;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
+  perfil_id?: string | null;
+
+  @ApiProperty({ enum: ALCANCES })
+  alcance!: string;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
+  empresa_id?: string | null;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
+  sucursal_id?: string | null;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true, type: String })
+  unidad_id?: string | null;
+
+  @ApiPropertyOptional({ format: 'date', nullable: true, type: String, description: 'Por defecto, hoy en America/Lima' })
+  vigente_desde?: string | null;
+
+  @ApiPropertyOptional({ format: 'date', nullable: true, type: String, description: 'No anterior a vigente_desde' })
+  vigente_hasta?: string | null;
+}
+
+export class AsignacionOtorgadaDto {
+  @ApiProperty({ format: 'uuid' })
+  asignacion_id!: string;
 }
 
 const instante = (fecha: Date | null): string | null => (fecha === null ? null : fecha.toISOString());
