@@ -270,7 +270,7 @@ Comportamiento:
    - Verificar: `pnpm nx test admin-cliente`.
 8. **`selector-alcance` y `form-asignacion`.**
    - Componentes con cascada de org y validaciones locales.
-   - Pruebas: con UNIDAD pide empresa, sucursal y unidad, y las listas se piden en cascada; rol y perfil no pueden quedar ambos; hasta < desde muestra el mensaje de TR-CA-038 y deshabilita guardar.
+   - Pruebas: con UNIDAD pide empresa, sucursal y unidad, y las listas se piden en cascada; rol y perfil no pueden quedar ambos; hasta < desde muestra el mensaje de TR-CA-038 y deja el formulario inválido.
    - Verificar: `pnpm nx test admin-cliente`.
 9. **Invitar.**
    - `UsuariosInvitarPage`, con lectura del `state` para reenviar.
@@ -323,7 +323,7 @@ Comportamiento:
 - [ ] Con `MEMBRESIA_EXISTENTE`, la UI muestra «El usuario ya es miembro del tenant (…)».
 - [ ] «Reenviar invitación» abre invitar con nombre y correo cargados, y el correo no aparece en la URL.
 - [ ] TR-CA-037 en UI: el formulario no permite tener un rol y un perfil seleccionados a la vez.
-- [ ] TR-CA-038 en UI: hasta anterior a desde muestra el mensaje y deshabilita guardar.
+- [ ] TR-CA-038 en UI: hasta anterior a desde muestra el mensaje y «Guardar» no envía la petición.
 - [ ] El selector de alcance UNIDAD pide empresa, sucursal y unidad en cascada con las rutas del 17a.
 - [ ] TR-CA-039: finalizar con «Cese» envía `{ motivo: 'Cese', confirmar: true }` y el detalle muestra FINALIZADO.
 - [ ] TR-CA-040: la respuesta `PROPIETARIO_UNICO` muestra «El tenant debe tener al menos un propietario activo».
