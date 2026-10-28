@@ -1,5 +1,6 @@
 import { EntitySchema } from 'typeorm';
 import type { AvisoVencimiento } from '../../domain/aviso-vencimiento.js';
+import { EmpresaLecturaEntidad, SucursalLecturaEntidad, UnidadLecturaEntidad } from './entidades-lectura.js';
 
 // Mapeo ORM de org.aviso_vencimiento. El esquema lo define db/01a_org_alta.sql (sin synchronize).
 // Los repositorios de org anteriores al spec 10 siguen con SQL (regla 11).
@@ -17,5 +18,5 @@ export const AvisoVencimientoEntidad = new EntitySchema<AvisoVencimiento>({
   },
 });
 
-/** Van en el DataSource de la app que use la tarea de vencimientos. */
-export const ENTIDADES_ORG = [AvisoVencimientoEntidad];
+/** Van en el DataSource de la app que use la tarea de vencimientos o las listas de organización. */
+export const ENTIDADES_ORG = [AvisoVencimientoEntidad, EmpresaLecturaEntidad, SucursalLecturaEntidad, UnidadLecturaEntidad];

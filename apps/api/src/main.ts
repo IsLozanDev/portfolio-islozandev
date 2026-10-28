@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
-import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
+import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { AppModule } from './app.module.js';
@@ -13,7 +13,7 @@ import { cargarConfig } from './config/env.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT] });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT, ...ENTIDADES_ORG] });
 await dataSource.initialize();
 
 const validator = new InMemoryEventSchemaValidator();

@@ -1,4 +1,4 @@
-import { ConflictError, ForbiddenError, ValidationError, type Clock, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
+import { ConflictError, ValidationError, type Clock, type IdGenerator } from '@vitrina/plataforma/kernel';
 import type { SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import {
   CodigoTenant,
@@ -10,24 +10,16 @@ import {
   type Plan,
   type ProductoCodigo,
   type RegistrarEmpresa,
-  type RepositorioTenants,
 } from '@vitrina/plataforma/org';
 import type { ParametroPort } from '@vitrina/plataforma/parametros';
 import type { IdentidadPropietario, InvitarPropietario } from '@vitrina/plataforma/seguridad';
 import { validarRuc } from '@vitrina/shared/util';
+import { ExigirOperador, type Actor, type DependenciasOperador } from './operador.js';
 
 const PARAMETRO_DIAS_PRUEBA = 'plat.suscripcion.dias_prueba';
 export const MENSAJE_TENANT_DUPLICADO = 'El código de tenant ya existe';
 
 export type Modalidad = 'PRUEBA' | 'ACTIVO';
-
-export class OperadorRequeridoError extends ForbiddenError {
-  override readonly code = 'OPERADOR_REQUERIDO';
-
-  constructor() {
-    super('Solo el tenant operador puede dar de alta tenants');
-  }
-}
 
 export class TenantDuplicadoError extends ConflictError {
   override readonly code = 'TENANT_DUPLICADO';
@@ -58,7 +50,7 @@ export interface AltaTenantComando {
   nombreComercial?: string | null;
   correoPropietario: string;
   nombrePropietario: string;
-  actor: { usuarioId: string; tenantId: string };
+  actor: Actor;
 }
 
 export interface TenantDadoDeAlta {
@@ -80,12 +72,9 @@ export interface TenantsPorCodigo {
   idDe(codigo: string): Promise<string | null>;
 }
 
-export interface DependenciasAlta {
-  unidadDeTrabajo: UnitOfWork;
-  contexto: TenantContext;
+export interface DependenciasAlta extends DependenciasOperador {
   ids: IdGenerator;
   reloj: Clock;
-  tenants: Pick<RepositorioTenants, 'buscar'>;
   tenantsPorCodigo: TenantsPorCodigo;
   parametros: Pick<ParametroPort, 'valor'>;
   crearTenant: Pick<CrearTenant, 'ejecutar'>;
@@ -93,8 +82,6 @@ export interface DependenciasAlta {
   registrarEmpresa: Pick<RegistrarEmpresa, 'ejecutar'>;
   sembrarSeries: Pick<SembrarSeriesIniciales, 'ejecutar'>;
   invitarPropietario: Pick<InvitarPropietario, 'prepararIdentidad' | 'registrar' | 'notificar'>;
-  /** Código del tenant operador (ORG_TENANT_OPERADOR). */
-  tenantOperador: string;
 }
 
 /**
@@ -103,10 +90,14 @@ export interface DependenciasAlta {
  * Supabase se llama antes de la transacción (crear usuario) y después del commit (enlace).
  */
 export class AltaTenant {
-  constructor(private readonly dependencias: DependenciasAlta) {}
+  private readonly exigirOperador: ExigirOperador;
+
+  constructor(private readonly dependencias: DependenciasAlta) {
+    this.exigirOperador = new ExigirOperador(dependencias);
+  }
 
   async ejecutar(comando: AltaTenantComando): Promise<TenantDadoDeAlta> {
-    await this.exigirOperador(comando.actor);
+    await this.exigirOperador.ejecutar(comando.actor);
     const hoy = fechaCalendarioDe(this.dependencias.reloj.now());
     validarComando(comando, hoy);
     if ((await this.dependencias.tenantsPorCodigo.idDe(comando.codigo)) !== null) throw new TenantDuplicadoError();
@@ -119,13 +110,6 @@ export class AltaTenant {
       const { correoEnviado } = await this.dependencias.invitarPropietario.notificar(identidad);
       return { ...alta, usuarioNuevo: identidad.usuarioNuevo, correoEnviado };
     });
-  }
-
-  /** Un propietario de cliente puede asignarse PLAT_ADMIN_TENANTS (los predefinidos son globales): el permiso no basta. */
-  private async exigirOperador(actor: AltaTenantComando['actor']): Promise<void> {
-    const { contexto, unidadDeTrabajo, tenants, tenantOperador } = this.dependencias;
-    const tenantDelActor = await contexto.run({ tenantId: actor.tenantId }, () => unidadDeTrabajo.run(() => tenants.buscar(actor.tenantId)));
-    if (tenantDelActor?.codigo !== tenantOperador) throw new OperadorRequeridoError();
   }
 
   /** Sin tenant de cliente en la base todavía, el parámetro resuelve a su defecto. */

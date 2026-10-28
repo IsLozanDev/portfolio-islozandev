@@ -3,13 +3,20 @@ import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kern
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
 import { CLOCK, ID_GENERATOR, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWork, type KernelInfraOptions } from '@vitrina/plataforma/kernel-infra';
-import { CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
+import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { FallidosController } from './eventos/fallidos.controller.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
+import { ConsolaTenantsController } from './org/consola-tenants.controller.js';
+import { ConsolaTenants } from './org/consulta-tenants.js';
+import { ConsultaTenantsTypeOrm } from './org/consulta-tenants.typeorm.js';
+import { EmpresasController } from './org/empresas.controller.js';
+import { ExigirOperador } from './org/operador.js';
+import { SucursalesController } from './org/sucursales.controller.js';
 import { TenantsPorCodigoTypeOrm } from './org/tenants-por-codigo.typeorm.js';
+import { UnidadesController } from './org/unidades.controller.js';
 import { SaludController } from './salud/salud.controller.js';
 
 export type AppOpciones = KernelInfraOptions &
@@ -33,9 +40,28 @@ export class AppModule {
         CorrelativosModule.register(),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
       ],
-      // Fallidos y alta de tenant viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar.
-      controllers: [SaludController, FallidosController, AltaTenantController],
+      // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
+      // (org no puede usar @Permiso de seguridad).
+      controllers: [
+        SaludController,
+        FallidosController,
+        AltaTenantController,
+        ConsolaTenantsController,
+        EmpresasController,
+        SucursalesController,
+        UnidadesController,
+      ],
       providers: [
+        {
+          provide: ConsolaTenants,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, cambiarEstadoTenant: CambiarEstadoTenant) =>
+            new ConsolaTenants({
+              exigirOperador: new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
+              consulta: new ConsultaTenantsTypeOrm(dataSource),
+              cambiarEstadoTenant,
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CambiarEstadoTenant],
+        },
         {
           provide: AltaTenant,
           useFactory: (

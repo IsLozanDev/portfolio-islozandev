@@ -2,12 +2,12 @@ import { ConflictError, ValidationError, type TenantScope } from '@vitrina/plata
 import { IdentidadNoDisponibleError, type IdentidadPropietario } from '@vitrina/plataforma/seguridad';
 import {
   AltaTenant,
-  OperadorRequeridoError,
   RucInvalidoError,
   TenantDuplicadoError,
   type AltaTenantComando,
   type DependenciasAlta,
 } from '../src/org/alta-tenant.js';
+import { OperadorRequeridoError } from '../src/org/operador.js';
 
 const OPERADOR = '0193f3a0-0000-7000-8000-0000000000aa';
 const CLIENTE = '0193f3a0-0000-7000-8000-0000000000bb';

@@ -3,6 +3,7 @@ import { UnidadOperativa, type DatosUnidad, type TipoUnidad } from '../domain/un
 import { buscarTenant, existe } from './comunes.js';
 import type { RepositorioEmpresas, RepositorioSucursales, RepositorioTenants, RepositorioUnidades } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
+import { exigirVersion } from './version-obsoleta.js';
 
 // Tope de la búsqueda de ciclos: una cadena más larga solo puede venir de datos ya corruptos.
 const PROFUNDIDAD_MAXIMA = 50;
@@ -24,6 +25,8 @@ export interface RegistrarUnidadComando extends DatosUnidad {
 
 export interface EditarUnidadComando extends DatosUnidad {
   unidadId: string;
+  /** La que leyó el cliente. */
+  version: number;
   padreId: string | null;
   /** true reactiva, false inactiva; sin valor no cambia. */
   activo?: boolean;
@@ -73,9 +76,10 @@ export class RegistrarUnidad extends CasoUnidad {
 }
 
 export class EditarUnidad extends CasoUnidad {
-  ejecutar({ unidadId, padreId, activo, ...datos }: EditarUnidadComando): Promise<void> {
+  ejecutar({ unidadId, version, padreId, activo, ...datos }: EditarUnidadComando): Promise<void> {
     return this.enTransaccion(async () => {
       const unidad = await this.unidad(unidadId);
+      exigirVersion(unidad, version);
       const padre = await this.padre(padreId);
       await this.exigirSinCiclo(unidad, padre);
 

@@ -2,6 +2,7 @@ import { ConflictError, NotFoundError, ValidationError } from '@vitrina/platafor
 import { CrearTenant } from '../src/application/crear-tenant.js';
 import { EditarEmpresa, RegistrarEmpresa, type RegistrarEmpresaComando } from '../src/application/empresa.casos-de-uso.js';
 import type { PadronRucPort } from '../src/application/ports/padron-ruc.port.js';
+import { VersionObsoletaError } from '../src/application/version-obsoleta.js';
 import { Suscripcion } from '../src/domain/suscripcion.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
@@ -147,7 +148,8 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
       const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
 
-      await e.en(tenantId, () => editar.ejecutar({ empresaId, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null }));
+      const version = await e.versionDe('empresa', empresaId);
+      await e.en(tenantId, () => editar.ejecutar({ empresaId, version, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null }));
 
       const [fila] = await e.dataSource.query('SELECT nombre_comercial, version FROM org.empresa WHERE id = $1', [empresaId]);
       expect(fila.nombre_comercial).toBe('Sabores Arequipa');
@@ -161,8 +163,24 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const { empresaId } = await e.en(a, () => registrar().ejecutar(COMANDO));
       const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
       await expect(
-        e.en(b, () => editar.ejecutar({ empresaId, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null })),
+        e.en(b, () => editar.ejecutar({ empresaId, version: 1, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null })),
       ).rejects.toThrow(NotFoundError);
+    });
+
+    it('con una versión vieja lanza VersionObsoletaError sin escribir ni publicar', async () => {
+      const tenantId = await nuevoTenant('editar-version-vieja');
+      const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
+      const datos = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null };
+      const leida = await e.versionDe('empresa', empresaId);
+      await e.en(tenantId, () => editar.ejecutar({ empresaId, version: leida, ...datos, nombreComercial: 'Primera' }));
+
+      await expect(e.en(tenantId, () => editar.ejecutar({ empresaId, version: leida, ...datos, nombreComercial: 'Segunda' }))).rejects.toThrow(
+        VersionObsoletaError,
+      );
+      const [fila] = await e.dataSource.query('SELECT nombre_comercial, version FROM org.empresa WHERE id = $1', [empresaId]);
+      expect(fila).toEqual({ nombre_comercial: 'Primera', version: String(leida + 1) });
+      expect(await e.eventosDe(empresaId)).toEqual(['empresa.creada', 'empresa.actualizada']);
     });
   });
 });

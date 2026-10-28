@@ -3,6 +3,7 @@ import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } fr
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
 import { CrearTenant } from '../application/crear-tenant.js';
 import { EditarEmpresa, RegistrarEmpresa } from '../application/empresa.casos-de-uso.js';
+import { ListarEmpresas, ListarSucursales, ListarUnidades } from '../application/lecturas-organizacion.js';
 import type { PadronRucPort } from '../application/ports/padron-ruc.port.js';
 import type { UsoUsuariosPort } from '../application/ports/uso-usuarios.port.js';
 import { EditarSucursal, InactivarSucursal, MarcarSucursalPrincipal, RegistrarSucursal } from '../application/sucursal.casos-de-uso.js';
@@ -10,6 +11,7 @@ import { CambiarEstadoTenant, GestionarSuscripcion } from '../application/tenant
 import { EditarUnidad, InactivarUnidad, RegistrarUnidad } from '../application/unidad.casos-de-uso.js';
 import { PadronRucNulo } from './padron-ruc.nulo.js';
 import { EmpresaRepositorioTypeOrm } from './typeorm/empresa.repositorio.js';
+import { LecturaOrganizacionTypeOrm } from './typeorm/lectura-organizacion.typeorm.js';
 import { SucursalRepositorioTypeOrm } from './typeorm/sucursal.repositorio.js';
 import { SuscripcionRepositorioTypeOrm } from './typeorm/suscripcion.repositorio.js';
 import { TenantRepositorioTypeOrm } from './typeorm/tenant.repositorio.js';
@@ -19,6 +21,7 @@ import { UsoUsuariosProvisional } from './uso-usuarios.provisional.js';
 export const PADRON_RUC = Symbol('PADRON_RUC');
 export const USO_USUARIOS = Symbol('USO_USUARIOS');
 const REPOS = Symbol('ORG_REPOS');
+const LECTURA = Symbol('ORG_LECTURA');
 
 interface Repos {
   tenants: TenantRepositorioTypeOrm;
@@ -59,6 +62,27 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
         unidades: new UnidadRepositorioTypeOrm(uow, contexto),
       }),
       inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+    },
+    {
+      provide: LECTURA,
+      useFactory: (uow: TypeOrmUnitOfWork, contexto: TenantContext) => new LecturaOrganizacionTypeOrm(uow, contexto),
+      inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+    },
+    {
+      provide: ListarEmpresas,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarEmpresas({ unidadDeTrabajo: uow, lectura }),
+      inject: [UNIT_OF_WORK, LECTURA],
+    },
+    {
+      provide: ListarSucursales,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm, r: Repos) =>
+        new ListarSucursales({ unidadDeTrabajo: uow, lectura, empresas: r.empresas }),
+      inject: [UNIT_OF_WORK, LECTURA, REPOS],
+    },
+    {
+      provide: ListarUnidades,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarUnidades({ unidadDeTrabajo: uow, lectura }),
+      inject: [UNIT_OF_WORK, LECTURA],
     },
     { provide: PADRON_RUC, useClass: PadronRucNulo },
     { provide: USO_USUARIOS, useClass: UsoUsuariosProvisional },
@@ -107,6 +131,9 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
     InactivarUnidad,
     GestionarSuscripcion,
     CambiarEstadoTenant,
+    ListarEmpresas,
+    ListarSucursales,
+    ListarUnidades,
   ],
 })
 export class OrgModule {}

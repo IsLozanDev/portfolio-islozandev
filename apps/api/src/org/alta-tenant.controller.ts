@@ -15,13 +15,15 @@ import { PERMISOS_ORG } from '@vitrina/plataforma/org';
 import { Permiso, PrincipalActual, type Principal } from '@vitrina/plataforma/seguridad';
 import { validar } from '../eventos/fallidos.http.js';
 import { AltaTenant, type TenantDadoDeAlta } from './alta-tenant.js';
-import { AltaTenantDto, AltaTenantFiltro, EsquemaAltaTenant, TenantDadoDeAltaDto } from './alta-tenant.http.js';
+import { AltaTenantDto, EsquemaAltaTenant, TenantDadoDeAltaDto } from './alta-tenant.http.js';
+import { actorDe } from './operador.js';
+import { OrgFiltro } from './org.filtro.js';
 
 /** TR-RF-001. Vive en apps/api: orquesta org, seguridad y correlativos (PL-10). PermisoGuard exige X-Sucursal-Id. */
 @ApiTags('org')
 @ApiBearerAuth()
 @ApiHeader({ name: 'X-Sucursal-Id', required: true, description: 'Sucursal del tenant operador' })
-@UseFilters(AltaTenantFiltro)
+@UseFilters(OrgFiltro)
 @Controller('org/tenants')
 export class AltaTenantController {
   constructor(@Inject(AltaTenant) private readonly altaTenant: AltaTenant) {}
@@ -49,7 +51,7 @@ export class AltaTenantController {
       nombreComercial: entrada.nombre_comercial ?? null,
       correoPropietario: entrada.correo_propietario,
       nombrePropietario: entrada.nombre_propietario,
-      actor: { usuarioId: principal.usuarioId, tenantId: principal.tenantId ?? '' },
+      actor: actorDe(principal),
     });
     return tenantDadoDeAltaDto(alta);
   }
