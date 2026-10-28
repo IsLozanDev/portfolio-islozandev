@@ -49,6 +49,7 @@ Estimado: 7-7,5 h. El roadmap da 7. Si se pasa, se recorta primero el filtro por
 
 - **`apps/plataforma-consola`** (nueva, `scope:app`, `type:app`): copia de la configuración de `plataforma-admin`, puerto **4201**, el mismo proxy `/v1`, `nombreApp` «Consola de plataforma», `aal2Guard` sobre todas las rutas de la consola y el menú filtrado por `/consola`.
 - **`libs/plataforma/consola-tenants`** (nueva, `scope:plataforma`, `type:feature`): cliente HTTP, modelos, páginas de lista, detalle y alta, borrador del alta y `CONSOLA_TENANTS_ROUTES`.
+- **`libs/shared/ui`:** input opcional `valorInicial` en `vit-filtros` para precargar búsqueda y selecciones sin emitir.
 - **`libs/shared/shell`:**
   - Tercer parámetro opcional `prefijoMenu` en `rutasDelShell`. El layout muestra solo las opciones cuya ruta empieza por ese prefijo.
   - `AccionSensibleService` se mueve aquí desde `admin-cliente`, con sus mensajes en `MENSAJES_SHELL`.
@@ -180,7 +181,8 @@ interface RespuestaAltaTenant { tenantId: string; estado: EstadoTenant; usuarioN
 **Lista (`/consola/tenants`):**
 
 - `vit-filtros` con búsqueda `q` (código o nombre), `estado` (`ESTADOS_TENANT`) y `producto` (`PRODUCTOS`). Los filtros y la página van en los query params de la URL.
-- `vit-tabla` con código, nombre, estado (chip), suscripciones (producto y plan) y fecha de creación (`dd/MM/yyyy`). Paginación de 20. Clic en la fila abre el detalle.
+- `vit-tabla` con código, nombre, estado (texto), suscripciones (producto y plan) y fecha de creación (`dd/MM/yyyy`). Paginación de 20. Cada fila tiene un enlace › al detalle (`vitAccionesFila`, como la lista de usuarios del 16a): `vit-tabla` no emite el clic de fila.
+- `vit-filtros` precarga sus controles desde la URL con el input nuevo `valorInicial`.
 - Botón «Nuevo tenant» con `*siPermiso="plat.tenant.crear"`. Antes de navegar llama a `AccionSensibleService.exigirMfa()`.
 - `vit-cargando` mientras carga y `vit-estado-vacio` sin resultados.
 
@@ -320,6 +322,8 @@ export function filtrarMenuPorPrefijo(menu: readonly OpcionMenu[], prefijo: stri
 - **Sí:** operador frente a cliente por permiso y `OPERADOR_REQUERIDO` de la API (D2). La consola no lee `tipo_usuario`.
 - **Sí:** DTO, catálogos y matriz de transiciones repetidos en `models/`. `libs/plataforma/org` es `type:backend` y no se importa. `shared/contracts` sigue vacía.
 - **Sí:** filtros y página en los query params. La lista se puede compartir y recargar.
+- **Sí:** `valorInicial` en `vit-filtros` para que los controles muestren el filtro de la URL (decisión del usuario, paso 5).
+- **Sí:** enlace › por fila hacia el detalle en vez de clic en la fila (decisión del usuario, paso 5). `vit-tabla` no emite el clic de fila y el enlace funciona con teclado.
 - **Sí:** prueba cronometrada manual del usuario (decisión del usuario). Un recorrido automatizado no mide a un operador.
 - **No:** endpoint de productos y planes. Constantes en el front, como dice el contexto.
 

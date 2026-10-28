@@ -87,4 +87,20 @@ describe('FiltrosComponent', () => {
     expect(anfitrion.cambios).toEqual([{ busqueda: '', estado: null }]);
     expect(await select.getValueText()).toBe('');
   });
+
+  it('precarga búsqueda y selección desde valorInicial sin emitir', async () => {
+    fixture.componentRef.destroy();
+    const conInicial = TestBed.createComponent(FiltrosComponent);
+    const emitidos: ValorFiltros[] = [];
+    conInicial.componentInstance.cambio.subscribe((valor) => emitidos.push(valor));
+    conInicial.componentRef.setInput('definiciones', anfitrion.definiciones);
+    conInicial.componentRef.setInput('valorInicial', { busqueda: 'gym', estado: 'SUSPENDIDO' });
+    await conInicial.whenStable();
+
+    const select = await TestbedHarnessEnvironment.loader(conInicial).getHarness(MatSelectHarness);
+    const campo: HTMLInputElement = conInicial.nativeElement.querySelector('input[type="search"]');
+    expect(campo.value).toBe('gym');
+    expect(await select.getValueText()).toBe('Suspendido');
+    expect(emitidos).toEqual([]);
+  });
 });
