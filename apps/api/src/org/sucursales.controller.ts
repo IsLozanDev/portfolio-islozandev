@@ -14,7 +14,15 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { EditarSucursal, InactivarSucursal, ListarSucursales, MarcarSucursalPrincipal, PERMISOS_ORG, RegistrarSucursal } from '@vitrina/plataforma/org';
+import {
+  EditarSucursal,
+  InactivarSucursal,
+  ListarSucursales,
+  MarcarSucursalPrincipal,
+  PERMISOS_ORG,
+  RegistrarSucursal,
+  type DatosSucursal,
+} from '@vitrina/plataforma/org';
 import { Permiso } from '@vitrina/plataforma/seguridad';
 import type { z } from 'zod';
 import { validar } from '../eventos/fallidos.http.js';
@@ -120,7 +128,7 @@ export class SucursalesController {
   }
 }
 
-function datosSucursal(datos: z.infer<typeof EsquemaRegistrarSucursal>) {
+function datosSucursal(datos: z.infer<typeof EsquemaRegistrarSucursal>): DatosSucursal {
   return {
     codigo: datos.codigo,
     nombre: datos.nombre,

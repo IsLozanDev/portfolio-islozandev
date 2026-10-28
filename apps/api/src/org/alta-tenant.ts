@@ -14,7 +14,7 @@ import {
 import type { ParametroPort } from '@vitrina/plataforma/parametros';
 import type { IdentidadPropietario, InvitarPropietario } from '@vitrina/plataforma/seguridad';
 import { validarRuc } from '@vitrina/shared/util';
-import { ExigirOperador, type DependenciasOperador } from './operador.js';
+import { ExigirOperador, type Actor, type DependenciasOperador } from './operador.js';
 
 const PARAMETRO_DIAS_PRUEBA = 'plat.suscripcion.dias_prueba';
 export const MENSAJE_TENANT_DUPLICADO = 'El código de tenant ya existe';
@@ -50,7 +50,7 @@ export interface AltaTenantComando {
   nombreComercial?: string | null;
   correoPropietario: string;
   nombrePropietario: string;
-  actor: { usuarioId: string; tenantId: string };
+  actor: Actor;
 }
 
 export interface TenantDadoDeAlta {

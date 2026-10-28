@@ -1,10 +1,12 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
-    { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 }
+    { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
+    { "codigo": "organizacion", "nombre": "Organización", "orden": 3 },
+    { "codigo": "consola", "nombre": "Consola", "orden": 4 }
   ],
   "opciones": [
     { "codigo": "plat.seguridad", "modulo": "seguridad", "padre": null, "nombre": "Seguridad", "icono": "admin_panel_settings", "orden": 1, "permisos": [] },
@@ -14,7 +16,13 @@
     { "codigo": "plat.seguridad.usuarios", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Usuarios", "ruta": "/admin/usuarios", "icono": "person_add", "orden": 4, "permisos": ["plat.usuario.invitar"] },
     { "codigo": "plat.configuracion", "modulo": "configuracion", "padre": null, "nombre": "Configuración", "icono": "settings", "orden": 2, "permisos": [] },
     { "codigo": "plat.configuracion.parametros", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Parámetros", "ruta": "/admin/parametros", "icono": "tune", "orden": 1, "permisos": ["plat.parametro.leer"] },
-    { "codigo": "plat.configuracion.series", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Series", "ruta": "/admin/series", "icono": "format_list_numbered", "orden": 2, "permisos": ["plat.serie.gestionar"] }
+    { "codigo": "plat.configuracion.series", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Series", "ruta": "/admin/series", "icono": "format_list_numbered", "orden": 2, "permisos": ["plat.serie.gestionar"] },
+    { "codigo": "plat.organizacion", "modulo": "organizacion", "padre": null, "nombre": "Organización", "icono": "corporate_fare", "orden": 3, "permisos": [] },
+    { "codigo": "plat.organizacion.empresas", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Empresas", "ruta": "/admin/empresas", "icono": "business", "orden": 1, "permisos": ["plat.organizacion.consultar"] },
+    { "codigo": "plat.organizacion.sucursales", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Sucursales", "ruta": "/admin/sucursales", "icono": "store", "orden": 2, "permisos": ["plat.organizacion.consultar"] },
+    { "codigo": "plat.organizacion.unidades", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Unidades", "ruta": "/admin/unidades", "icono": "view_module", "orden": 3, "permisos": ["plat.organizacion.consultar"] },
+    { "codigo": "plat.consola", "modulo": "consola", "padre": null, "nombre": "Consola", "icono": "dns", "orden": 4, "permisos": [] },
+    { "codigo": "plat.consola.tenants", "modulo": "consola", "padre": "plat.consola", "nombre": "Tenants", "ruta": "/consola/tenants", "icono": "apartment", "orden": 1, "permisos": ["plat.tenant.consultar"] }
   ],
   "permisos": [
     { "codigo": "plat.manifiesto.aplicar", "descripcion": "Aplicar el manifiesto funcional de un producto", "alcance_minimo": "TENANT", "sensible": false },
@@ -32,13 +40,19 @@
     { "codigo": "plat.serie.numerar", "descripcion": "Obtener el siguiente número de una serie", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.evento.consultar", "descripcion": "Ver las entregas de eventos que agotaron sus reintentos", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.evento.reprocesar", "descripcion": "Volver a entregar eventos fallidos a su consumidor", "alcance_minimo": "TENANT", "sensible": true },
-    { "codigo": "plat.tenant.crear", "descripcion": "Dar de alta un tenant con su propietario (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true }
+    { "codigo": "plat.tenant.crear", "descripcion": "Dar de alta un tenant con su propietario (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.tenant.consultar", "descripcion": "Ver la lista y el detalle de los tenants (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.tenant.cambiar_estado", "descripcion": "Activar, suspender o dar de baja un tenant con motivo (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.organizacion.consultar", "descripcion": "Ver empresas, sucursales y unidades del tenant", "alcance_minimo": "SUCURSAL", "sensible": false },
+    { "codigo": "plat.empresa.crear", "descripcion": "Registrar y editar empresas del tenant", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.sucursal.gestionar", "descripcion": "Registrar, editar e inactivar sucursales y marcar la principal", "alcance_minimo": "EMPRESA", "sensible": false },
+    { "codigo": "plat.unidad.gestionar", "descripcion": "Registrar, editar e inactivar unidades operativas", "alcance_minimo": "SUCURSAL", "sensible": false }
   ],
   "roles_predefinidos": [
     {
       "codigo": "PLAT_ADMIN_SEGURIDAD",
       "nombre": "Administrador de seguridad",
-      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar"]
+      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar", "plat.organizacion.consultar"]
     },
     {
       "codigo": "PLAT_ADMIN_CONFIGURACION",
@@ -53,7 +67,7 @@
     {
       "codigo": "PLAT_ADMIN_TENANTS",
       "nombre": "Administrador de tenants",
-      "permisos": ["plat.tenant.crear", "plat.sesion.contexto"]
+      "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto"]
     },
     {
       "codigo": "PLAT_PROPIETARIO",
@@ -61,7 +75,8 @@
       "permisos": [
         "plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto",
         "plat.usuario.invitar", "plat.asignacion.revocar", "plat.parametro.leer", "plat.parametro.editar", "plat.serie.gestionar",
-        "plat.evento.consultar", "plat.evento.reprocesar"
+        "plat.evento.consultar", "plat.evento.reprocesar", "plat.organizacion.consultar", "plat.empresa.crear", "plat.sucursal.gestionar",
+        "plat.unidad.gestionar"
       ]
     }
   ],
