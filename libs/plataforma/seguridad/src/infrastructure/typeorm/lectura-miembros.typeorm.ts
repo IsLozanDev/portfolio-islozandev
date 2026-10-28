@@ -26,6 +26,8 @@ import {
   RolPermisoLecturaEntidad,
   UsuarioLecturaEntidad,
   type FilaAsignacion,
+  type FilaPerfil,
+  type FilaPerfilRol,
   type FilaRol,
 } from './entidades-lectura.js';
 import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
@@ -220,11 +222,11 @@ export class LecturaMiembrosTypeOrm implements LecturaMiembros {
     return new Set(filas.map((fila) => fila.rol_id));
   }
 
-  private rolesDePerfiles(idsRoles: readonly string[]) {
+  private rolesDePerfiles(idsRoles: readonly string[]): Promise<FilaPerfilRol[]> {
     return this.repositorio(PerfilRolLecturaEntidad, 'perfilRol').where('perfilRol.rolId IN (:...idsRoles)', { idsRoles }).getMany();
   }
 
-  private async perfilesVisibles(ids: readonly string[]) {
+  private async perfilesVisibles(ids: readonly string[]): Promise<FilaPerfil[]> {
     if (ids.length === 0) return [];
     return this.repositorio(PerfilLecturaEntidad, 'perfil')
       .where('(perfil.tenantId = :tenantId OR perfil.tenantId IS NULL)', { tenantId: this.tenantId })

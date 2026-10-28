@@ -2,7 +2,8 @@ import type { Alcance } from './asignacion';
 
 export const ESTADOS_MEMBRESIA = ['INVITADO', 'ACTIVO', 'SUSPENDIDO', 'FINALIZADO'] as const;
 export type EstadoMembresia = (typeof ESTADOS_MEMBRESIA)[number];
-export type OrdenMiembros = 'nombre' | 'correo' | 'estado';
+export const ORDENES_MIEMBROS = ['nombre', 'correo', 'estado'] as const;
+export type OrdenMiembros = (typeof ORDENES_MIEMBROS)[number];
 export type DireccionOrden = 'asc' | 'desc';
 export type EstadoAsignacion = 'VIGENTE' | 'FUTURA' | 'VENCIDA' | 'REVOCADA';
 
@@ -87,7 +88,9 @@ export interface MiembroDetalle extends Miembro {
   asignaciones: AsignacionDelMiembro[];
 }
 
-const aFecha = (valor: string | null): Date | null => (valor === null ? null : new Date(valor));
+function aFecha(valor: string | null): Date | null {
+  return valor === null ? null : new Date(valor);
+}
 
 export function aMiembro(respuesta: MiembroRespuesta): Miembro {
   return {

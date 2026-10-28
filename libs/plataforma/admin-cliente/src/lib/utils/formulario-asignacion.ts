@@ -45,7 +45,7 @@ export function crearGrupoAsignacion(): GrupoAsignacion {
 /** TR-CA-038: «La vigencia hasta no puede ser anterior a la vigencia desde». Sin desde, la API usa hoy. */
 function validarVigencia(grupo: AbstractControl): ValidationErrors | null {
   const { vigenteDesde, vigenteHasta } = (grupo as GrupoAsignacion).getRawValue();
-  const desde = vigenteDesde ? fechaCalendario(vigenteDesde) : fechaCalendario(new Date());
+  const desde = fechaCalendario(vigenteDesde ?? new Date());
   if (!vigenteHasta || fechaCalendario(vigenteHasta) >= desde) return null;
   return { [ERROR_VIGENCIA_INVALIDA]: true };
 }

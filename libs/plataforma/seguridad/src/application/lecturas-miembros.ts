@@ -3,6 +3,9 @@ import { fechaLocal } from './otorgar-asignacion.js';
 import type { Asignables, FiltroMiembros, LecturaMiembros, Listado, MiembroDetalle, MiembroListado } from './ports/lectura-miembros.js';
 import type { ProductosContratados } from './ports/repositorios.js';
 
+/** PLAT no se contrata: sus roles se asignan en todo tenant, como en `rol.casos-de-uso.ts`. */
+const PRODUCTO_PLATAFORMA = 'PLAT';
+
 export interface DependenciasLecturaMiembros {
   unidadDeTrabajo: UnitOfWork;
   lectura: LecturaMiembros;
@@ -33,12 +36,12 @@ export class ConsultarMiembro {
   }
 }
 
-/** Roles y perfiles para el selector de invitar y asignar: solo de productos contratados (TR-RN-006). */
+/** Roles y perfiles para el selector de invitar y asignar: de PLAT y de los productos contratados (TR-RN-006). */
 export class ListarAsignables {
   constructor(private readonly dependencias: Omit<DependenciasLecturaMiembros, 'reloj'> & { productos: ProductosContratados }) {}
 
   ejecutar(): Promise<Asignables> {
     const { unidadDeTrabajo, lectura, productos } = this.dependencias;
-    return unidadDeTrabajo.run(async () => lectura.asignables(await productos.vigentes()));
+    return unidadDeTrabajo.run(async () => lectura.asignables([PRODUCTO_PLATAFORMA, ...(await productos.vigentes())]));
   }
 }

@@ -18,6 +18,8 @@ import { exigirUuid, MembresiasFiltro, validar } from './membresias.http.js';
 import {
   AsignablesDto,
   asignablesDto,
+  DIRECCIONES,
+  ESTADOS_MEMBRESIA,
   EsquemaListarMiembros,
   filtroMiembrosDe,
   ListadoMiembrosDto,
@@ -48,10 +50,10 @@ export class MiembrosController {
 
   @Get('miembros')
   @Permiso(PERMISOS_SEG.usuarioInvitar)
-  @ApiQuery({ name: 'estado', required: false, enum: ['INVITADO', 'ACTIVO', 'SUSPENDIDO', 'FINALIZADO'] })
+  @ApiQuery({ name: 'estado', required: false, enum: ESTADOS_MEMBRESIA })
   @ApiQuery({ name: 'busqueda', required: false, description: 'Parte del nombre o del correo' })
   @ApiQuery({ name: 'orden', required: false, enum: ORDENES_MIEMBROS })
-  @ApiQuery({ name: 'direccion', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({ name: 'direccion', required: false, enum: DIRECCIONES })
   @ApiQuery({ name: 'pagina', required: false, example: 1 })
   @ApiQuery({ name: 'tamano', required: false, example: TAMANO_PAGINA_DEFECTO, description: `Máximo ${TAMANO_PAGINA_MAXIMO}` })
   @ApiOkResponse({ type: ListadoMiembrosDto })

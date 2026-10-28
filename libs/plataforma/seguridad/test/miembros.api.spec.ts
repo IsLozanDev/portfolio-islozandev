@@ -23,6 +23,7 @@ describeConDb('API de miembros (spec 16a; PostgreSQL 16 y Redis 7)', () => {
   let tenant: string;
   let sucursal: string;
   let cajero: string;
+  let administrador: string;
   let ana: { membresiaId: string; usuarioId: string };
   let luis: { membresiaId: string; usuarioId: string };
   const jwks = new JwksLocal();
@@ -42,7 +43,7 @@ describeConDb('API de miembros (spec 16a; PostgreSQL 16 y Redis 7)', () => {
     await e.sembrar.suscripcion(tenant, 'REST');
     ({ sucursales: [sucursal] } = await e.sembrar.organizacion(tenant));
     cajero = await e.sembrar.rol(tenant, 'REST', 'CAJERO', ['rest.caja.cerrar']);
-    const administrador = await e.sembrar.rol(tenant, 'PLAT', 'ADMIN_USUARIOS', ['plat.usuario.invitar']);
+    administrador = await e.sembrar.rol(tenant, 'PLAT', 'ADMIN_USUARIOS', ['plat.usuario.invitar']);
     ana = await e.sembrar.membresia(tenant, 'ACTIVO', true);
     await e.sembrar.asignacion(tenant, ana.membresiaId, { rolId: administrador });
     luis = await e.sembrar.membresia(tenant, 'ACTIVO');
@@ -99,7 +100,11 @@ describeConDb('API de miembros (spec 16a; PostgreSQL 16 y Redis 7)', () => {
 
     const asignables = await comoUsuario(ana.usuarioId, '/seg/asignables');
     expect(asignables.status).toBe(200);
-    expect(asignables.body.roles).toEqual([{ id: cajero, codigo: 'CAJERO', nombre: 'CAJERO', producto_codigo: 'REST', sensible: false }]);
+    // PLAT no se contrata: su rol aparece aunque el tenant solo tenga REST.
+    expect(asignables.body.roles).toEqual([
+      { id: administrador, codigo: 'ADMIN_USUARIOS', nombre: 'ADMIN_USUARIOS', producto_codigo: 'PLAT', sensible: false },
+      { id: cajero, codigo: 'CAJERO', nombre: 'CAJERO', producto_codigo: 'REST', sensible: false },
+    ]);
   });
 
   it('el detalle de Luis trae su asignación en Miraflores', async () => {

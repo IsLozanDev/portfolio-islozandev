@@ -1,13 +1,15 @@
 import { Component, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
+import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerIntl, MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MensajeValidacionPipe } from '@vitrina/shared/ui';
 import type { Asignables } from '../../models/asignable';
 import { MENSAJES_ASIGNACION } from '../../models/mensajes-admin';
+import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service';
+import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
 import { ERROR_UBICACION_REQUERIDA, ERROR_VIGENCIA_INVALIDA, PREFIJO_PERFIL, PREFIJO_ROL, type GrupoAsignacion } from '../../utils/formulario-asignacion';
 import { SelectorAlcanceComponent } from '../selector-alcance/selector-alcance.component';
 
@@ -20,7 +22,12 @@ const LOCALE_PERU = 'es-PE';
 @Component({
   selector: 'vit-form-asignacion',
   imports: [ReactiveFormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule, MatSelectModule, MensajeValidacionPipe, SelectorAlcanceComponent],
-  providers: [provideNativeDateAdapter(), { provide: MAT_DATE_LOCALE, useValue: LOCALE_PERU }],
+  providers: [
+    provideNativeDateAdapter(),
+    { provide: DateAdapter, useClass: AdaptadorFechaPeru },
+    { provide: MAT_DATE_LOCALE, useValue: LOCALE_PERU },
+    { provide: MatDatepickerIntl, useClass: CalendarioEnEspanol },
+  ],
   templateUrl: './form-asignacion.component.html',
 })
 export class FormAsignacionComponent {

@@ -16,7 +16,7 @@ import {
 import { aErrorAdmin } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { COLUMNAS_MIEMBROS, ETIQUETAS_ESTADO_MEMBRESIA, MENSAJES_ADMIN } from '../../models/mensajes-admin';
-import { ESTADOS_MEMBRESIA, type EstadoMembresia, type FiltroMiembros, type Miembro, type OrdenMiembros } from '../../models/miembro';
+import { ESTADOS_MEMBRESIA, ORDENES_MIEMBROS, type EstadoMembresia, type FiltroMiembros, type Miembro, type OrdenMiembros } from '../../models/miembro';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { MiembrosCliente } from '../../services/miembros.cliente';
 import { formatearFechaHora } from '../../utils/formato';
@@ -35,7 +35,7 @@ export interface FilaMiembro {
 /** El primero es el de la API (spec 17a): 20 por página. */
 export const TAMANOS_PAGINA_MIEMBROS = [20, 50, 100];
 const CLAVE_FILTRO_ESTADO = 'estado';
-const ORDENES_PERMITIDOS: readonly string[] = ['nombre', 'correo', 'estado'] satisfies OrdenMiembros[];
+const ORDENES_PERMITIDOS: readonly string[] = ORDENES_MIEMBROS;
 
 export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANOS_PAGINA_MIEMBROS[0] };
 

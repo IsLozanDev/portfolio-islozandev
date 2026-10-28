@@ -15,8 +15,8 @@ import { ESTADOS_ASIGNACION } from '../domain/asignacion.js';
 
 export const TAMANO_PAGINA_DEFECTO = 20;
 export const TAMANO_PAGINA_MAXIMO = 100;
-const ESTADOS_MEMBRESIA = ['INVITADO', 'ACTIVO', 'SUSPENDIDO', 'FINALIZADO'] as const;
-const DIRECCIONES = ['asc', 'desc'] as const;
+export const ESTADOS_MEMBRESIA = ['INVITADO', 'ACTIVO', 'SUSPENDIDO', 'FINALIZADO'] as const;
+export const DIRECCIONES = ['asc', 'desc'] as const;
 /** Igual que `seg.usuario.email`, la columna más larga en la que se busca. */
 const LONGITUD_MAXIMA_BUSQUEDA = 255;
 
@@ -213,8 +213,13 @@ export class AsignacionOtorgadaDto {
   asignacion_id!: string;
 }
 
-const instante = (fecha: Date | null): string | null => (fecha === null ? null : fecha.toISOString());
-const referenciaDto = (referencia: Referencia | null): ReferenciaDto | null => (referencia === null ? null : { id: referencia.id, nombre: referencia.nombre });
+function instante(fecha: Date | null): string | null {
+  return fecha === null ? null : fecha.toISOString();
+}
+
+function referenciaDto(referencia: Referencia | null): ReferenciaDto | null {
+  return referencia === null ? null : { id: referencia.id, nombre: referencia.nombre };
+}
 
 export function miembroDto(miembro: MiembroListado): MiembroDto {
   return {

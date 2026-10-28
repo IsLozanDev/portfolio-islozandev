@@ -67,6 +67,25 @@ describe('FormAsignacionComponent', () => {
     expect(grupo().valid).toBe(true);
   });
 
+  it('TR-CA-038 escribiendo las fechas a mano en dd/MM/yyyy', async () => {
+    const escribir = (campo: string, valor: string) => {
+      const entrada = elemento().querySelector<HTMLInputElement>(`[data-campo=${campo}]`);
+      if (!entrada) throw new Error(`No hay campo ${campo}`);
+      entrada.value = valor;
+      entrada.dispatchEvent(new Event('input'));
+    };
+    escribir('vigente-desde', '20/10/2026');
+    escribir('vigente-hasta', '19/10/2026');
+    await estable(fixture);
+
+    expect(grupo().getRawValue()).toMatchObject({ vigenteDesde: new Date(2026, 9, 20), vigenteHasta: new Date(2026, 9, 19) });
+    expect(elemento().querySelector('[data-error=vigencia]')?.textContent?.trim()).toBe(MENSAJES_ASIGNACION.vigenciaInvalida);
+  });
+
+  it('el botón del calendario está en español', () => {
+    expect(elemento().querySelector('mat-datepicker-toggle button')?.getAttribute('aria-label')).toBe('Abrir calendario');
+  });
+
   it('sin vigente desde (invitar) solo muestra vigente hasta', async () => {
     expect(elemento().querySelector('[data-campo=vigente-desde]')).not.toBeNull();
 

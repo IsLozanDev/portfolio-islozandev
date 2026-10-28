@@ -13,6 +13,7 @@ import {
 } from '../models/ubicacion';
 import { solicitar } from '../utils/solicitar';
 
+const RUTA_ORG = '/org';
 /** Máximo de la API (spec 17a): el selector muestra todo el tenant de una vez. */
 const TAMANO_SELECTOR = 100;
 /** Solo se asigna sobre empresas, sucursales y unidades activas. */
@@ -22,7 +23,7 @@ const PARAMETROS_SELECTOR = new HttpParams().set('tamano', TAMANO_SELECTOR).set(
 @Injectable({ providedIn: 'root' })
 export class OrganizacionCliente {
   private readonly http = inject(HttpClient);
-  private readonly urlOrg = inject(CONFIG_AUTH).apiUrl + '/org';
+  private readonly urlOrg = inject(CONFIG_AUTH).apiUrl + RUTA_ORG;
 
   async empresas(): Promise<Ubicacion[]> {
     const respuesta = await solicitar(this.http.get<Listado<EmpresaRespuesta>>(`${this.urlOrg}/empresas`, { params: PARAMETROS_SELECTOR }));
