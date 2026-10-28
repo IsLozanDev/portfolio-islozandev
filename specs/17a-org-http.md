@@ -52,10 +52,13 @@ Estimado: 7-8 h. El roadmap da 7. La hora de más es la `version` en las edicion
 - **`libs/plataforma/org`**:
   - `version` obligatoria en `EditarEmpresaComando`, `EditarSucursalComando` y `EditarUnidadComando`, y `VersionObsoletaError`.
   - Puerto de lectura `LecturaOrganizacion` con su adaptador TypeORM, y los casos de uso `ListarEmpresas`, `ListarSucursales` y `ListarUnidades`.
-  - `src/interface/`: `empresas.controller.ts`, `sucursales.controller.ts`, `unidades.controller.ts` y `organizacion.http.ts` (zod, DTO, filtro de errores y paginación).
+  - Entidades TypeORM de solo lectura (`entidades-lectura.ts`), que entran en `ENTIDADES_ORG`.
   - `PERMISOS_ORG` suma `tenantConsultar` y `organizacionConsultar`. Se corrige el comentario del archivo.
-  - `OrgModule` registra los controladores y las lecturas.
+  - `OrgModule` registra las lecturas.
 - **`apps/api/src/org/`**:
+  - `empresas.controller.ts`, `sucursales.controller.ts`, `unidades.controller.ts` y `organizacion.http.ts` (zod, DTO, mapeos y paginación).
+  - `org.filtro.ts`: `OrgFiltro`, el filtro de errores de `/v1/org`, sacado de `alta-tenant.http.ts` (era `AltaTenantFiltro`).
+  - `ENTIDADES_ORG` en el `DataSource` de `apps/api/src/main.ts`.
   - `operador.ts`: `ExigirOperador` y `OperadorRequeridoError`, sacados de `alta-tenant.ts`. `AltaTenant` los usa.
   - `consulta-tenants.ts` (puerto y orquestación) y `consulta-tenants.typeorm.ts` (llamada a las funciones SQL).
   - `consola-tenants.controller.ts` y `consola-tenants.http.ts`.
@@ -191,7 +194,7 @@ Todos bajo `/v1/org`, con `@ApiBearerAuth()`, `X-Sucursal-Id` (lo exige `Permiso
 
 `POST /tenants` (spec 12) no cambia de ruta ni de contrato.
 
-**Organización del cliente (tenant del token; `libs/plataforma/org/src/interface/`):**
+**Organización del cliente (tenant del token; `apps/api/src/org/`):**
 
 | Método y ruta | Permiso | Caso de uso | Éxito |
 | --- | --- | --- | --- |
@@ -216,7 +219,7 @@ Errores:
 | `codigo` | HTTP | Cuándo |
 | --- | --- | --- |
 | `SOLICITUD_INVALIDA` | 400 | zod (campos, `tamano` > 100, `id` no UUID) |
-| `VALIDACION` (u otro código del `ValidationError`) | 400 | Regla de dominio: RUC inválido, motivo < 10 (TR-CA-018), establecimiento `0000` fuera de la principal |
+| `SOLICITUD_INVALIDA` | 400 | Regla de dominio (`ValidationError`, con su mensaje): RUC inválido, motivo < 10 (TR-CA-018), establecimiento `0000` fuera de la principal, almacén sin sucursal (TR-CA-011) |
 | `MFA_REQUERIDA` | 401 | Cambio de estado sin aal2 o MFA de más de 15 min |
 | `SIN_PERMISO` | 403 | Sin el permiso del endpoint |
 | `OPERADOR_REQUERIDO` | 403 | Endpoint de tenants y actor fuera del tenant operador |
@@ -224,7 +227,7 @@ Errores:
 | `CONFLICTO` | 409 | Regla de dominio: transición no permitida (TR-CA-017), RUC duplicado, tope de sucursales, principal sin reemplazo, padre de otra empresa |
 | `VERSION_OBSOLETA` | 409 | `PUT` con `version` vieja |
 
-El filtro de org copia el mapeo de `SeriesFiltro`. Los códigos exactos de `ValidationError` se toman del kernel al implementar y quedan en la tabla OpenAPI.
+`OrgFiltro` es el filtro del alta (spec 12), que ya mapeaba `validation_error` a `SOLICITUD_INVALIDA`, `not_found` a `NO_ENCONTRADO` y `conflict` a `CONFLICTO`. Los errores con código propio (`VERSION_OBSOLETA`, `OPERADOR_REQUERIDO`) salen con ese código.
 
 ### Manifiesto PLAT `1.6.0`
 
@@ -270,9 +273,10 @@ El filtrado del menú por app (consola o admin) es del 17b. Aquí solo se declar
    - Pruebas de integración: paginación y `total`; filtros por `activo`, `empresa_id`, `sucursal_id` y `tipo`; orden; con el tenant A no aparece nada de B; `ListarSucursales` con empresa de B da `NotFoundError`.
    - Verificar: `pnpm nx test org` en CI.
 4. **Controladores de organización.**
-   - `organizacion.http.ts` (zod, DTO, filtro, constantes de página) y los tres controladores. `PERMISOS_ORG` con las dos constantes nuevas.
-   - Pruebas supertest: GWT de RF-002 a 004 (TR-CA-004 a 012) con los RUC 20512345671 y 20498765433; sin `plat.sucursal.gestionar`, alta, edición e inactivación de sucursal dan 403; empresa de otro tenant en la URL da 404; `PUT` con versión vieja da 409 `VERSION_OBSOLETA`; unidad con padre de otra empresa da 409; `tamano=101` da 400.
-   - Verificar: `pnpm nx test org` y las rutas en `/v1/docs`.
+   - En `apps/api/src/org/`: `organizacion.http.ts` (zod, DTO, mapeos, constantes de página), `org.filtro.ts` y los tres controladores. `PERMISOS_ORG` con las dos constantes nuevas.
+   - `apps/api/test/organizacion.http.spec.ts` (sin base, con `PermisoGuard` real): sin `plat.sucursal.gestionar`, alta, edición e inactivación de sucursal dan 403; `tamano=101` da 400; mapeo snake_case y errores.
+   - `apps/api/test/organizacion.integracion.spec.ts` (`OrgModule` real sobre la base, con supertest): GWT TR-CA-004 a 012 con los RUC 20512345671 y 20498765433; empresa, sucursal o unidad de otro tenant en la URL da 404; `PUT` con versión vieja da 409 `VERSION_OBSOLETA`; unidad con padre de otra empresa da 409.
+   - Verificar: `pnpm nx test api` y las rutas en `/v1/docs`.
 5. **Operador compartido.**
    - `apps/api/src/org/operador.ts` con `ExigirOperador` y `OperadorRequeridoError`. `AltaTenant` lo usa.
    - Verificar: las pruebas del spec 12 (`alta-tenant*.spec.ts`) siguen en verde.
@@ -344,7 +348,9 @@ El filtrado del menú por app (consola o admin) es del 17b. Aquí solo se declar
 - **Sí:** un spec de back «org-http» que deja a 17b y 17c solo front (D3 del contexto, roadmap).
 - **Sí:** operador frente a cliente por permiso más la comprobación de tenant operador, con `OPERADOR_REQUERIDO`. No se usa `tipo_usuario` y `mi-contexto` no cambia (D2, decisión del usuario).
 - **Sí:** `ExigirOperador` compartido en `apps/api/src/org/operador.ts`. La regla del 12 era privada de `AltaTenant` y ahora la usan cuatro endpoints.
-- **Sí:** tenants en `apps/api`, organización en `libs/plataforma/org/src/interface`. La consola necesita `ORG_TENANT_OPERADOR` y el mismo orquestador de operador que el alta. La organización solo usa org (regla 1).
+- **Sí:** todos los controladores de org en `apps/api/src/org/`, como el alta. Decisión del usuario al implementar el paso 4. PL-10 solo deja a org depender del kernel (`comp('org', 'kernel')`) y `seg` puede depender de `org`. Los controladores necesitan `@Permiso` de seguridad. La lógica sigue en `libs/plataforma/org`.
+- **No:** controladores en `libs/plataforma/org/src/interface`. Org importaría seguridad, lo que rompe PL-10 y arma un ciclo seg ↔ org.
+- **No:** mover `@Permiso` al kernel para usarlo desde org. Toca seguridad, correlativos y parámetros, fuera del alcance del 17a.
 - **Sí:** lista y detalle de tenants con funciones `SECURITY DEFINER` de dueño `org_lector`, que solo se llaman después de la comprobación de operador (D5). La RLS de `org.tenant` es por `id`.
 - **Sí:** el historial va en el detalle (P5). Sale de la misma función sin costo extra.
 - **Sí:** `plat.tenant.cambiar_estado` es sensible (D4, RF-006).

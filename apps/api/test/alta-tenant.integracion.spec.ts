@@ -20,7 +20,8 @@ import {
   type ProveedorIdentidad,
 } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
-import { AltaTenant, OperadorRequeridoError, TenantDuplicadoError, type AltaTenantComando, type DependenciasAlta } from '../src/org/alta-tenant.js';
+import { AltaTenant, TenantDuplicadoError, type AltaTenantComando, type DependenciasAlta } from '../src/org/alta-tenant.js';
+import { OperadorRequeridoError } from '../src/org/operador.js';
 import { TenantsPorCodigoTypeOrm } from '../src/org/tenants-por-codigo.typeorm.js';
 import { crearBaseTemporal, describeConDb, type BaseTemporal } from './support/temp-db.js';
 

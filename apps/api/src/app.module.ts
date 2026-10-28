@@ -9,7 +9,10 @@ import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vi
 import { FallidosController } from './eventos/fallidos.controller.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
+import { EmpresasController } from './org/empresas.controller.js';
+import { SucursalesController } from './org/sucursales.controller.js';
 import { TenantsPorCodigoTypeOrm } from './org/tenants-por-codigo.typeorm.js';
+import { UnidadesController } from './org/unidades.controller.js';
 import { SaludController } from './salud/salud.controller.js';
 
 export type AppOpciones = KernelInfraOptions &
@@ -33,8 +36,9 @@ export class AppModule {
         CorrelativosModule.register(),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
       ],
-      // Fallidos y alta de tenant viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar.
-      controllers: [SaludController, FallidosController, AltaTenantController],
+      // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
+      // (org no puede usar @Permiso de seguridad).
+      controllers: [SaludController, FallidosController, AltaTenantController, EmpresasController, SucursalesController, UnidadesController],
       providers: [
         {
           provide: AltaTenant,

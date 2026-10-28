@@ -6,8 +6,9 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { ValidationError } from '@vitrina/plataforma/kernel';
 import { IdentidadNoDisponibleError, PermisoGuard } from '@vitrina/plataforma/seguridad';
-import { AltaTenant, OperadorRequeridoError, RucInvalidoError, TenantDuplicadoError, type AltaTenantComando, type TenantDadoDeAlta } from '../src/org/alta-tenant.js';
+import { AltaTenant, RucInvalidoError, TenantDuplicadoError, type AltaTenantComando, type TenantDadoDeAlta } from '../src/org/alta-tenant.js';
 import { AltaTenantController } from '../src/org/alta-tenant.controller.js';
+import { OperadorRequeridoError } from '../src/org/operador.js';
 
 const OPERADOR = '0193f3a0-0000-7000-8000-0000000000aa';
 const SUCURSAL_OPERADOR = '0193f3a0-0000-7000-8000-000000000101';
@@ -141,7 +142,7 @@ describe('HTTP POST /v1/org/tenants (TR-RF-001)', () => {
   it.each([
     ['RUC con dígito verificador inválido', new RucInvalidoError(), 400, 'RUC_INVALIDO', 'RUC inválido'],
     ['ACTIVO sin fecha', new ValidationError('Un tenant ACTIVO exige vigente_hasta posterior a hoy'), 400, 'SOLICITUD_INVALIDA', 'Un tenant ACTIVO exige vigente_hasta posterior a hoy'],
-    ['actor fuera del operador', new OperadorRequeridoError(), 403, 'OPERADOR_REQUERIDO', 'Solo el tenant operador puede dar de alta tenants'],
+    ['actor fuera del operador', new OperadorRequeridoError(), 403, 'OPERADOR_REQUERIDO', 'Solo el tenant operador puede administrar tenants'],
     ['código repetido', new TenantDuplicadoError(), 409, 'TENANT_DUPLICADO', 'El código de tenant ya existe'],
     ['Supabase caído', new IdentidadNoDisponibleError('timeout'), 503, 'IDENTIDAD_NO_DISPONIBLE', 'El proveedor de identidad no respondió (timeout)'],
   ])('%s responde %i %s', async (_caso, error, estado, codigo, mensaje) => {

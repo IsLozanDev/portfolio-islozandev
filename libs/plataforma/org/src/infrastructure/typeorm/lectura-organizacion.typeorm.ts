@@ -68,14 +68,47 @@ async function paginar<F extends ObjectLiteral, T>(consulta: SelectQueryBuilder<
   return { items: filas.map(mapear), total };
 }
 
-function empresaListada({ tenantId: _tenantId, version, ...fila }: FilaEmpresa): EmpresaListada {
-  return { ...fila, version: Number(version) };
+function empresaListada(fila: FilaEmpresa): EmpresaListada {
+  return {
+    id: fila.id,
+    ruc: fila.ruc,
+    razonSocial: fila.razonSocial,
+    nombreComercial: fila.nombreComercial,
+    direccionFiscal: fila.direccionFiscal,
+    ubigeo: fila.ubigeo,
+    activo: fila.activo,
+    version: Number(fila.version),
+  };
 }
 
-function sucursalListada({ tenantId: _tenantId, version, ...fila }: FilaSucursal): SucursalListada {
-  return { ...fila, version: Number(version) };
+function sucursalListada(fila: FilaSucursal): SucursalListada {
+  return {
+    id: fila.id,
+    empresaId: fila.empresaId,
+    codigo: fila.codigo,
+    nombre: fila.nombre,
+    codigoEstablecimientoSunat: fila.codigoEstablecimientoSunat,
+    direccion: fila.direccion,
+    ubigeo: fila.ubigeo,
+    telefono: fila.telefono,
+    zonaHoraria: fila.zonaHoraria,
+    esPrincipal: fila.esPrincipal,
+    activo: fila.activo,
+    version: Number(fila.version),
+  };
 }
 
-function unidadListada({ tenantId: _tenantId, version, ...fila }: FilaUnidad): UnidadListada {
-  return { ...fila, version: Number(version) };
+function unidadListada(fila: FilaUnidad): UnidadListada {
+  return {
+    id: fila.id,
+    empresaId: fila.empresaId,
+    sucursalId: fila.sucursalId,
+    tipo: fila.tipo,
+    codigo: fila.codigo,
+    nombre: fila.nombre,
+    padreId: fila.padreId,
+    atributos: fila.atributos,
+    activo: fila.activo,
+    version: Number(fila.version),
+  };
 }
