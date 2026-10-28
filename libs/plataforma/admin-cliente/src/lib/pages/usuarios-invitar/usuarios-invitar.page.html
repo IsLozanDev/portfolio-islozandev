@@ -1,0 +1,30 @@
+<section class="flex max-w-2xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.tituloInvitar }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (asignables(); as opciones) {
+    <form class="flex flex-col" [formGroup]="formulario" (ngSubmit)="invitar()" novalidate>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombre }}</mat-label>
+          <input matInput formControlName="nombre" autocomplete="name" required data-campo="nombre" />
+          <mat-error>{{ formulario.controls.nombre.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.correo }}</mat-label>
+          <input matInput type="email" formControlName="correo" autocomplete="email" required data-campo="correo" />
+          <mat-error>{{ formulario.controls.correo.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <vit-form-asignacion [grupo]="formulario.controls.asignacion" [asignables]="opciones" [conVigenteDesde]="false" />
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.invitar" (cancelar)="cancelar()" />
+    </form>
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>

@@ -6,6 +6,11 @@ export interface DatosInvitacion {
   asignacion: FormularioAsignacion;
 }
 
+/** `state` de la navegación para «Reenviar invitación»: el correo nunca va en la URL. */
+export interface EstadoReenvio {
+  reenviar?: { nombre: string; correo: string };
+}
+
 export interface CuerpoInvitacion extends CuerpoAsignacion {
   nombre: string;
   correo: string;

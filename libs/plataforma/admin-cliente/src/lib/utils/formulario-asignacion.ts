@@ -1,4 +1,5 @@
 import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
+import type { Asignables } from '../models/asignable';
 import type { Alcance, FormularioAsignacion } from '../models/asignacion';
 
 /** El selector de rol o perfil guarda uno solo: `rol:<id>` o `perfil:<id>` (TR-RN-008, TR-CA-037). */
@@ -80,4 +81,11 @@ export function aFormularioAsignacion(grupo: GrupoAsignacion): FormularioAsignac
 
 function idConPrefijo(asignable: string | null, prefijo: string): string | null {
   return asignable?.startsWith(prefijo) ? asignable.slice(prefijo.length) : null;
+}
+
+/** El rol o perfil elegido trae algún permiso sensible: invitar u otorgar exige MFA reciente (TR-RN-009). */
+export function esAsignableSensible(asignables: Asignables, asignable: string | null): boolean {
+  const rolId = idConPrefijo(asignable, PREFIJO_ROL);
+  const perfilId = idConPrefijo(asignable, PREFIJO_PERFIL);
+  return asignables.roles.some((rol) => rol.id === rolId && rol.sensible) || asignables.perfiles.some((perfil) => perfil.id === perfilId && perfil.sensible);
 }

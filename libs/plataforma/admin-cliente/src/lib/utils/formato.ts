@@ -7,3 +7,9 @@ const FORMATO_FECHA_HORA = new Intl.DateTimeFormat(LOCALE_PERU, { timeZone: ZONA
 export function formatearFechaHora(instante: Date): string {
   return FORMATO_FECHA_HORA.format(instante);
 }
+
+/** `YYYY-MM-DD` de la API como `dd/MM/yyyy`, sin pasar por `Date` (es una fecha calendario). */
+export function formatearFecha(fecha: string): string {
+  const [anio, mes, dia] = fecha.split('-');
+  return `${dia}/${mes}/${anio}`;
+}

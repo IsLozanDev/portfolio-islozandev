@@ -13,8 +13,13 @@ import { PERMISOS_ADMIN } from './models/permisos-admin';
 @Component({ template: '' })
 class Prohibido {}
 
+/** La primera carga lazy transforma Material entero; con la máquina ocupada pasa los 5 s por defecto. */
+const ESPERA_PRECARGA_MS = 30_000;
+
 describe('ADMIN_CLIENTE_ROUTES', () => {
   let sesion: DobleSesion;
+
+  beforeAll(() => import('./pages/usuarios-lista/usuarios-lista.page'), ESPERA_PRECARGA_MS);
 
   async function navegar(url: string): Promise<{ url: string; titulo: string }> {
     TestBed.configureTestingModule({
