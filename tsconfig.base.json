@@ -65,6 +65,9 @@
       ],
       "@vitrina/plataforma/admin-cliente": [
         "./libs/plataforma/admin-cliente/src/index.ts"
+      ],
+      "@vitrina/plataforma/consola-tenants": [
+        "./libs/plataforma/consola-tenants/src/index.ts"
       ]
     }
   }

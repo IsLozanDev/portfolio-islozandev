@@ -15,10 +15,7 @@ export const appRoutes: Route[] = [
       {
         path: 'consola',
         canActivate: [aal2Guard],
-        children: [
-          { path: '', pathMatch: 'full', redirectTo: 'tenants' },
-          { path: 'tenants', loadComponent: () => import('./pages/tenants-provisional/tenants-provisional.page').then((modulo) => modulo.TenantsProvisionalPage) },
-        ],
+        loadChildren: () => import('@vitrina/plataforma/consola-tenants').then((modulo) => modulo.CONSOLA_TENANTS_ROUTES),
       },
     ],
     NOMBRE_APP,
