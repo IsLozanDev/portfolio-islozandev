@@ -23,11 +23,13 @@ const ICONO_POR_TIPO: Readonly<Record<TipoAviso, SweetAlertIcon>> = {
 const CLASES_AVISO: SweetAlertCustomClass = { popup: 'vit-aviso' };
 const CLASES_AVISO_DESTRUCTIVO: SweetAlertCustomClass = { popup: ['vit-aviso', 'vit-aviso-destructivo'] };
 
-const CAMPO_MOTIVO: SweetAlertOptions = {
-  input: 'textarea',
-  inputLabel: MENSAJES_UI.motivo,
-  inputValidator: (valor: string) => (valor.trim().length < LONGITUD_MINIMA_MOTIVO ? MENSAJES_UI.motivoMuyCorto : null),
-};
+function campoMotivo(longitudMinima: number): SweetAlertOptions {
+  return {
+    input: 'textarea',
+    inputLabel: MENSAJES_UI.motivo,
+    inputValidator: (valor: string) => (valor.trim().length < longitudMinima ? MENSAJES_UI.motivoMuyCorto(longitudMinima) : null),
+  };
+}
 
 /**
  * Único punto del front que usa SweetAlert2. Los textos van como texto plano
@@ -77,7 +79,7 @@ export class AvisosService {
       confirmButtonText: opciones.textoConfirmar ?? MENSAJES_UI.eliminar,
       cancelButtonText: opciones.textoCancelar ?? MENSAJES_UI.cancelar,
       customClass: CLASES_AVISO_DESTRUCTIVO,
-      ...(opciones.pedirMotivo ? CAMPO_MOTIVO : {}),
+      ...(opciones.pedirMotivo ? campoMotivo(opciones.longitudMinimaMotivo ?? LONGITUD_MINIMA_MOTIVO) : {}),
     });
     if (!resultado.isConfirmed) return { confirmado: false };
     return { confirmado: true, motivo: opciones.pedirMotivo ? String(resultado.value).trim() : null };

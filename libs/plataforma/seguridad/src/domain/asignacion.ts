@@ -180,6 +180,23 @@ export class Asignacion extends AggregateRoot {
   }
 }
 
+export const ESTADOS_ASIGNACION = ['VIGENTE', 'FUTURA', 'VENCIDA', 'REVOCADA'] as const;
+export type EstadoAsignacion = (typeof ESTADOS_ASIGNACION)[number];
+
+export interface VigenciaAsignacion {
+  vigenteDesde: Fecha;
+  vigenteHasta: Fecha | null;
+  revocadaEn: Date | null;
+}
+
+/** Estado que ve el administrador en `hoy`: la revocación manda sobre la vigencia (TR-RF-014). */
+export function estadoAsignacion(vigencia: VigenciaAsignacion, hoy: Fecha): EstadoAsignacion {
+  if (vigencia.revocadaEn !== null) return 'REVOCADA';
+  if (hoy < vigencia.vigenteDesde) return 'FUTURA';
+  if (vigencia.vigenteHasta !== null && vigencia.vigenteHasta < hoy) return 'VENCIDA';
+  return 'VIGENTE';
+}
+
 function validarAlcance(datos: DatosAsignacion): void {
   if (!ALCANCES.includes(datos.alcance)) throw new ValidationError(`Alcance desconocido: ${datos.alcance}`);
   const requerido = ID_DEL_ALCANCE[datos.alcance];

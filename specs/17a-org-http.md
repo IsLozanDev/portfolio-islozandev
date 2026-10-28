@@ -1,6 +1,6 @@
 # SPEC 17a — Org HTTP: tenants para el operador y empresas, sucursales y unidades del cliente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 06, SPEC 12
 > **Date:** 2026-10-27
 > **Objective:** Exponer por `/v1/org` la lista, el detalle y el cambio de estado de tenants para el tenant operador, y la gestión de empresas, sucursales y unidades del tenant del token, con sus permisos y opciones de menú en el manifiesto PLAT `1.6.0`.

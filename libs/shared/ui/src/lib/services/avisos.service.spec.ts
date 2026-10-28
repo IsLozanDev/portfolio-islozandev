@@ -140,6 +140,27 @@ describe('AvisosService', () => {
 
       await expect(respuesta).resolves.toEqual({ confirmado: true, motivo: 'motivo válido' });
     });
+
+    it('con longitudMinimaMotivo 4 rechaza «Ces» y muestra el error con esa longitud', async () => {
+      void avisos.confirmarDestructiva({ titulo: '¿Finalizar?', pedirMotivo: true, longitudMinimaMotivo: 4 });
+      await esperarPopup();
+
+      escribirMotivo('Ces');
+      Swal.clickConfirm();
+
+      await vi.waitFor(() => expect(Swal.getValidationMessage()?.textContent).toBe('Ingrese un motivo de al menos 4 caracteres.'));
+      expect(Swal.getPopup()).not.toBeNull();
+    });
+
+    it('con longitudMinimaMotivo 4 acepta «Cese»', async () => {
+      const respuesta = avisos.confirmarDestructiva({ titulo: '¿Finalizar?', pedirMotivo: true, longitudMinimaMotivo: 4 });
+      await esperarPopup();
+
+      escribirMotivo('Cese');
+      Swal.clickConfirm();
+
+      await expect(respuesta).resolves.toEqual({ confirmado: true, motivo: 'Cese' });
+    });
   });
 
   describe('toast', () => {
