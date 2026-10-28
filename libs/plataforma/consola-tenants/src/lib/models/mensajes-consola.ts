@@ -1,5 +1,5 @@
 import { MENSAJES_SHELL } from '@vitrina/shared/shell';
-import type { EstadoTenant } from './catalogos';
+import type { EstadoTenant, Modalidad } from './catalogos';
 
 /** Textos de la consola de tenants, en español de Perú. */
 export const MENSAJES_CONSOLA = {
@@ -10,6 +10,83 @@ export const MENSAJES_CONSOLA = {
   verDetalle: 'Ver detalle',
   sinSuscripciones: '—',
 } as const;
+
+export const MENSAJES_DETALLE = {
+  volver: 'Volver a tenants',
+  noExiste: 'El tenant no existe',
+  ultimoCambio: 'Último cambio',
+  suscripciones: 'Suscripciones',
+  producto: 'Producto',
+  plan: 'Plan',
+  estado: 'Estado',
+  vigenteHasta: 'Vigente hasta',
+  sinVencimiento: 'Sin vencimiento',
+  empresaPrincipal: 'Empresa principal',
+  sinEmpresa: 'Sin empresa principal',
+  ruc: 'RUC',
+  historial: 'Historial de estados',
+  sinHistorial: 'Sin cambios de estado.',
+  yaEstaba: 'El tenant ya estaba en ese estado.',
+} as const;
+
+export const MENSAJES_ALTA = {
+  titulo: 'Nuevo tenant',
+  pasoTenant: 'Tenant y suscripción',
+  pasoEmpresa: 'Empresa y propietario',
+  codigo: 'Código',
+  ayudaCodigo: 'Minúsculas, números y guiones, p. ej. polleria-dona-rosa',
+  nombre: 'Nombre',
+  producto: 'Producto',
+  plan: 'Plan',
+  modalidad: 'Modalidad',
+  vigenteHasta: 'Vigente hasta',
+  ruc: 'RUC',
+  razonSocial: 'Razón social',
+  nombreComercial: 'Nombre comercial (opcional)',
+  correoPropietario: 'Correo del propietario',
+  nombrePropietario: 'Nombre del propietario',
+  siguiente: 'Siguiente',
+  anterior: 'Anterior',
+  crear: 'Crear tenant',
+  creado: 'Tenant creado',
+  correoNoEnviado: 'El tenant se creó, pero no se pudo enviar el correo al propietario.',
+  codigoFormato: 'Use minúsculas, números y guiones, sin espacios.',
+  rucInvalido: 'RUC inválido',
+} as const;
+
+export const ETIQUETAS_MODALIDAD: Readonly<Record<Modalidad, string>> = {
+  PRUEBA: 'Prueba',
+  ACTIVO: 'Activo',
+};
+
+export interface ConfirmacionDeEstado {
+  boton: string;
+  titulo: (codigo: string) => string;
+  texto: string;
+  hecho: string;
+}
+
+/** Textos de cada destino de TR-RF-006; el motivo lo pide `confirmarDestructiva` (mínimo 10). */
+export const CONFIRMACIONES_ESTADO: Readonly<Record<Exclude<EstadoTenant, 'PRUEBA'>, ConfirmacionDeEstado>> = {
+  ACTIVO: {
+    boton: 'Activar',
+    titulo: (codigo) => `¿Activar «${codigo}»?`,
+    texto: 'El tenant volverá a operar con normalidad. Indique el motivo.',
+    hecho: 'Tenant activado',
+  },
+  SUSPENDIDO: {
+    boton: 'Suspender',
+    titulo: (codigo) => `¿Suspender «${codigo}»?`,
+    texto: 'Sus usuarios solo podrán consultar y pagar. Indique el motivo.',
+    hecho: 'Tenant suspendido',
+  },
+  BAJA: {
+    boton: 'Dar de baja',
+    titulo: (codigo) => `¿Dar de baja «${codigo}»?`,
+    texto: 'Un tenant dado de baja no puede reactivarse. Indique el motivo.',
+    hecho: 'Tenant dado de baja',
+  },
+};
 
 export const COLUMNAS_TENANTS = {
   codigo: 'Código',

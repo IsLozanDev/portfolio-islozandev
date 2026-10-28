@@ -76,7 +76,8 @@ Estimado: 7-7,5 h. El roadmap da 7. Si se pasa, se recorta primero el filtro por
 - Spec 13: `SesionService`, `aal2Guard`, `permisoGuard`, `*siPermiso`, `authInterceptor` con step-up, `OMITIR_AVISO_ERROR`, `provideAuth`, inactividad.
 - Spec 14: `AUTH_UI_ROUTES` (`/auth`, incluida `/auth/mfa?returnUrl`).
 - Spec 15: `LayoutComponent`, `vit-tabla`, `vit-filtros`, `vit-acciones-formulario`, `mensajeValidacion`, `vit-cargando`, `vit-estado-vacio`, `AvisosService` (`exito`, `advertencia`, `confirmarDestructiva`), `erroresHttpInterceptor`, páginas 403 y 404.
-- Spec 03: `validarRuc` de `libs/shared/util`.
+- Spec 03: `validarRuc` de `libs/shared/util`, copiado en `consola-tenants/src/lib/utils/ruc.ts` (ver Decisiones).
+- Spec 16a: `AdaptadorFechaPeru` y `CalendarioEnEspanol`, copiados en `consola-tenants/src/lib/services/` (ver Decisiones).
 - Spec 12 y 17a: contratos HTTP tal cual.
 
 **Cambia:**
@@ -207,7 +208,7 @@ interface RespuestaAltaTenant { tenantId: string; estado: EstadoTenant; usuarioN
 - Éxito: borra el borrador, navega a `/consola/tenants/:tenant_id` y avisa «Tenant creado». Con `correo_enviado: false` el aviso es de advertencia: «El tenant se creó, pero no se pudo enviar el correo al propietario».
 - `TENANT_DUPLICADO` (409): vuelve al paso 1 y muestra en `codigo` «El código de tenant ya existe».
 - `RUC_INVALIDO` y `SOLICITUD_INVALIDA` (400): muestra el `mensaje` de la API como texto plano en el paso que corresponda.
-- Esos tres códigos se piden con `OMITIR_AVISO_ERROR`. `IDENTIDAD_NO_DISPONIBLE`, `OPERADOR_REQUERIDO` y el resto los avisa `erroresHttpInterceptor`.
+- Los demás códigos (`IDENTIDAD_NO_DISPONIBLE`, `OPERADOR_REQUERIDO`, etc.) se muestran como alerta sobre el asistente. `erroresHttpInterceptor` solo avisa errores de conexión y 5xx, así que no hace falta `OMITIR_AVISO_ERROR`.
 - Si la API responde `MFA_REQUERIDA`, el interceptor del 13 navega a `/auth/mfa?returnUrl=/consola/tenants/nuevo`. Al volver, el formulario se restaura desde el borrador.
 
 ### Menú por app
@@ -326,6 +327,10 @@ export function filtrarMenuPorPrefijo(menu: readonly OpcionMenu[], prefijo: stri
 - **Sí:** enlace › por fila hacia el detalle en vez de clic en la fila (decisión del usuario, paso 5). `vit-tabla` no emite el clic de fila y el enlace funciona con teclado.
 - **Sí:** prueba cronometrada manual del usuario (decisión del usuario). Un recorrido automatizado no mide a un operador.
 - **No:** endpoint de productos y planes. Constantes en el front, como dice el contexto.
+- **Sí:** copiar `AdaptadorFechaPeru` y `CalendarioEnEspanol` del 16a en `consola-tenants` para el datepicker de `vigente_hasta` (decisión del usuario, paso 7). Moverlos a `shared/ui` queda como deuda para otro spec.
+- **Sí:** copiar `validarRuc` en `consola-tenants/src/lib/utils/ruc.ts` (decisión del usuario, paso 7). La lib se empaqueta con ng-packagr, que no admite importar `shared/util` (no buildable), y `@nx/angular:unit-test` necesita el target `build`. El servidor sigue validando con el original.
+- **No:** quitar el `build` de `consola-tenants`. Sin él no corren sus pruebas.
+- **No:** darle build de ng-packagr a `shared/util`. También la usa el back (Node ESM con Jest).
 
 ## Riesgos
 

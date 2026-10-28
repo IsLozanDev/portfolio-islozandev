@@ -1,0 +1,82 @@
+<section class="flex flex-col gap-4">
+  <a mat-button class="self-start" routerLink="..">{{ mensajes.volver }}</a>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (tenant(); as detalle) {
+    <header class="flex flex-col gap-1">
+      <h1 class="text-2xl font-medium">{{ detalle.codigo }}</h1>
+      <p class="text-sobre-superficie-variante">{{ detalle.nombre }}</p>
+      <p class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="rounded-tarjeta bg-contenedor-secundario px-2 py-0.5 text-sobre-contenedor-secundario" data-estado-tenant>{{ etiquetasEstado[detalle.estado] }}</span>
+        @if (detalle.estadoCambiadoEn) {
+          <span>{{ mensajes.ultimoCambio }}: {{ formatearFechaHora(detalle.estadoCambiadoEn) }}</span>
+        }
+        @if (detalle.estadoMotivo) {
+          <span class="text-sobre-superficie-variante">«{{ detalle.estadoMotivo }}»</span>
+        }
+      </p>
+    </header>
+
+    @if (destinos().length > 0) {
+      <div *siPermiso="permisos.tenantCambiarEstado" class="flex flex-wrap gap-2" data-acciones-estado>
+        @for (destino of destinos(); track destino) {
+          <button mat-stroked-button type="button" [disabled]="ocupado()" (click)="cambiarEstado(destino)">{{ confirmaciones[destino].boton }}</button>
+        }
+      </div>
+    }
+
+    <h2 class="text-lg font-medium">{{ mensajes.suscripciones }}</h2>
+    <div class="overflow-x-auto rounded-tarjeta border border-borde">
+      <table class="w-full text-left text-sm">
+        <thead>
+          <tr class="border-b border-borde">
+            <th class="p-2 font-medium" scope="col">{{ mensajes.producto }}</th>
+            <th class="p-2 font-medium" scope="col">{{ mensajes.plan }}</th>
+            <th class="p-2 font-medium" scope="col">{{ mensajes.estado }}</th>
+            <th class="p-2 font-medium" scope="col">{{ mensajes.vigenteHasta }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (suscripcion of detalle.suscripciones; track suscripcion.productoCodigo) {
+            <tr data-suscripcion>
+              <td class="p-2">{{ suscripcion.productoCodigo }}</td>
+              <td class="p-2">{{ suscripcion.plan }}</td>
+              <td class="p-2">{{ suscripcion.estado }}</td>
+              <td class="p-2">{{ suscripcion.vigenteHasta ? formatearFechaCalendario(suscripcion.vigenteHasta) : mensajes.sinVencimiento }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="text-lg font-medium">{{ mensajes.empresaPrincipal }}</h2>
+    @if (detalle.empresaPrincipal; as empresa) {
+      <p data-empresa-principal>{{ mensajes.ruc }} {{ empresa.ruc }} · {{ empresa.razonSocial }}</p>
+    } @else {
+      <p class="text-sobre-superficie-variante">{{ mensajes.sinEmpresa }}</p>
+    }
+
+    <h2 class="text-lg font-medium">{{ mensajes.historial }}</h2>
+    @if (detalle.historial.length === 0) {
+      <p class="text-sobre-superficie-variante">{{ mensajes.sinHistorial }}</p>
+    } @else {
+      <ol class="flex flex-col gap-2">
+        @for (cambio of detalle.historial; track cambio.registradoEn) {
+          <li class="rounded-tarjeta border border-borde p-3 text-sm" data-cambio-estado>
+            <p class="font-medium">{{ etiquetasEstado[cambio.estadoAnterior] }} → {{ etiquetasEstado[cambio.estadoNuevo] }}</p>
+            <p class="text-sobre-superficie-variante">{{ formatearFechaHora(cambio.registradoEn) }} · «{{ cambio.motivo }}»</p>
+          </li>
+        }
+      </ol>
+    }
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="search_off" [titulo]="mensajes.noExiste">
+      <a mat-button routerLink="..">{{ mensajes.volver }}</a>
+    </vit-estado-vacio>
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>
