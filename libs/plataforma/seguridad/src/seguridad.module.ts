@@ -33,6 +33,11 @@ import { RolRepositorioTypeOrm } from './infrastructure/typeorm/rol.repositorio.
 import { InvitacionesController } from './interface/invitaciones.controller.js';
 import { LIMITE_TASA, LimiteTasaGuard } from './interface/membresias.http.js';
 import { MembresiasController } from './interface/membresias.controller.js';
+import { MiembrosController } from './interface/miembros.controller.js';
+import { AsignacionesController } from './interface/asignaciones.controller.js';
+import { OtorgarAsignacion } from './application/otorgar-asignacion.js';
+import { ConsultarMiembro, ListarAsignables, ListarMiembros } from './application/lecturas-miembros.js';
+import { LecturaMiembrosTypeOrm } from './infrastructure/typeorm/lectura-miembros.typeorm.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
@@ -111,7 +116,7 @@ export class SeguridadModule {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
       global: true,
-      controllers: [MiContextoController, InvitacionesController, MembresiasController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController],
       providers: [
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
@@ -153,6 +158,30 @@ export class SeguridadModule {
           provide: PRODUCTOS_CONTRATADOS,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): ProductosContratados => new ProductosContratadosTypeOrm(unidadDeTrabajo, contexto),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        {
+          provide: OtorgarAsignacion,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher, repositorios: ReposMembresias) =>
+            new OtorgarAsignacion(unidadDeTrabajo, contexto, ids, reloj, eventos, repositorios, op.mfaMaxEdadSeg),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ListarMiembros,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock) =>
+            new ListarMiembros({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), reloj }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
+        },
+        {
+          provide: ConsultarMiembro,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock) =>
+            new ConsultarMiembro({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), reloj }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
+        },
+        {
+          provide: ListarAsignables,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, productos: ProductosContratados) =>
+            new ListarAsignables({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), productos }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PRODUCTOS_CONTRATADOS],
         },
         ciclo(SuspenderMembresia),
         ciclo(ReactivarMembresia),

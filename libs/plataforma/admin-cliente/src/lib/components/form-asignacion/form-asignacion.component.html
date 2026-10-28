@@ -1,0 +1,47 @@
+<div class="flex flex-col" [formGroup]="grupo()">
+  <mat-form-field appearance="outline">
+    <mat-label>{{ mensajes.rolOPerfil }}</mat-label>
+    <mat-select formControlName="asignable" data-campo="asignable" required>
+      <mat-optgroup [label]="mensajes.roles">
+        @for (rol of asignables().roles; track rol.id) {
+          <mat-option [value]="prefijoRol + rol.id">
+            {{ rol.nombre }} · {{ rol.productoCodigo }}@if (rol.sensible) { ({{ mensajes.sensible }})}
+          </mat-option>
+        }
+      </mat-optgroup>
+      <mat-optgroup [label]="mensajes.perfiles">
+        @for (perfil of asignables().perfiles; track perfil.id) {
+          <mat-option [value]="prefijoPerfil + perfil.id">
+            {{ perfil.nombre }}@if (perfil.sensible) { ({{ mensajes.sensible }})}
+          </mat-option>
+        }
+      </mat-optgroup>
+    </mat-select>
+    <mat-error>{{ grupo().controls.asignable.errors | mensajeValidacion }}</mat-error>
+  </mat-form-field>
+
+  <vit-selector-alcance [grupo]="grupo()" />
+  @if (grupo().hasError(errorUbicacion) && grupo().touched) {
+    <p role="alert" class="mb-4 text-sm text-error">{{ mensajes.ubicacionRequerida }}</p>
+  }
+
+  <div class="grid gap-x-4 sm:grid-cols-2">
+    @if (conVigenteDesde()) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.vigenteDesde }}</mat-label>
+        <input matInput [matDatepicker]="calendarioDesde" formControlName="vigenteDesde" data-campo="vigente-desde" />
+        <mat-datepicker-toggle matIconSuffix [for]="calendarioDesde" />
+        <mat-datepicker #calendarioDesde />
+      </mat-form-field>
+    }
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.vigenteHasta }}</mat-label>
+      <input matInput [matDatepicker]="calendarioHasta" formControlName="vigenteHasta" data-campo="vigente-hasta" />
+      <mat-datepicker-toggle matIconSuffix [for]="calendarioHasta" />
+      <mat-datepicker #calendarioHasta />
+    </mat-form-field>
+  </div>
+  @if (grupo().hasError(errorVigencia)) {
+    <p role="alert" class="mb-4 text-sm text-error" data-error="vigencia">{{ mensajes.vigenciaInvalida }}</p>
+  }
+</div>

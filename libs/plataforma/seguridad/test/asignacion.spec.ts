@@ -1,5 +1,5 @@
 import { ValidationError } from '@vitrina/plataforma/kernel';
-import { Asignacion, type ContextoOtorgamiento, type DatosAsignacion } from '../src/domain/asignacion.js';
+import { Asignacion, estadoAsignacion, type ContextoOtorgamiento, type DatosAsignacion } from '../src/domain/asignacion.js';
 import { AlcanceIncoherenteError, AlcanceInsuficienteError, RolOPerfilError, VigenciaInvalidaError } from '../src/domain/errores.js';
 
 const ID = '0193f3a0-0000-7000-8000-000000000401';
@@ -153,5 +153,21 @@ describe('Asignacion.reconstituir', () => {
     expect(a.rolId).toBe(CAJERO);
     expect(a.otorgadoPor).toBeNull();
     expect(a.pullEvents()).toEqual([]);
+  });
+});
+
+describe('estadoAsignacion (spec 16a)', () => {
+  const HOY = '2026-10-20';
+  const vigencia = (desde: string, hasta: string | null, revocadaEn: Date | null = null) => ({ vigenteDesde: desde, vigenteHasta: hasta, revocadaEn });
+
+  it.each([
+    ['VIGENTE', vigencia('2026-10-20', '2026-10-20')],
+    ['VIGENTE', vigencia('2026-01-01', null)],
+    ['FUTURA', vigencia('2026-10-21', null)],
+    ['VENCIDA', vigencia('2026-10-01', '2026-10-19')],
+    ['REVOCADA', vigencia('2026-01-01', null, new Date('2026-10-10T12:00:00Z'))],
+    ['REVOCADA', vigencia('2026-10-21', null, new Date('2026-10-10T12:00:00Z'))],
+  ] as const)('%s con %o', (esperado, datosVigencia) => {
+    expect(estadoAsignacion(datosVigencia, HOY)).toBe(esperado);
   });
 });

@@ -62,6 +62,9 @@
       ],
       "@vitrina/shared/shell": [
         "./libs/shared/shell/src/index.ts"
+      ],
+      "@vitrina/plataforma/admin-cliente": [
+        "./libs/plataforma/admin-cliente/src/index.ts"
       ]
     }
   }

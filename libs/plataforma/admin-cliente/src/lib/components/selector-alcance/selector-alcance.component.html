@@ -1,0 +1,47 @@
+<div class="grid gap-x-4 sm:grid-cols-2" [formGroup]="grupo()">
+  <mat-form-field appearance="outline">
+    <mat-label>{{ mensajes.alcance }}</mat-label>
+    <mat-select formControlName="alcance" data-campo="alcance">
+      @for (opcion of alcances; track opcion.valor) {
+        <mat-option [value]="opcion.valor">{{ opcion.etiqueta }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (niveles() >= 1) {
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.empresa }}</mat-label>
+      <mat-select formControlName="empresaId" data-campo="empresa">
+        @for (empresa of empresas(); track empresa.id) {
+          <mat-option [value]="empresa.id">{{ empresa.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  @if (niveles() >= 2) {
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.sucursal }}</mat-label>
+      <mat-select formControlName="sucursalId" data-campo="sucursal">
+        @for (sucursal of sucursales(); track sucursal.id) {
+          <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  @if (niveles() >= 3) {
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.unidad }}</mat-label>
+      <mat-select formControlName="unidadId" data-campo="unidad">
+        @for (unidad of unidades(); track unidad.id) {
+          <mat-option [value]="unidad.id">{{ unidad.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="text-sm text-error sm:col-span-2">{{ mensajeError }}</p>
+  }
+</div>

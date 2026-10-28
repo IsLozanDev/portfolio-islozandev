@@ -1,0 +1,83 @@
+<section class="flex flex-col gap-4">
+  <a mat-button class="self-start" routerLink="..">{{ mensajes.volver }}</a>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (miembro(); as detalle) {
+    <header class="flex flex-col gap-1">
+      <h1 class="text-2xl font-medium">{{ detalle.nombre }}</h1>
+      <p class="text-sobre-superficie-variante">{{ detalle.correo }}</p>
+      <p class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="rounded-tarjeta bg-contenedor-secundario px-2 py-0.5 text-sobre-contenedor-secundario" data-estado-membresia>{{ etiquetaEstado(detalle) }}</span>
+        @if (detalle.esPropietario) {
+          <span class="rounded-tarjeta border border-borde px-2 py-0.5">{{ mensajes.propietario }}</span>
+        }
+        @if (vencimientoInvitacion(detalle); as vence) {
+          <span>{{ mensajes.invitacionVence }} {{ vence }}</span>
+        }
+      </p>
+    </header>
+
+    @if (acciones(); as permitidas) {
+      <div class="flex flex-wrap gap-2" data-acciones-membresia>
+        @if (permitidas.asignar) {
+          <button *siPermiso="permisos.asignacionOtorgar" mat-flat-button type="button" [disabled]="ocupado()" (click)="asignar()">{{ mensajes.asignar }}</button>
+        }
+        @for (accion of permitidas.ciclo; track accion) {
+          <button *siPermiso="permisos.asignacionRevocar" mat-stroked-button type="button" [disabled]="ocupado()" (click)="ejecutarCiclo(accion)">
+            {{ etiquetasCiclo[accion] }}
+          </button>
+        }
+        @if (permitidas.reenviar) {
+          <button *siPermiso="permisos.usuarioInvitar" mat-stroked-button type="button" [disabled]="ocupado()" (click)="reenviarInvitacion()">
+            {{ mensajes.reenviarInvitacion }}
+          </button>
+        }
+      </div>
+    }
+
+    <h2 class="text-lg font-medium">{{ mensajes.asignaciones }}</h2>
+    @if (detalle.asignaciones.length === 0) {
+      <p class="text-sobre-superficie-variante">{{ mensajes.sinAsignaciones }}</p>
+    } @else {
+      <div class="overflow-x-auto rounded-tarjeta border border-borde">
+        <table mat-table class="w-full" [dataSource]="detalle.asignaciones">
+          <ng-container matColumnDef="rolOPerfil">
+            <th *matHeaderCellDef mat-header-cell>{{ mensajes.rolOPerfil }}</th>
+            <td *matCellDef="let asignacion" mat-cell>{{ nombreAsignado(asignacion) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="alcance">
+            <th *matHeaderCellDef mat-header-cell>{{ mensajes.alcance }}</th>
+            <td *matCellDef="let asignacion" mat-cell>{{ alcance(asignacion) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="vigencia">
+            <th *matHeaderCellDef mat-header-cell>{{ mensajes.vigencia }}</th>
+            <td *matCellDef="let asignacion" mat-cell>{{ vigencia(asignacion) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="estado">
+            <th *matHeaderCellDef mat-header-cell>{{ mensajes.estado }}</th>
+            <td *matCellDef="let asignacion" mat-cell>{{ estadoAsignacion(asignacion) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="acciones">
+            <th *matHeaderCellDef mat-header-cell>{{ mensajes.acciones }}</th>
+            <td *matCellDef="let asignacion" mat-cell>
+              @if (esRevocable(asignacion)) {
+                <button *siPermiso="permisos.asignacionRevocar" mat-button type="button" [disabled]="ocupado()" (click)="revocar(asignacion)">
+                  {{ mensajes.revocar }}
+                </button>
+              } @else {
+                {{ textoSinFecha }}
+              }
+            </td>
+          </ng-container>
+          <tr *matHeaderRowDef="columnas" mat-header-row></tr>
+          <tr *matRowDef="let asignacion; columns: columnas" mat-row [attr.data-asignacion]="asignacion.id"></tr>
+        </table>
+      </div>
+    }
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>

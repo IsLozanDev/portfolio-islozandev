@@ -55,6 +55,7 @@ export { OtorgarAsignacion, type Otorgante, type OtorgarAsignacionComando } from
 export { AplicarManifiesto, type ResultadoManifiesto } from './application/aplicar-manifiesto.js';
 export type { RepositorioManifiestos, SesionManifiesto } from './application/ports/repositorios.js';
 export { ManifiestoRepositorioTypeOrm } from './infrastructure/typeorm/manifiesto.repositorio.js';
+export { ENTIDADES_SEG_LECTURA } from './infrastructure/typeorm/entidades-lectura.js';
 export { clavePermisos, ResolverPermisos, TTL_PERMISOS_SEG } from './application/resolver-permisos.js';
 export {
   CACHE_PERMISOS,

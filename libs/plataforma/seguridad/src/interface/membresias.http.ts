@@ -18,6 +18,14 @@ const ESTADOS: ReadonlyArray<readonly [abstract new (...args: never[]) => Domain
   [ForbiddenError, 403],
 ];
 
+// Los errores genéricos del kernel salen con el código de la API, como en el resto de los filtros (spec 16a).
+const CODIGOS_GENERICOS: Readonly<Record<string, string>> = {
+  validation_error: 'SOLICITUD_INVALIDA',
+  not_found: 'NO_ENCONTRADO',
+  conflict: 'CONFLICTO',
+  forbidden: 'PROHIBIDO',
+};
+
 /**
  * Errores de dominio de las rutas de membresías como `{ codigo, mensaje }`, igual que los guards
  * de seg (decisión del spec 08). Lo que no es de dominio sigue al filtro global.
@@ -33,7 +41,7 @@ export class MembresiasFiltro implements ExceptionFilter {
       return;
     }
     const estado = ESTADOS.find(([tipo]) => error instanceof tipo)?.[1] ?? 500;
-    res.status(estado).json({ codigo: error.code, mensaje: error.message });
+    res.status(estado).json({ codigo: CODIGOS_GENERICOS[error.code] ?? error.code, mensaje: error.message });
   }
 }
 

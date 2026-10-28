@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { type CanActivate, type ExecutionContext, type INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -23,57 +23,11 @@ import { InvitacionesController } from '../src/interface/invitaciones.controller
 import { MembresiasController } from '../src/interface/membresias.controller.js';
 import { LIMITE_TASA, LimiteTasaGuard } from '../src/interface/membresias.http.js';
 import { MFA_MAX_EDAD_SEG } from '../src/interface/mi-contexto.controller.js';
+import { ANA, Doble, PrincipalDePrueba } from './support/dobles-http.js';
 
-const ANA = '0193f3a0-0000-7000-8000-000000000901';
 const MEMBRESIA = '0193f3a0-0000-7000-8000-000000000301';
 const SUCURSAL = '0193f3a0-0000-7000-8000-000000000101';
 const ROL = '0193f3a0-0000-7000-8000-000000000501';
-
-/** Sustituye a los guards de seg: pone el principal (las pruebas de los guards reales están aparte). */
-class PrincipalDePrueba implements CanActivate {
-  canActivate(ctx: ExecutionContext): boolean {
-    const req = ctx.switchToHttp().getRequest();
-    req.principal = { usuarioId: ANA, tenantId: null, tipo: 'INTERNO', aal: 'aal1', sesionId: 's', amr: [] };
-    return true;
-  }
-}
-
-/** Doble de un caso de uso: guarda los comandos y responde lo programado, en orden. */
-class Doble {
-  llamadas: unknown[] = [];
-  private respuestas: Array<() => Promise<unknown>> = [];
-  private siempre: () => Promise<unknown> = async () => undefined;
-
-  ejecutar = (comando: unknown): Promise<unknown> => {
-    this.llamadas.push(comando);
-    return (this.respuestas.shift() ?? this.siempre)();
-  };
-
-  responde(valor: unknown): this {
-    this.siempre = async () => valor;
-    return this;
-  }
-
-  falla(error: Error): this {
-    this.siempre = async () => {
-      throw error;
-    };
-    return this;
-  }
-
-  fallaUnaVez(error: Error): this {
-    this.respuestas.push(async () => {
-      throw error;
-    });
-    return this;
-  }
-
-  reiniciar(): void {
-    this.llamadas = [];
-    this.respuestas = [];
-    this.siempre = async () => undefined;
-  }
-}
 
 /** Rutas, validación, errores y límite de tasa sin base: los casos de uso son dobles. */
 describe('Rutas de invitaciones y membresías (HTTP, sin base)', () => {
@@ -170,7 +124,7 @@ describe('Rutas de invitaciones y membresías (HTTP, sin base)', () => {
       [new AlcanceSuperiorError(), 403, 'ALCANCE_SUPERIOR', 'No puede otorgar un alcance mayor al suyo'],
       [new LimiteUsuariosError('REST', 10), 409, 'LIMITE_USUARIOS', 'El plan de REST permite 10 usuarios'],
       [new IdentidadNoDisponibleError('over_email_send_rate_limit'), 503, 'IDENTIDAD_NO_DISPONIBLE', expect.any(String)],
-      [new NotFoundError('El rol no existe'), 404, 'not_found', 'El rol no existe'],
+      [new NotFoundError('El rol no existe'), 404, 'NO_ENCONTRADO', 'El rol no existe'],
     ])('%s responde %i con {codigo, mensaje}', async (error, estado, codigo, mensaje) => {
       casos.invitar.falla(error);
 

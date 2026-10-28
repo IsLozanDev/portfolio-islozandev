@@ -1,0 +1,33 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.tituloUsuarios }}</h1>
+    <a *siPermiso="permisos.usuarioInvitar" mat-flat-button routerLink="invitar">
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      {{ mensajes.invitarUsuario }}
+    </a>
+  </header>
+
+  <vit-filtros [definiciones]="filtros" [placeholderBusqueda]="mensajes.buscarMiembro" (cambio)="filtrar($event)" />
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinMiembros"
+    (pagina)="paginar($event)"
+    (orden)="ordenar($event)"
+  >
+    <ng-template vitAccionesFila let-miembro>
+      <a mat-icon-button [routerLink]="miembro.membresiaId" [attr.aria-label]="mensajes.verDetalle + ': ' + miembro.nombre">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>
