@@ -103,6 +103,14 @@ export const MENSAJES_ASIGNACION = {
 
 /** Roles y árbol de permisos (spec 16b). */
 export const MENSAJES_ROLES = {
+  tituloRoles: 'Roles',
+  nuevoRol: 'Nuevo rol',
+  buscarRol: 'Buscar por nombre o código',
+  sinRoles: 'No hay roles con estos filtros.',
+  producto: 'Producto',
+  tipo: 'Tipo',
+  estado: 'Estado',
+  permisos: 'Permisos',
   codigo: 'Código',
   nombre: 'Nombre',
   permisosSeleccionados: (cantidad: number) => (cantidad === 1 ? '1 permiso seleccionado' : `${cantidad} permisos seleccionados`),
@@ -113,7 +121,10 @@ export const MENSAJES_ROLES = {
   sinPermisosEnCatalogo: 'Este producto no tiene permisos en su catálogo.',
 } as const;
 
-export const ETIQUETAS_ALCANCE:Readonly<Record<Alcance, string>> = {
+export const ETIQUETAS_TIPO_ROL = { predefinido: 'Predefinido', propio: 'Propio' } as const;
+export const ETIQUETAS_ESTADO_ROL = { activo: 'Activo', inactivo: 'Inactivo' } as const;
+
+export const ETIQUETAS_ALCANCE: Readonly<Record<Alcance, string>> = {
   TENANT: 'Todo el tenant',
   EMPRESA: 'Una empresa',
   SUCURSAL: 'Una sucursal',
