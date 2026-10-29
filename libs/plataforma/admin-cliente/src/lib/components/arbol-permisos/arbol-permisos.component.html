@@ -1,0 +1,75 @@
+<ng-template #filaPermiso let-permiso>
+  <li class="py-1" [attr.data-permiso]="permiso.codigo">
+    <mat-checkbox [checked]="seleccionados().has(permiso.codigo)" [disabled]="soloLectura()" (change)="alternarPermiso(permiso.codigo)">
+      <span class="flex flex-wrap items-center gap-x-2">
+        <span>{{ permiso.descripcion }}</span>
+        <code class="text-xs text-sobre-superficie-variante">{{ permiso.codigo }}</code>
+        @if (permiso.sensible) {
+          <span class="rounded-full bg-contenedor-error px-2 text-xs text-sobre-contenedor-error" data-sensible>{{ mensajes.sensible }}</span>
+        }
+      </span>
+    </mat-checkbox>
+  </li>
+</ng-template>
+
+<section class="flex flex-col gap-2">
+  <p class="text-sm text-sobre-superficie-variante" aria-live="polite" data-contador>{{ mensajes.permisosSeleccionados(seleccionados().size) }}</p>
+
+  @if (vacio()) {
+    <p class="text-sm">{{ mensajes.sinPermisosEnCatalogo }}</p>
+  }
+
+  <mat-accordion multi>
+    @for (modulo of arbol().modulos; track modulo.codigo) {
+      <mat-expansion-panel [expanded]="true" [attr.data-modulo]="modulo.codigo">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-checkbox
+              [checked]="estadoDeModulo(modulo) === 'marcado'"
+              [indeterminate]="estadoDeModulo(modulo) === 'parcial'"
+              [disabled]="soloLectura()"
+              [attr.aria-label]="mensajes.todoElModulo(modulo.nombre)"
+              (click)="$event.stopPropagation()"
+              (keydown)="$event.stopPropagation()"
+              (change)="alternarModulo(modulo)"
+              data-grupo="modulo"
+            >
+              {{ modulo.nombre }}
+            </mat-checkbox>
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        @for (opcion of modulo.opciones; track opcion.codigo) {
+          <div class="mb-3" [attr.data-opcion]="opcion.codigo">
+            <mat-checkbox
+              [checked]="estadoDeOpcion(opcion) === 'marcado'"
+              [indeterminate]="estadoDeOpcion(opcion) === 'parcial'"
+              [disabled]="soloLectura()"
+              [attr.aria-label]="mensajes.todaLaOpcion(opcion.nombre)"
+              (change)="alternarOpcion(opcion)"
+              data-grupo="opcion"
+            >
+              <span class="font-medium">{{ opcion.nombre }}</span>
+            </mat-checkbox>
+            <ul class="ml-8">
+              @for (permiso of opcion.permisos; track permiso.codigo) {
+                <ng-container *ngTemplateOutlet="filaPermiso; context: { $implicit: permiso }" />
+              }
+            </ul>
+          </div>
+        }
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+
+  @if (arbol().otros.length > 0) {
+    <div class="rounded-tarjeta border border-borde p-4" data-otros>
+      <h3 class="mb-2 font-medium">{{ mensajes.otrosPermisos }}</h3>
+      <ul>
+        @for (permiso of arbol().otros; track permiso.codigo) {
+          <ng-container *ngTemplateOutlet="filaPermiso; context: { $implicit: permiso }" />
+        }
+      </ul>
+    </div>
+  }
+</section>

@@ -101,7 +101,19 @@ export const MENSAJES_ASIGNACION = {
   sensible: 'requiere verificación',
 } as const;
 
-export const ETIQUETAS_ALCANCE: Readonly<Record<Alcance, string>> = {
+/** Roles y árbol de permisos (spec 16b). */
+export const MENSAJES_ROLES = {
+  codigo: 'Código',
+  nombre: 'Nombre',
+  permisosSeleccionados: (cantidad: number) => (cantidad === 1 ? '1 permiso seleccionado' : `${cantidad} permisos seleccionados`),
+  otrosPermisos: 'Otros permisos',
+  sensible: 'Requiere verificación',
+  todaLaOpcion: (opcion: string) => `Todos los permisos de ${opcion}`,
+  todoElModulo: (modulo: string) => `Todos los permisos de ${modulo}`,
+  sinPermisosEnCatalogo: 'Este producto no tiene permisos en su catálogo.',
+} as const;
+
+export const ETIQUETAS_ALCANCE:Readonly<Record<Alcance, string>> = {
   TENANT: 'Todo el tenant',
   EMPRESA: 'Una empresa',
   SUCURSAL: 'Una sucursal',

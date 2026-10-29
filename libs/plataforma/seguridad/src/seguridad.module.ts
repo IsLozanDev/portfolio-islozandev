@@ -42,6 +42,11 @@ import { ContextoTenantInterceptor } from './interface/contexto-tenant.intercept
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
 import { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
+import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from './application/rol.casos-de-uso.js';
+import { ConsultarCatalogo, ConsultarRol, ListarProductosDisponibles, ListarRoles, type DependenciasLecturaRoles } from './application/lecturas-roles.js';
+import { LecturaRolesTypeOrm } from './infrastructure/typeorm/lectura-roles.typeorm.js';
+import { RolesController } from './interface/roles.controller.js';
+import { CatalogoController } from './interface/catalogo.controller.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 
@@ -97,6 +102,15 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
 type ReposMembresias = ReturnType<typeof reposMembresias>;
+const DEPENDENCIAS_LECTURA_ROLES = Symbol('DEPENDENCIAS_LECTURA_ROLES');
+type CasoDeLecturaDeRoles<T> = new (dependencias: DependenciasLecturaRoles) => T;
+
+/** Los cuatro casos de uso de lectura de roles reciben las mismas dependencias (spec 16b). */
+const lecturaDeRoles = <T>(Clase: CasoDeLecturaDeRoles<T>) => ({
+  provide: Clase,
+  useFactory: (dependencias: DependenciasLecturaRoles) => new Clase(dependencias),
+  inject: [DEPENDENCIAS_LECTURA_ROLES],
+});
 type CasoDeCiclo<T> = new (uow: UnitOfWork, reloj: Clock, eventos: EventPublisher, repos: ReposMembresias) => T;
 
 /** Los cuatro casos de uso de ciclo de vida tienen la misma firma. */
@@ -116,7 +130,7 @@ export class SeguridadModule {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
       global: true,
-      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController],
       providers: [
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
@@ -183,6 +197,43 @@ export class SeguridadModule {
             new ListarAsignables({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), productos }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PRODUCTOS_CONTRATADOS],
         },
+        // Roles (spec 16b): escritura del spec 06 y lecturas nuevas.
+        {
+          provide: CrearRol,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, eventos: EventPublisher, repositorios: ReposMembresias, productos: ProductosContratados) =>
+            new CrearRol(unidadDeTrabajo, contexto, ids, eventos, { ...repositorios, productos }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PRODUCTOS_CONTRATADOS],
+        },
+        {
+          provide: CopiarRol,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, eventos: EventPublisher, repositorios: ReposMembresias, productos: ProductosContratados) =>
+            new CopiarRol(unidadDeTrabajo, contexto, ids, eventos, { ...repositorios, productos }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PRODUCTOS_CONTRATADOS],
+        },
+        {
+          provide: CambiarPermisosRol,
+          useFactory: (unidadDeTrabajo: UnitOfWork, eventos: EventPublisher, repositorios: ReposMembresias) => new CambiarPermisosRol(unidadDeTrabajo, eventos, repositorios),
+          inject: [UNIT_OF_WORK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: InactivarRol,
+          useFactory: (unidadDeTrabajo: UnitOfWork, eventos: EventPublisher, repositorios: ReposMembresias) => new InactivarRol(unidadDeTrabajo, eventos, repositorios.roles),
+          inject: [UNIT_OF_WORK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: DEPENDENCIAS_LECTURA_ROLES,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, productos: ProductosContratados): DependenciasLecturaRoles => ({
+            unidadDeTrabajo,
+            lectura: new LecturaRolesTypeOrm(unidadDeTrabajo, contexto),
+            productos,
+            catalogo: new CatalogoPermisosTypeOrm(unidadDeTrabajo, contexto),
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PRODUCTOS_CONTRATADOS],
+        },
+        lecturaDeRoles(ListarRoles),
+        lecturaDeRoles(ConsultarRol),
+        lecturaDeRoles(ConsultarCatalogo),
+        lecturaDeRoles(ListarProductosDisponibles),
         ciclo(SuspenderMembresia),
         ciclo(ReactivarMembresia),
         ciclo(FinalizarMembresia),

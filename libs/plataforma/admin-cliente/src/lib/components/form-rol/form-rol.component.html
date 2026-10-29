@@ -1,0 +1,12 @@
+<div class="grid gap-x-4 sm:grid-cols-2" [formGroup]="grupo()">
+  <mat-form-field appearance="outline">
+    <mat-label>{{ mensajes.codigo }}</mat-label>
+    <input matInput formControlName="codigo" data-campo="codigo" autocomplete="off" required />
+    <mat-error>{{ grupo().controls.codigo.errors | mensajeValidacion }}</mat-error>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ mensajes.nombre }}</mat-label>
+    <input matInput formControlName="nombre" data-campo="nombre" autocomplete="off" required />
+    <mat-error>{{ grupo().controls.nombre.errors | mensajeValidacion }}</mat-error>
+  </mat-form-field>
+</div>
