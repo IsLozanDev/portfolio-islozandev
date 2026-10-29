@@ -1,7 +1,7 @@
 import { NotFoundError, type EventPublisher, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
-import { ProductoNoContratadoError, RolPredefinidoNoEditableError } from '../domain/errores.js';
+import { RolPredefinidoNoEditableError } from '../domain/errores.js';
 import { Rol, type DatosRol, type PermisoCatalogo } from '../domain/rol.js';
-import { ROL_PROPIETARIO } from './invitar-propietario.js';
+import { exigirContratado, permisosPlatDelCliente, PRODUCTO_PLATAFORMA } from './productos-del-cliente.js';
 import type { CatalogoPermisos, ProductosContratados, RepositorioRoles } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
 
@@ -32,23 +32,11 @@ export interface InactivarRolComando {
   confirmado: boolean;
 }
 
-const PRODUCTO_PLATAFORMA = 'PLAT';
-
-/** Precondición de TR-RF-011: suscripción vigente al producto del rol. PLAT no se contrata. */
-async function exigirContratado(productos: ProductosContratados, productoCodigo: string): Promise<void> {
-  if (productoCodigo !== PRODUCTO_PLATAFORMA && !(await productos.vigentes()).includes(productoCodigo)) {
-    throw new ProductoNoContratadoError(productoCodigo);
-  }
-}
-
-/**
- * Catálogo con el que se validan los permisos de un rol del cliente. En PLAT el techo es
- * PLAT_PROPIETARIO: quedan fuera los permisos de operador y de despliegue (spec 16b).
- */
+/** Catálogo con el que se validan los permisos de un rol del cliente; en PLAT, recortado a su techo. */
 async function catalogoDelCliente(catalogo: CatalogoPermisos, productoCodigo: string, permisos: readonly string[]): Promise<PermisoCatalogo[]> {
   const encontrados = await catalogo.permisos(permisos);
   if (productoCodigo !== PRODUCTO_PLATAFORMA) return encontrados;
-  const permitidos = new Set(await catalogo.permisosDeRolPredefinido(ROL_PROPIETARIO));
+  const permitidos = await permisosPlatDelCliente(catalogo);
   return encontrados.filter((permiso) => permitidos.has(permiso.codigo));
 }
 
