@@ -8,7 +8,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { of } from 'rxjs';
 import { contextoDePrueba, DobleSesion, RUTAS_DE_PRUEBA } from '../../../testing/pagina-de-prueba';
-import { CLAVE_NOMBRE_APP } from '../../models/datos-ruta-shell';
+import { CLAVE_NOMBRE_APP, CLAVE_PREFIJO_MENU } from '../../models/datos-ruta-shell';
 import { LayoutComponent } from './layout.component';
 
 @Component({ template: '<p>contenido</p>' })
@@ -55,6 +55,16 @@ describe('LayoutComponent', () => {
   it('usa el nombre de la app de data de la ruta', async () => {
     await abrir(true, { [CLAVE_NOMBRE_APP]: 'SazónPOS' });
     expect(elemento().querySelector('mat-toolbar')?.textContent).toContain('SazónPOS');
+  });
+
+  it('con prefijo de menú muestra solo las opciones de la app', async () => {
+    await abrir(true, { [CLAVE_PREFIJO_MENU]: '/consola' });
+    sesion.contexto.set(contextoDePrueba({ menu: [...MENU_ADMIN, { codigo: 'tenants', padre: null, nombre: 'Tenants', ruta: '/consola/tenants', icono: 'apartment', orden: 2 }] }));
+    await harness.fixture.whenStable();
+
+    const menu = elemento().querySelector('vit-menu-lateral')?.textContent;
+    expect(menu).toContain('Tenants');
+    expect(menu).not.toContain('Usuarios');
   });
 
   it('reemplaza el menú cuando cambia el contexto', async () => {

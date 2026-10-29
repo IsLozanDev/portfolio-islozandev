@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
+import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent } from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EstadoReenvio } from '../../models/invitacion';
@@ -16,7 +17,6 @@ import {
 } from '../../models/mensajes-admin';
 import type { AsignacionDelMiembro, EstadoMembresia, MiembroDetalle } from '../../models/miembro';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
-import { AccionSensibleService } from '../../services/accion-sensible.service';
 import { AsignacionesCliente } from '../../services/asignaciones.cliente';
 import { MembresiasCliente, type AccionMembresia } from '../../services/membresias.cliente';
 import { MiembrosCliente } from '../../services/miembros.cliente';

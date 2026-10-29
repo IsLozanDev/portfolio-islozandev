@@ -1,11 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, SesionService, type ContextoUsuario } from '@vitrina/shared/auth';
 import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
-import { DobleSesion } from '../../testing/doble-sesion';
-import { MENSAJES_ADMIN } from '../models/mensajes-admin';
+import { MENSAJES_SHELL } from '../models/mensajes-shell';
 import { AccionSensibleService } from './accion-sensible.service';
 
 const RUTA_MFA = '/auth/mfa';
@@ -14,12 +13,12 @@ const RUTA_MFA = '/auth/mfa';
 class Destino {}
 
 describe('AccionSensibleService', () => {
-  let sesion: DobleSesion;
+  let sesion: { contexto: WritableSignal<Pick<ContextoUsuario, 'mfaVigente'> | null> };
   let avisos: { advertencia: ReturnType<typeof vi.fn> };
   let router: Router;
 
   beforeEach(async () => {
-    sesion = new DobleSesion();
+    sesion = { contexto: signal<Pick<ContextoUsuario, 'mfaVigente'> | null>({ mfaVigente: false }) };
     avisos = { advertencia: vi.fn(async () => undefined) };
     TestBed.configureTestingModule({
       providers: [
@@ -35,7 +34,7 @@ describe('AccionSensibleService', () => {
   });
 
   it('con MFA vigente deja seguir sin avisar ni navegar', async () => {
-    sesion.contexto.set({ permisos: [], mfaVigente: true });
+    sesion.contexto.set({ mfaVigente: true });
 
     await expect(TestBed.inject(AccionSensibleService).exigirMfa()).resolves.toBe(true);
 
@@ -46,7 +45,7 @@ describe('AccionSensibleService', () => {
   it('sin MFA vigente avisa y lleva a /auth/mfa con la ruta actual como retorno', async () => {
     await expect(TestBed.inject(AccionSensibleService).exigirMfa()).resolves.toBe(false);
 
-    expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_ADMIN.tituloMfaRequerida, MENSAJES_ADMIN.mfaRequerida);
+    expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_SHELL.tituloMfaRequerida, MENSAJES_SHELL.mfaRequerida);
     expect(router.navigate).toHaveBeenCalledWith([RUTA_MFA], { queryParams: { returnUrl: '/admin/usuarios/m-luis' } });
   });
 });

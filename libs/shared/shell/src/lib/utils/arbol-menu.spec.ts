@@ -1,5 +1,5 @@
 import type { ContextoUsuario } from '@vitrina/shared/auth';
-import { construirArbolMenu, ICONO_POR_DEFECTO } from './arbol-menu';
+import { construirArbolMenu, filtrarMenuPorPrefijo, ICONO_POR_DEFECTO } from './arbol-menu';
 
 type OpcionMenu = ContextoUsuario['menu'][number];
 
@@ -49,5 +49,30 @@ describe('construirArbolMenu', () => {
 
   it('sin icono usa el icono por defecto', () => {
     expect(construirArbolMenu([opcion('inicio', { icono: null })])[0].icono).toBe(ICONO_POR_DEFECTO);
+  });
+});
+
+describe('filtrarMenuPorPrefijo', () => {
+  const menuDelProducto = [
+    opcion('plat.admin', { ruta: null }),
+    opcion('plat.admin.usuarios', { padre: 'plat.admin', ruta: '/admin/usuarios' }),
+    opcion('plat.consola', { ruta: null }),
+    opcion('plat.consola.tenants', { padre: 'plat.consola', ruta: '/consola/tenants' }),
+  ];
+  const codigosDelArbol = (prefijo: string | undefined) => construirArbolMenu(filtrarMenuPorPrefijo(menuDelProducto, prefijo)).map((nodo) => nodo.codigo);
+
+  it('sin prefijo deja el menú entero', () => {
+    expect(codigosDelArbol(undefined)).toEqual(['plat.admin', 'plat.consola']);
+  });
+
+  it('con /admin no aparece la consola', () => {
+    expect(codigosDelArbol('/admin')).toEqual(['plat.admin']);
+  });
+
+  it('con /consola solo aparece Consola > Tenants', () => {
+    const arbol = construirArbolMenu(filtrarMenuPorPrefijo(menuDelProducto, '/consola'));
+
+    expect(arbol.map((nodo) => nodo.codigo)).toEqual(['plat.consola']);
+    expect(arbol[0].hijos.map((nodo) => nodo.ruta)).toEqual(['/consola/tenants']);
   });
 });

@@ -118,7 +118,7 @@ describe('AsignacionNuevaPage', () => {
     sesion.contexto.set({ permisos: [], mfaVigente: false });
     await pulsarAsignar();
 
-    expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_ASIGNAR)}`);
+    await vi.waitFor(() => expect(url()).toBe(`${RUTA_MFA}?returnUrl=${encodeURIComponent(RUTA_ASIGNAR)}`));
   });
 
   it('cancelar vuelve al detalle sin enviar', async () => {

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, inject, input, output, signal, type OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,15 +9,19 @@ import { MENSAJES_UI } from '../../models/mensajes-ui';
 
 export const ESPERA_BUSQUEDA_MS = 300;
 
-/** Búsqueda con espera y filtros de selección; emite el valor completo en cada cambio. */
+/**
+ * Búsqueda con espera y filtros de selección; emite el valor completo en cada cambio. `valorInicial`
+ * precarga los controles (p. ej. desde la URL) sin emitir.
+ */
 @Component({
   selector: 'vit-filtros',
   imports: [MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
   templateUrl: './filtros.component.html',
 })
-export class FiltrosComponent {
+export class FiltrosComponent implements OnInit {
   readonly definiciones = input<DefinicionFiltro[]>([]);
   readonly placeholderBusqueda = input<string>(MENSAJES_UI.buscar);
+  readonly valorInicial = input<Readonly<Record<string, string | null>>>({});
   readonly cambio = output<ValorFiltros>();
 
   protected readonly busqueda = signal('');
@@ -29,6 +33,12 @@ export class FiltrosComponent {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.esperaBusqueda));
+  }
+
+  ngOnInit(): void {
+    const { busqueda, ...selecciones } = this.valorInicial();
+    this.busqueda.set(busqueda ?? '');
+    this.selecciones.set(selecciones);
   }
 
   protected escribirBusqueda(texto: string): void {

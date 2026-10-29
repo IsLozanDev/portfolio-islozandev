@@ -1,0 +1,101 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <mat-stepper linear orientation="vertical" [selectedIndex]="pasoInicial" (selectionChange)="cambiarPaso($event)">
+    <mat-step [stepControl]="formulario.controls.tenant" [label]="mensajes.pasoTenant">
+      <form class="flex flex-col pt-2" [formGroup]="formulario.controls.tenant" novalidate>
+        <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.codigo }}</mat-label>
+            <input matInput formControlName="codigo" autocomplete="off" required data-campo="codigo" />
+            <mat-hint>{{ mensajes.ayudaCodigo }}</mat-hint>
+            <mat-error>{{ mensajeDeError(tenant.codigo.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.nombre }}</mat-label>
+            <input matInput formControlName="nombre" autocomplete="organization" required data-campo="nombre" />
+            <mat-error>{{ mensajeDeError(tenant.nombre.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.producto }}</mat-label>
+            <mat-select formControlName="productoCodigo" required data-campo="producto">
+              @for (producto of productos; track producto) {
+                <mat-option [value]="producto">{{ producto }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>{{ mensajeDeError(tenant.productoCodigo.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.plan }}</mat-label>
+            <mat-select formControlName="plan" required data-campo="plan">
+              @for (plan of planes; track plan) {
+                <mat-option [value]="plan">{{ plan }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>{{ mensajeDeError(tenant.plan.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.modalidad }}</mat-label>
+            <mat-select formControlName="modalidad" data-campo="modalidad" (selectionChange)="cambiarModalidad()">
+              @for (modalidad of modalidades; track modalidad) {
+                <mat-option [value]="modalidad">{{ etiquetasModalidad[modalidad] }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          @if (esActivo()) {
+            <mat-form-field appearance="outline">
+              <mat-label>{{ mensajes.vigenteHasta }}</mat-label>
+              <input matInput [matDatepicker]="calendarioVigencia" formControlName="vigenteHasta" data-campo="vigente-hasta" />
+              <mat-datepicker-toggle matIconSuffix [for]="calendarioVigencia" />
+              <mat-datepicker #calendarioVigencia />
+              <mat-error>{{ mensajeDeError(tenant.vigenteHasta.errors) }}</mat-error>
+            </mat-form-field>
+          }
+        </div>
+        <div class="flex justify-end">
+          <button mat-flat-button matStepperNext type="button" (click)="marcarPasoTenant()">{{ mensajes.siguiente }}</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="formulario.controls.empresa" [label]="mensajes.pasoEmpresa">
+      <form class="flex flex-col pt-2" [formGroup]="formulario.controls.empresa" (ngSubmit)="crear()" novalidate>
+        <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.ruc }}</mat-label>
+            <input matInput formControlName="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required data-campo="ruc" />
+            <mat-error>{{ mensajeDeError(empresa.ruc.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.razonSocial }}</mat-label>
+            <input matInput formControlName="razonSocial" required data-campo="razon-social" />
+            <mat-error>{{ mensajeDeError(empresa.razonSocial.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.nombreComercial }}</mat-label>
+            <input matInput formControlName="nombreComercial" data-campo="nombre-comercial" />
+            <mat-error>{{ mensajeDeError(empresa.nombreComercial.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.correoPropietario }}</mat-label>
+            <input matInput type="email" formControlName="correoPropietario" autocomplete="email" required data-campo="correo-propietario" />
+            <mat-error>{{ mensajeDeError(empresa.correoPropietario.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.nombrePropietario }}</mat-label>
+            <input matInput formControlName="nombrePropietario" autocomplete="name" required data-campo="nombre-propietario" />
+            <mat-error>{{ mensajeDeError(empresa.nombrePropietario.errors) }}</mat-error>
+          </mat-form-field>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <button mat-button matStepperPrevious type="button">{{ mensajes.anterior }}</button>
+          <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.crear" (cancelar)="cancelar()" />
+        </div>
+      </form>
+    </mat-step>
+  </mat-stepper>
+</section>

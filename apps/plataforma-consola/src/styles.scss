@@ -1,0 +1,12 @@
+@use '../../../libs/shared/ui/src/estilos/material' as tema-vitrina;
+
+html {
+  @include tema-vitrina.aplicar-tema();
+}
+
+body {
+  margin: 0;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+}

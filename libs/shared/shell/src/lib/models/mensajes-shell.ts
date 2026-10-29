@@ -20,6 +20,8 @@ export const MENSAJES_SHELL = {
   sinConexion: 'No se pudo conectar. Revise su conexión.',
   tituloErrorServidor: 'Error del servidor',
   errorServidor: 'Ocurrió un error en el servidor. Inténtelo de nuevo.',
+  tituloMfaRequerida: 'Verificación requerida',
+  mfaRequerida: 'Esta acción es sensible. Verifique su identidad con el segundo factor y vuelva a intentarlo.',
 } as const;
 
 /** Toast tras cambiar de sucursal desde el encabezado (TR-CA-045). */

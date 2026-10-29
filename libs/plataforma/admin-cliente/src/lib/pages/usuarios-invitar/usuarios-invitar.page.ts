@@ -4,13 +4,13 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AccionesFormularioComponent, AvisosService, CargandoComponent, MensajeValidacionPipe } from '@vitrina/shared/ui';
 import { FormAsignacionComponent } from '../../components/form-asignacion/form-asignacion.component';
 import type { Asignables } from '../../models/asignable';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EstadoReenvio } from '../../models/invitacion';
 import { MENSAJES_ADMIN } from '../../models/mensajes-admin';
-import { AccionSensibleService } from '../../services/accion-sensible.service';
 import { AsignacionesCliente } from '../../services/asignaciones.cliente';
 import { InvitacionesCliente } from '../../services/invitaciones.cliente';
 import { aFormularioAsignacion, crearGrupoAsignacion, esAsignableSensible } from '../../utils/formulario-asignacion';

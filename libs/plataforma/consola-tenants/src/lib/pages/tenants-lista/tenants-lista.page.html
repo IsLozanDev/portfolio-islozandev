@@ -1,0 +1,32 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.tituloTenants }}</h1>
+    <button *siPermiso="permisos.tenantCrear" mat-flat-button type="button" (click)="nuevoTenant()">
+      <mat-icon aria-hidden="true">add_business</mat-icon>
+      {{ mensajes.nuevoTenant }}
+    </button>
+  </header>
+
+  <vit-filtros [definiciones]="filtros" [placeholderBusqueda]="mensajes.buscarTenant" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinTenants"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-tenant>
+      <a mat-icon-button [routerLink]="tenant.id" [attr.aria-label]="mensajes.verDetalle + ': ' + tenant.codigo">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>

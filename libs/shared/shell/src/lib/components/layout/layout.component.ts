@@ -8,9 +8,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { SesionService } from '@vitrina/shared/auth';
 import { filter, map } from 'rxjs';
-import { CLAVE_NOMBRE_APP } from '../../models/datos-ruta-shell';
+import { CLAVE_NOMBRE_APP, CLAVE_PREFIJO_MENU } from '../../models/datos-ruta-shell';
 import { MENSAJES_SHELL } from '../../models/mensajes-shell';
-import { construirArbolMenu } from '../../utils/arbol-menu';
+import { construirArbolMenu, filtrarMenuPorPrefijo } from '../../utils/arbol-menu';
 import { MenuLateralComponent } from '../menu-lateral/menu-lateral.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
 import { SelectorSucursalComponent } from '../selector-sucursal/selector-sucursal.component';
@@ -30,9 +30,12 @@ export class LayoutComponent {
   private readonly sesion = inject(SesionService);
   private readonly menuLateral = viewChild.required(MatSidenav);
 
+  private readonly datosRuta = inject(ActivatedRoute).snapshot.data;
+  private readonly prefijoMenu: string | undefined = this.datosRuta[CLAVE_PREFIJO_MENU];
+
   protected readonly mensajes = MENSAJES_SHELL;
-  protected readonly nombreApp: string = inject(ActivatedRoute).snapshot.data[CLAVE_NOMBRE_APP] ?? MENSAJES_SHELL.nombreAppPorDefecto;
-  protected readonly menu = computed(() => construirArbolMenu(this.sesion.contexto()?.menu ?? []));
+  protected readonly nombreApp: string = this.datosRuta[CLAVE_NOMBRE_APP] ?? MENSAJES_SHELL.nombreAppPorDefecto;
+  protected readonly menu = computed(() => construirArbolMenu(filtrarMenuPorPrefijo(this.sesion.contexto()?.menu ?? [], this.prefijoMenu)));
   protected readonly escritorio = toSignal(
     inject(BreakpointObserver)
       .observe(CONSULTA_ESCRITORIO)
