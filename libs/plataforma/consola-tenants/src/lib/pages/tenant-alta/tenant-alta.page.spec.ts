@@ -139,15 +139,28 @@ describe('TenantAltaPage', { timeout: ESPERA_PRIMERA_CARGA_MS }, () => {
     expect(elemento().querySelector('mat-error')?.textContent).toContain(MENSAJES_ALTA.codigoFormato);
   });
 
+  async function elegirModalidad(modalidad: 'PRUEBA' | 'ACTIVO'): Promise<void> {
+    formulario().controls.tenant.controls.modalidad.setValue(modalidad);
+    (pagina() as unknown as { cambiarModalidad(): void }).cambiarModalidad();
+    await estable();
+  }
+
   it('modalidad ACTIVO sin vigente hasta no deja avanzar', async () => {
     await abrir();
-    formulario().controls.tenant.controls.modalidad.setValue('ACTIVO');
-    formulario().controls.tenant.controls.vigenteHasta.updateValueAndValidity();
-    await estable();
+    await elegirModalidad('ACTIVO');
     await llenarPasoTenant();
 
     expect(stepper().selectedIndex).toBe(0);
     expect(elemento().querySelector('[data-campo="vigente-hasta"]')).not.toBeNull();
+  });
+
+  it('volver de ACTIVO a PRUEBA con la fecha en pantalla deja avanzar al paso 2', async () => {
+    await abrir();
+    await elegirModalidad('ACTIVO');
+    await elegirModalidad('PRUEBA');
+    await llenarPasoTenant();
+
+    expect(stepper().selectedIndex).toBe(1);
   });
 
   it('TR-CA-003: con RUC 20601234560 muestra «RUC inválido» y no envía', async () => {

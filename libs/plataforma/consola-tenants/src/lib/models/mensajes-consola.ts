@@ -34,7 +34,7 @@ export const MENSAJES_ALTA = {
   pasoTenant: 'Tenant y suscripción',
   pasoEmpresa: 'Empresa y propietario',
   codigo: 'Código',
-  ayudaCodigo: 'Minúsculas, números y guiones, p. ej. polleria-dona-rosa',
+  ayudaCodigo: 'Minúsculas, números y guiones',
   nombre: 'Nombre',
   producto: 'Producto',
   plan: 'Plan',

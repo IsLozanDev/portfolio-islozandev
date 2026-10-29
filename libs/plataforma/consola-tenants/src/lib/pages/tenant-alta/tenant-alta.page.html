@@ -8,7 +8,7 @@
   <mat-stepper linear orientation="vertical" [selectedIndex]="pasoInicial" (selectionChange)="cambiarPaso($event)">
     <mat-step [stepControl]="formulario.controls.tenant" [label]="mensajes.pasoTenant">
       <form class="flex flex-col pt-2" [formGroup]="formulario.controls.tenant" novalidate>
-        <div class="grid gap-x-4 sm:grid-cols-2">
+        <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
           <mat-form-field appearance="outline">
             <mat-label>{{ mensajes.codigo }}</mat-label>
             <input matInput formControlName="codigo" autocomplete="off" required data-campo="codigo" />
@@ -40,7 +40,7 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>{{ mensajes.modalidad }}</mat-label>
-            <mat-select formControlName="modalidad" data-campo="modalidad" (selectionChange)="revalidarVigencia()">
+            <mat-select formControlName="modalidad" data-campo="modalidad" (selectionChange)="cambiarModalidad()">
               @for (modalidad of modalidades; track modalidad) {
                 <mat-option [value]="modalidad">{{ etiquetasModalidad[modalidad] }}</mat-option>
               }
@@ -49,7 +49,7 @@
           @if (esActivo()) {
             <mat-form-field appearance="outline">
               <mat-label>{{ mensajes.vigenteHasta }}</mat-label>
-              <input matInput [matDatepicker]="calendarioVigencia" formControlName="vigenteHasta" required data-campo="vigente-hasta" />
+              <input matInput [matDatepicker]="calendarioVigencia" formControlName="vigenteHasta" data-campo="vigente-hasta" />
               <mat-datepicker-toggle matIconSuffix [for]="calendarioVigencia" />
               <mat-datepicker #calendarioVigencia />
               <mat-error>{{ mensajeDeError(tenant.vigenteHasta.errors) }}</mat-error>
@@ -57,14 +57,14 @@
           }
         </div>
         <div class="flex justify-end">
-          <button mat-flat-button matStepperNext type="button" (click)="marcarPaso(0)">{{ mensajes.siguiente }}</button>
+          <button mat-flat-button matStepperNext type="button" (click)="marcarPasoTenant()">{{ mensajes.siguiente }}</button>
         </div>
       </form>
     </mat-step>
 
     <mat-step [stepControl]="formulario.controls.empresa" [label]="mensajes.pasoEmpresa">
       <form class="flex flex-col pt-2" [formGroup]="formulario.controls.empresa" (ngSubmit)="crear()" novalidate>
-        <div class="grid gap-x-4 sm:grid-cols-2">
+        <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2">
           <mat-form-field appearance="outline">
             <mat-label>{{ mensajes.ruc }}</mat-label>
             <input matInput formControlName="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required data-campo="ruc" />

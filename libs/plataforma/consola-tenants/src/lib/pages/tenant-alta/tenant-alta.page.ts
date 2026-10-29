@@ -18,7 +18,7 @@ import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service'
 import { BorradorAltaService } from '../../services/borrador-alta.service';
 import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
 import { TenantsCliente } from '../../services/tenants.cliente';
-import { aSolicitudAlta, crearFormularioAlta, ERROR_SERVIDOR, mensajeDeError, type GrupoEmpresa, type GrupoTenant } from '../../utils/formulario-alta';
+import { aplicarModalidad, aSolicitudAlta, crearFormularioAlta, ERROR_SERVIDOR, mensajeDeError, type GrupoEmpresa, type GrupoTenant } from '../../utils/formulario-alta';
 
 const LOCALE_PERU = 'es-PE';
 const PASO_TENANT = 0;
@@ -66,6 +66,7 @@ export class TenantAltaPage {
   constructor() {
     const guardado = this.borrador.leer();
     if (guardado) this.formulario.setValue(guardado.valor);
+    aplicarModalidad(this.formulario.controls.tenant);
     this.pasoInicial = guardado?.paso ?? PASO_TENANT;
     void this.accionSensible.exigirMfa();
   }
@@ -82,13 +83,12 @@ export class TenantAltaPage {
     return this.tenant.modalidad.value === 'ACTIVO';
   }
 
-  protected revalidarVigencia(): void {
-    this.tenant.vigenteHasta.updateValueAndValidity();
+  protected cambiarModalidad(): void {
+    aplicarModalidad(this.formulario.controls.tenant);
   }
 
-  protected marcarPaso(paso: number): void {
-    const grupo = paso === PASO_TENANT ? this.formulario.controls.tenant : this.formulario.controls.empresa;
-    grupo.markAllAsTouched();
+  protected marcarPasoTenant(): void {
+    this.formulario.controls.tenant.markAllAsTouched();
   }
 
   protected cambiarPaso(evento: StepperSelectionEvent): void {

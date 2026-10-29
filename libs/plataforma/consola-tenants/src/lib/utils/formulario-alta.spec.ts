@@ -1,5 +1,5 @@
 import { MENSAJES_ALTA } from '../models/mensajes-consola';
-import { aSolicitudAlta, crearFormularioAlta, ERROR_SERVIDOR, mensajeDeError } from './formulario-alta';
+import { aplicarModalidad, aSolicitudAlta, crearFormularioAlta, ERROR_SERVIDOR, mensajeDeError } from './formulario-alta';
 
 /** TR-CA-001 con el RUC válido de los specs 03 y 12. */
 function polleriaDonaRosa() {
@@ -57,12 +57,23 @@ describe('formulario de alta de tenant', () => {
     const formulario = polleriaDonaRosa();
     const { modalidad, vigenteHasta } = formulario.controls.tenant.controls;
     modalidad.setValue('ACTIVO');
-    vigenteHasta.updateValueAndValidity();
+    aplicarModalidad(formulario.controls.tenant);
     expect(vigenteHasta.hasError('required')).toBe(true);
 
     vigenteHasta.setValue(new Date(2027, 9, 28));
     expect(formulario.valid).toBe(true);
     expect(aSolicitudAlta(formulario.getRawValue()).vigenteHasta).toBe('2027-10-28');
+  });
+
+  it('volver de ACTIVO a PRUEBA sin fecha deja el paso válido', () => {
+    const formulario = polleriaDonaRosa();
+    const { modalidad } = formulario.controls.tenant.controls;
+    modalidad.setValue('ACTIVO');
+    aplicarModalidad(formulario.controls.tenant);
+    modalidad.setValue('PRUEBA');
+    aplicarModalidad(formulario.controls.tenant);
+
+    expect(formulario.controls.tenant.valid).toBe(true);
   });
 
   it('el error del servidor se muestra con el mensaje de la API', () => {

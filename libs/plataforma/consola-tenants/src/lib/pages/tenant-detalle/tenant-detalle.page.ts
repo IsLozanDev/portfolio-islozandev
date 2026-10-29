@@ -68,7 +68,8 @@ export class TenantDetallePage {
     this.error.set(null);
     try {
       const resultado = await this.tenants.cambiarEstado(tenant.id, { estado: destino, motivo: respuesta.motivo });
-      this.avisos.toast(resultado.cambiado ? 'exito' : 'info', resultado.cambiado ? confirmacion.hecho : MENSAJES_DETALLE.yaEstaba);
+      if (resultado.cambiado) this.avisos.toast('exito', confirmacion.hecho);
+      else this.avisos.toast('info', MENSAJES_DETALLE.yaEstaba);
       await this.cargar();
     } catch (error) {
       this.error.set(aErrorConsola(error).message);

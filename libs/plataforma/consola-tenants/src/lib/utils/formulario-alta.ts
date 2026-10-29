@@ -1,4 +1,4 @@
-import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
+import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors, type ValidatorFn } from '@angular/forms';
 import { mensajeDeValidacion } from '@vitrina/shared/ui';
 import { validarRuc } from './ruc';
 import type { Modalidad, Plan, ProductoCodigo } from '../models/catalogos';
@@ -43,24 +43,34 @@ export type FormularioAlta = FormGroup<{ tenant: GrupoTenant; empresa: GrupoEmpr
 export type ValorFormularioAlta = ReturnType<FormularioAlta['getRawValue']>;
 
 export function crearFormularioAlta(): FormularioAlta {
-  const texto = (...validadores: ((control: AbstractControl) => ValidationErrors | null)[]) => new FormControl('', { nonNullable: true, validators: validadores });
   return new FormGroup({
     tenant: new FormGroup({
-      codigo: texto(Validators.required, Validators.minLength(LONGITUD_MINIMA_CODIGO), Validators.maxLength(LONGITUD_MAXIMA_CODIGO), validarCodigo),
-      nombre: texto(Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
+      codigo: controlDeTexto(Validators.required, Validators.minLength(LONGITUD_MINIMA_CODIGO), Validators.maxLength(LONGITUD_MAXIMA_CODIGO), validarCodigo),
+      nombre: controlDeTexto(Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
       productoCodigo: new FormControl<ProductoCodigo | null>(null, Validators.required),
       plan: new FormControl<Plan | null>(null, Validators.required),
       modalidad: new FormControl<Modalidad>(MODALIDAD_POR_DEFECTO, { nonNullable: true }),
-      vigenteHasta: new FormControl<Date | null>(null, exigirVigenciaSiActivo),
+      vigenteHasta: new FormControl<Date | null>(null),
     }),
     empresa: new FormGroup({
-      ruc: texto(Validators.required, validarRucDelControl),
-      razonSocial: texto(Validators.required, Validators.maxLength(LONGITUD_MAXIMA_RAZON_SOCIAL)),
-      nombreComercial: texto(Validators.maxLength(LONGITUD_MAXIMA_NOMBRE_COMERCIAL)),
-      correoPropietario: texto(Validators.required, Validators.email, Validators.maxLength(LONGITUD_MAXIMA_CORREO)),
-      nombrePropietario: texto(Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
+      ruc: controlDeTexto(Validators.required, validarRucDelControl),
+      razonSocial: controlDeTexto(Validators.required, Validators.maxLength(LONGITUD_MAXIMA_RAZON_SOCIAL)),
+      nombreComercial: controlDeTexto(Validators.maxLength(LONGITUD_MAXIMA_NOMBRE_COMERCIAL)),
+      correoPropietario: controlDeTexto(Validators.required, Validators.email, Validators.maxLength(LONGITUD_MAXIMA_CORREO)),
+      nombrePropietario: controlDeTexto(Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
     }),
   });
+}
+
+/**
+ * La API exige `vigente_hasta` solo en modalidad ACTIVO. Se pone o se quita `Validators.required` en el
+ * control (no el atributo `required` del input: su validador queda pegado al control al ocultarlo).
+ */
+export function aplicarModalidad(grupo: GrupoTenant): void {
+  const { modalidad, vigenteHasta } = grupo.controls;
+  if (modalidad.value === MODALIDAD_CON_VIGENCIA) vigenteHasta.addValidators(Validators.required);
+  else vigenteHasta.removeValidators(Validators.required);
+  vigenteHasta.updateValueAndValidity();
 }
 
 /** Mensaje del primer error del campo: los propios del alta y luego los genéricos de `shared/ui`. */
@@ -107,8 +117,7 @@ function validarRucDelControl(control: AbstractControl): ValidationErrors | null
   return ruc === '' || validarRuc(ruc) ? null : { [ERROR_RUC_INVALIDO]: true };
 }
 
-/** La API exige `vigente_hasta` solo en modalidad ACTIVO; la página revalida al cambiar la modalidad. */
-function exigirVigenciaSiActivo(control: AbstractControl): ValidationErrors | null {
-  const modalidad = control.parent?.get('modalidad')?.value as Modalidad | undefined;
-  return modalidad === MODALIDAD_CON_VIGENCIA && !control.value ? Validators.required(control) : null;
+
+function controlDeTexto(...validadores: ValidatorFn[]): FormControl<string> {
+  return new FormControl('', { nonNullable: true, validators: validadores });
 }
