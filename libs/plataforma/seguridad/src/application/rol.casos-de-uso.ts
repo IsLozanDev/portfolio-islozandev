@@ -1,6 +1,7 @@
 import { NotFoundError, type EventPublisher, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
 import { ProductoNoContratadoError, RolPredefinidoNoEditableError } from '../domain/errores.js';
-import { Rol, type DatosRol } from '../domain/rol.js';
+import { Rol, type DatosRol, type PermisoCatalogo } from '../domain/rol.js';
+import { ROL_PROPIETARIO } from './invitar-propietario.js';
 import type { CatalogoPermisos, ProductosContratados, RepositorioRoles } from './ports/repositorios.js';
 import { publicarEventos } from './publicar-eventos.js';
 
@@ -31,11 +32,24 @@ export interface InactivarRolComando {
   confirmado: boolean;
 }
 
+const PRODUCTO_PLATAFORMA = 'PLAT';
+
 /** Precondición de TR-RF-011: suscripción vigente al producto del rol. PLAT no se contrata. */
 async function exigirContratado(productos: ProductosContratados, productoCodigo: string): Promise<void> {
-  if (productoCodigo !== 'PLAT' && !(await productos.vigentes()).includes(productoCodigo)) {
+  if (productoCodigo !== PRODUCTO_PLATAFORMA && !(await productos.vigentes()).includes(productoCodigo)) {
     throw new ProductoNoContratadoError(productoCodigo);
   }
+}
+
+/**
+ * Catálogo con el que se validan los permisos de un rol del cliente. En PLAT el techo es
+ * PLAT_PROPIETARIO: quedan fuera los permisos de operador y de despliegue (spec 16b).
+ */
+async function catalogoDelCliente(catalogo: CatalogoPermisos, productoCodigo: string, permisos: readonly string[]): Promise<PermisoCatalogo[]> {
+  const encontrados = await catalogo.permisos(permisos);
+  if (productoCodigo !== PRODUCTO_PLATAFORMA) return encontrados;
+  const permitidos = new Set(await catalogo.permisosDeRolPredefinido(ROL_PROPIETARIO));
+  return encontrados.filter((permiso) => permitidos.has(permiso.codigo));
 }
 
 async function buscarRol(roles: RepositorioRoles, id: string): Promise<Rol> {
@@ -57,7 +71,7 @@ export class CrearRol {
   ejecutar({ productoCodigo, permisos, ...datos }: CrearRolComando): Promise<{ rolId: string }> {
     return this.uow.run(async () => {
       await exigirContratado(this.repos.productos, productoCodigo);
-      const catalogo = await this.repos.catalogo.permisos(permisos);
+      const catalogo = await catalogoDelCliente(this.repos.catalogo, productoCodigo, permisos);
       const rol = Rol.crear(this.ids.next(), this.contexto.current().tenantId, productoCodigo, datos, permisos, catalogo);
 
       await this.repos.roles.guardar(rol);
@@ -67,7 +81,7 @@ export class CrearRol {
   }
 }
 
-/** TR-CA-031: copia un rol predefinido o propio, con sus permisos o con los indicados. */
+/** TR-CA-031: copia un rol predefinido o propio, con sus permisos o con los indicados. El conjunto final siempre se valida. */
 export class CopiarRol {
   constructor(
     private readonly uow: UnitOfWork,
@@ -82,7 +96,8 @@ export class CopiarRol {
       const origen = await buscarRol(this.repos.roles, origenId);
       await exigirContratado(this.repos.productos, origen.productoCodigo);
       const rol = Rol.copiarDe(this.ids.next(), this.contexto.current().tenantId, origen, datos);
-      if (permisos !== undefined) rol.cambiarPermisos(permisos, await this.repos.catalogo.permisos(permisos));
+      const permisosFinales = permisos ?? origen.permisos;
+      rol.cambiarPermisos(permisosFinales, await catalogoDelCliente(this.repos.catalogo, origen.productoCodigo, permisosFinales));
 
       await this.repos.roles.guardar(rol);
       await publicarEventos(this.eventos, rol);
@@ -102,7 +117,7 @@ export class CambiarPermisosRol {
   async ejecutar({ rolId, permisos }: CambiarPermisosRolComando): Promise<void> {
     await this.uow.run(async () => {
       const rol = await buscarRol(this.repos.roles, rolId);
-      rol.cambiarPermisos(permisos, await this.repos.catalogo.permisos(permisos));
+      rol.cambiarPermisos(permisos, await catalogoDelCliente(this.repos.catalogo, rol.productoCodigo, permisos));
       await this.repos.roles.guardar(rol);
       await publicarEventos(this.eventos, rol);
     });

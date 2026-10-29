@@ -4,8 +4,8 @@ import type { Fecha } from '../../domain/asignacion.js';
 import type { EstadoMembresia } from '../../domain/membresia.js';
 import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
 
-// Mapeo ORM de solo lectura para la administración de miembros (spec 16a). La escritura sigue en los
-// repositorios con SQL (anteriores al spec 10, regla 11).
+// Mapeo ORM de solo lectura para la administración de miembros (spec 16a) y de roles (spec 16b). La
+// escritura sigue en los repositorios con SQL (anteriores al spec 10, regla 11).
 
 export interface FilaMembresia {
   id: string;
@@ -66,7 +66,39 @@ export interface FilaRolPermiso {
 
 export interface FilaPermiso {
   codigo: string;
+  productoCodigo: string;
+  descripcion: string;
+  alcanceMinimo: Alcance;
   sensible: boolean;
+  obsoleto: boolean;
+}
+
+export interface FilaProducto {
+  codigo: string;
+  nombre: string;
+}
+
+export interface FilaModulo {
+  id: string;
+  productoCodigo: string;
+  codigo: string;
+  nombre: string;
+  orden: number;
+  obsoleto: boolean;
+}
+
+export interface FilaOpcion {
+  id: string;
+  moduloId: string;
+  codigo: string;
+  nombre: string;
+  orden: number;
+  obsoleto: boolean;
+}
+
+export interface FilaOpcionPermiso {
+  opcionId: string;
+  permisoCodigo: string;
 }
 
 export interface FilaPerfil {
@@ -173,7 +205,59 @@ export const PermisoLecturaEntidad = new EntitySchema<FilaPermiso>({
   tableName: 'permiso',
   columns: {
     codigo: { type: 'varchar', primary: true },
+    productoCodigo: { name: 'producto_codigo', type: 'varchar' },
+    descripcion: { type: 'varchar' },
+    alcanceMinimo: { name: 'alcance_minimo', type: 'varchar' },
     sensible: { type: 'boolean' },
+    obsoleto: { type: 'boolean' },
+  },
+});
+
+export const ProductoLecturaEntidad = new EntitySchema<FilaProducto>({
+  name: 'SegProducto',
+  schema: 'seg',
+  tableName: 'producto',
+  columns: {
+    codigo: { type: 'varchar', primary: true },
+    nombre: { type: 'varchar' },
+  },
+});
+
+export const ModuloLecturaEntidad = new EntitySchema<FilaModulo>({
+  name: 'SegModulo',
+  schema: 'seg',
+  tableName: 'modulo',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    productoCodigo: { name: 'producto_codigo', type: 'varchar' },
+    codigo: { type: 'varchar' },
+    nombre: { type: 'varchar' },
+    orden: { type: 'smallint' },
+    obsoleto: { type: 'boolean' },
+  },
+});
+
+export const OpcionLecturaEntidad = new EntitySchema<FilaOpcion>({
+  name: 'SegOpcion',
+  schema: 'seg',
+  tableName: 'opcion',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    moduloId: { name: 'modulo_id', type: 'uuid' },
+    codigo: { type: 'varchar' },
+    nombre: { type: 'varchar' },
+    orden: { type: 'smallint' },
+    obsoleto: { type: 'boolean' },
+  },
+});
+
+export const OpcionPermisoLecturaEntidad = new EntitySchema<FilaOpcionPermiso>({
+  name: 'SegOpcionPermiso',
+  schema: 'seg',
+  tableName: 'opcion_permiso',
+  columns: {
+    opcionId: { name: 'opcion_id', type: 'uuid', primary: true },
+    permisoCodigo: { name: 'permiso_codigo', type: 'varchar', primary: true },
   },
 });
 
@@ -207,6 +291,10 @@ export const ENTIDADES_SEG_LECTURA = [
   RolLecturaEntidad,
   RolPermisoLecturaEntidad,
   PermisoLecturaEntidad,
+  ProductoLecturaEntidad,
+  ModuloLecturaEntidad,
+  OpcionLecturaEntidad,
+  OpcionPermisoLecturaEntidad,
   PerfilLecturaEntidad,
   PerfilRolLecturaEntidad,
   EmpresaUbicacionEntidad,
