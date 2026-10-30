@@ -93,7 +93,7 @@ Estimado: 9-9,5 h (back 1; organización 5; U-06 2; navegador 1-1,5). El roadmap
 - Spec 03: casos de uso y reglas de empresa, sucursal y unidad, con sus mensajes.
 - Spec 17a: contratos de los endpoints existentes, `OrgFiltro`, `EsquemaPagina`, `empresaDto`, `sucursalDto`, `unidadDto` y `exigirUuid` de `organizacion.http.ts`.
 - Spec 13: `SesionService` (`cargarContexto`, `sucursalId`, `salir`), `permisoGuard`, `*siPermiso`, `OMITIR_AVISO_ERROR`, `opcionesCookie`.
-- Spec 15: `vit-tabla`, `vit-filtros` (con `valorInicial` del 17b), `vit-acciones-formulario`, `mensajeValidacion`, `vit-cargando`, `vit-estado-vacio`, `AvisosService` (`exito`, `advertencia`, `confirmarDestructiva`), `erroresHttpInterceptor`.
+- Spec 15: `vit-tabla`, `vit-acciones-formulario`, `mensajeValidacion`, `vit-cargando`, `vit-estado-vacio`, `AvisosService` (`exito`, `advertencia`, `confirmarDestructiva`), `erroresHttpInterceptor`.
 - Spec 16a: `OrganizacionCliente`, `models/listado.ts`, `models/error-admin.ts`, `utils/solicitar.ts` y `src/testing/`.
 
 **Cambia:**
@@ -220,7 +220,7 @@ Las rutas `nueva` van antes de las que llevan id.
 
 **Comunes:**
 
-- Listas con `vit-filtros` y `vit-tabla`, paginación de 20. Filtros y página en los query params. `vit-filtros` precarga desde la URL con `valorInicial`.
+- Listas con `vit-tabla`, paginación de 20. Filtros y página en los query params. Los filtros son `mat-select` propios de la página, precargados desde la URL: la empresa no tiene opción «Todas» y no hay búsqueda por texto.
 - El selector de empresa usa `OrganizacionCliente.empresas()`. Si la URL no trae `empresa`, la página elige la primera activa por razón social y la pone en la URL con `replaceUrl`. Sin empresas, `vit-estado-vacio` con enlace a «Nueva empresa».
 - Acciones por fila con `vitAccionesFila` y `*siPermiso`. Sin el permiso de escritura no se ven los botones de alta, edición, inactivación, reactivación ni principal.
 - Formularios con `vit-acciones-formulario` y `mensajeValidacion`. «Guardar» deshabilitado mientras viaja la petición.
@@ -445,6 +445,8 @@ Ambientes:
 - **Sí:** copiar `validarRuc` en `admin-cliente/src/lib/utils/ruc.ts` (decisión del usuario), por la misma razón que el 17b (ng-packagr).
 - **Sí:** `TIPOS_UNIDAD` repetida en el front con una prueba que fija los valores, hasta el 19a.
 - **Sí:** clientes nuevos por entidad y `OrganizacionCliente` sin cambios. Cada clase tiene un solo motivo de cambio.
+- **Sí:** filtros con `mat-select` propios en vez de `vit-filtros` (decisión del usuario, paso 7). `vit-filtros` siempre trae búsqueda y «Todos», y aquí la empresa es obligatoria y la API no busca por texto.
+- **No:** ampliar `vit-filtros` en `shared/ui`. Toca una lib compartida del 15 por dos listas.
 - **No:** columna de padre en la lista de unidades. La lista solo trae `padre_id`, y mostrar el código pediría otra petición. El padre se ve en la edición.
 - **Sí:** razón social escrita a mano (TR-CA-004 adaptado). El padrón es de R2.
 

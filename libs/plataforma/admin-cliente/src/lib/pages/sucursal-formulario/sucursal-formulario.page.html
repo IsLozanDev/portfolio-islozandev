@@ -1,0 +1,67 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ sucursalId ? mensajes.tituloEdicion : mensajes.tituloNueva }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (versionObsoleta()) {
+    <div role="alert" class="flex flex-wrap items-center justify-between gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="version">
+      <span>{{ comunes.versionObsoleta }}</span>
+      <button mat-stroked-button type="button" (click)="recargar()" data-accion="recargar">{{ comunes.recargar }}</button>
+    </div>
+  }
+
+  @if (noExiste()) {
+    <vit-estado-vacio icono="store" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" [routerLink]="rutaSucursales" [relativeTo]="rutaMontaje">{{ mensajes.volver }}</a>
+  } @else if (cargando()) {
+    <vit-cargando />
+  } @else {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.codigo }}</mat-label>
+          <input matInput formControlName="codigo" data-campo="codigo" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.codigo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombre }}</mat-label>
+          <input matInput formControlName="nombre" data-campo="nombre" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.establecimientoSunat }}</mat-label>
+          <input matInput formControlName="codigoEstablecimientoSunat" data-campo="establecimiento" inputmode="numeric" maxlength="4" autocomplete="off" />
+          @if (ayudaEstablecimiento(); as ayuda) {
+            <mat-hint data-ayuda="establecimiento">{{ ayuda }}</mat-hint>
+          }
+          <mat-error>{{ mensajeDeError(grupo.controls.codigoEstablecimientoSunat.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.ubigeo }}</mat-label>
+          <input matInput formControlName="ubigeo" data-campo="ubigeo" inputmode="numeric" maxlength="6" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.ubigeo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sm:col-span-2">
+          <mat-label>{{ mensajes.direccion }}</mat-label>
+          <input matInput formControlName="direccion" data-campo="direccion" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.direccion.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.telefono }}</mat-label>
+          <input matInput formControlName="telefono" data-campo="telefono" type="tel" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.telefono.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.zonaHoraria }}</mat-label>
+          <input matInput formControlName="zonaHoraria" data-campo="zonaHoraria" autocomplete="off" required />
+          <mat-hint>{{ mensajes.ayudaZonaHoraria }}</mat-hint>
+          <mat-error>{{ mensajeDeError(grupo.controls.zonaHoraria.errors) }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="sucursalId ? comunes.guardarCambios : mensajes.registrar" (cancelar)="cancelar()" />
+    </form>
+  }
+</section>

@@ -24,7 +24,7 @@ const SABORES = {
   version: 3,
 };
 
-@Component({ template: '' })
+@Component({ selector: 'vit-destino-empresa-formulario', template: '' })
 class Destino {}
 
 describe('EmpresaFormularioPage', () => {

@@ -1,0 +1,87 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ unidadId ? mensajes.tituloEdicion : mensajes.tituloNueva }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (versionObsoleta()) {
+    <div role="alert" class="flex flex-wrap items-center justify-between gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="version">
+      <span>{{ comunes.versionObsoleta }}</span>
+      <button mat-stroked-button type="button" (click)="recargar()" data-accion="recargar">{{ comunes.recargar }}</button>
+    </div>
+  }
+
+  @if (noExiste()) {
+    <vit-estado-vacio icono="view_module" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" [routerLink]="rutaUnidades" [relativeTo]="rutaMontaje">{{ mensajes.volver }}</a>
+  } @else if (cargando()) {
+    <vit-cargando />
+  } @else {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.tipo }}</mat-label>
+          <mat-select formControlName="tipo" data-campo="tipo" required>
+            @for (tipo of tipos; track tipo) {
+              <mat-option [value]="tipo">{{ etiquetasTipo[tipo] }}</mat-option>
+            }
+          </mat-select>
+          <mat-error>{{ mensajeDeError(grupo.controls.tipo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.sucursal }}</mat-label>
+          <mat-select formControlName="sucursalId" data-campo="sucursal">
+            <mat-option [value]="null">{{ mensajes.sinSucursal }}</mat-option>
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (grupo.hasError(errorSucursalRequerida)) {
+          <p role="alert" class="text-sm text-error sm:col-span-2" data-error="sucursal">{{ mensajeDeError(grupo.errors) }}</p>
+        }
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.codigo }}</mat-label>
+          <input matInput formControlName="codigo" data-campo="codigo" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.codigo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombre }}</mat-label>
+          <input matInput formControlName="nombre" data-campo="nombre" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sm:col-span-2">
+          <mat-label>{{ mensajes.padre }}</mat-label>
+          <mat-select formControlName="padreId" data-campo="padre">
+            <mat-option [value]="null">{{ mensajes.sinPadre }}</mat-option>
+            @for (padre of padres(); track padre.id) {
+              <mat-option [value]="padre.id">{{ padre.codigo }} · {{ padre.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <fieldset class="grid gap-x-4 sm:grid-cols-3">
+        <legend class="mb-2 text-sm font-medium">{{ mensajes.atributos }}</legend>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.impresora }}</mat-label>
+          <input matInput formControlName="impresora" data-campo="impresora" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.impresora.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.capacidad }}</mat-label>
+          <input matInput formControlName="capacidad" data-campo="capacidad" type="number" min="0" step="1" />
+          <mat-error>{{ mensajeDeError(grupo.controls.capacidad.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.piso }}</mat-label>
+          <input matInput formControlName="piso" data-campo="piso" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.piso.errors) }}</mat-error>
+        </mat-form-field>
+      </fieldset>
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="unidadId ? comunes.guardarCambios : mensajes.registrar" (cancelar)="cancelar()" />
+    </form>
+  }
+</section>

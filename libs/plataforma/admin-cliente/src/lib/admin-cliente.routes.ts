@@ -59,6 +59,36 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_ADMIN.empresaCrear)],
     loadComponent: () => import('./pages/empresa-formulario/empresa-formulario.page').then((modulo) => modulo.EmpresaFormularioPage),
   },
+  {
+    path: 'sucursales',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.organizacionConsultar)],
+    loadComponent: () => import('./pages/sucursales-lista/sucursales-lista.page').then((modulo) => modulo.SucursalesListaPage),
+  },
+  {
+    path: 'sucursales/nueva',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.sucursalGestionar)],
+    loadComponent: () => import('./pages/sucursal-formulario/sucursal-formulario.page').then((modulo) => modulo.SucursalFormularioPage),
+  },
+  {
+    path: 'sucursales/:sucursalId/editar',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.sucursalGestionar)],
+    loadComponent: () => import('./pages/sucursal-formulario/sucursal-formulario.page').then((modulo) => modulo.SucursalFormularioPage),
+  },
+  {
+    path: 'unidades',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.organizacionConsultar)],
+    loadComponent: () => import('./pages/unidades-lista/unidades-lista.page').then((modulo) => modulo.UnidadesListaPage),
+  },
+  {
+    path: 'unidades/nueva',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.unidadGestionar)],
+    loadComponent: () => import('./pages/unidad-formulario/unidad-formulario.page').then((modulo) => modulo.UnidadFormularioPage),
+  },
+  {
+    path: 'unidades/:unidadId/editar',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.unidadGestionar)],
+    loadComponent: () => import('./pages/unidad-formulario/unidad-formulario.page').then((modulo) => modulo.UnidadFormularioPage),
+  },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.
   { path: 'asignaciones', redirectTo: 'usuarios' },
