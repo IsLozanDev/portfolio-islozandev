@@ -14,6 +14,20 @@
         }
         <span class="truncate text-lg">{{ nombreApp }}</span>
         <span class="flex-1"></span>
+        @if (volverA(); as destino) {
+          <!-- A menos de 768 px solo el ícono: el texto no cabe junto al selector. El span oculta: el CSS de mat-button le gana a `hidden`. -->
+          <span class="hidden md:inline">
+            <a mat-button [href]="destino.url" data-accion="volver-a">
+              <mat-icon aria-hidden="true">arrow_back</mat-icon>
+              {{ mensajeVolverA(destino.nombreApp) }}
+            </a>
+          </span>
+          <span class="md:hidden">
+            <a mat-icon-button [href]="destino.url" [attr.aria-label]="mensajeVolverA(destino.nombreApp)" data-accion="volver-a-icono">
+              <mat-icon aria-hidden="true">arrow_back</mat-icon>
+            </a>
+          </span>
+        }
         <vit-selector-sucursal />
         <vit-menu-usuario />
       </mat-toolbar>

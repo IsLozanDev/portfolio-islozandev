@@ -63,6 +63,17 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "subdominios": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/plataforma-consola/src/environments/environment.ts",
+              "with": "apps/plataforma-consola/src/environments/environment.subdominios.ts"
+            }
+          ]
         }
       }
     },
@@ -81,6 +92,12 @@
         },
         "development": {
           "buildTarget": "plataforma-consola:build:development"
+        },
+        "subdominios": {
+          "buildTarget": "plataforma-consola:build:subdominios",
+          "allowedHosts": [
+            "consola.vitrina.test"
+          ]
         }
       }
     },

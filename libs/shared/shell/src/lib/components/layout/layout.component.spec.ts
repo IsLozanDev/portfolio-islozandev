@@ -8,6 +8,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { of } from 'rxjs';
 import { contextoDePrueba, DobleSesion, RUTAS_DE_PRUEBA } from '../../../testing/pagina-de-prueba';
+import { ORIGENES_VOLVER_A } from '../../config/volver-a.config';
 import { CLAVE_NOMBRE_APP, CLAVE_PREFIJO_MENU } from '../../models/datos-ruta-shell';
 import { LayoutComponent } from './layout.component';
 
@@ -22,7 +23,7 @@ describe('LayoutComponent', () => {
   let sesion: DobleSesion;
   let harness: RouterTestingHarness;
 
-  async function abrir(escritorio: boolean, datos: Record<string, string> = {}): Promise<void> {
+  async function abrir(escritorio: boolean, datos: Record<string, string> = {}, origenesVolverA: Record<string, string> = {}): Promise<void> {
     sesion = new DobleSesion();
     sesion.contexto.set(contextoDePrueba({ menu: MENU_ADMIN }));
     TestBed.configureTestingModule({
@@ -31,6 +32,7 @@ describe('LayoutComponent', () => {
         { provide: SesionService, useValue: sesion },
         { provide: CONFIG_AUTH, useValue: { rutas: RUTAS_DE_PRUEBA } },
         { provide: BreakpointObserver, useValue: { observe: () => of({ matches: escritorio, breakpoints: {} }) } },
+        { provide: ORIGENES_VOLVER_A, useValue: origenesVolverA },
       ],
     });
     harness = await RouterTestingHarness.create('/');
@@ -75,6 +77,31 @@ describe('LayoutComponent', () => {
     const menu = elemento().querySelector('vit-menu-lateral')?.textContent;
     expect(menu).toContain('Roles');
     expect(menu).not.toContain('Usuarios');
+  });
+
+  describe('enlace «Volver a» (U-06)', () => {
+    const CONSOLA = 'http://consola.vitrina.test:4201';
+    const enlaceVolverA = () => elemento().querySelector<HTMLAnchorElement>('[data-accion=volver-a]');
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('una entrada con volverA de la lista blanca muestra «Volver a <app>» hacia esa URL, también como ícono', async () => {
+      await abrir(true, {}, { [CONSOLA]: 'Consola de plataforma' });
+      await TestBed.inject(Router).navigateByUrl(`/usuarios?volverA=${encodeURIComponent(`${CONSOLA}/consola/tenants`)}`);
+      await harness.fixture.whenStable();
+
+      expect(enlaceVolverA()?.textContent).toContain('Volver a Consola de plataforma');
+      expect(enlaceVolverA()?.getAttribute('href')).toBe(`${CONSOLA}/consola/tenants`);
+      expect(elemento().querySelector('[data-accion=volver-a-icono]')?.getAttribute('aria-label')).toBe('Volver a Consola de plataforma');
+    });
+
+    it('un volverA ajeno no muestra enlace', async () => {
+      await abrir(true, {}, { [CONSOLA]: 'Consola de plataforma' });
+      await TestBed.inject(Router).navigateByUrl(`/usuarios?volverA=${encodeURIComponent('https://malo.test/')}`);
+      await harness.fixture.whenStable();
+
+      expect(enlaceVolverA()).toBeNull();
+    });
   });
 
   it('en escritorio el menú está fijo y abierto, sin botón de menú', async () => {
