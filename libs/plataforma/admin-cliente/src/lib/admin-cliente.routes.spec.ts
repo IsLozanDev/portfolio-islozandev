@@ -64,9 +64,9 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     expect(await navegar('/admin/roles')).toEqual({ url: '/admin/roles', titulo: 'Roles' });
   });
 
-  it('/admin/roles sin plat.rol.gestionar va a /403', async () => {
+  it.each(['/admin/roles', '/admin/roles/nuevo', '/admin/roles/r-mozo', '/admin/roles/r-mozo/copiar'])('%s sin plat.rol.gestionar va a /403', async (ruta) => {
     sesion.conPermisos(PERMISOS_ADMIN.usuarioInvitar);
 
-    expect((await navegar('/admin/roles')).url).toBe(RUTA_PROHIBIDO);
+    expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
   });
 });

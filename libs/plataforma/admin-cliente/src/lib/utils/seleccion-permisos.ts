@@ -28,6 +28,11 @@ export function alternarGrupo(codigos: readonly string[], seleccionados: Readonl
   return nuevos;
 }
 
+/** Lo que se envía a la API: orden estable por código. */
+export function permisosOrdenados(seleccionados: ReadonlySet<string>): string[] {
+  return [...seleccionados].sort();
+}
+
 /** No muta `seleccionados`. */
 export function alternarPermiso(codigo: string, seleccionados: ReadonlySet<string>): Set<string> {
   const nuevos = new Set(seleccionados);

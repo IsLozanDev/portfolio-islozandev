@@ -1,0 +1,38 @@
+<section class="flex max-w-4xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.tituloNuevo }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (productos(); as opciones) {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="crear()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.producto }}</mat-label>
+        <mat-select [value]="productoCodigo()" (selectionChange)="elegirProducto($event.value)" data-campo="producto" required>
+          @for (producto of opciones; track producto.codigo) {
+            <mat-option [value]="producto.codigo">{{ producto.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <vit-form-rol [grupo]="grupo" />
+
+      @if (arbol(); as catalogo) {
+        <vit-arbol-permisos [arbol]="catalogo" [(seleccionados)]="seleccionados" />
+      } @else if (productoCodigo()) {
+        <vit-cargando />
+      } @else {
+        <p class="text-sm text-sobre-superficie-variante">{{ mensajes.elijaProducto }}</p>
+      }
+
+      @if (faltanPermisos() && seleccionados().size === 0) {
+        <p role="alert" class="text-sm text-error" data-error="permisos">{{ mensajes.seleccionePermiso }}</p>
+      }
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.crear" (cancelar)="cancelar()" />
+    </form>
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>

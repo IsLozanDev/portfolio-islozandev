@@ -26,8 +26,17 @@ interface Ubicacion {
   opcion: ElementoDelMenu;
 }
 
+interface OpcionEnArmado extends ElementoDelMenu {
+  permisos: PermisoDelArbol[];
+}
+
 interface ModuloEnArmado extends ElementoDelMenu {
-  opciones: Map<string, ElementoDelMenu & { permisos: PermisoDelArbol[] }>;
+  opciones: Map<string, OpcionEnArmado>;
+}
+
+interface PermisoConUbicaciones {
+  permiso: PermisoDelArbol;
+  ubicaciones: Ubicacion[];
 }
 
 /** Cada permiso cuelga de una sola opción: la primera por orden de módulo, de opción y código de opción. */
@@ -35,7 +44,7 @@ export function armarArbolPermisos(productoCodigo: string, filas: readonly FilaC
   const modulos = new Map<string, ModuloEnArmado>();
   const otros: PermisoDelArbol[] = [];
 
-  for (const [permiso, ubicaciones] of agruparPorPermiso(filas)) {
+  for (const { permiso, ubicaciones } of agruparPorPermiso(filas)) {
     const primera = ubicaciones.sort(porOrdenDelMenu)[0];
     if (!primera) {
       otros.push(permiso);
@@ -59,22 +68,22 @@ export function armarArbolPermisos(productoCodigo: string, filas: readonly FilaC
   };
 }
 
-function agruparPorPermiso(filas: readonly FilaCatalogo[]): Map<PermisoDelArbol, Ubicacion[]> {
-  const porCodigoDePermiso = new Map<string, { permiso: PermisoDelArbol; ubicaciones: Ubicacion[] }>();
+function agruparPorPermiso(filas: readonly FilaCatalogo[]): PermisoConUbicaciones[] {
+  const porCodigoDePermiso = new Map<string, PermisoConUbicaciones>();
   for (const { permiso, modulo, opcion } of filas) {
     const grupo = porCodigoDePermiso.get(permiso.codigo) ?? { permiso, ubicaciones: [] };
     if (modulo && opcion) grupo.ubicaciones.push({ modulo, opcion });
     porCodigoDePermiso.set(permiso.codigo, grupo);
   }
-  return new Map([...porCodigoDePermiso.values()].map(({ permiso, ubicaciones }) => [permiso, ubicaciones]));
+  return [...porCodigoDePermiso.values()];
 }
 
-function opcionEnArmado(modulos: Map<string, ModuloEnArmado>, { modulo, opcion }: Ubicacion): ElementoDelMenu & { permisos: PermisoDelArbol[] } {
+function opcionEnArmado(modulos: Map<string, ModuloEnArmado>, { modulo, opcion }: Ubicacion): OpcionEnArmado {
   const moduloEnArmado = modulos.get(modulo.codigo) ?? { ...modulo, opciones: new Map() };
   modulos.set(modulo.codigo, moduloEnArmado);
-  const opcionEnArmado = moduloEnArmado.opciones.get(opcion.codigo) ?? { ...opcion, permisos: [] };
-  moduloEnArmado.opciones.set(opcion.codigo, opcionEnArmado);
-  return opcionEnArmado;
+  const opcionDelModulo = moduloEnArmado.opciones.get(opcion.codigo) ?? { ...opcion, permisos: [] };
+  moduloEnArmado.opciones.set(opcion.codigo, opcionDelModulo);
+  return opcionDelModulo;
 }
 
 function porOrdenDelMenu(a: Ubicacion, b: Ubicacion): number {

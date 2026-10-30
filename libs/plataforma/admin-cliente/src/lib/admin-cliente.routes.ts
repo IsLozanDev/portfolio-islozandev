@@ -29,6 +29,21 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_ADMIN.rolGestionar)],
     loadComponent: () => import('./pages/roles-lista/roles-lista.page').then((modulo) => modulo.RolesListaPage),
   },
+  {
+    path: 'roles/nuevo',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.rolGestionar)],
+    loadComponent: () => import('./pages/rol-nuevo/rol-nuevo.page').then((modulo) => modulo.RolNuevoPage),
+  },
+  {
+    path: 'roles/:rolId',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.rolGestionar)],
+    loadComponent: () => import('./pages/rol-detalle/rol-detalle.page').then((modulo) => modulo.RolDetallePage),
+  },
+  {
+    path: 'roles/:rolId/copiar',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.rolGestionar)],
+    loadComponent: () => import('./pages/rol-copia/rol-copia.page').then((modulo) => modulo.RolCopiaPage),
+  },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.
   { path: 'asignaciones', redirectTo: 'usuarios' },
