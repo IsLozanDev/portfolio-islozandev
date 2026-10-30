@@ -1,4 +1,4 @@
-import type { AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormControl, type AbstractControl, type ValidationErrors, type ValidatorFn } from '@angular/forms';
 import { mensajeDeValidacion } from '@vitrina/shared/ui';
 import { MENSAJES_VALIDACION_ORGANIZACION } from '../models/mensajes-organizacion';
 
@@ -37,4 +37,9 @@ export function mensajeDeErrorOrganizacion(errores: ValidationErrors | null): st
 export function textoONulo(valor: string): string | null {
   const recortado = valor.trim();
   return recortado === '' ? null : recortado;
+}
+
+/** Control de texto que vuelve a `inicial` (no a null) con `reset`. */
+export function campoDeTexto(inicial: string, ...validadores: ValidatorFn[]): FormControl<string> {
+  return new FormControl(inicial, { nonNullable: true, validators: validadores });
 }

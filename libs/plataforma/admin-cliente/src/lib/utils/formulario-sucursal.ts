@@ -1,6 +1,6 @@
 import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
 import type { DatosSucursal, Sucursal } from '../models/sucursal';
-import { ERROR_ESTABLECIMIENTO_FORMATO, ERROR_ESTABLECIMIENTO_PRINCIPAL, textoONulo, validarUbigeo } from './validadores-organizacion';
+import { campoDeTexto, ERROR_ESTABLECIMIENTO_FORMATO, ERROR_ESTABLECIMIENTO_PRINCIPAL, textoONulo, validarUbigeo } from './validadores-organizacion';
 
 /** El domicilio fiscal: solo la sucursal principal lo lleva (TR-RN-003). */
 export const ESTABLECIMIENTO_PRINCIPAL = '0000';
@@ -27,13 +27,13 @@ export type GrupoSucursal = FormGroup<{
 
 export function crearGrupoSucursal(): GrupoSucursal {
   return new FormGroup({
-    codigo: texto('', Validators.required, Validators.maxLength(LONGITUD_MAXIMA_CODIGO)),
-    nombre: texto('', Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
-    codigoEstablecimientoSunat: texto('', validarEstablecimiento),
-    direccion: texto('', Validators.maxLength(LONGITUD_MAXIMA_DIRECCION)),
-    ubigeo: texto('', validarUbigeo),
-    telefono: texto('', Validators.maxLength(LONGITUD_MAXIMA_TELEFONO)),
-    zonaHoraria: texto(ZONA_HORARIA_POR_DEFECTO, Validators.required, Validators.maxLength(LONGITUD_MAXIMA_ZONA_HORARIA)),
+    codigo: campoDeTexto('', Validators.required, Validators.maxLength(LONGITUD_MAXIMA_CODIGO)),
+    nombre: campoDeTexto('', Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
+    codigoEstablecimientoSunat: campoDeTexto('', validarEstablecimiento),
+    direccion: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_DIRECCION)),
+    ubigeo: campoDeTexto('', validarUbigeo),
+    telefono: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_TELEFONO)),
+    zonaHoraria: campoDeTexto(ZONA_HORARIA_POR_DEFECTO, Validators.required, Validators.maxLength(LONGITUD_MAXIMA_ZONA_HORARIA)),
   });
 }
 
@@ -78,8 +78,4 @@ function validarEstablecimiento(control: AbstractControl): ValidationErrors | nu
   if (establecimiento === '') return null;
   if (!FORMATO_ESTABLECIMIENTO.test(establecimiento)) return { [ERROR_ESTABLECIMIENTO_FORMATO]: true };
   return establecimiento === ESTABLECIMIENTO_PRINCIPAL ? { [ERROR_ESTABLECIMIENTO_PRINCIPAL]: true } : null;
-}
-
-function texto(inicial: string, ...validadores: ((control: AbstractControl) => ValidationErrors | null)[]): FormControl<string> {
-  return new FormControl(inicial, { nonNullable: true, validators: validadores });
 }

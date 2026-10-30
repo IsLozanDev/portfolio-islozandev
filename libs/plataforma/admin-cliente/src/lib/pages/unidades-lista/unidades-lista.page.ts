@@ -11,7 +11,7 @@ import { aErrorAdmin, CODIGO_VERSION_OBSOLETA } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { ETIQUETAS_ESTADO_FILTRO, MENSAJES_ORGANIZACION, MENSAJES_UNIDADES } from '../../models/mensajes-organizacion';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
-import { ETIQUETAS_TIPO_UNIDAD, TIPOS_UNIDAD, type TipoUnidad } from '../../models/tipos-unidad';
+import { esTipoUnidad, ETIQUETAS_TIPO_UNIDAD, TIPOS_UNIDAD, type TipoUnidad } from '../../models/tipos-unidad';
 import type { Ubicacion } from '../../models/ubicacion';
 import type { Unidad } from '../../models/unidad';
 import { OrganizacionCliente } from '../../services/organizacion.cliente';
@@ -225,7 +225,7 @@ function filtroDesdeUrl(parametros: ParamMap): FiltroUnidadesUrl {
   return {
     empresaId: parametros.get(PARAMETRO_URL_ORGANIZACION.empresa),
     sucursalId: parametros.get(PARAMETRO_URL_ORGANIZACION.sucursal),
-    tipo: (TIPOS_UNIDAD as readonly string[]).includes(tipo ?? '') ? (tipo as TipoUnidad) : null,
+    tipo: esTipoUnidad(tipo) ? tipo : null,
     estado: estadoDesdeUrl(parametros),
     pagina: paginaDesdeUrl(parametros),
   };

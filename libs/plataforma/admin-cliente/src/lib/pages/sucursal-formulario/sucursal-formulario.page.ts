@@ -88,12 +88,16 @@ export class SucursalFormularioPage {
   }
 
   protected cancelar(): void {
-    void this.volverALista(this.sucursal()?.empresaId ?? this.empresaIdDelAlta);
+    void this.volverALista(this.empresaId());
+  }
+
+  private empresaId(): string | null {
+    return this.sucursal()?.empresaId ?? this.empresaIdDelAlta;
   }
 
   private async enviar(): Promise<void> {
     const sucursal = this.sucursal();
-    const empresaId = sucursal?.empresaId ?? this.empresaIdDelAlta;
+    const empresaId = this.empresaId();
     if (!empresaId) return;
     const datos = aDatosSucursal(this.grupo);
     if (sucursal) await this.sucursales.editar(sucursal.id, sucursal.version, datos);

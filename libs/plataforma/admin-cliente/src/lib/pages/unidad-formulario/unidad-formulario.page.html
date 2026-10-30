@@ -31,7 +31,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ mensajes.sucursal }}</mat-label>
-          <mat-select formControlName="sucursalId" data-campo="sucursal">
+          <mat-select formControlName="sucursalId" data-campo="sucursal" [placeholder]="mensajes.sinSucursal">
             <mat-option [value]="null">{{ mensajes.sinSucursal }}</mat-option>
             @for (sucursal of sucursales(); track sucursal.id) {
               <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
@@ -53,7 +53,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="sm:col-span-2">
           <mat-label>{{ mensajes.padre }}</mat-label>
-          <mat-select formControlName="padreId" data-campo="padre">
+          <mat-select formControlName="padreId" data-campo="padre" [placeholder]="mensajes.sinPadre">
             <mat-option [value]="null">{{ mensajes.sinPadre }}</mat-option>
             @for (padre of padres(); track padre.id) {
               <mat-option [value]="padre.id">{{ padre.codigo }} · {{ padre.nombre }}</mat-option>

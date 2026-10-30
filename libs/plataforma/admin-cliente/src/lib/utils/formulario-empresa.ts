@@ -1,7 +1,7 @@
 import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
 import type { DatosEmpresa, Empresa } from '../models/empresa';
 import { validarRuc } from './ruc';
-import { ERROR_RUC_INVALIDO, textoONulo, validarUbigeo } from './validadores-organizacion';
+import { campoDeTexto, ERROR_RUC_INVALIDO, textoONulo, validarUbigeo } from './validadores-organizacion';
 
 // Los límites de TR-RF-002 que valida la API.
 const LONGITUD_MAXIMA_RAZON_SOCIAL = 200;
@@ -18,11 +18,11 @@ export type GrupoEmpresa = FormGroup<{
 
 export function crearGrupoEmpresa(): GrupoEmpresa {
   return new FormGroup({
-    ruc: texto(Validators.required, validarRucDelControl),
-    razonSocial: texto(Validators.required, Validators.maxLength(LONGITUD_MAXIMA_RAZON_SOCIAL)),
-    nombreComercial: texto(Validators.maxLength(LONGITUD_MAXIMA_NOMBRE_COMERCIAL)),
-    direccionFiscal: texto(Validators.maxLength(LONGITUD_MAXIMA_DIRECCION)),
-    ubigeo: texto(validarUbigeo),
+    ruc: campoDeTexto('', Validators.required, validarRucDelControl),
+    razonSocial: campoDeTexto('', Validators.required, Validators.maxLength(LONGITUD_MAXIMA_RAZON_SOCIAL)),
+    nombreComercial: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_NOMBRE_COMERCIAL)),
+    direccionFiscal: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_DIRECCION)),
+    ubigeo: campoDeTexto('', validarUbigeo),
   });
 }
 
@@ -56,8 +56,4 @@ export function aDatosEmpresa(grupo: GrupoEmpresa): DatosEmpresa {
 function validarRucDelControl(control: AbstractControl): ValidationErrors | null {
   const ruc = (control.value as string).trim();
   return ruc === '' || validarRuc(ruc) ? null : { [ERROR_RUC_INVALIDO]: true };
-}
-
-function texto(...validadores: ((control: AbstractControl) => ValidationErrors | null)[]): FormControl<string> {
-  return new FormControl('', { nonNullable: true, validators: validadores });
 }

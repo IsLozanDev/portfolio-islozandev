@@ -30,7 +30,8 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 16c | perfiles | U-04 (RF 012): lista, crear y cambiar roles del perfil (TR-CA-034, 035); `GET /v1/seg/perfiles/roles-disponibles` con `plat.perfil.gestionar` | 3-4 | 16b | 16b |
 | 17a | org-http | Back de ORG sin UI: tenants (lista, detalle, estado; `SECURITY DEFINER` para la lista) y empresas, sucursales y unidades. Permisos ORG al manifiesto y a `PLAT_PROPIETARIO`. Operador vs. cliente por permiso (`OPERADOR_REQUERIDO`), no por `tipo_usuario` | 7 | 12 | 17a |
 | 17b | consola-plataforma | O-04 (RF 001, 006): app `plataforma-consola`, solo front | 7 | 15, 17a | 17b |
-| 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida), solo front | 7 | 16a, 17a | 17c |
+| 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida). Front, más `GET` por id de empresa, sucursal y unidad y CORS por variable (`ORIGENES_PERMITIDOS`) | 9 | 16a, 17a | 17c |
+| 15b | identidad-visual | Revisión de diseño (sin historia en el plan): tema esmeralda, shell con menú oscuro, marco de `/auth` con la vitrina, chips de estado, `vit-tabla` como lista en celular; adopción en usuarios y tenants. Canvas «Vitrina · Diseño UI» | 9 | 15, 16a, 17b, 17c | — |
 | 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
 | 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
 | 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |

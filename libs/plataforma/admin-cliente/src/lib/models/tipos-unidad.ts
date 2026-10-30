@@ -12,6 +12,10 @@ export const TIPOS_UNIDAD = [
 ] as const;
 export type TipoUnidad = (typeof TIPOS_UNIDAD)[number];
 
+export function esTipoUnidad(valor: string | null): valor is TipoUnidad {
+  return (TIPOS_UNIDAD as readonly (string | null)[]).includes(valor);
+}
+
 /** El único tipo que puede registrarse sin sucursal (TR-RN-004). */
 export const TIPO_ALMACEN: TipoUnidad = 'ALMACEN';
 

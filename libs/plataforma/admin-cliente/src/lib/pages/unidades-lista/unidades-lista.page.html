@@ -28,7 +28,7 @@
       </mat-form-field>
       <mat-form-field class="sm:w-56" appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ mensajes.sucursal }}</mat-label>
-        <mat-select [value]="filtro().sucursalId" (selectionChange)="elegirSucursal($event.value)" data-filtro="sucursal">
+        <mat-select [value]="filtro().sucursalId" (selectionChange)="elegirSucursal($event.value)" data-filtro="sucursal" [placeholder]="mensajes.todas">
           <mat-option [value]="null">{{ mensajes.todas }}</mat-option>
           @for (sucursal of sucursales(); track sucursal.id) {
             <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
@@ -37,7 +37,7 @@
       </mat-form-field>
       <mat-form-field class="sm:w-56" appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ mensajes.tipo }}</mat-label>
-        <mat-select [value]="filtro().tipo" (selectionChange)="elegirTipo($event.value)" data-filtro="tipo">
+        <mat-select [value]="filtro().tipo" (selectionChange)="elegirTipo($event.value)" data-filtro="tipo" [placeholder]="mensajes.todos">
           <mat-option [value]="null">{{ mensajes.todos }}</mat-option>
           @for (tipo of tipos; track tipo) {
             <mat-option [value]="tipo">{{ etiquetasTipo[tipo] }}</mat-option>
