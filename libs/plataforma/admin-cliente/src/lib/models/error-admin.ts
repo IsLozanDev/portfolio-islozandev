@@ -2,6 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MENSAJE_ERROR_DESCONOCIDO, MENSAJES_POR_CODIGO } from './mensajes-admin';
 
 export const CODIGO_DESCONOCIDO = 'DESCONOCIDO';
+export const CODIGO_NO_ENCONTRADO = 'NO_ENCONTRADO';
+/** `PUT` con una versión vieja (spec 17a, TR-RNF-008). */
+export const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
 
 /** Error de la API como `{ codigo, mensaje }`. `mensaje` es texto plano para mostrar. */
 export class ErrorAdmin extends Error {
