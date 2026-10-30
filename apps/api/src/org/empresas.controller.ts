@@ -14,13 +14,14 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { EditarEmpresa, ListarEmpresas, PERMISOS_ORG, RegistrarEmpresa } from '@vitrina/plataforma/org';
+import { ConsultarEmpresa, EditarEmpresa, ListarEmpresas, PERMISOS_ORG, RegistrarEmpresa } from '@vitrina/plataforma/org';
 import { Permiso } from '@vitrina/plataforma/seguridad';
 import { validar } from '../eventos/fallidos.http.js';
 import { OrgFiltro } from './org.filtro.js';
 import {
   activoDe,
   EditarEmpresaDto,
+  EmpresaDto,
   empresaDto,
   EmpresaRegistradaDto,
   EsquemaEditarEmpresa,
@@ -48,6 +49,7 @@ const EMPRESA_NO_EXISTE = 'La empresa no existe';
 export class EmpresasController {
   constructor(
     @Inject(ListarEmpresas) private readonly listarEmpresas: ListarEmpresas,
+    @Inject(ConsultarEmpresa) private readonly consultarEmpresa: ConsultarEmpresa,
     @Inject(RegistrarEmpresa) private readonly registrarEmpresa: RegistrarEmpresa,
     @Inject(EditarEmpresa) private readonly editarEmpresa: EditarEmpresa,
   ) {}
@@ -63,6 +65,14 @@ export class EmpresasController {
     const filtro = validar(EsquemaListarActivos, consulta);
     const empresas = await this.listarEmpresas.ejecutar({ ...paginaDe(filtro), activo: activoDe(filtro.activo) });
     return listadoDto(empresas, empresaDto);
+  }
+
+  @Get(':id')
+  @Permiso(PERMISOS_ORG.organizacionConsultar)
+  @ApiOkResponse({ type: EmpresaDto, description: 'La misma fila que la lista, con su versión' })
+  @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (inexistente, de otro tenant o id no UUID)' })
+  async consultar(@Param('id') id: string): Promise<EmpresaDto> {
+    return empresaDto(await this.consultarEmpresa.ejecutar(exigirUuid(id, EMPRESA_NO_EXISTE)));
   }
 
   @Post()

@@ -228,9 +228,13 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
       await como(b.tenantId).post(`/empresas/${a.empresaId}/sucursales`, sucursalCayma),
       await como(b.tenantId).post(`/sucursales/${caymaDeA}/inactivar`),
       await como(b.tenantId).post(`/unidades/${almacenDeA}/inactivar`),
+      await como(b.tenantId).get(`/empresas/${a.empresaId}`),
+      await como(b.tenantId).get(`/sucursales/${caymaDeA}`),
+      await como(b.tenantId).get(`/unidades/${almacenDeA}`),
     ];
 
-    expect(intentos.map((respuesta) => respuesta.status)).toEqual([404, 404, 404, 404, 404]);
+    expect(intentos.map((respuesta) => respuesta.status)).toEqual([404, 404, 404, 404, 404, 404, 404, 404]);
+    expect((await como(a.tenantId).get(`/sucursales/${caymaDeA}`)).body).toMatchObject({ id: caymaDeA, codigo: 'CAYMA', version: 1 });
     expect((await como(b.tenantId).get('/empresas')).body.items.map((empresa: { id: string }) => empresa.id)).toEqual([b.empresaId]);
     expect((await como(b.tenantId).get('/unidades')).body).toEqual({ items: [], total: 0 });
   });

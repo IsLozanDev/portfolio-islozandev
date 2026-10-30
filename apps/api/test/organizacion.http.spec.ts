@@ -5,6 +5,9 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { ConflictError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import {
+  ConsultarEmpresa,
+  ConsultarSucursal,
+  ConsultarUnidad,
   EditarEmpresa,
   EditarSucursal,
   EditarUnidad,
@@ -63,10 +66,28 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
 
   beforeAll(async () => {
     const empresa = { id: EMPRESA, ruc: '20512345671', razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: '040101', activo: true, version: 3 };
+    const sucursal = {
+      id: SUCURSAL,
+      empresaId: EMPRESA,
+      codigo: 'CAYMA',
+      nombre: 'Cayma',
+      codigoEstablecimientoSunat: '0002',
+      direccion: null,
+      ubigeo: '040103',
+      telefono: null,
+      zonaHoraria: 'America/Lima',
+      esPrincipal: false,
+      activo: true,
+      version: 2,
+    };
+    const unidad = { id: UNIDAD, empresaId: EMPRESA, sucursalId: null, tipo: 'ALMACEN', codigo: 'ALM', nombre: 'Almacén central', padreId: null, atributos: { piso: '1' }, activo: true, version: 1 };
     const modulo = await Test.createTestingModule({
       controllers: [EmpresasController, SucursalesController, UnidadesController],
       providers: [
         { provide: ListarEmpresas, useValue: caso('ListarEmpresas', { items: [empresa], total: 21 }) },
+        { provide: ConsultarEmpresa, useValue: caso('ConsultarEmpresa', empresa) },
+        { provide: ConsultarSucursal, useValue: caso('ConsultarSucursal', sucursal) },
+        { provide: ConsultarUnidad, useValue: caso('ConsultarUnidad', unidad) },
         { provide: RegistrarEmpresa, useValue: caso('RegistrarEmpresa', { empresaId: EMPRESA, sucursalPrincipalId: SUCURSAL }) },
         { provide: EditarEmpresa, useValue: caso('EditarEmpresa') },
         { provide: ListarSucursales, useValue: caso('ListarSucursales', { items: [], total: 0 }) },
@@ -109,6 +130,64 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
       total: 21,
     });
     expect(llamadas).toEqual([{ caso: 'ListarEmpresas', argumentos: [{ pagina: 1, tamano: 20, activo: true }] }]);
+  });
+
+  it.each([
+    [
+      'empresas',
+      `/v1/org/empresas/${EMPRESA}`,
+      'ConsultarEmpresa',
+      { id: EMPRESA, ruc: '20512345671', razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: null, ubigeo: '040101', activo: true, version: 3 },
+    ],
+    [
+      'sucursales',
+      `/v1/org/sucursales/${SUCURSAL}`,
+      'ConsultarSucursal',
+      {
+        id: SUCURSAL,
+        empresa_id: EMPRESA,
+        codigo: 'CAYMA',
+        nombre: 'Cayma',
+        codigo_establecimiento_sunat: '0002',
+        direccion: null,
+        ubigeo: '040103',
+        telefono: null,
+        zona_horaria: 'America/Lima',
+        es_principal: false,
+        activo: true,
+        version: 2,
+      },
+    ],
+    [
+      'unidades',
+      `/v1/org/unidades/${UNIDAD}`,
+      'ConsultarUnidad',
+      { id: UNIDAD, empresa_id: EMPRESA, sucursal_id: null, tipo: 'ALMACEN', codigo: 'ALM', nombre: 'Almacén central', padre_id: null, atributos: { piso: '1' }, activo: true, version: 1 },
+    ],
+  ])('GET /%s/:id responde 200 con la fila en snake_case y su versión', async (_recurso, ruta, nombre, cuerpo) => {
+    const respuesta = await conCabeceras(servidor().get(ruta));
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual(cuerpo);
+    expect(llamadas).toEqual([{ caso: nombre, argumentos: [ruta.split('/').at(-1)] }]);
+  });
+
+  it.each([
+    ['/v1/org/empresas/sabores', 'La empresa no existe'],
+    ['/v1/org/sucursales/cayma', 'La sucursal no existe'],
+    ['/v1/org/unidades/alm', 'La unidad no existe'],
+  ])('GET %s (id que no es UUID) responde 404 sin llamar al caso de uso', async (ruta, mensaje) => {
+    const respuesta = await conCabeceras(servidor().get(ruta));
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body).toEqual({ codigo: 'NO_ENCONTRADO', mensaje });
+    expect(llamadas).toEqual([]);
+  });
+
+  it('GET por id de otro tenant responde 404 NO_ENCONTRADO', async () => {
+    fallo = new NotFoundError('La sucursal no existe');
+    const respuesta = await conCabeceras(servidor().get(`/v1/org/sucursales/${SUCURSAL}`));
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body).toEqual({ codigo: 'NO_ENCONTRADO', mensaje: 'La sucursal no existe' });
   });
 
   it.each([
@@ -213,9 +292,17 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
     expect(llamadas).toEqual([]);
   });
 
-  it('sin plat.organizacion.consultar, las listas responden 403', async () => {
+  it('sin plat.organizacion.consultar, las listas y las lecturas por id responden 403', async () => {
     permisosDelActor = ['plat.sesion.contexto'];
-    for (const ruta of ['/v1/org/empresas', `/v1/org/empresas/${EMPRESA}/sucursales`, '/v1/org/unidades']) {
+    const rutas = [
+      '/v1/org/empresas',
+      `/v1/org/empresas/${EMPRESA}/sucursales`,
+      '/v1/org/unidades',
+      `/v1/org/empresas/${EMPRESA}`,
+      `/v1/org/sucursales/${SUCURSAL}`,
+      `/v1/org/unidades/${UNIDAD}`,
+    ];
+    for (const ruta of rutas) {
       const respuesta = await conCabeceras(servidor().get(ruta));
       expect(respuesta.status).toBe(403);
       expect(respuesta.body.permiso).toBe('plat.organizacion.consultar');

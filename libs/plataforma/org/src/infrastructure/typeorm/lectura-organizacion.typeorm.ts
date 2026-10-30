@@ -52,6 +52,21 @@ export class LecturaOrganizacionTypeOrm implements LecturaOrganizacion {
     return paginar(consulta, filtro, unidadListada);
   }
 
+  async empresa(empresaId: string): Promise<EmpresaListada | null> {
+    const fila = await this.delTenant(EmpresaLecturaEntidad, 'empresa').andWhere('empresa.id = :empresaId', { empresaId }).getOne();
+    return fila ? empresaListada(fila) : null;
+  }
+
+  async sucursal(sucursalId: string): Promise<SucursalListada | null> {
+    const fila = await this.delTenant(SucursalLecturaEntidad, 'sucursal').andWhere('sucursal.id = :sucursalId', { sucursalId }).getOne();
+    return fila ? sucursalListada(fila) : null;
+  }
+
+  async unidad(unidadId: string): Promise<UnidadListada | null> {
+    const fila = await this.delTenant(UnidadLecturaEntidad, 'unidad').andWhere('unidad.id = :unidadId', { unidadId }).getOne();
+    return fila ? unidadListada(fila) : null;
+  }
+
   private delTenant<F extends ObjectLiteral>(entidad: EntitySchema<F>, alias: string): SelectQueryBuilder<F> {
     return this.unidadDeTrabajo.manager
       .getRepository(entidad)

@@ -73,4 +73,8 @@ export interface LecturaOrganizacion {
   sucursales(empresaId: string, filtro: FiltroSucursales): Promise<Listado<SucursalListada>>;
   /** Por tipo y código. */
   unidades(filtro: FiltroUnidades): Promise<Listado<UnidadListada>>;
+  /** null si no existe o es de otro tenant. */
+  empresa(empresaId: string): Promise<EmpresaListada | null>;
+  sucursal(sucursalId: string): Promise<SucursalListada | null>;
+  unidad(unidadId: string): Promise<UnidadListada | null>;
 }

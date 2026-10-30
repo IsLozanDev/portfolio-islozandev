@@ -14,7 +14,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { EditarUnidad, InactivarUnidad, ListarUnidades, PERMISOS_ORG, RegistrarUnidad, TIPOS_UNIDAD } from '@vitrina/plataforma/org';
+import { ConsultarUnidad, EditarUnidad, InactivarUnidad, ListarUnidades, PERMISOS_ORG, RegistrarUnidad, TIPOS_UNIDAD } from '@vitrina/plataforma/org';
 import { Permiso } from '@vitrina/plataforma/seguridad';
 import { validar } from '../eventos/fallidos.http.js';
 import { OrgFiltro } from './org.filtro.js';
@@ -31,6 +31,7 @@ import {
   RegistrarUnidadDto,
   TAMANO_PAGINA_DEFECTO,
   TAMANO_PAGINA_MAXIMO,
+  UnidadDto,
   unidadDto,
   UnidadRegistradaDto,
 } from './organizacion.http.js';
@@ -48,6 +49,7 @@ const UNIDAD_NO_EXISTE = 'La unidad no existe';
 export class UnidadesController {
   constructor(
     @Inject(ListarUnidades) private readonly listarUnidades: ListarUnidades,
+    @Inject(ConsultarUnidad) private readonly consultarUnidad: ConsultarUnidad,
     @Inject(RegistrarUnidad) private readonly registrarUnidad: RegistrarUnidad,
     @Inject(EditarUnidad) private readonly editarUnidad: EditarUnidad,
     @Inject(InactivarUnidad) private readonly inactivarUnidad: InactivarUnidad,
@@ -73,6 +75,14 @@ export class UnidadesController {
       activo: activoDe(filtro.activo),
     });
     return listadoDto(unidades, unidadDto);
+  }
+
+  @Get(':id')
+  @Permiso(PERMISOS_ORG.organizacionConsultar)
+  @ApiOkResponse({ type: UnidadDto, description: 'La misma fila que la lista, con su versión' })
+  @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (inexistente, de otro tenant o id no UUID)' })
+  async consultar(@Param('id') id: string): Promise<UnidadDto> {
+    return unidadDto(await this.consultarUnidad.ejecutar(exigirUuid(id, UNIDAD_NO_EXISTE)));
   }
 
   @Post()
