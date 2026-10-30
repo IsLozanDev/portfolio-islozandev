@@ -1,0 +1,99 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    @if (filtro().empresaId) {
+      <a *siPermiso="permisos.unidadGestionar" mat-flat-button routerLink="nueva" [queryParams]="parametrosDeNueva()" data-accion="nueva">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        {{ mensajes.nueva }}
+      </a>
+    }
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (empresas()?.length === 0) {
+    <vit-estado-vacio icono="domain_add" [titulo]="mensajes.sinEmpresas" />
+    <a *siPermiso="permisos.empresaCrear" mat-stroked-button class="self-start" [routerLink]="rutaNuevaEmpresa">{{ mensajes.irANuevaEmpresa }}</a>
+  } @else {
+    <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <mat-form-field class="sm:w-72" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mensajes.empresa }}</mat-label>
+        <mat-select [value]="filtro().empresaId" (selectionChange)="elegirEmpresa($event.value)" data-filtro="empresa">
+          @for (empresa of empresas() ?? []; track empresa.id) {
+            <mat-option [value]="empresa.id">{{ empresa.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="sm:w-56" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mensajes.sucursal }}</mat-label>
+        <mat-select [value]="filtro().sucursalId" (selectionChange)="elegirSucursal($event.value)" data-filtro="sucursal" [placeholder]="mensajes.todas">
+          <mat-option [value]="null">{{ mensajes.todas }}</mat-option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="sm:w-56" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mensajes.tipo }}</mat-label>
+        <mat-select [value]="filtro().tipo" (selectionChange)="elegirTipo($event.value)" data-filtro="tipo" [placeholder]="mensajes.todos">
+          <mat-option [value]="null">{{ mensajes.todos }}</mat-option>
+          @for (tipo of tipos; track tipo) {
+            <mat-option [value]="tipo">{{ etiquetasTipo[tipo] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="sm:w-40" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mensajes.estado }}</mat-label>
+        <mat-select [value]="filtro().estado" (selectionChange)="elegirEstado($event.value)" data-filtro="estado">
+          @for (estado of estados; track estado) {
+            <mat-option [value]="estado">{{ etiquetasEstado[estado] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <vit-tabla
+      [columnas]="columnas"
+      [filas]="listado().items"
+      [total]="listado().total"
+      [cargando]="cargando()"
+      [indicePagina]="filtro().pagina - 1"
+      [tamanosPagina]="tamanosPagina"
+      [textoVacio]="mensajes.sinUnidades"
+      (pagina)="paginar($event)"
+    >
+      <ng-template vitAccionesFila let-fila>
+        <ng-container *siPermiso="permisos.unidadGestionar">
+          <a mat-icon-button [routerLink]="[fila.id, 'editar']" [attr.aria-label]="comunes.editar + ': ' + fila.codigo" data-accion="editar">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </a>
+          @if (fila.unidad.activo) {
+            <button
+              mat-icon-button
+              type="button"
+              [disabled]="procesando()"
+              (click)="inactivar(fila.unidad)"
+              [attr.aria-label]="mensajes.inactivar + ': ' + fila.codigo"
+              data-accion="inactivar"
+            >
+              <mat-icon aria-hidden="true">block</mat-icon>
+            </button>
+          } @else {
+            <button
+              mat-icon-button
+              type="button"
+              [disabled]="procesando()"
+              (click)="reactivar(fila.unidad)"
+              [attr.aria-label]="mensajes.reactivar + ': ' + fila.codigo"
+              data-accion="reactivar"
+            >
+              <mat-icon aria-hidden="true">restart_alt</mat-icon>
+            </button>
+          }
+        </ng-container>
+      </ng-template>
+    </vit-tabla>
+  }
+</section>

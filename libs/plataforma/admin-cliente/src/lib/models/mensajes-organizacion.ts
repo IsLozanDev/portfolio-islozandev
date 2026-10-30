@@ -1,0 +1,132 @@
+/** Textos de empresas, sucursales y unidades (spec 17c), en español de Perú. */
+export const MENSAJES_ORGANIZACION = {
+  /** TR-RNF-008: reemplaza el texto de `VERSION_OBSOLETA` de la API. */
+  versionObsoleta: 'Otro usuario modificó el registro; recargue',
+  recargar: 'Recargar',
+  editar: 'Editar',
+  guardarCambios: 'Guardar cambios',
+  sinDato: '—',
+} as const;
+
+export const MENSAJES_EMPRESAS = {
+  titulo: 'Empresas',
+  nueva: 'Nueva empresa',
+  tituloNueva: 'Nueva empresa',
+  tituloEdicion: 'Editar empresa',
+  sinEmpresas: 'No hay empresas registradas.',
+  verSucursales: 'Sucursales',
+  ruc: 'RUC',
+  razonSocial: 'Razón social',
+  nombreComercial: 'Nombre comercial',
+  direccionFiscal: 'Dirección fiscal',
+  ubigeo: 'Ubigeo',
+  ayudaRazonSocial: 'Escríbala como figura en SUNAT.',
+  registrar: 'Registrar empresa',
+  /** TR-CA-004: la API crea también la sucursal principal. */
+  registrada: 'Empresa registrada con su sucursal principal 0000',
+  actualizada: 'Empresa actualizada',
+  noExiste: 'La empresa no existe',
+  volver: 'Volver a empresas',
+} as const;
+
+export const ETIQUETAS_ESTADO_FILTRO = { activas: 'Activas', inactivas: 'Inactivas', todas: 'Todas' } as const;
+
+export const MENSAJES_SUCURSALES = {
+  titulo: 'Sucursales',
+  nueva: 'Nueva sucursal',
+  empresa: 'Empresa',
+  estado: 'Estado',
+  sinEmpresas: 'Primero registre una empresa',
+  irANuevaEmpresa: 'Nueva empresa',
+  sinSucursales: 'No hay sucursales con estos filtros.',
+  codigo: 'Código',
+  nombre: 'Nombre',
+  establecimiento: 'Establecimiento',
+  ubigeo: 'Ubigeo',
+  principal: 'Principal',
+  sinEstablecimiento: 'Sin establecimiento',
+  activa: 'Activa',
+  inactiva: 'Inactiva',
+  verUnidades: 'Unidades',
+  marcarPrincipal: 'Marcar como principal',
+  inactivar: 'Inactivar',
+  reactivar: 'Reactivar',
+  tituloMarcarPrincipal: 'Cambiar la sucursal principal',
+  /** TR-CA-009 y brecha 5: la anterior pierde el 0000 y queda sin establecimiento. */
+  textoMarcarPrincipal: (nueva: string, actual: string) =>
+    `${nueva} pasará a ser la principal y ${actual} dejará de serlo. ${actual} quedará sin establecimiento SUNAT; asígnele uno al editarla.`,
+  principalActual: 'la principal actual',
+  tituloInactivar: 'Inactivar sucursal',
+  textoInactivar: (nombre: string) => `¿Inactivar la sucursal ${nombre}? Dejará de aparecer en el selector de sucursales.`,
+  tituloPrincipalNoInactivable: 'No se puede inactivar la principal',
+  /** TR-RN-003, el mismo texto que el dominio. */
+  principalNoInactivable: 'Marque otra sucursal como principal antes de inactivar esta',
+  principalCambiada: 'Sucursal principal cambiada',
+  inactivada: 'Sucursal inactivada',
+  reactivada: 'Sucursal reactivada',
+  tituloNueva: 'Nueva sucursal',
+  tituloEdicion: 'Editar sucursal',
+  establecimientoSunat: 'Establecimiento SUNAT',
+  direccion: 'Dirección',
+  telefono: 'Teléfono',
+  zonaHoraria: 'Zona horaria',
+  ayudaZonaHoraria: 'Nombre IANA, p. ej. America/Lima',
+  ayudaPrincipal: 'La sucursal principal conserva el establecimiento 0000.',
+  /** Brecha 5: la que dejó de ser principal quedó sin establecimiento. */
+  ayudaAsignarEstablecimiento: 'Asigne el establecimiento SUNAT de esta sucursal',
+  registrar: 'Registrar sucursal',
+  registrada: 'Sucursal registrada',
+  actualizada: 'Sucursal actualizada',
+  noExiste: 'La sucursal no existe',
+  volver: 'Volver a sucursales',
+} as const;
+
+export const MENSAJES_UNIDADES = {
+  titulo: 'Unidades',
+  nueva: 'Nueva unidad',
+  tituloNueva: 'Nueva unidad',
+  tituloEdicion: 'Editar unidad',
+  empresa: 'Empresa',
+  sucursal: 'Sucursal',
+  tipo: 'Tipo',
+  estado: 'Estado',
+  todas: 'Todas',
+  todos: 'Todos',
+  sinEmpresas: 'Primero registre una empresa',
+  irANuevaEmpresa: 'Nueva empresa',
+  sinUnidades: 'No hay unidades con estos filtros.',
+  codigo: 'Código',
+  nombre: 'Nombre',
+  /** TR-CA-012: el almacén de nivel empresa sirve a todas sus sucursales. */
+  nivelEmpresa: 'Empresa',
+  sinSucursal: 'Sin sucursal (nivel empresa)',
+  padre: 'Unidad padre',
+  sinPadre: 'Sin padre',
+  impresora: 'Impresora',
+  capacidad: 'Capacidad',
+  piso: 'Piso',
+  atributos: 'Atributos',
+  activa: 'Activa',
+  inactiva: 'Inactiva',
+  inactivar: 'Inactivar',
+  reactivar: 'Reactivar',
+  tituloInactivar: 'Inactivar unidad',
+  textoInactivar: (nombre: string) => `¿Inactivar la unidad ${nombre}?`,
+  inactivada: 'Unidad inactivada',
+  reactivada: 'Unidad reactivada',
+  registrar: 'Registrar unidad',
+  registrada: 'Unidad registrada',
+  actualizada: 'Unidad actualizada',
+  noExiste: 'La unidad no existe',
+  volver: 'Volver a unidades',
+} as const;
+
+export const MENSAJES_VALIDACION_ORGANIZACION = {
+  rucInvalido: 'RUC inválido',
+  ubigeoFormato: 'El ubigeo tiene 6 dígitos',
+  establecimientoFormato: 'El establecimiento SUNAT tiene 4 dígitos',
+  establecimientoPrincipal: 'El establecimiento 0000 corresponde a la sucursal principal',
+  /** TR-CA-011, el mismo texto que el dominio. */
+  sucursalRequerida: 'Solo los almacenes pueden registrarse sin sucursal',
+  capacidadEntera: 'La capacidad es un número entero mayor o igual a 0',
+} as const;

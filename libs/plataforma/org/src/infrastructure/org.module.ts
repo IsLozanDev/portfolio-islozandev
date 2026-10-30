@@ -3,7 +3,14 @@ import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } fr
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
 import { CrearTenant } from '../application/crear-tenant.js';
 import { EditarEmpresa, RegistrarEmpresa } from '../application/empresa.casos-de-uso.js';
-import { ListarEmpresas, ListarSucursales, ListarUnidades } from '../application/lecturas-organizacion.js';
+import {
+  ConsultarEmpresa,
+  ConsultarSucursal,
+  ConsultarUnidad,
+  ListarEmpresas,
+  ListarSucursales,
+  ListarUnidades,
+} from '../application/lecturas-organizacion.js';
 import type { PadronRucPort } from '../application/ports/padron-ruc.port.js';
 import type { UsoUsuariosPort } from '../application/ports/uso-usuarios.port.js';
 import { EditarSucursal, InactivarSucursal, MarcarSucursalPrincipal, RegistrarSucursal } from '../application/sucursal.casos-de-uso.js';
@@ -84,6 +91,21 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
       useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarUnidades({ unidadDeTrabajo: uow, lectura }),
       inject: [UNIT_OF_WORK, LECTURA],
     },
+    {
+      provide: ConsultarEmpresa,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarEmpresa({ unidadDeTrabajo: uow, lectura }),
+      inject: [UNIT_OF_WORK, LECTURA],
+    },
+    {
+      provide: ConsultarSucursal,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarSucursal({ unidadDeTrabajo: uow, lectura }),
+      inject: [UNIT_OF_WORK, LECTURA],
+    },
+    {
+      provide: ConsultarUnidad,
+      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarUnidad({ unidadDeTrabajo: uow, lectura }),
+      inject: [UNIT_OF_WORK, LECTURA],
+    },
     { provide: PADRON_RUC, useClass: PadronRucNulo },
     { provide: USO_USUARIOS, useClass: UsoUsuariosProvisional },
     {
@@ -134,6 +156,9 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
     ListarEmpresas,
     ListarSucursales,
     ListarUnidades,
+    ConsultarEmpresa,
+    ConsultarSucursal,
+    ConsultarUnidad,
   ],
 })
 export class OrgModule {}

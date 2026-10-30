@@ -1,0 +1,45 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <a *siPermiso="permisos.empresaCrear" mat-flat-button routerLink="nueva" data-accion="nueva">
+      <mat-icon aria-hidden="true">add_business</mat-icon>
+      {{ mensajes.nueva }}
+    </a>
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="pagina() - 1"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinEmpresas"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-empresa>
+      <a
+        mat-icon-button
+        routerLink="../sucursales"
+        [queryParams]="parametrosDeSucursales(empresa.id)"
+        [attr.aria-label]="mensajes.verSucursales + ': ' + empresa.razonSocial"
+        data-accion="sucursales"
+      >
+        <mat-icon aria-hidden="true">store</mat-icon>
+      </a>
+      <a
+        *siPermiso="permisos.empresaCrear"
+        mat-icon-button
+        [routerLink]="[empresa.id, 'editar']"
+        [attr.aria-label]="comunes.editar + ': ' + empresa.razonSocial"
+        data-accion="editar"
+      >
+        <mat-icon aria-hidden="true">edit</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>

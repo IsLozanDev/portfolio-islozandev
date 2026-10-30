@@ -63,6 +63,17 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "subdominios": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/plataforma-admin/src/environments/environment.ts",
+              "with": "apps/plataforma-admin/src/environments/environment.subdominios.ts"
+            }
+          ]
         }
       }
     },
@@ -81,6 +92,12 @@
         },
         "development": {
           "buildTarget": "plataforma-admin:build:development"
+        },
+        "subdominios": {
+          "buildTarget": "plataforma-admin:build:subdominios",
+          "allowedHosts": [
+            "admin.vitrina.test"
+          ]
         }
       }
     },

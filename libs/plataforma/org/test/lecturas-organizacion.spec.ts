@@ -1,7 +1,14 @@
 import { NotFoundError } from '@vitrina/plataforma/kernel';
 import { CrearTenant } from '../src/application/crear-tenant.js';
 import { RegistrarEmpresa } from '../src/application/empresa.casos-de-uso.js';
-import { ListarEmpresas, ListarSucursales, ListarUnidades } from '../src/application/lecturas-organizacion.js';
+import {
+  ConsultarEmpresa,
+  ConsultarSucursal,
+  ConsultarUnidad,
+  ListarEmpresas,
+  ListarSucursales,
+  ListarUnidades,
+} from '../src/application/lecturas-organizacion.js';
 import { InactivarSucursal, RegistrarSucursal } from '../src/application/sucursal.casos-de-uso.js';
 import { RegistrarUnidad } from '../src/application/unidad.casos-de-uso.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
@@ -15,6 +22,7 @@ const PRIMERA_PAGINA = { pagina: 1, tamano: 20 };
 describeConDb('Listas de organización (PostgreSQL 16)', () => {
   let e: Entorno;
   let listar: { empresas: ListarEmpresas; sucursales: ListarSucursales; unidades: ListarUnidades };
+  let consultar: { empresa: ConsultarEmpresa; sucursal: ConsultarSucursal; unidad: ConsultarUnidad };
 
   beforeAll(async () => {
     e = await crearEntorno();
@@ -23,6 +31,11 @@ describeConDb('Listas de organización (PostgreSQL 16)', () => {
       empresas: new ListarEmpresas({ unidadDeTrabajo: e.uow, lectura }),
       sucursales: new ListarSucursales({ unidadDeTrabajo: e.uow, lectura, empresas: e.repos.empresas }),
       unidades: new ListarUnidades({ unidadDeTrabajo: e.uow, lectura }),
+    };
+    consultar = {
+      empresa: new ConsultarEmpresa({ unidadDeTrabajo: e.uow, lectura }),
+      sucursal: new ConsultarSucursal({ unidadDeTrabajo: e.uow, lectura }),
+      unidad: new ConsultarUnidad({ unidadDeTrabajo: e.uow, lectura }),
     };
   });
 
@@ -122,5 +135,30 @@ describeConDb('Listas de organización (PostgreSQL 16)', () => {
     await expect(e.en(b.tenantId, () => listar.sucursales.ejecutar(a.sabores.empresaId, PRIMERA_PAGINA))).rejects.toThrow(
       new NotFoundError('La empresa no existe'),
     );
+  });
+
+  it('consulta por id: devuelve la misma fila que la lista, con su versión', async () => {
+    const { tenantId, sabores, yanahuaraId } = await sembrar('consultar-por-id');
+
+    const empresas = await e.en(tenantId, () => listar.empresas.ejecutar(PRIMERA_PAGINA));
+    const empresaListada = empresas.items.find((empresa) => empresa.id === sabores.empresaId);
+    expect(await e.en(tenantId, () => consultar.empresa.ejecutar(sabores.empresaId))).toEqual(empresaListada);
+
+    expect(await e.en(tenantId, () => consultar.sucursal.ejecutar(yanahuaraId))).toMatchObject({ id: yanahuaraId, activo: false, version: 2 });
+
+    const unidades = await e.en(tenantId, () => listar.unidades.ejecutar(PRIMERA_PAGINA));
+    const almacen = unidades.items.find((unidad) => unidad.codigo === 'ALM');
+    expect(await e.en(tenantId, () => consultar.unidad.ejecutar(almacen?.id ?? ''))).toEqual(almacen);
+  });
+
+  it('consulta por id: un id de otro tenant o inexistente no existe', async () => {
+    const a = await sembrar('consultar-tenant-a');
+    const b = await sembrar('consultar-tenant-b');
+    const unidadesDeA = await e.en(a.tenantId, () => listar.unidades.ejecutar(PRIMERA_PAGINA));
+
+    await expect(e.en(b.tenantId, () => consultar.empresa.ejecutar(a.sabores.empresaId))).rejects.toThrow(new NotFoundError('La empresa no existe'));
+    await expect(e.en(b.tenantId, () => consultar.sucursal.ejecutar(a.caymaId))).rejects.toThrow(new NotFoundError('La sucursal no existe'));
+    await expect(e.en(b.tenantId, () => consultar.unidad.ejecutar(unidadesDeA.items[0].id))).rejects.toThrow(new NotFoundError('La unidad no existe'));
+    await expect(e.en(a.tenantId, () => consultar.empresa.ejecutar(e.ids.next()))).rejects.toThrow(NotFoundError);
   });
 });

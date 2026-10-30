@@ -47,3 +47,31 @@ export class ListarUnidades {
     return unidadDeTrabajo.run(() => lectura.unidades(filtro));
   }
 }
+
+/** Un id de otro tenant no se ve: responde que no existe (404, no 403). */
+export class ConsultarEmpresa {
+  constructor(private readonly dependencias: DependenciasLecturaOrganizacion) {}
+
+  ejecutar(empresaId: string): Promise<EmpresaListada> {
+    const { unidadDeTrabajo, lectura } = this.dependencias;
+    return unidadDeTrabajo.run(async () => existe(await lectura.empresa(empresaId), 'La empresa no existe'));
+  }
+}
+
+export class ConsultarSucursal {
+  constructor(private readonly dependencias: DependenciasLecturaOrganizacion) {}
+
+  ejecutar(sucursalId: string): Promise<SucursalListada> {
+    const { unidadDeTrabajo, lectura } = this.dependencias;
+    return unidadDeTrabajo.run(async () => existe(await lectura.sucursal(sucursalId), 'La sucursal no existe'));
+  }
+}
+
+export class ConsultarUnidad {
+  constructor(private readonly dependencias: DependenciasLecturaOrganizacion) {}
+
+  ejecutar(unidadId: string): Promise<UnidadListada> {
+    const { unidadDeTrabajo, lectura } = this.dependencias;
+    return unidadDeTrabajo.run(async () => existe(await lectura.unidad(unidadId), 'La unidad no existe'));
+  }
+}

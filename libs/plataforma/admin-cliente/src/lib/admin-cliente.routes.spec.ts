@@ -19,7 +19,15 @@ const ESPERA_PRECARGA_MS = 30_000;
 describe('ADMIN_CLIENTE_ROUTES', () => {
   let sesion: DobleSesion;
 
-  beforeAll(() => Promise.all([import('./pages/usuarios-lista/usuarios-lista.page'), import('./pages/roles-lista/roles-lista.page')]), ESPERA_PRECARGA_MS);
+  beforeAll(
+    () =>
+      Promise.all([
+        import('./pages/usuarios-lista/usuarios-lista.page'),
+        import('./pages/roles-lista/roles-lista.page'),
+        import('./pages/empresas-lista/empresas-lista.page'),
+      ]),
+    ESPERA_PRECARGA_MS,
+  );
 
   async function navegar(url: string): Promise<{ url: string; titulo: string }> {
     TestBed.configureTestingModule({
@@ -66,6 +74,48 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
 
   it.each(['/admin/roles', '/admin/roles/nuevo', '/admin/roles/r-mozo', '/admin/roles/r-mozo/copiar'])('%s sin plat.rol.gestionar va a /403', async (ruta) => {
     sesion.conPermisos(PERMISOS_ADMIN.usuarioInvitar);
+
+    expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/empresas abre la lista con plat.organizacion.consultar', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);
+
+    expect(await navegar('/admin/empresas')).toEqual({ url: '/admin/empresas', titulo: 'Empresas' });
+  });
+
+  it.each(['/admin/empresas/nueva', '/admin/empresas/e-sabores/editar'])('%s sin plat.empresa.crear va a /403', async (ruta) => {
+    sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);
+
+    expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/empresas sin plat.organizacion.consultar va a /403', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.empresaCrear);
+
+    expect((await navegar('/admin/empresas')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/sucursales sin plat.organizacion.consultar va a /403', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.sucursalGestionar);
+
+    expect((await navegar('/admin/sucursales')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it.each(['/admin/sucursales/nueva?empresa=e-sabores', '/admin/sucursales/s-cayma/editar'])('%s sin plat.sucursal.gestionar va a /403', async (ruta) => {
+    sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);
+
+    expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/unidades sin plat.organizacion.consultar va a /403', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.unidadGestionar);
+
+    expect((await navegar('/admin/unidades')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it.each(['/admin/unidades/nueva?empresa=e-sabores', '/admin/unidades/u-caja/editar'])('%s sin plat.unidad.gestionar va a /403', async (ruta) => {
+    sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);
 
     expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
   });

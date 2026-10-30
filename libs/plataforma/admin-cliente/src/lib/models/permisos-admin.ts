@@ -4,4 +4,8 @@ export const PERMISOS_ADMIN = {
   asignacionOtorgar: 'plat.asignacion.otorgar',
   asignacionRevocar: 'plat.asignacion.revocar',
   rolGestionar: 'plat.rol.gestionar',
+  organizacionConsultar: 'plat.organizacion.consultar',
+  empresaCrear: 'plat.empresa.crear',
+  sucursalGestionar: 'plat.sucursal.gestionar',
+  unidadGestionar: 'plat.unidad.gestionar',
 } as const;

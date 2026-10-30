@@ -71,6 +71,9 @@ export {
   type UnidadRepos,
 } from './application/unidad.casos-de-uso.js';
 export {
+  ConsultarEmpresa,
+  ConsultarSucursal,
+  ConsultarUnidad,
   ListarEmpresas,
   ListarSucursales,
   ListarUnidades,

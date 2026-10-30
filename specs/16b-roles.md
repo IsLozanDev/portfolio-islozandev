@@ -1,6 +1,6 @@
 # SPEC 16b — Roles: controladores, catálogo de permisos en árbol y UI de roles del cliente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 15, SPEC 16a
 > **Date:** 2026-10-28
 > **Objective:** Exponer por `/v1/seg` la lectura, creación, copia, cambio de permisos e inactivación de roles con el catálogo de permisos en árbol, y construir en `libs/plataforma/admin-cliente` las pantallas de roles (U-04, TR-RF-011).

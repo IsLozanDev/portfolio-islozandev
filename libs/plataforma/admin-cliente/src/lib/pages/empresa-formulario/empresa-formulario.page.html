@@ -1,0 +1,54 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ empresaId ? mensajes.tituloEdicion : mensajes.tituloNueva }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (versionObsoleta()) {
+    <div role="alert" class="flex flex-wrap items-center justify-between gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="version">
+      <span>{{ comunes.versionObsoleta }}</span>
+      <button mat-stroked-button type="button" (click)="recargar()" data-accion="recargar">{{ comunes.recargar }}</button>
+    </div>
+  }
+
+  @if (noExiste()) {
+    <vit-estado-vacio icono="domain_disabled" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" [routerLink]="rutaEmpresas" [relativeTo]="rutaMontaje">{{ mensajes.volver }}</a>
+  } @else if (cargando()) {
+    <vit-cargando />
+  } @else {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.ruc }}</mat-label>
+          <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.ruc.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.razonSocial }}</mat-label>
+          <input matInput formControlName="razonSocial" data-campo="razonSocial" autocomplete="off" required />
+          <mat-hint>{{ mensajes.ayudaRazonSocial }}</mat-hint>
+          <mat-error>{{ mensajeDeError(grupo.controls.razonSocial.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombreComercial }}</mat-label>
+          <input matInput formControlName="nombreComercial" data-campo="nombreComercial" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.nombreComercial.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.ubigeo }}</mat-label>
+          <input matInput formControlName="ubigeo" data-campo="ubigeo" inputmode="numeric" maxlength="6" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.ubigeo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sm:col-span-2">
+          <mat-label>{{ mensajes.direccionFiscal }}</mat-label>
+          <input matInput formControlName="direccionFiscal" data-campo="direccionFiscal" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.direccionFiscal.errors) }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="empresaId ? comunes.guardarCambios : mensajes.registrar" (cancelar)="cancelar()" />
+    </form>
+  }
+</section>

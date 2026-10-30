@@ -24,6 +24,11 @@ export const MENSAJES_SHELL = {
   mfaRequerida: 'Esta acción es sensible. Verifique su identidad con el segundo factor y vuelva a intentarlo.',
 } as const;
 
+/** Enlace de la barra tras una entrada profunda desde otra app (U-06). */
+export function mensajeVolverA(nombreApp: string): string {
+  return `Volver a ${nombreApp}`;
+}
+
 /** Toast tras cambiar de sucursal desde el encabezado (TR-CA-045). */
 export function mensajeAhoraTrabajaEn(sucursal: string): string {
   return `Ahora trabaja en ${sucursal}`;

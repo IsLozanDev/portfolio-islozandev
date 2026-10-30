@@ -20,6 +20,8 @@ const esquema = z.object({
   EVT_BACKOFF_MAX_MS: z.coerce.number().int().positive().default(600_000),
   // Código del tenant operador: el único que da de alta tenants (spec 12).
   ORG_TENANT_OPERADOR: z.string().min(3).max(30).default('plataforma'),
+  // Orígenes del navegador con CORS (U-06); ver cors.ts. Sin valor, CORS apagado.
+  ORIGENES_PERMITIDOS: z.string().optional(),
 });
 
 export type Config = z.infer<typeof esquema>;

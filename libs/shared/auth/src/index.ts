@@ -12,4 +12,4 @@ export { permisoGuard } from './lib/guards/permiso.guard';
 export { sesionGuard } from './lib/guards/sesion.guard';
 export { authInterceptor, esDeLaApi } from './lib/interceptors/auth.interceptor';
 export { SiPermisoDirective } from './lib/directives/si-permiso.directive';
-export { PARAMETRO_RETORNO, rutaDeRetorno } from './lib/utils/navegacion';
+export { PARAMETRO_RETORNO, PARAMETRO_VOLVER_A, rutaDeRetorno, urlDeVuelta } from './lib/utils/navegacion';

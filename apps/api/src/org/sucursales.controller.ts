@@ -15,6 +15,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
+  ConsultarSucursal,
   EditarSucursal,
   InactivarSucursal,
   ListarSucursales,
@@ -38,6 +39,7 @@ import {
   listadoDto,
   paginaDe,
   RegistrarSucursalDto,
+  SucursalDto,
   sucursalDto,
   SucursalRegistradaDto,
   TAMANO_PAGINA_DEFECTO,
@@ -58,6 +60,7 @@ const SUCURSAL_NO_EXISTE = 'La sucursal no existe';
 export class SucursalesController {
   constructor(
     @Inject(ListarSucursales) private readonly listarSucursales: ListarSucursales,
+    @Inject(ConsultarSucursal) private readonly consultarSucursal: ConsultarSucursal,
     @Inject(RegistrarSucursal) private readonly registrarSucursal: RegistrarSucursal,
     @Inject(EditarSucursal) private readonly editarSucursal: EditarSucursal,
     @Inject(InactivarSucursal) private readonly inactivarSucursal: InactivarSucursal,
@@ -77,6 +80,14 @@ export class SucursalesController {
     const filtro = validar(EsquemaListarActivos, consulta);
     const sucursales = await this.listarSucursales.ejecutar(empresaId, { ...paginaDe(filtro), activo: activoDe(filtro.activo) });
     return listadoDto(sucursales, sucursalDto);
+  }
+
+  @Get('sucursales/:id')
+  @Permiso(PERMISOS_ORG.organizacionConsultar)
+  @ApiOkResponse({ type: SucursalDto, description: 'La misma fila que la lista, con su versión' })
+  @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (inexistente, de otro tenant o id no UUID)' })
+  async consultar(@Param('id') id: string): Promise<SucursalDto> {
+    return sucursalDto(await this.consultarSucursal.ejecutar(exigirUuid(id, SUCURSAL_NO_EXISTE)));
   }
 
   @Post('empresas/:id/sucursales')

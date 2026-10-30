@@ -1,6 +1,6 @@
 # SPEC 16a — Usuarios y asignaciones: lectura de miembros, otorgar por HTTP y UI de administración del cliente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 08, SPEC 15, SPEC 17a
 > **Date:** 2026-10-28
 > **Objective:** Exponer la lista y el detalle de miembros, los roles y perfiles asignables y `POST /v1/seg/asignaciones`, y construir en la nueva lib `libs/plataforma/admin-cliente` las pantallas para invitar, asignar, suspender, reactivar, finalizar y revocar (U-03).

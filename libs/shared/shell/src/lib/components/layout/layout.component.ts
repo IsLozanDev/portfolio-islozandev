@@ -9,7 +9,8 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { SesionService } from '@vitrina/shared/auth';
 import { filter, map } from 'rxjs';
 import { CLAVE_NOMBRE_APP, CLAVE_PREFIJO_MENU } from '../../models/datos-ruta-shell';
-import { MENSAJES_SHELL } from '../../models/mensajes-shell';
+import { MENSAJES_SHELL, mensajeVolverA } from '../../models/mensajes-shell';
+import { VolverAService } from '../../services/volver-a.service';
 import { construirArbolMenu, filtrarMenuPorPrefijo } from '../../utils/arbol-menu';
 import { MenuLateralComponent } from '../menu-lateral/menu-lateral.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
@@ -34,6 +35,8 @@ export class LayoutComponent {
   private readonly prefijoMenu: string | undefined = this.datosRuta[CLAVE_PREFIJO_MENU];
 
   protected readonly mensajes = MENSAJES_SHELL;
+  protected readonly mensajeVolverA = mensajeVolverA;
+  protected readonly volverA = inject(VolverAService).destino;
   protected readonly nombreApp: string = this.datosRuta[CLAVE_NOMBRE_APP] ?? MENSAJES_SHELL.nombreAppPorDefecto;
   protected readonly menu = computed(() => construirArbolMenu(filtrarMenuPorPrefijo(this.sesion.contexto()?.menu ?? [], this.prefijoMenu)));
   protected readonly escritorio = toSignal(
