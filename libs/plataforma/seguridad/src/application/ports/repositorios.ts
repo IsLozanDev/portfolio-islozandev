@@ -30,6 +30,8 @@ export interface RepositorioPerfiles {
 export interface CatalogoPermisos {
   permisos(codigos: readonly string[]): Promise<PermisoCatalogo[]>;
   sensible(codigo: string): Promise<boolean>;
+  /** Permisos del rol predefinido (`tenant_id` nulo) con ese código; vacío si no existe. */
+  permisosDeRolPredefinido(codigo: string): Promise<string[]>;
 }
 
 /** Productos con suscripción PRUEBA o ACTIVA vigente del tenant del contexto (TR-RN-006). */

@@ -1,0 +1,49 @@
+<section class="flex max-w-4xl flex-col gap-4">
+  <a mat-button class="self-start" routerLink="..">{{ mensajes.volver }}</a>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (rol(); as detalle) {
+    <header class="flex flex-col gap-1">
+      <h1 class="text-2xl font-medium">{{ detalle.nombre }}</h1>
+      <p class="flex flex-wrap items-center gap-2 text-sm">
+        <code class="text-sobre-superficie-variante">{{ detalle.codigo }}</code>
+        <span>{{ detalle.productoNombre }}</span>
+        <span class="rounded-tarjeta border border-borde px-2 py-0.5" data-tipo>{{ tipo() }}</span>
+        <span class="rounded-tarjeta bg-contenedor-secundario px-2 py-0.5 text-sobre-contenedor-secundario" data-estado>{{ estado() }}</span>
+      </p>
+    </header>
+
+    @if (detalle.predefinido) {
+      <p class="rounded-tarjeta border border-borde p-3 text-sm" data-aviso="predefinido">{{ mensajes.predefinidoNoEditable }}</p>
+    } @else if (!detalle.activo) {
+      <p class="rounded-tarjeta border border-borde p-3 text-sm" data-aviso="inactivo">{{ mensajes.inactivoNoEditable }}</p>
+    }
+
+    @if (detalle.activo) {
+      <div class="flex flex-wrap gap-2" data-acciones-rol>
+        @if (editable()) {
+          <button mat-flat-button type="button" [disabled]="ocupado() || !hayCambios() || sinPermisos()" (click)="guardar()" data-accion="guardar">
+            {{ mensajes.guardar }}
+          </button>
+        }
+        <button mat-stroked-button type="button" [disabled]="ocupado()" (click)="copiar()" data-accion="copiar">{{ mensajes.copiar }}</button>
+        @if (editable()) {
+          <button mat-stroked-button type="button" [disabled]="ocupado()" (click)="inactivar()" data-accion="inactivar">{{ mensajes.inactivar }}</button>
+        }
+      </div>
+    }
+
+    @if (editable() && sinPermisos()) {
+      <p role="alert" class="text-sm text-error" data-error="permisos">{{ mensajes.seleccionePermiso }}</p>
+    }
+
+    @if (arbol(); as catalogo) {
+      <vit-arbol-permisos [arbol]="catalogo" [soloLectura]="!editable()" [(seleccionados)]="seleccionados" />
+    }
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>

@@ -1,0 +1,24 @@
+<section class="flex max-w-4xl flex-col gap-4">
+  @if (origen(); as rolOrigen) {
+    <h1 class="text-2xl font-medium">{{ mensajes.tituloCopia(rolOrigen.nombre) }}</h1>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (arbol(); as catalogo) {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="copiar()" novalidate>
+      <vit-form-rol [grupo]="grupo" />
+      <vit-arbol-permisos [arbol]="catalogo" [(seleccionados)]="seleccionados" />
+
+      @if (faltanPermisos() && seleccionados().size === 0) {
+        <p role="alert" class="text-sm text-error" data-error="permisos">{{ mensajes.seleccionePermiso }}</p>
+      }
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.crear" (cancelar)="cancelar()" />
+    </form>
+  } @else if (!error()) {
+    <vit-cargando />
+  }
+</section>

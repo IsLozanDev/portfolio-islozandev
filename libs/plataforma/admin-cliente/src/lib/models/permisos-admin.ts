@@ -3,4 +3,5 @@ export const PERMISOS_ADMIN = {
   usuarioInvitar: 'plat.usuario.invitar',
   asignacionOtorgar: 'plat.asignacion.otorgar',
   asignacionRevocar: 'plat.asignacion.revocar',
+  rolGestionar: 'plat.rol.gestionar',
 } as const;

@@ -9,13 +9,30 @@ import type {
 } from '../../application/ports/repositorios.js';
 import type { Alcance } from '../../domain/alcance.js';
 import type { PermisoCatalogo } from '../../domain/rol.js';
+import { RolLecturaEntidad, RolPermisoLecturaEntidad } from './entidades-lectura.js';
 import { RepositorioBase } from './repositorio-base.js';
 
 // Lecturas sin agregado propio, en la misma transacción que el caso de uso.
 
 export class CatalogoPermisosTypeOrm extends RepositorioBase implements CatalogoPermisos {
-  constructor(uow: TypeOrmUnitOfWork, tenants: TenantContext) {
-    super(uow, tenants);
+  constructor(
+    private readonly unidadDeTrabajo: TypeOrmUnitOfWork,
+    tenants: TenantContext,
+  ) {
+    super(unidadDeTrabajo, tenants);
+  }
+
+  async permisosDeRolPredefinido(codigo: string): Promise<string[]> {
+    const filas = await this.unidadDeTrabajo.manager
+      .getRepository(RolPermisoLecturaEntidad)
+      .createQueryBuilder('rolPermiso')
+      .innerJoin(RolLecturaEntidad.options.name, 'rol', 'rol.id = rolPermiso.rolId')
+      .select('rolPermiso.permisoCodigo', 'permisoCodigo')
+      .where('rol.tenantId IS NULL')
+      .andWhere('rol.codigo = :codigo', { codigo })
+      .orderBy('rolPermiso.permisoCodigo')
+      .getRawMany<{ permisoCodigo: string }>();
+    return filas.map((fila) => fila.permisoCodigo);
   }
 
   async permisos(codigos: readonly string[]): Promise<PermisoCatalogo[]> {

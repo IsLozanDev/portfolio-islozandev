@@ -1,6 +1,6 @@
 # SPEC 17b — Consola de plataforma: app `plataforma-consola` con lista, detalle, alta y cambio de estado de tenants
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 13, SPEC 15, SPEC 16a, SPEC 17a
 > **Date:** 2026-10-28
 > **Objective:** Crear la app `apps/plataforma-consola`, con MFA obligatorio en toda la app, y la lib `libs/plataforma/consola-tenants` para listar, consultar, dar de alta con asistente y cambiar el estado de tenants sobre la API del 12 y el 17a (O-04).

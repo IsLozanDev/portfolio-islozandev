@@ -1,0 +1,30 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.tituloRoles }}</h1>
+    <a mat-flat-button routerLink="nuevo" data-accion="nuevo">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      {{ mensajes.nuevoRol }}
+    </a>
+  </header>
+
+  <vit-filtros [definiciones]="filtros()" [placeholderBusqueda]="mensajes.buscarRol" (cambio)="filtrar($event)" />
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filas()"
+    [total]="filas().length"
+    [cargando]="cargando()"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinRoles"
+  >
+    <ng-template vitAccionesFila let-rol>
+      <a mat-icon-button [routerLink]="rol.id" [attr.aria-label]="verDetalle + ': ' + rol.nombre">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>

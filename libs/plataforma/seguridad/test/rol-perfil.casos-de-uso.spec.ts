@@ -1,6 +1,7 @@
 import { ConflictError, NotFoundError } from '@vitrina/plataforma/kernel';
 import { CambiarRolesPerfil, CrearPerfil } from '../src/application/perfil.casos-de-uso.js';
 import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from '../src/application/rol.casos-de-uso.js';
+import { ROL_PROPIETARIO } from '../src/application/invitar-propietario.js';
 import { PermisoAjenoAlProductoError, ProductoNoContratadoError, RolPredefinidoNoEditableError } from '../src/domain/errores.js';
 import { RolRepositorioTypeOrm } from '../src/infrastructure/typeorm/rol.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
@@ -11,6 +12,8 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
   let tenant: string;
   let REST_MOZO: string;
   let REST_CAJERO: string;
+  let PLAT_ADMIN_TENANTS: string;
+  let PLAT_ADMIN_SEGURIDAD: string;
 
   const crearRol = () => new CrearRol(e.uow, e.contexto, e.ids, e.eventos, e.repos);
   const copiarRol = () => new CopiarRol(e.uow, e.contexto, e.ids, e.eventos, e.repos);
@@ -26,12 +29,15 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
 
   beforeAll(async () => {
     e = await crearEntorno();
-    for (const p of ['rest.pedido.tomar', 'rest.pedido.anular', 'rest.mesa.ver', 'rest.caja.cerrar', 'gym.acceso.registrar', 'plat.rol.gestionar', 'lib.venta.registrar', 'eco.pedido.gestionar', 'cli.cita.registrar']) {
+    for (const p of ['rest.pedido.tomar', 'rest.pedido.anular', 'rest.mesa.ver', 'rest.caja.cerrar', 'gym.acceso.registrar', 'plat.rol.gestionar', 'lib.venta.registrar', 'eco.pedido.gestionar', 'cli.cita.registrar', 'plat.asignacion.revocar', 'plat.manifiesto.aplicar', 'plat.tenant.crear']) {
       await e.sembrar.permiso(p);
     }
     await e.sembrar.permiso('rest.retirado.ver', { obsoleto: true });
     REST_MOZO = await e.sembrar.rol(null, 'REST', 'REST_MOZO', ['rest.pedido.tomar', 'rest.pedido.anular', 'rest.mesa.ver']);
     REST_CAJERO = await e.sembrar.rol(null, 'REST', 'REST_CAJERO', ['rest.caja.cerrar']);
+    await e.sembrar.rol(null, 'PLAT', ROL_PROPIETARIO, ['plat.rol.gestionar', 'plat.asignacion.revocar']);
+    PLAT_ADMIN_TENANTS = await e.sembrar.rol(null, 'PLAT', 'PLAT_ADMIN_TENANTS', ['plat.tenant.crear']);
+    PLAT_ADMIN_SEGURIDAD = await e.sembrar.rol(null, 'PLAT', 'PLAT_ADMIN_SEGURIDAD', ['plat.rol.gestionar', 'plat.asignacion.revocar']);
     tenant = await e.sembrar.tenant();
     await e.sembrar.suscripcion(tenant, 'REST');
     await e.sembrar.suscripcion(tenant, 'GYM', 'VENCIDA');
@@ -130,6 +136,36 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
       await expect(e.en(tenant, () => copiarRol().ejecutar({ origenId: ajeno, codigo: 'COPIA', nombre: 'Copia' }))).rejects.toThrow(NotFoundError);
       expect(await e.en(tenant, () => e.uow.run(() => e.repos.roles.buscarPorCodigo('AJENO')))).toBeNull();
       expect((await e.en(tenant, () => e.uow.run(() => e.repos.roles.buscarPorCodigo('REST_MOZO'))))?.id).toBe(REST_MOZO);
+    });
+  });
+
+  describe('Techo de PLAT: permisos de PLAT_PROPIETARIO (spec 16b)', () => {
+    it('crear un rol PLAT con un permiso de despliegue o de operador se rechaza sin dejar filas', async () => {
+      for (const permiso of ['plat.manifiesto.aplicar', 'plat.tenant.crear']) {
+        await expect(
+          e.en(tenant, () => crearRol().ejecutar({ productoCodigo: 'PLAT', codigo: 'ESCALADA', nombre: 'Escalada', permisos: ['plat.rol.gestionar', permiso] })),
+        ).rejects.toThrow(new PermisoAjenoAlProductoError([permiso]));
+      }
+      expect((await e.dataSource.query("SELECT count(*)::int AS n FROM seg.rol WHERE codigo = 'ESCALADA'"))[0].n).toBe(0);
+    });
+
+    it('copiar PLAT_ADMIN_TENANTS sin permisos se rechaza', async () => {
+      await expect(
+        e.en(tenant, () => copiarRol().ejecutar({ origenId: PLAT_ADMIN_TENANTS, codigo: 'TENANTS_COPIA', nombre: 'Copia de tenants' })),
+      ).rejects.toThrow(new PermisoAjenoAlProductoError(['plat.tenant.crear']));
+    });
+
+    it('copiar PLAT_ADMIN_SEGURIDAD sin permisos copia los suyos y deja solo rol.creado', async () => {
+      const { rolId } = await e.en(tenant, () => copiarRol().ejecutar({ origenId: PLAT_ADMIN_SEGURIDAD, codigo: 'SEGURIDAD_COPIA', nombre: 'Copia de seguridad' }));
+
+      expect(await permisosDe(rolId)).toEqual(['plat.asignacion.revocar', 'plat.rol.gestionar']);
+      expect(await e.eventosDe(rolId)).toEqual([['rol.creado', 1]]);
+    });
+
+    it('cambiar permisos de un rol PLAT propio a uno de operador se rechaza', async () => {
+      const { rolId } = await e.en(tenant, () => crearRol().ejecutar({ productoCodigo: 'PLAT', codigo: 'SEG_PROPIO', nombre: 'Seguridad propia', permisos: ['plat.rol.gestionar'] }));
+      await expect(e.en(tenant, () => cambiarPermisos().ejecutar({ rolId, permisos: ['plat.tenant.crear'] }))).rejects.toThrow(PermisoAjenoAlProductoError);
+      expect(await permisosDe(rolId)).toEqual(['plat.rol.gestionar']);
     });
   });
 

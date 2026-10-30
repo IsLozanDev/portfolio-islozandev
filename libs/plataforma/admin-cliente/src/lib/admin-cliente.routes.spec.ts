@@ -19,7 +19,7 @@ const ESPERA_PRECARGA_MS = 30_000;
 describe('ADMIN_CLIENTE_ROUTES', () => {
   let sesion: DobleSesion;
 
-  beforeAll(() => import('./pages/usuarios-lista/usuarios-lista.page'), ESPERA_PRECARGA_MS);
+  beforeAll(() => Promise.all([import('./pages/usuarios-lista/usuarios-lista.page'), import('./pages/roles-lista/roles-lista.page')]), ESPERA_PRECARGA_MS);
 
   async function navegar(url: string): Promise<{ url: string; titulo: string }> {
     TestBed.configureTestingModule({
@@ -56,5 +56,17 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     sesion.conPermisos(PERMISOS_ADMIN.usuarioInvitar);
 
     expect((await navegar('/admin/asignaciones')).url).toBe('/admin/usuarios');
+  });
+
+  it('/admin/roles abre la lista con plat.rol.gestionar', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.rolGestionar);
+
+    expect(await navegar('/admin/roles')).toEqual({ url: '/admin/roles', titulo: 'Roles' });
+  });
+
+  it.each(['/admin/roles', '/admin/roles/nuevo', '/admin/roles/r-mozo', '/admin/roles/r-mozo/copiar'])('%s sin plat.rol.gestionar va a /403', async (ruta) => {
+    sesion.conPermisos(PERMISOS_ADMIN.usuarioInvitar);
+
+    expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
   });
 });

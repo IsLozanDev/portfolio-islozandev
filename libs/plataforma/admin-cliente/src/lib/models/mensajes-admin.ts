@@ -101,6 +101,51 @@ export const MENSAJES_ASIGNACION = {
   sensible: 'requiere verificación',
 } as const;
 
+/** Roles y árbol de permisos (spec 16b). */
+export const MENSAJES_ROLES = {
+  tituloRoles: 'Roles',
+  nuevoRol: 'Nuevo rol',
+  buscarRol: 'Buscar por nombre o código',
+  sinRoles: 'No hay roles con estos filtros.',
+  producto: 'Producto',
+  tipo: 'Tipo',
+  estado: 'Estado',
+  permisos: 'Permisos',
+  codigo: 'Código',
+  nombre: 'Nombre',
+  permisosSeleccionados: (cantidad: number) => (cantidad === 1 ? '1 permiso seleccionado' : `${cantidad} permisos seleccionados`),
+  otrosPermisos: 'Otros permisos',
+  sensible: 'Requiere verificación',
+  todaLaOpcion: (opcion: string) => `Todos los permisos de ${opcion}`,
+  todoElModulo: (modulo: string) => `Todos los permisos de ${modulo}`,
+  sinPermisosEnCatalogo: 'Este producto no tiene permisos en su catálogo.',
+  tituloNuevo: 'Nuevo rol',
+  tituloCopia: (nombre: string) => `Copiar «${nombre}»`,
+  elijaProducto: 'Elija un producto para ver sus permisos.',
+  seleccionePermiso: 'Seleccione al menos un permiso',
+  crear: 'Crear rol',
+  rolCreado: 'Rol creado',
+  volver: 'Volver a roles',
+  copiar: 'Copiar',
+  inactivar: 'Inactivar',
+  guardar: 'Guardar permisos',
+  permisosGuardados: 'Permisos guardados',
+  /** TR-CA-032, texto del SRS. */
+  predefinidoNoEditable: 'Los roles predefinidos no se editan; cree una copia',
+  inactivoNoEditable: 'Este rol está inactivo: no se edita ni se copia.',
+  rolInactivado: 'Rol inactivado',
+} as const;
+
+/** TR-CA-033 y TR-RNF-021: confirmación sin motivo, con los usuarios afectados si los hay. */
+export const CONFIRMACION_INACTIVAR_ROL = {
+  titulo: (nombre: string) => `¿Inactivar el rol ${nombre}?`,
+  afectados: (nombre: string, afectados: number) =>
+    `El rol ${nombre} está asignado a ${afectados === 1 ? '1 usuario' : `${afectados} usuarios`}. Sus permisos dejarán de estar vigentes.`,
+} as const;
+
+export const ETIQUETAS_TIPO_ROL = { predefinido: 'Predefinido', propio: 'Propio' } as const;
+export const ETIQUETAS_ESTADO_ROL = { activo: 'Activo', inactivo: 'Inactivo' } as const;
+
 export const ETIQUETAS_ALCANCE: Readonly<Record<Alcance, string>> = {
   TENANT: 'Todo el tenant',
   EMPRESA: 'Una empresa',
