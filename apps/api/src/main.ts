@@ -10,8 +10,10 @@ import { ENTIDADES_SEG_LECTURA, registrarEsquemasSeg } from '@vitrina/plataforma
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
+import { opcionesCors } from './cors.js';
 
 const config = cargarConfig();
+const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -39,4 +41,5 @@ const app = await NestFactory.create(
   }),
 );
 configurarApp(app);
+if (cors) app.enableCors(cors);
 await app.listen(config.PORT);
