@@ -21,6 +21,7 @@ const SANGRIA_POR_NIVEL_REM = 1;
 })
 export class MenuLateralComponent {
   readonly nodos = input.required<NodoMenu[]>();
+  readonly nombreApp = input.required<string>();
 
   protected readonly mensajes = MENSAJES_SHELL;
   protected readonly iconoSinOpciones = ICONO_SIN_OPCIONES;

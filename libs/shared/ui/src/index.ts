@@ -11,7 +11,7 @@ export type {
   ResultadoConfirmacionDestructiva,
   TipoAviso,
 } from './lib/models/aviso';
-export type { CambioOrden, CambioPagina, ColumnaTabla } from './lib/models/columna-tabla';
+export type { CambioOrden, CambioPagina, ColumnaTabla, RolMovil } from './lib/models/columna-tabla';
 export type { DefinicionFiltro, OpcionFiltro, ValorFiltros } from './lib/models/filtro';
 export type { TonoEstado } from './lib/models/tono-estado';
 export { MENSAJES_UI } from './lib/models/mensajes-ui';

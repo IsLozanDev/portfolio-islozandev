@@ -1,8 +1,10 @@
+import { BreakpointObserver, type BreakpointState } from '@angular/cdk/layout';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { MatPaginatorHarness } from '@angular/material/paginator/testing';
 import { MatSortHarness } from '@angular/material/sort/testing';
+import { of } from 'rxjs';
 import { AccionesFilaDirective } from '../../directives/acciones-fila.directive';
 import type { CambioOrden, CambioPagina, ColumnaTabla } from '../../models/columna-tabla';
 import { TablaComponent } from './tabla.component';
@@ -114,5 +116,96 @@ describe('TablaComponent', () => {
 
     expect(await correo.isDisabled()).toBe(true);
     expect(anfitrion.ordenes).toEqual([{ clave: 'nombre', direccion: 'asc' }]);
+  });
+});
+
+interface Membresia {
+  correo: string;
+  estado: string;
+}
+
+@Component({
+  imports: [TablaComponent],
+  template: '<vit-tabla [columnas]="columnas" [filas]="filas" [total]="1" />',
+})
+class TablaConTono {
+  readonly columnas: ColumnaTabla<Membresia>[] = [
+    { clave: 'correo', titulo: 'Correo' },
+    { clave: 'estado', titulo: 'Estado', tono: (fila) => (fila.estado === 'Activo' ? 'exito' : 'neutro') },
+  ];
+  readonly filas: Membresia[] = [{ correo: 'ana@vitrina.pe', estado: 'Activo' }];
+}
+
+describe('TablaComponent con tono', () => {
+  it('la columna con tono pinta un chip y la columna sin tono pinta texto', async () => {
+    const fixture = TestBed.createComponent(TablaConTono);
+    await fixture.whenStable();
+    const [celdaCorreo, celdaEstado] = fixture.nativeElement.querySelectorAll('td.mat-mdc-cell') as NodeListOf<HTMLElement>;
+
+    expect(celdaCorreo.querySelector('vit-chip-estado')).toBeNull();
+    expect(celdaCorreo.textContent?.trim()).toBe('ana@vitrina.pe');
+    const chip = celdaEstado.querySelector('vit-chip-estado span');
+    expect(chip?.textContent?.trim()).toBe('Activo');
+    expect(chip?.classList).toContain('bg-chip-exito');
+  });
+});
+
+interface Contacto {
+  nombre: string;
+  correo: string;
+  telefono: string;
+  estado: string;
+}
+
+@Component({
+  imports: [TablaComponent, AccionesFilaDirective],
+  template: `
+    <vit-tabla [columnas]="columnas" [filas]="filas" [total]="1">
+      <ng-template vitAccionesFila let-fila>
+        <button type="button">Ver {{ fila.nombre }}</button>
+      </ng-template>
+    </vit-tabla>
+  `,
+})
+class TablaMovil {
+  readonly columnas: ColumnaTabla<Contacto>[] = [
+    { clave: 'nombre', titulo: 'Nombre', movil: 'titulo' },
+    { clave: 'correo', titulo: 'Correo', movil: 'detalle' },
+    { clave: 'telefono', titulo: 'Teléfono' },
+    { clave: 'estado', titulo: 'Estado', movil: 'estado', tono: () => 'advertencia' },
+  ];
+  readonly filas: Contacto[] = [{ nombre: 'Ana Torres', correo: 'ana@vitrina.pe', telefono: '999888777', estado: 'Invitado' }];
+}
+
+function simularAncho(esMovil: boolean): void {
+  const estado: BreakpointState = { matches: esMovil, breakpoints: {} };
+  TestBed.overrideProvider(BreakpointObserver, { useValue: { observe: () => of(estado) } });
+}
+
+describe('TablaComponent en celular', () => {
+  it('pinta una lista con título, detalle, chip de estado y acciones, sin las columnas sin movil', async () => {
+    simularAncho(true);
+    const fixture = TestBed.createComponent(TablaMovil);
+    await fixture.whenStable();
+    const elemento: HTMLElement = fixture.nativeElement;
+    const item = elemento.querySelector('li');
+
+    expect(elemento.querySelector('table')).toBeNull();
+    expect(elemento.querySelectorAll('li')).toHaveLength(1);
+    expect(item?.querySelector('.font-medium')?.textContent?.trim()).toBe('Ana Torres');
+    expect(item?.textContent).toContain('ana@vitrina.pe');
+    expect(item?.querySelector('vit-chip-estado span')?.classList).toContain('bg-chip-advertencia');
+    expect(item?.querySelector('button')?.textContent).toBe('Ver Ana Torres');
+    expect(item?.textContent).not.toContain('999888777');
+  });
+
+  it('en escritorio pinta la tabla con todas las columnas', async () => {
+    simularAncho(false);
+    const fixture = TestBed.createComponent(TablaMovil);
+    await fixture.whenStable();
+    const elemento: HTMLElement = fixture.nativeElement;
+
+    expect(elemento.querySelector('ul')).toBeNull();
+    expect(elemento.querySelector('table')?.textContent).toContain('999888777');
   });
 });

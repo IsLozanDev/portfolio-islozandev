@@ -9,6 +9,7 @@ export const MENSAJES_SHELL = {
   errorCargarSucursales: 'No se pudieron cargar sus sucursales. Inténtelo de nuevo.',
   volverAlInicio: 'Volver al inicio',
   salir: 'Salir',
+  marca: 'Vitrina',
   nombreAppPorDefecto: 'Plataforma',
   abrirMenu: 'Abrir menú',
   menuPrincipal: 'Menú principal',

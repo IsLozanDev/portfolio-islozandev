@@ -1,22 +1,27 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, contentChild, input, output } from '@angular/core';
+import { Component, computed, contentChild, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatPaginatorIntl, MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { map } from 'rxjs';
 import { AccionesFilaDirective } from '../../directives/acciones-fila.directive';
-import type { CambioOrden, CambioPagina, ColumnaTabla } from '../../models/columna-tabla';
+import type { CambioOrden, CambioPagina, ColumnaTabla, RolMovil } from '../../models/columna-tabla';
 import { MENSAJES_UI } from '../../models/mensajes-ui';
 import { PaginadorEnEspanol } from '../../services/paginador-en-espanol.service';
 import { CargandoComponent } from '../cargando/cargando.component';
+import { ChipEstadoComponent } from '../chip-estado/chip-estado.component';
 import { EstadoVacioComponent } from '../estado-vacio/estado-vacio.component';
 
 export const COLUMNA_ACCIONES = 'acciones';
 export const TAMANOS_PAGINA_POR_DEFECTO = [10, 25, 50];
+export const BREAKPOINT_MOVIL = '(max-width: 599.98px)';
 
-/** Tabla con paginación y orden del lado del servidor: recibe la página actual y el total, y emite los cambios. */
+/** Tabla con paginación y orden del lado del servidor: recibe la página actual y el total, y emite los cambios. En celular se pinta como lista. */
 @Component({
   selector: 'vit-tabla',
-  imports: [NgTemplateOutlet, MatTableModule, MatSortModule, MatPaginatorModule, CargandoComponent, EstadoVacioComponent],
+  imports: [NgTemplateOutlet, MatTableModule, MatSortModule, MatPaginatorModule, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent],
   providers: [{ provide: MatPaginatorIntl, useClass: PaginadorEnEspanol }],
   templateUrl: './tabla.component.html',
 })
@@ -35,13 +40,30 @@ export class TablaComponent<Fila extends object> {
   protected readonly accionesFila = contentChild<AccionesFilaDirective<Fila>>(AccionesFilaDirective);
   protected readonly tituloAcciones = MENSAJES_UI.acciones;
   protected readonly columnaAcciones = COLUMNA_ACCIONES;
+  protected readonly esMovil = toSignal(
+    inject(BreakpointObserver)
+      .observe(BREAKPOINT_MOVIL)
+      .pipe(map((estado) => estado.matches)),
+    { initialValue: false },
+  );
+  protected readonly columnaTitulo = computed(() => this.columnaConRol('titulo'));
+  protected readonly columnaEstado = computed(() => this.columnaConRol('estado'));
+  protected readonly columnasDetalle = computed(() => this.columnas().filter((columna) => columna.movil === 'detalle'));
   protected readonly columnasVisibles = computed(() => {
     const claves: string[] = this.columnas().map((columna) => columna.clave);
     return this.accionesFila() ? [...claves, COLUMNA_ACCIONES] : claves;
   });
 
+  private columnaConRol(rol: RolMovil): ColumnaTabla<Fila> | undefined {
+    return this.columnas().find((columna) => columna.movil === rol);
+  }
+
   protected valorDe(fila: Fila, clave: keyof Fila): unknown {
     return fila[clave];
+  }
+
+  protected textoDe(fila: Fila, clave: keyof Fila): string {
+    return String(fila[clave]);
   }
 
   protected cambiarPagina(evento: PageEvent): void {

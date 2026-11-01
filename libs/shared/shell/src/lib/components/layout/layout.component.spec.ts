@@ -47,16 +47,31 @@ describe('LayoutComponent', () => {
     return harness.fixture.debugElement.query(By.directive(MatSidenav)).componentInstance;
   }
 
-  it('pinta el menú del contexto, el contenido y el nombre por defecto', async () => {
+  it('pinta el menú del contexto, el contenido, la marca y el nombre por defecto en el menú lateral', async () => {
     await abrir(true);
-    expect(elemento().querySelector('vit-menu-lateral')?.textContent).toContain('Usuarios');
+    const menu = elemento().querySelector('vit-menu-lateral')?.textContent;
+    expect(menu).toContain('Usuarios');
+    expect(menu).toContain('Vitrina');
+    expect(menu).toContain('Plataforma');
     expect(elemento().querySelector('main')?.textContent).toContain('contenido');
-    expect(elemento().querySelector('mat-toolbar')?.textContent).toContain('Plataforma');
   });
 
   it('usa el nombre de la app de data de la ruta', async () => {
     await abrir(true, { [CLAVE_NOMBRE_APP]: 'SazónPOS' });
-    expect(elemento().querySelector('mat-toolbar')?.textContent).toContain('SazónPOS');
+    expect(elemento().querySelector('vit-menu-lateral')?.textContent).toContain('SazónPOS');
+  });
+
+  it('en escritorio la barra es clara y sin marca; en móvil es noche y muestra «Vitrina»', async () => {
+    await abrir(true);
+    const barraEscritorio = elemento().querySelector('mat-toolbar');
+    expect(barraEscritorio?.classList).toContain('vit-barra-clara');
+    expect(barraEscritorio?.textContent).not.toContain('Vitrina');
+
+    TestBed.resetTestingModule();
+    await abrir(false);
+    const barraMovil = elemento().querySelector('mat-toolbar');
+    expect(barraMovil?.classList).toContain('vit-barra-noche');
+    expect(barraMovil?.textContent).toContain('Vitrina');
   });
 
   it('con prefijo de menú muestra solo las opciones de la app', async () => {

@@ -4,6 +4,18 @@
 /* El tono 40 de la paleta generada (#036b58) no es el esmeralda de marca: se fija `primary` aparte. */
 $primario-marca: #0B6E5B;
 
+$noche: #071A17;
+$sobre-noche: #C9DCD6;
+$menta: #5EE2C0;
+
+/* Superficie oscura del shell: los textos e iconos de Material que heredan on-surface pasan a sobre-noche. */
+@mixin sobre-noche() {
+  @include mat.theme-overrides((
+    on-surface: $sobre-noche,
+    on-surface-variant: $sobre-noche,
+  ));
+}
+
 /* Tema Material 3 único de la plataforma; la app lo aplica en `html`. */
 @mixin aplicar-tema() {
   color-scheme: light;
@@ -24,5 +36,65 @@ $primario-marca: #0B6E5B;
 
   .vit-campo-codigo {
     @include mat.form-field-density(-2);
+  }
+
+  .vit-menu-noche {
+    @include sobre-noche();
+    @include mat.sidenav-overrides((
+      container-background-color: $noche,
+      container-text-color: $sobre-noche,
+      container-shape: 0,
+    ));
+    @include mat.list-overrides((
+      active-indicator-color: color-mix(in srgb, #{$menta} 16%, transparent),
+      list-item-hover-state-layer-color: $menta,
+      list-item-focus-state-layer-color: $menta,
+    ));
+  }
+
+  .vit-barra-clara {
+    @include mat.toolbar-overrides((
+      container-background-color: var(--mat-sys-surface-container-lowest),
+      container-text-color: var(--mat-sys-on-surface),
+    ));
+  }
+
+  .vit-barra-noche {
+    @include sobre-noche();
+    @include mat.toolbar-overrides((
+      container-background-color: $noche,
+      container-text-color: $sobre-noche,
+    ));
+  }
+
+  /* `vit-tabla` la trae puesta; las `mat-table` sueltas de los detalles la agregan. */
+  .vit-tabla-compacta {
+    @include mat.table-overrides((
+      header-container-height: 40px,
+      row-item-container-height: 40px,
+      header-headline-size: 13px,
+      row-item-outline-color: var(--mat-sys-outline-variant),
+    ));
+    /* Con un número, el mixin usa la escala M2: -4 son 32 px. */
+    @include mat.icon-button-density(-4);
+
+    .mat-mdc-header-cell + .mat-mdc-header-cell,
+    .mat-mdc-cell + .mat-mdc-cell {
+      border-left: 1px solid var(--color-borde);
+    }
+
+    .mat-mdc-row {
+      transition: background-color 120ms ease;
+
+      &:hover {
+        background-color: var(--mat-sys-surface-container);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mat-mdc-row {
+        transition: none;
+      }
+    }
   }
 }
