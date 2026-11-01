@@ -32,6 +32,8 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 17b | consola-plataforma | O-04 (RF 001, 006): app `plataforma-consola`, solo front | 7 | 15, 17a | 17b |
 | 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida). Front, más `GET` por id de empresa, sucursal y unidad y CORS por variable (`ORIGENES_PERMITIDOS`) | 9 | 16a, 17a | 17c |
 | 15b | identidad-visual | Revisión de diseño (sin historia en el plan): tema esmeralda, shell con menú oscuro, marco de `/auth` con la vitrina, chips de estado, `vit-tabla` como lista en celular; adopción en usuarios y tenants. Canvas «Vitrina · Diseño UI» | 9 | 15, 16a, 17b, 17c | — |
+| 15d | menu-colapsable-y-busqueda | Revisión de diseño (sin historia en el plan): menú lateral que se oculta a una franja de iconos con submenú, preferencia en `localStorage`, búsqueda de opciones con Ctrl K y teclado. Canvas «Shell · menú» | 6 | 15, 15b | — |
+| 15c | tema-oscuro | Revisión de diseño (sin historia en el plan): tema oscuro con selector Sistema / Claro / Oscuro en el menú de usuario, `light-dark()` en tokens, `data-tema` y script anti-parpadeo. Canvas «Tema oscuro» | 6 | 15b, 15d | — |
 | 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
 | 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
 | 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |

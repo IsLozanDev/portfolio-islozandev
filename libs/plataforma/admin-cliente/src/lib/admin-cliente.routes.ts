@@ -45,6 +45,26 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     loadComponent: () => import('./pages/rol-copia/rol-copia.page').then((modulo) => modulo.RolCopiaPage),
   },
   {
+    path: 'perfiles',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.perfilGestionar)],
+    loadComponent: () => import('./pages/perfiles-lista/perfiles-lista.page').then((modulo) => modulo.PerfilesListaPage),
+  },
+  {
+    path: 'perfiles/nuevo',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.perfilGestionar)],
+    loadComponent: () => import('./pages/perfil-nuevo/perfil-nuevo.page').then((modulo) => modulo.PerfilNuevoPage),
+  },
+  {
+    path: 'perfiles/:perfilId',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.perfilGestionar)],
+    loadComponent: () => import('./pages/perfil-detalle/perfil-detalle.page').then((modulo) => modulo.PerfilDetallePage),
+  },
+  {
+    path: 'perfiles/:perfilId/copiar',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.perfilGestionar)],
+    loadComponent: () => import('./pages/perfil-copia/perfil-copia.page').then((modulo) => modulo.PerfilCopiaPage),
+  },
+  {
     path: 'empresas',
     canMatch: [permisoGuard(PERMISOS_ADMIN.organizacionConsultar)],
     loadComponent: () => import('./pages/empresas-lista/empresas-lista.page').then((modulo) => modulo.EmpresasListaPage),

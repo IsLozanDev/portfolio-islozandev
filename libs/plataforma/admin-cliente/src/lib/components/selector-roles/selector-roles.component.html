@@ -1,0 +1,26 @@
+<section class="flex flex-col gap-3">
+  <p class="text-sm text-sobre-superficie-variante" aria-live="polite" data-contador>{{ mensajes.rolesSeleccionados(seleccionados().size) }}</p>
+
+  @for (grupo of grupos(); track grupo.productoCodigo) {
+    <fieldset class="rounded-tarjeta border border-borde p-4" [attr.data-producto]="grupo.productoCodigo">
+      <legend class="px-1 font-medium">{{ grupo.productoNombre }}</legend>
+      <ul>
+        @for (rol of grupo.roles; track rol.id) {
+          <li class="py-1" [attr.data-rol]="rol.id">
+            <mat-checkbox [checked]="seleccionados().has(rol.id)" [disabled]="soloLectura()" (change)="alternar(rol.id)">
+              <span class="flex flex-wrap items-center gap-x-2">
+                <span>{{ rol.nombre }}</span>
+                <code class="text-xs text-sobre-superficie-variante">{{ rol.codigo }}</code>
+                @if (rol.predefinido) {
+                  <span class="rounded-full bg-contenedor-secundario px-2 text-xs text-sobre-contenedor-secundario" data-predefinido>{{ mensajes.predefinido }}</span>
+                }
+              </span>
+            </mat-checkbox>
+          </li>
+        }
+      </ul>
+    </fieldset>
+  } @empty {
+    <vit-estado-vacio [icono]="iconoSinRoles" [titulo]="mensajes.sinRolesDisponibles" />
+  }
+</section>
