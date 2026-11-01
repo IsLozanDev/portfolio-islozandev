@@ -40,13 +40,13 @@ export class PerfilesCliente {
   }
 
   async crear(formulario: FormularioPerfil, roles: readonly string[]): Promise<string> {
-    const cuerpo = { codigo: formulario.codigo, nombre: formulario.nombre, roles: [...roles] };
+    const cuerpo = cuerpoPerfil(formulario, roles);
     return (await solicitar(this.http.post<PerfilCreadoRespuesta>(this.urlPerfiles, cuerpo))).perfil_id;
   }
 
   /** Copia y edición en una sola llamada; siempre envía los roles. */
   async copiar(origenId: string, formulario: FormularioPerfil, roles: readonly string[]): Promise<string> {
-    const cuerpo = { codigo: formulario.codigo, nombre: formulario.nombre, roles: [...roles] };
+    const cuerpo = cuerpoPerfil(formulario, roles);
     return (await solicitar(this.http.post<PerfilCreadoRespuesta>(`${this.urlDe(origenId)}/copia`, cuerpo))).perfil_id;
   }
 
@@ -58,4 +58,8 @@ export class PerfilesCliente {
   private urlDe(perfilId: string): string {
     return `${this.urlPerfiles}/${encodeURIComponent(perfilId)}`;
   }
+}
+
+function cuerpoPerfil(formulario: FormularioPerfil, roles: readonly string[]): FormularioPerfil & { roles: string[] } {
+  return { codigo: formulario.codigo, nombre: formulario.nombre, roles: [...roles] };
 }
