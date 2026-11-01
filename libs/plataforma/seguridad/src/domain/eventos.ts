@@ -36,6 +36,7 @@ export interface RolInactivado {
 export interface PerfilCreado {
   codigo: string;
   nombre: string;
+  copiado_de: string | null;
   roles: string[];
 }
 

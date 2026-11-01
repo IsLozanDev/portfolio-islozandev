@@ -52,7 +52,7 @@ export interface Semilla {
   suscripcion(tenantId: string, producto: string, estado?: 'PRUEBA' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA', limiteUsuarios?: number | null): Promise<void>;
   permiso(codigo: string, cambios?: { alcanceMinimo?: string; sensible?: boolean; obsoleto?: boolean }): Promise<void>;
   rol(tenantId: string | null, producto: string, codigo: string, permisos: string[]): Promise<string>;
-  perfil(tenantId: string, codigo: string, roles: string[]): Promise<string>;
+  perfil(tenantId: string | null, codigo: string, roles: string[]): Promise<string>;
   membresia(
     tenantId: string,
     estado?: 'INVITADO' | 'ACTIVO' | 'SUSPENDIDO' | 'FINALIZADO',

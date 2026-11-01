@@ -33,6 +33,7 @@ export {
   PerfilPredefinidoNoEditableError,
   PermisoAjenoAlProductoError,
   ProductoNoContratadoError,
+  RolFueraDelTechoError,
   RolOPerfilError,
   RolPredefinidoNoEditableError,
   VigenciaInvalidaError,
@@ -50,7 +51,14 @@ export {
   type InactivarRolComando,
   type ResultadoInactivar,
 } from './application/rol.casos-de-uso.js';
-export { CambiarRolesPerfil, CrearPerfil, type CambiarRolesPerfilComando, type CrearPerfilComando } from './application/perfil.casos-de-uso.js';
+export {
+  CambiarRolesPerfil,
+  CopiarPerfil,
+  CrearPerfil,
+  type CambiarRolesPerfilComando,
+  type CopiarPerfilComando,
+  type CrearPerfilComando,
+} from './application/perfil.casos-de-uso.js';
 export { OtorgarAsignacion, type Otorgante, type OtorgarAsignacionComando } from './application/otorgar-asignacion.js';
 export { AplicarManifiesto, type ResultadoManifiesto } from './application/aplicar-manifiesto.js';
 export type { RepositorioManifiestos, SesionManifiesto } from './application/ports/repositorios.js';

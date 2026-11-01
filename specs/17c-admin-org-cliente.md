@@ -1,6 +1,6 @@
 # SPEC 17c — Organización del cliente: empresas, sucursales y unidades en `admin-cliente`, y sesión compartida entre apps
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 13, SPEC 15, SPEC 16a, SPEC 17a, SPEC 17b
 > **Date:** 2026-10-29
 > **Objective:** Construir en `libs/plataforma/admin-cliente` las pantallas para registrar, editar, inactivar y reactivar empresas, sucursales y unidades (U-05), con sus tres lecturas por id en la API, y dejar `plataforma-admin` y `plataforma-consola` compartiendo la sesión entre subdominios con enlace de vuelta (U-06).

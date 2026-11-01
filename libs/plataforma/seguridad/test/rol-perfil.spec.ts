@@ -126,7 +126,7 @@ describe('Perfil (TR-RF-012)', () => {
       expect.objectContaining({
         eventType: 'perfil.creado',
         aggregateType: 'perfil',
-        payload: { codigo: 'ENCARGADO', nombre: 'Encargado de tienda', roles: [LIB_VENDEDOR.id, ECO_GESTOR.id].sort() },
+        payload: { codigo: 'ENCARGADO', nombre: 'Encargado de tienda', copiado_de: null, roles: [LIB_VENDEDOR.id, ECO_GESTOR.id].sort() },
       }),
     ]);
   });
@@ -163,6 +163,38 @@ describe('Perfil (TR-RF-012)', () => {
     expect(() => predefinido.cambiarRoles([LIB_VENDEDOR], ['LIB'])).toThrow(PerfilPredefinidoNoEditableError);
     expect(predefinido.tenantId).toBeNull();
     expect(predefinido.datos).toEqual({ codigo: 'CAJERO', nombre: 'Cajero' });
+  });
+
+  describe('copiarDe (spec 16c)', () => {
+    const COPIA = '0193f3a0-0000-7000-8000-000000000502';
+    const predefinido = Perfil.reconstituir('p3', 1, { tenantId: null, codigo: 'ENCARGADO', nombre: 'Encargado', roles: [LIB_VENDEDOR.id] });
+
+    it('crea un perfil propio con los roles indicados y un solo perfil.creado con copiado_de', () => {
+      const copia = Perfil.copiarDe(COPIA, TENANT, predefinido, { codigo: 'ENCARGADO_2', nombre: 'Encargado 2' }, [LIB_VENDEDOR, ECO_GESTOR], ['LIB', 'ECO']);
+
+      expect(copia.tenantId).toBe(TENANT);
+      expect(copia.roles).toEqual([LIB_VENDEDOR.id, ECO_GESTOR.id].sort());
+      expect(copia.pullEvents()).toEqual([
+        expect.objectContaining({
+          eventType: 'perfil.creado',
+          payload: { codigo: 'ENCARGADO_2', nombre: 'Encargado 2', copiado_de: 'p3', roles: [LIB_VENDEDOR.id, ECO_GESTOR.id].sort() },
+        }),
+      ]);
+    });
+
+    it('un origen de otro tenant se rechaza', () => {
+      const ajeno = Perfil.reconstituir('p4', 1, { tenantId: OTRO_TENANT, codigo: 'AJENO', nombre: 'Ajeno', roles: [LIB_VENDEDOR.id] });
+      expect(() => Perfil.copiarDe(COPIA, TENANT, ajeno, { codigo: 'COPIA', nombre: 'Copia' }, [LIB_VENDEDOR], ['LIB'])).toThrow(
+        new ConflictError('Solo se copian perfiles predefinidos o del propio tenant'),
+      );
+    });
+
+    it('valida el conjunto final con las reglas de crear', () => {
+      const copiar = (roles: Rol[]) => () => Perfil.copiarDe(COPIA, TENANT, predefinido, { codigo: 'COPIA', nombre: 'Copia' }, roles, ['LIB']);
+      expect(copiar([])).toThrow(ValidationError);
+      expect(copiar([rol('x3', { productoCodigo: 'LIB', activo: false })])).toThrow('inactivo');
+      expect(copiar([CLI_RECEPCION])).toThrow(ProductoNoContratadoError);
+    });
   });
 });
 

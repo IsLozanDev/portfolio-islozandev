@@ -1,8 +1,8 @@
 import { ConflictError, NotFoundError } from '@vitrina/plataforma/kernel';
-import { CambiarRolesPerfil, CrearPerfil } from '../src/application/perfil.casos-de-uso.js';
+import { CambiarRolesPerfil, CopiarPerfil, CrearPerfil } from '../src/application/perfil.casos-de-uso.js';
 import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from '../src/application/rol.casos-de-uso.js';
 import { ROL_PROPIETARIO } from '../src/application/invitar-propietario.js';
-import { PermisoAjenoAlProductoError, ProductoNoContratadoError, RolPredefinidoNoEditableError } from '../src/domain/errores.js';
+import { PermisoAjenoAlProductoError, ProductoNoContratadoError, RolFueraDelTechoError, RolPredefinidoNoEditableError } from '../src/domain/errores.js';
 import { RolRepositorioTypeOrm } from '../src/infrastructure/typeorm/rol.repositorio.js';
 import { crearEntorno, type Entorno } from './support/entorno.js';
 import { describeConDb } from './support/temp-db.js';
@@ -14,6 +14,7 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
   let REST_CAJERO: string;
   let PLAT_ADMIN_TENANTS: string;
   let PLAT_ADMIN_SEGURIDAD: string;
+  let PLAT_PROPIETARIO: string;
 
   const crearRol = () => new CrearRol(e.uow, e.contexto, e.ids, e.eventos, e.repos);
   const copiarRol = () => new CopiarRol(e.uow, e.contexto, e.ids, e.eventos, e.repos);
@@ -21,6 +22,7 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
   const inactivar = () => new InactivarRol(e.uow, e.eventos, e.repos.roles);
   const crearPerfil = () => new CrearPerfil(e.uow, e.contexto, e.ids, e.eventos, e.repos);
   const cambiarRoles = () => new CambiarRolesPerfil(e.uow, e.eventos, e.repos);
+  const copiarPerfil = () => new CopiarPerfil(e.uow, e.contexto, e.ids, e.eventos, e.repos);
 
   const permisosDe = async (rolId: string) =>
     (await e.dataSource.query('SELECT permiso_codigo FROM seg.rol_permiso WHERE rol_id = $1 ORDER BY 1', [rolId])).map((f: { permiso_codigo: string }) => f.permiso_codigo);
@@ -35,7 +37,7 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
     await e.sembrar.permiso('rest.retirado.ver', { obsoleto: true });
     REST_MOZO = await e.sembrar.rol(null, 'REST', 'REST_MOZO', ['rest.pedido.tomar', 'rest.pedido.anular', 'rest.mesa.ver']);
     REST_CAJERO = await e.sembrar.rol(null, 'REST', 'REST_CAJERO', ['rest.caja.cerrar']);
-    await e.sembrar.rol(null, 'PLAT', ROL_PROPIETARIO, ['plat.rol.gestionar', 'plat.asignacion.revocar']);
+    PLAT_PROPIETARIO = await e.sembrar.rol(null, 'PLAT', ROL_PROPIETARIO, ['plat.rol.gestionar', 'plat.asignacion.revocar']);
     PLAT_ADMIN_TENANTS = await e.sembrar.rol(null, 'PLAT', 'PLAT_ADMIN_TENANTS', ['plat.tenant.crear']);
     PLAT_ADMIN_SEGURIDAD = await e.sembrar.rol(null, 'PLAT', 'PLAT_ADMIN_SEGURIDAD', ['plat.rol.gestionar', 'plat.asignacion.revocar']);
     tenant = await e.sembrar.tenant();
@@ -246,6 +248,94 @@ describeConDb('Casos de uso de rol y perfil (PostgreSQL 16)', () => {
       ]);
       const [{ payload }] = await e.dataSource.query("SELECT payload FROM sync.outbox WHERE aggregate_id = $1 AND event_type = 'perfil.roles_cambiados'", [perfilId]);
       expect(payload).toEqual({ agregados: [ECO_GESTOR], quitados: [LIB_VENDEDOR] });
+    });
+
+    describe('CopiarPerfil (spec 16c)', () => {
+      const rolesDe = async (perfilId: string) =>
+        (await e.dataSource.query('SELECT rol_id FROM seg.perfil_rol WHERE perfil_id = $1 ORDER BY 1', [perfilId])).map((f: { rol_id: string }) => f.rol_id);
+      const payloadCreado = async (perfilId: string) =>
+        (await e.dataSource.query("SELECT payload FROM sync.outbox WHERE aggregate_id = $1 AND event_type = 'perfil.creado'", [perfilId]))[0].payload;
+
+      it('copiar un predefinido sin roles copia los suyos y deja solo perfil.creado con copiado_de', async () => {
+        const origen = await e.sembrar.perfil(null, 'ENCARGADO_BASE', [LIB_VENDEDOR, ECO_GESTOR]);
+        const { perfilId } = await e.en(tienda, () => copiarPerfil().ejecutar({ origenId: origen, codigo: 'ENCARGADO_COPIA', nombre: 'Encargado copia' }));
+
+        expect(await rolesDe(perfilId)).toEqual([LIB_VENDEDOR, ECO_GESTOR].sort());
+        expect((await e.dataSource.query('SELECT tenant_id FROM seg.perfil WHERE id = $1', [perfilId]))[0].tenant_id).toBe(tienda);
+        expect(await e.eventosDe(perfilId)).toEqual([['perfil.creado', 1]]);
+        expect((await payloadCreado(perfilId)).copiado_de).toBe(origen);
+      });
+
+      it('copiar un propio con roles usa esos roles', async () => {
+        const { perfilId: origen } = await e.en(tienda, () => crearPerfil().ejecutar({ codigo: 'MIXTO', nombre: 'Mixto', roles: [LIB_VENDEDOR, ECO_GESTOR] }));
+        const { perfilId } = await e.en(tienda, () => copiarPerfil().ejecutar({ origenId: origen, codigo: 'SOLO_ECO', nombre: 'Solo ECO', roles: [ECO_GESTOR] }));
+
+        expect(await rolesDe(perfilId)).toEqual([ECO_GESTOR]);
+        expect(await rolesDe(origen)).toEqual([LIB_VENDEDOR, ECO_GESTOR].sort());
+      });
+
+      it('un perfil de otro tenant no se copia', async () => {
+        const otro = await e.sembrar.tenant();
+        const ajeno = await e.sembrar.perfil(otro, 'AJENO', [LIB_VENDEDOR]);
+        await expect(e.en(tienda, () => copiarPerfil().ejecutar({ origenId: ajeno, codigo: 'COPIA_AJENA', nombre: 'Copia ajena' }))).rejects.toThrow(
+          new NotFoundError('El perfil no existe'),
+        );
+      });
+
+      it('un rol inactivo del origen hace fallar la copia salvo que se quite', async () => {
+        const retirado = await e.sembrar.rol(tienda, 'LIB', 'RETIRADO', ['lib.venta.registrar']);
+        const origen = await e.sembrar.perfil(tienda, 'CON_RETIRADO', [LIB_VENDEDOR, retirado]);
+        await e.dataSource.query('UPDATE seg.rol SET activo = false WHERE id = $1', [retirado]);
+
+        await expect(e.en(tienda, () => copiarPerfil().ejecutar({ origenId: origen, codigo: 'COPIA_FALLA', nombre: 'Copia que falla' }))).rejects.toThrow(
+          ConflictError,
+        );
+        const { perfilId } = await e.en(tienda, () =>
+          copiarPerfil().ejecutar({ origenId: origen, codigo: 'COPIA_SIN_RETIRADO', nombre: 'Copia sin retirado', roles: [LIB_VENDEDOR] }),
+        );
+        expect(await rolesDe(perfilId)).toEqual([LIB_VENDEDOR]);
+      });
+
+      it('copiar con PLAT_ADMIN_TENANTS se rechaza', async () => {
+        const { perfilId: origen } = await e.en(tienda, () => crearPerfil().ejecutar({ codigo: 'BASE_PLAT', nombre: 'Base PLAT', roles: [LIB_VENDEDOR] }));
+        await expect(
+          e.en(tienda, () => copiarPerfil().ejecutar({ origenId: origen, codigo: 'COPIA_PLAT', nombre: 'Copia PLAT', roles: [PLAT_ADMIN_TENANTS] })),
+        ).rejects.toThrow(RolFueraDelTechoError);
+      });
+    });
+
+    describe('Techo de PLAT en perfiles (spec 16c)', () => {
+      const rolesDe = async (perfilId: string) =>
+        (await e.dataSource.query('SELECT rol_id FROM seg.perfil_rol WHERE perfil_id = $1 ORDER BY 1', [perfilId])).map((f: { rol_id: string }) => f.rol_id);
+
+      it('crear un perfil con PLAT_ADMIN_TENANTS se rechaza sin dejar filas ni eventos', async () => {
+        const antes = await outboxDelTenant(tienda);
+        await expect(
+          e.en(tienda, () => crearPerfil().ejecutar({ codigo: 'OPERADOR', nombre: 'Operador', roles: [LIB_VENDEDOR, PLAT_ADMIN_TENANTS] })),
+        ).rejects.toThrow(new RolFueraDelTechoError('PLAT_ADMIN_TENANTS'));
+        expect((await e.dataSource.query("SELECT count(*)::int AS n FROM seg.perfil WHERE codigo = 'OPERADOR'"))[0].n).toBe(0);
+        expect(await outboxDelTenant(tienda)).toBe(antes);
+      });
+
+      it('agregar PLAT_ADMIN_TENANTS al cambiar roles se rechaza y deja los roles como estaban', async () => {
+        const { perfilId } = await e.en(tienda, () => crearPerfil().ejecutar({ codigo: 'CAJA_TIENDA', nombre: 'Caja de tienda', roles: [LIB_VENDEDOR] }));
+        await expect(e.en(tienda, () => cambiarRoles().ejecutar({ perfilId, roles: [LIB_VENDEDOR, PLAT_ADMIN_TENANTS] }))).rejects.toThrow(RolFueraDelTechoError);
+        expect(await rolesDe(perfilId)).toEqual([LIB_VENDEDOR]);
+      });
+
+      it('un rol PLAT propio con un permiso de operador (anterior al 16b) también se rechaza', async () => {
+        const heredado = await e.sembrar.rol(tienda, 'PLAT', 'HEREDADO', ['plat.rol.gestionar', 'plat.manifiesto.aplicar']);
+        await expect(e.en(tienda, () => crearPerfil().ejecutar({ codigo: 'HEREDADO', nombre: 'Heredado', roles: [heredado] }))).rejects.toThrow(
+          new RolFueraDelTechoError('HEREDADO'),
+        );
+      });
+
+      it('PLAT_PROPIETARIO y un rol de un producto contratado pasan', async () => {
+        const { perfilId } = await e.en(tienda, () =>
+          crearPerfil().ejecutar({ codigo: 'DUENO_TIENDA', nombre: 'Dueño de tienda', roles: [PLAT_PROPIETARIO, LIB_VENDEDOR] }),
+        );
+        expect(await rolesDe(perfilId)).toEqual([PLAT_PROPIETARIO, LIB_VENDEDOR].sort());
+      });
     });
   });
 });
