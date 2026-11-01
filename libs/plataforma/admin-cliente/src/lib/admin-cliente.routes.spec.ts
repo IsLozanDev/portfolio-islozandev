@@ -24,6 +24,7 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
       Promise.all([
         import('./pages/usuarios-lista/usuarios-lista.page'),
         import('./pages/roles-lista/roles-lista.page'),
+        import('./pages/perfiles-lista/perfiles-lista.page'),
         import('./pages/empresas-lista/empresas-lista.page'),
       ]),
     ESPERA_PRECARGA_MS,
@@ -77,6 +78,21 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
 
     expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
   });
+
+  it('/admin/perfiles abre la lista con plat.perfil.gestionar, sin plat.rol.gestionar', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.perfilGestionar);
+
+    expect(await navegar('/admin/perfiles')).toEqual({ url: '/admin/perfiles', titulo: 'Perfiles' });
+  });
+
+  it.each(['/admin/perfiles', '/admin/perfiles/nuevo', '/admin/perfiles/p-caja', '/admin/perfiles/p-caja/copiar'])(
+    '%s sin plat.perfil.gestionar va a /403',
+    async (ruta) => {
+      sesion.conPermisos(PERMISOS_ADMIN.rolGestionar);
+
+      expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
+    },
+  );
 
   it('/admin/empresas abre la lista con plat.organizacion.consultar', async () => {
     sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);

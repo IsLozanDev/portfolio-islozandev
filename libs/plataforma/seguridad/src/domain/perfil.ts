@@ -27,16 +27,34 @@ export class Perfil extends AggregateRoot {
 
   /** `contratados`: productos con suscripción vigente del tenant. PLAT no se contrata. */
   static crear(id: string, tenantId: string, datos: DatosPerfil, roles: readonly Rol[], contratados: readonly string[]): Perfil {
-    const perfil = new Perfil(id, 0, {
+    const perfil = Perfil.nuevo(id, tenantId, datos, roles, contratados);
+    perfil.publicarCreado(null);
+    return perfil;
+  }
+
+  /** Origen predefinido o del propio tenant; valida el conjunto final de roles con las reglas de `crear` (spec 16c). */
+  static copiarDe(id: string, tenantId: string, origen: Perfil, datos: DatosPerfil, roles: readonly Rol[], contratados: readonly string[]): Perfil {
+    if (origen.props.tenantId !== null && origen.props.tenantId !== tenantId) {
+      throw new ConflictError('Solo se copian perfiles predefinidos o del propio tenant');
+    }
+    const perfil = Perfil.nuevo(id, tenantId, datos, roles, contratados);
+    perfil.publicarCreado(origen.id);
+    return perfil;
+  }
+
+  private static nuevo(id: string, tenantId: string, datos: DatosPerfil, roles: readonly Rol[], contratados: readonly string[]): Perfil {
+    return new Perfil(id, 0, {
       tenantId,
       codigo: textoRequerido(datos.codigo, 3, 50, 'El código del perfil'),
       nombre: textoRequerido(datos.nombre, 3, 100, 'El nombre del perfil'),
       roles: validarRoles(tenantId, roles, contratados),
     });
-    const p = perfil.props;
-    const payload: PerfilCreado = { codigo: p.codigo, nombre: p.nombre, roles: [...p.roles] };
-    perfil.raise({ eventType: EVENTOS_SEG.perfilCreado, aggregateType: 'perfil', schemaVersion: 1, payload });
-    return perfil;
+  }
+
+  private publicarCreado(copiadoDe: string | null): void {
+    const { codigo, nombre, roles } = this.props;
+    const payload: PerfilCreado = { codigo, nombre, copiado_de: copiadoDe, roles: [...roles] };
+    this.raise({ eventType: EVENTOS_SEG.perfilCreado, aggregateType: 'perfil', schemaVersion: 1, payload });
   }
 
   static reconstituir(id: string, version: number, props: PerfilProps): Perfil {

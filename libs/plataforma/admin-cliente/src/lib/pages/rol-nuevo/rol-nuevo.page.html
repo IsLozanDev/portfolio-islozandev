@@ -16,7 +16,7 @@
         </mat-select>
       </mat-form-field>
 
-      <vit-form-rol [grupo]="grupo" />
+      <vit-form-codigo-nombre [grupo]="grupo" />
 
       @if (arbol(); as catalogo) {
         <vit-arbol-permisos [arbol]="catalogo" [(seleccionados)]="seleccionados" />

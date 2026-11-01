@@ -50,7 +50,7 @@ export interface ResultadoInactivar {
   afectados: number;
 }
 
-/** Lo que se escribe en `form-rol`; los permisos salen del árbol. */
+/** Lo que se escribe en `form-codigo-nombre`; los permisos salen del árbol. */
 export interface FormularioRol {
   codigo: string;
   nombre: string;

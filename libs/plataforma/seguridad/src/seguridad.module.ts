@@ -47,6 +47,10 @@ import { ConsultarCatalogo, ConsultarRol, ListarProductosDisponibles, ListarRole
 import { LecturaRolesTypeOrm } from './infrastructure/typeorm/lectura-roles.typeorm.js';
 import { RolesController } from './interface/roles.controller.js';
 import { CatalogoController } from './interface/catalogo.controller.js';
+import { CambiarRolesPerfil, CopiarPerfil, CrearPerfil } from './application/perfil.casos-de-uso.js';
+import { ConsultarPerfil, ListarPerfiles, ListarRolesDisponibles, type DependenciasLecturaPerfiles } from './application/lecturas-perfiles.js';
+import { LecturaPerfilesTypeOrm } from './infrastructure/typeorm/lectura-perfiles.typeorm.js';
+import { PerfilesController } from './interface/perfiles.controller.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 
@@ -103,6 +107,7 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
 type ReposMembresias = ReturnType<typeof reposMembresias>;
 const DEPENDENCIAS_LECTURA_ROLES = Symbol('DEPENDENCIAS_LECTURA_ROLES');
+const DEPENDENCIAS_LECTURA_PERFILES = Symbol('DEPENDENCIAS_LECTURA_PERFILES');
 type CasoDeLecturaDeRoles<T> = new (dependencias: DependenciasLecturaRoles) => T;
 
 /** Los cuatro casos de uso de lectura de roles reciben las mismas dependencias (spec 16b). */
@@ -130,7 +135,7 @@ export class SeguridadModule {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
       global: true,
-      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController],
       providers: [
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
@@ -234,6 +239,36 @@ export class SeguridadModule {
         lecturaDeRoles(ConsultarRol),
         lecturaDeRoles(ConsultarCatalogo),
         lecturaDeRoles(ListarProductosDisponibles),
+        // Perfiles (spec 16c): escritura del spec 06 más la copia, y lecturas nuevas.
+        {
+          provide: CrearPerfil,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, eventos: EventPublisher, repositorios: ReposMembresias, productos: ProductosContratados) =>
+            new CrearPerfil(unidadDeTrabajo, contexto, ids, eventos, { ...repositorios, productos }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PRODUCTOS_CONTRATADOS],
+        },
+        {
+          provide: CopiarPerfil,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, eventos: EventPublisher, repositorios: ReposMembresias, productos: ProductosContratados) =>
+            new CopiarPerfil(unidadDeTrabajo, contexto, ids, eventos, { ...repositorios, productos }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PRODUCTOS_CONTRATADOS],
+        },
+        {
+          provide: CambiarRolesPerfil,
+          useFactory: (unidadDeTrabajo: UnitOfWork, eventos: EventPublisher, repositorios: ReposMembresias, productos: ProductosContratados) =>
+            new CambiarRolesPerfil(unidadDeTrabajo, eventos, { ...repositorios, productos }),
+          inject: [UNIT_OF_WORK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, PRODUCTOS_CONTRATADOS],
+        },
+        {
+          provide: DEPENDENCIAS_LECTURA_PERFILES,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): DependenciasLecturaPerfiles => ({
+            unidadDeTrabajo,
+            lectura: new LecturaPerfilesTypeOrm(unidadDeTrabajo, contexto),
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        { provide: ListarPerfiles, useFactory: (dependencias: DependenciasLecturaPerfiles) => new ListarPerfiles(dependencias), inject: [DEPENDENCIAS_LECTURA_PERFILES] },
+        { provide: ConsultarPerfil, useFactory: (dependencias: DependenciasLecturaPerfiles) => new ConsultarPerfil(dependencias), inject: [DEPENDENCIAS_LECTURA_PERFILES] },
+        { provide: ListarRolesDisponibles, useFactory: (listarRoles: ListarRoles) => new ListarRolesDisponibles(listarRoles), inject: [ListarRoles] },
         ciclo(SuspenderMembresia),
         ciclo(ReactivarMembresia),
         ciclo(FinalizarMembresia),

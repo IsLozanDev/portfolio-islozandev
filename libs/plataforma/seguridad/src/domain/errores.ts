@@ -93,6 +93,15 @@ export class ProductoNoContratadoError extends ValidationError {
   }
 }
 
+/** Un rol PLAT con permisos fuera de PLAT_PROPIETARIO no entra en un perfil del cliente (spec 16c). */
+export class RolFueraDelTechoError extends ValidationError {
+  override readonly code = 'ROL_FUERA_DEL_TECHO';
+
+  constructor(readonly rolCodigo: string) {
+    super(`El rol ${rolCodigo} no se puede usar en un perfil del cliente`);
+  }
+}
+
 // Manifiesto (TR-RF-008).
 
 /** Rechaza el manifiesto completo. Cada detalle lleva su ruta, p. ej. `permisos[3].codigo: rest-caja-cerrar`. */

@@ -101,6 +101,9 @@ export const MENSAJES_ASIGNACION = {
   sensible: 'requiere verificación',
 } as const;
 
+/** Campos de `form-codigo-nombre`, en roles y perfiles. */
+export const MENSAJES_CODIGO_NOMBRE = { codigo: 'Código', nombre: 'Nombre' } as const;
+
 /** Roles y árbol de permisos (spec 16b). */
 export const MENSAJES_ROLES = {
   tituloRoles: 'Roles',
@@ -136,6 +139,36 @@ export const MENSAJES_ROLES = {
   rolInactivado: 'Rol inactivado',
 } as const;
 
+/** Perfiles de puesto (spec 16c). */
+export const MENSAJES_PERFILES = {
+  tituloPerfiles: 'Perfiles',
+  nuevoPerfil: 'Nuevo perfil',
+  buscarPerfil: 'Buscar por nombre o código',
+  sinPerfiles: 'No hay perfiles con estos filtros.',
+  nombre: 'Nombre',
+  codigo: 'Código',
+  tipo: 'Tipo',
+  productos: 'Productos',
+  roles: 'Roles',
+  rolesSeleccionados: (cantidad: number) => (cantidad === 1 ? '1 rol seleccionado' : `${cantidad} roles seleccionados`),
+  predefinido: 'Predefinido',
+  sinRolesDisponibles: 'No hay roles activos disponibles',
+  tituloNuevo: 'Nuevo perfil',
+  tituloCopia: (nombre: string) => `Copiar «${nombre}»`,
+  crear: 'Crear perfil',
+  perfilCreado: 'Perfil creado',
+  volver: 'Volver a perfiles',
+  copiar: 'Copiar',
+  guardar: 'Guardar roles',
+  rolesGuardados: 'Roles guardados',
+  seleccioneRol: 'Seleccione al menos un rol',
+  predefinidoNoEditable: 'Los perfiles predefinidos no se editan; cree una copia',
+  rolesNoDisponibles: (cantidad: number) =>
+    cantidad === 1
+      ? '1 rol de este perfil ya no está disponible y se quitará al guardar'
+      : `${cantidad} roles de este perfil ya no están disponibles y se quitarán al guardar`,
+} as const;
+
 /** TR-CA-033 y TR-RNF-021: confirmación sin motivo, con los usuarios afectados si los hay. */
 export const CONFIRMACION_INACTIVAR_ROL = {
   titulo: (nombre: string) => `¿Inactivar el rol ${nombre}?`,
@@ -144,6 +177,7 @@ export const CONFIRMACION_INACTIVAR_ROL = {
 } as const;
 
 export const ETIQUETAS_TIPO_ROL = { predefinido: 'Predefinido', propio: 'Propio' } as const;
+export const ETIQUETAS_TIPO_PERFIL = ETIQUETAS_TIPO_ROL;
 export const ETIQUETAS_ESTADO_ROL = { activo: 'Activo', inactivo: 'Inactivo' } as const;
 
 export const ETIQUETAS_ALCANCE: Readonly<Record<Alcance, string>> = {

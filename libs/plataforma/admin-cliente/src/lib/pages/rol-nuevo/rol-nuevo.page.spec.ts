@@ -9,7 +9,7 @@ import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { MENSAJES_ROLES } from '../../models/mensajes-admin';
-import type { GrupoRol } from '../../utils/formulario-rol';
+import type { GrupoCodigoNombre } from '../../utils/formulario-codigo-nombre';
 import { RolNuevoPage } from './rol-nuevo.page';
 
 const RUTA_NUEVO = '/admin/roles/nuevo';
@@ -31,7 +31,7 @@ describe('RolNuevoPage', () => {
   const elemento = () => harness.routeNativeElement as HTMLElement;
   const url = () => TestBed.inject(Router).url;
   const esperar = (ruta: string): TestRequest => http.expectOne((solicitud) => solicitud.url === `${API_URL}${ruta}`);
-  const pagina = () => harness.routeDebugElement?.componentInstance as { grupo: GrupoRol };
+  const pagina = () => harness.routeDebugElement?.componentInstance as { grupo: GrupoCodigoNombre };
 
   async function estable(): Promise<void> {
     await new Promise((resolver) => setTimeout(resolver));

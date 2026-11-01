@@ -22,7 +22,7 @@ export const ESQUEMAS_SEG: Readonly<Record<string, object>> = {
   [EVENTOS_SEG.rolCreado]: objeto({ producto_codigo: texto, codigo: texto, nombre: texto, copiado_de: uuidNulo, permisos: textos }),
   [EVENTOS_SEG.rolPermisosCambiados]: objeto({ agregados: textos, quitados: textos }),
   [EVENTOS_SEG.rolInactivado]: objeto({ afectados: { type: 'integer', minimum: 0 } }),
-  [EVENTOS_SEG.perfilCreado]: objeto({ codigo: texto, nombre: texto, roles: uuids }),
+  [EVENTOS_SEG.perfilCreado]: objeto({ codigo: texto, nombre: texto, copiado_de: uuidNulo, roles: uuids }),
   [EVENTOS_SEG.perfilRolesCambiados]: objeto({ agregados: uuids, quitados: uuids }),
   [EVENTOS_SEG.asignacionOtorgada]: objeto({
     membresia_id: uuid,

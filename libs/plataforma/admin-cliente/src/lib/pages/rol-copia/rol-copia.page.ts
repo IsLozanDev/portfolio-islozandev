@@ -3,14 +3,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccionesFormularioComponent, AvisosService, CargandoComponent } from '@vitrina/shared/ui';
 import { ArbolPermisosComponent } from '../../components/arbol-permisos/arbol-permisos.component';
-import { FormRolComponent } from '../../components/form-rol/form-rol.component';
+import { FormCodigoNombreComponent } from '../../components/form-codigo-nombre/form-codigo-nombre.component';
 import type { ArbolPermisos } from '../../models/catalogo-permisos';
 import { aErrorAdmin } from '../../models/error-admin';
 import { MENSAJES_ROLES } from '../../models/mensajes-admin';
 import type { RolDetalle } from '../../models/rol';
 import { CatalogoCliente } from '../../services/catalogo.cliente';
 import { RolesCliente } from '../../services/roles.cliente';
-import { aFormularioRol, crearGrupoRol } from '../../utils/formulario-rol';
+import { aCodigoNombre, crearGrupoCodigoNombre } from '../../utils/formulario-codigo-nombre';
 import { permisosOrdenados } from '../../utils/seleccion-permisos';
 
 const PARAMETRO_ROL = 'rolId';
@@ -18,7 +18,7 @@ const PARAMETRO_ROL = 'rolId';
 /** TR-CA-031: copia de un rol con el árbol precargado; copiar y editar van en una sola llamada. */
 @Component({
   selector: 'vit-rol-copia',
-  imports: [ReactiveFormsModule, AccionesFormularioComponent, CargandoComponent, ArbolPermisosComponent, FormRolComponent],
+  imports: [ReactiveFormsModule, AccionesFormularioComponent, CargandoComponent, ArbolPermisosComponent, FormCodigoNombreComponent],
   templateUrl: './rol-copia.page.html',
 })
 export class RolCopiaPage {
@@ -30,7 +30,7 @@ export class RolCopiaPage {
   private readonly origenId = this.ruta.snapshot.paramMap.get(PARAMETRO_ROL) ?? '';
 
   protected readonly mensajes = MENSAJES_ROLES;
-  protected readonly grupo = crearGrupoRol();
+  protected readonly grupo = crearGrupoCodigoNombre();
   protected readonly origen = signal<RolDetalle | null>(null);
   protected readonly arbol = signal<ArbolPermisos | null>(null);
   protected readonly seleccionados = signal<ReadonlySet<string>>(new Set());
@@ -52,7 +52,7 @@ export class RolCopiaPage {
     this.guardando.set(true);
     this.error.set(null);
     try {
-      const copiaId = await this.roles.copiar(this.origenId, aFormularioRol(this.grupo), permisosOrdenados(this.seleccionados()));
+      const copiaId = await this.roles.copiar(this.origenId, aCodigoNombre(this.grupo), permisosOrdenados(this.seleccionados()));
       this.avisos.toast('exito', MENSAJES_ROLES.rolCreado);
       await this.router.navigate(['../..', copiaId], { relativeTo: this.ruta });
     } catch (error) {
