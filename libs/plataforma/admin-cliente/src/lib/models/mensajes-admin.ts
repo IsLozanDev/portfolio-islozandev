@@ -101,6 +101,9 @@ export const MENSAJES_ASIGNACION = {
   sensible: 'requiere verificación',
 } as const;
 
+/** Campos de `form-codigo-nombre`, en roles y perfiles. */
+export const MENSAJES_CODIGO_NOMBRE = { codigo: 'Código', nombre: 'Nombre' } as const;
+
 /** Roles y árbol de permisos (spec 16b). */
 export const MENSAJES_ROLES = {
   tituloRoles: 'Roles',

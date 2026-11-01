@@ -1,18 +1,18 @@
 import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { estable } from '../../../testing/estable';
-import { aFormularioRol, crearGrupoRol } from '../../utils/formulario-rol';
-import { FormRolComponent } from './form-rol.component';
+import { aCodigoNombre, crearGrupoCodigoNombre } from '../../utils/formulario-codigo-nombre';
+import { FormCodigoNombreComponent } from './form-codigo-nombre.component';
 
 @Component({
-  imports: [FormRolComponent],
-  template: '<vit-form-rol [grupo]="grupo" />',
+  imports: [FormCodigoNombreComponent],
+  template: '<vit-form-codigo-nombre [grupo]="grupo" />',
 })
 class Anfitrion {
-  readonly grupo = crearGrupoRol();
+  readonly grupo = crearGrupoCodigoNombre();
 }
 
-describe('FormRolComponent', () => {
+describe('FormCodigoNombreComponent', () => {
   let fixture: ComponentFixture<Anfitrion>;
 
   const elemento = () => fixture.nativeElement as HTMLElement;
@@ -52,6 +52,6 @@ describe('FormRolComponent', () => {
     await estable(fixture);
 
     expect(grupo().valid).toBe(true);
-    expect(aFormularioRol(grupo())).toEqual({ codigo: 'MOZO_TERRAZA', nombre: 'Mozo terraza' });
+    expect(aCodigoNombre(grupo())).toEqual({ codigo: 'MOZO_TERRAZA', nombre: 'Mozo terraza' });
   });
 });

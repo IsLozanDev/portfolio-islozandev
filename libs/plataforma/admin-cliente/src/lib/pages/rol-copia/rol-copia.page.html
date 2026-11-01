@@ -9,7 +9,7 @@
 
   @if (arbol(); as catalogo) {
     <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="copiar()" novalidate>
-      <vit-form-rol [grupo]="grupo" />
+      <vit-form-codigo-nombre [grupo]="grupo" />
       <vit-arbol-permisos [arbol]="catalogo" [(seleccionados)]="seleccionados" />
 
       @if (faltanPermisos() && seleccionados().size === 0) {
