@@ -30,6 +30,7 @@
           "apps/plataforma-consola/src/tailwind.css",
           "node_modules/sweetalert2/dist/sweetalert2.css",
           "libs/shared/ui/src/estilos/sweetalert.css",
+          "libs/shared/ui/src/estilos/destructivo.css",
           "apps/plataforma-consola/src/styles.scss"
         ],
         "allowedCommonJsDependencies": [

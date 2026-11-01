@@ -1,0 +1,10 @@
+/* Acción destructiva: Material 3 no trae color de error para botones (sin color="warn"). */
+.vit-destructivo {
+  --mat-button-text-label-text-color: var(--mat-sys-error);
+  --mat-button-text-state-layer-color: var(--mat-sys-error);
+  --mat-button-text-ripple-color: color-mix(in srgb, var(--mat-sys-error) 12%, transparent);
+  --mat-button-outlined-label-text-color: var(--mat-sys-error);
+  --mat-button-outlined-outline-color: var(--mat-sys-error);
+  --mat-button-outlined-state-layer-color: var(--mat-sys-error);
+  --mat-button-outlined-ripple-color: color-mix(in srgb, var(--mat-sys-error) 12%, transparent);
+}

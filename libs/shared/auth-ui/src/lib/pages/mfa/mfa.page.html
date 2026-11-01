@@ -43,7 +43,7 @@
 
   @if (estado() === 'verificar' || estado() === 'enrolar') {
     <form class="flex flex-col gap-1" [formGroup]="formulario" (ngSubmit)="verificar()" novalidate>
-      <mat-form-field appearance="outline">
+      <mat-form-field class="vit-campo-codigo" appearance="outline">
         <mat-label>Código de verificación</mat-label>
         <input
           matInput

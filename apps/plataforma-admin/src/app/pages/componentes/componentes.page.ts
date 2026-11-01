@@ -9,6 +9,7 @@ import {
   AccionesFormularioComponent,
   AvisosService,
   CargandoComponent,
+  ChipEstadoComponent,
   EstadoVacioComponent,
   FiltrosComponent,
   MensajeValidacionPipe,
@@ -16,6 +17,7 @@ import {
   type CambioOrden,
   type CambioPagina,
   type TipoAviso,
+  type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
 import { COLUMNAS_USUARIOS, filtrarYOrdenar, FILTROS_USUARIOS, USUARIOS_DE_MUESTRA, type UsuarioDeMuestra } from './usuarios-de-muestra';
@@ -24,6 +26,7 @@ const TAMANO_PAGINA_INICIAL = 10;
 const LONGITUD_MINIMA_NOMBRE = 3;
 const DEMORA_GUARDADO_MS = 1000;
 const TIPOS_DE_AVISO: readonly TipoAviso[] = ['info', 'exito', 'advertencia', 'error'];
+const TONOS_DE_CHIP: readonly TonoEstado[] = ['exito', 'advertencia', 'info', 'neutro', 'error'];
 const FILTROS_VACIOS: ValorFiltros = { busqueda: '', estado: null };
 
 /** Solo fuera de producción (`/dev/componentes`): muestra y prueba en navegador los componentes de `shared/ui`. */
@@ -38,6 +41,7 @@ const FILTROS_VACIOS: ValorFiltros = { busqueda: '', estado: null };
     AccionesFilaDirective,
     AccionesFormularioComponent,
     CargandoComponent,
+    ChipEstadoComponent,
     EstadoVacioComponent,
     FiltrosComponent,
     MensajeValidacionPipe,
@@ -49,6 +53,7 @@ export class ComponentesPage {
   private readonly avisos = inject(AvisosService);
 
   protected readonly tiposDeAviso = TIPOS_DE_AVISO;
+  protected readonly tonosDeChip = TONOS_DE_CHIP;
   protected readonly columnas = COLUMNAS_USUARIOS;
   protected readonly definicionesFiltro = FILTROS_USUARIOS;
 

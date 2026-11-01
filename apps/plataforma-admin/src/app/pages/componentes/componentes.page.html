@@ -11,10 +11,21 @@
         <button mat-stroked-button type="button" (click)="mostrarAviso(tipo)">Modal {{ tipo }}</button>
       }
       <button mat-stroked-button type="button" (click)="confirmar()">Confirmar</button>
+      <button mat-stroked-button type="button" class="vit-destructivo" (click)="confirmar()">Dar de baja</button>
+      <button mat-button type="button" class="vit-destructivo" (click)="confirmar()">Revocar</button>
     </div>
     <div class="flex flex-wrap gap-2">
       @for (tipo of tiposDeAviso; track tipo) {
         <button mat-button type="button" (click)="mostrarToast(tipo)">Toast {{ tipo }}</button>
+      }
+    </div>
+  </section>
+
+  <section class="flex flex-col gap-3" aria-labelledby="titulo-chips">
+    <h2 id="titulo-chips" class="text-lg font-medium">Chips de estado</h2>
+    <div class="flex flex-wrap gap-2">
+      @for (tono of tonosDeChip; track tono) {
+        <vit-chip-estado [texto]="tono" [tono]="tono" />
       }
     </div>
   </section>

@@ -1,6 +1,6 @@
 # SPEC 16c — Perfiles de puesto: controladores, copia, techo PLAT y UI de perfiles del cliente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 15, SPEC 16a, SPEC 16b
 > **Date:** 2026-10-31
 > **Objective:** Exponer por HTTP la lista, el detalle, la creación, la copia y el cambio de roles de los perfiles de puesto con `plat.perfil.gestionar`, cerrar la escalada de roles PLAT dentro de un perfil y construir en `libs/plataforma/admin-cliente` las pantallas de perfiles (U-04, TR-RF-012).

@@ -1,11 +1,28 @@
 @use '@angular/material' as mat;
+@use './paleta-vitrina' as paleta;
+
+/* El tono 40 de la paleta generada (#036b58) no es el esmeralda de marca: se fija `primary` aparte. */
+$primario-marca: #0B6E5B;
 
 /* Tema Material 3 único de la plataforma; la app lo aplica en `html`. */
 @mixin aplicar-tema() {
   color-scheme: light;
   @include mat.theme((
-    color: mat.$azure-palette,
+    color: (
+      primary: paleta.$primary-palette,
+      tertiary: paleta.$tertiary-palette,
+    ),
     typography: Roboto,
     density: 0,
   ));
+  @include mat.theme-overrides((
+    primary: $primario-marca,
+  ));
+
+  /* Campos a 40 px, igual que los botones; el resto del tema queda en densidad 0. */
+  @include mat.form-field-density(-4);
+
+  .vit-campo-codigo {
+    @include mat.form-field-density(-2);
+  }
 }
