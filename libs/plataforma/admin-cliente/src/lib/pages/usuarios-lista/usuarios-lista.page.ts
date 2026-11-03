@@ -11,11 +11,12 @@ import {
   type CambioPagina,
   type ColumnaTabla,
   type DefinicionFiltro,
+  type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
-import { COLUMNAS_MIEMBROS, ETIQUETAS_ESTADO_MEMBRESIA, MENSAJES_ADMIN } from '../../models/mensajes-admin';
+import { COLUMNAS_MIEMBROS, ETIQUETAS_ESTADO_MEMBRESIA, MENSAJES_ADMIN, TONOS_ESTADO_MEMBRESIA } from '../../models/mensajes-admin';
 import { ESTADOS_MEMBRESIA, ORDENES_MIEMBROS, type EstadoMembresia, type FiltroMiembros, type Miembro, type OrdenMiembros } from '../../models/miembro';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { MiembrosCliente } from '../../services/miembros.cliente';
@@ -27,6 +28,7 @@ export interface FilaMiembro {
   nombre: string;
   correo: string;
   estado: string;
+  tonoEstado: TonoEstado;
   propietario: string;
   asignacionesVigentes: number;
   invitacionVence: string;
@@ -40,9 +42,9 @@ const ORDENES_PERMITIDOS: readonly string[] = ORDENES_MIEMBROS;
 export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANOS_PAGINA_MIEMBROS[0] };
 
 const COLUMNAS: ColumnaTabla<FilaMiembro>[] = [
-  { clave: 'nombre', titulo: COLUMNAS_MIEMBROS.nombre, ordenable: true },
-  { clave: 'correo', titulo: COLUMNAS_MIEMBROS.correo, ordenable: true },
-  { clave: 'estado', titulo: COLUMNAS_MIEMBROS.estado, ordenable: true },
+  { clave: 'nombre', titulo: COLUMNAS_MIEMBROS.nombre, ordenable: true, movil: 'titulo' },
+  { clave: 'correo', titulo: COLUMNAS_MIEMBROS.correo, ordenable: true, movil: 'detalle' },
+  { clave: 'estado', titulo: COLUMNAS_MIEMBROS.estado, ordenable: true, movil: 'estado', tono: (fila) => fila.tonoEstado },
   { clave: 'propietario', titulo: COLUMNAS_MIEMBROS.propietario },
   { clave: 'asignacionesVigentes', titulo: COLUMNAS_MIEMBROS.asignacionesVigentes },
   { clave: 'invitacionVence', titulo: COLUMNAS_MIEMBROS.invitacionVence },
@@ -126,6 +128,7 @@ function filaDe(miembro: Miembro): FilaMiembro {
     nombre: miembro.nombre,
     correo: miembro.correo,
     estado: ETIQUETAS_ESTADO_MEMBRESIA[miembro.estado],
+    tonoEstado: TONOS_ESTADO_MEMBRESIA[miembro.estado],
     propietario: miembro.esPropietario ? MENSAJES_ADMIN.si : MENSAJES_ADMIN.no,
     asignacionesVigentes: miembro.asignacionesVigentes,
     invitacionVence: miembro.invitacionExpiraEn ? formatearFechaHora(miembro.invitacionExpiraEn) : MENSAJES_ADMIN.sinFecha,

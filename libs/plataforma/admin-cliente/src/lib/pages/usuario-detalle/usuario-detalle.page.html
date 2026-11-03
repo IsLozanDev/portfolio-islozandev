@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-medium">{{ detalle.nombre }}</h1>
       <p class="text-sobre-superficie-variante">{{ detalle.correo }}</p>
       <p class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="rounded-tarjeta bg-contenedor-secundario px-2 py-0.5 text-sobre-contenedor-secundario" data-estado-membresia>{{ etiquetaEstado(detalle) }}</span>
+        <vit-chip-estado data-estado-membresia [texto]="etiquetaEstado(detalle)" [tono]="tonoEstado(detalle)" />
         @if (detalle.esPropietario) {
           <span class="rounded-tarjeta border border-borde px-2 py-0.5">{{ mensajes.propietario }}</span>
         }
@@ -26,7 +26,14 @@
           <button *siPermiso="permisos.asignacionOtorgar" mat-flat-button type="button" [disabled]="ocupado()" (click)="asignar()">{{ mensajes.asignar }}</button>
         }
         @for (accion of permitidas.ciclo; track accion) {
-          <button *siPermiso="permisos.asignacionRevocar" mat-stroked-button type="button" [disabled]="ocupado()" (click)="ejecutarCiclo(accion)">
+          <button
+            *siPermiso="permisos.asignacionRevocar"
+            mat-stroked-button
+            type="button"
+            [class.vit-destructivo]="esDestructiva(accion)"
+            [disabled]="ocupado()"
+            (click)="ejecutarCiclo(accion)"
+          >
             {{ etiquetasCiclo[accion] }}
           </button>
         }
@@ -43,7 +50,7 @@
       <p class="text-sobre-superficie-variante">{{ mensajes.sinAsignaciones }}</p>
     } @else {
       <div class="overflow-x-auto rounded-tarjeta border border-borde">
-        <table mat-table class="w-full" [dataSource]="detalle.asignaciones">
+        <table mat-table class="vit-tabla-compacta w-full" [dataSource]="detalle.asignaciones">
           <ng-container matColumnDef="rolOPerfil">
             <th *matHeaderCellDef mat-header-cell>{{ mensajes.rolOPerfil }}</th>
             <td *matCellDef="let asignacion" mat-cell>{{ nombreAsignado(asignacion) }}</td>
@@ -58,13 +65,15 @@
           </ng-container>
           <ng-container matColumnDef="estado">
             <th *matHeaderCellDef mat-header-cell>{{ mensajes.estado }}</th>
-            <td *matCellDef="let asignacion" mat-cell>{{ estadoAsignacion(asignacion) }}</td>
+            <td *matCellDef="let asignacion" mat-cell>
+              <vit-chip-estado [texto]="estadoAsignacion(asignacion)" [tono]="tonoAsignacion(asignacion)" />
+            </td>
           </ng-container>
           <ng-container matColumnDef="acciones">
             <th *matHeaderCellDef mat-header-cell>{{ mensajes.acciones }}</th>
             <td *matCellDef="let asignacion" mat-cell>
               @if (esRevocable(asignacion)) {
-                <button *siPermiso="permisos.asignacionRevocar" mat-button type="button" [disabled]="ocupado()" (click)="revocar(asignacion)">
+                <button *siPermiso="permisos.asignacionRevocar" mat-button class="vit-destructivo" type="button" [disabled]="ocupado()" (click)="revocar(asignacion)">
                   {{ mensajes.revocar }}
                 </button>
               } @else {

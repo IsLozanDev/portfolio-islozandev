@@ -1,0 +1,23 @@
+<div class="grid min-h-dvh grid-rows-[auto_1fr] min-[960px]:grid-cols-[7fr_5fr] min-[960px]:grid-rows-1">
+  <aside class="relative h-42 overflow-hidden bg-noche min-[960px]:h-auto" aria-hidden="true">
+    <img class="absolute inset-0 size-full object-cover" [src]="rutaIlustracion" alt="" />
+    <div class="relative flex h-full flex-col justify-between p-4 min-[960px]:p-10">
+      <div class="flex flex-col">
+        <span class="text-xl font-medium text-white">{{ mensajes.marca }}</span>
+        <span class="text-sm text-menta-suave">{{ mensajes.lema }}</span>
+      </div>
+      @if (destacado(); as nombre) {
+        <div class="hidden flex-col min-[960px]:flex">
+          <span class="text-sm text-menta-suave">{{ mensajes.invitacionDe }}</span>
+          <span class="text-2xl font-medium text-white">{{ nombre }}</span>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <main class="flex justify-center px-4 py-8 min-[960px]:items-center min-[960px]:justify-start min-[960px]:px-16">
+    <div class="w-full max-w-[360px]">
+      <ng-content />
+    </div>
+  </main>
+</div>

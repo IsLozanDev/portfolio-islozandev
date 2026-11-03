@@ -4,7 +4,7 @@ import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
-import { AvisosService, CargandoComponent } from '@vitrina/shared/ui';
+import { AvisosService, CargandoComponent, ChipEstadoComponent, type TonoEstado } from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EstadoReenvio } from '../../models/invitacion';
 import {
@@ -14,6 +14,8 @@ import {
   ETIQUETAS_ESTADO_MEMBRESIA,
   MENSAJES_ADMIN,
   MENSAJES_DETALLE,
+  TONOS_ESTADO_ASIGNACION,
+  TONOS_ESTADO_MEMBRESIA,
 } from '../../models/mensajes-admin';
 import type { AsignacionDelMiembro, EstadoMembresia, MiembroDetalle } from '../../models/miembro';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
@@ -36,13 +38,16 @@ const ACCIONES_POR_ESTADO: Readonly<Record<EstadoMembresia, { ciclo: AccionMembr
   FINALIZADO: { ciclo: [], asignar: false, reenviar: true },
 };
 
+/** Finalizar no tiene vuelta atrás: va en el color de error (TR-RNF-021). */
+const ACCION_DESTRUCTIVA: AccionMembresia = 'finalizar';
+
 /** Una asignación vencida o revocada ya no se revoca. */
 const ESTADOS_REVOCABLES: ReadonlySet<AsignacionDelMiembro['estado']> = new Set(['VIGENTE', 'FUTURA']);
 
 /** Detalle del miembro con sus asignaciones y las acciones de TR-RF-013 y 014 (U-03). */
 @Component({
   selector: 'vit-usuario-detalle',
-  imports: [MatButtonModule, MatTableModule, RouterLink, SiPermisoDirective, CargandoComponent],
+  imports: [MatButtonModule, MatTableModule, RouterLink, SiPermisoDirective, CargandoComponent, ChipEstadoComponent],
   templateUrl: './usuario-detalle.page.html',
 })
 export class UsuarioDetallePage {
@@ -81,6 +86,10 @@ export class UsuarioDetallePage {
     return ETIQUETAS_ESTADO_MEMBRESIA[miembro.estado];
   }
 
+  protected tonoEstado(miembro: MiembroDetalle): TonoEstado {
+    return TONOS_ESTADO_MEMBRESIA[miembro.estado];
+  }
+
   protected vencimientoInvitacion(miembro: MiembroDetalle): string | null {
     return miembro.invitacionExpiraEn ? formatearFechaHora(miembro.invitacionExpiraEn) : null;
   }
@@ -102,6 +111,14 @@ export class UsuarioDetallePage {
 
   protected estadoAsignacion(asignacion: AsignacionDelMiembro): string {
     return ETIQUETAS_ESTADO_ASIGNACION[asignacion.estado];
+  }
+
+  protected tonoAsignacion(asignacion: AsignacionDelMiembro): TonoEstado {
+    return TONOS_ESTADO_ASIGNACION[asignacion.estado];
+  }
+
+  protected esDestructiva(accion: AccionMembresia): boolean {
+    return accion === ACCION_DESTRUCTIVA;
   }
 
   protected esRevocable(asignacion: AsignacionDelMiembro): boolean {

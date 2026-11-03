@@ -24,6 +24,11 @@
           {
             "glob": "**/*",
             "input": "apps/plataforma-admin/public"
+          },
+          {
+            "glob": "vitrina.svg",
+            "input": "libs/shared/auth-ui/src/assets",
+            "output": "assets/auth-ui"
           }
         ],
         "styles": [

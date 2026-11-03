@@ -1,4 +1,5 @@
 import { MENSAJES_SHELL } from '@vitrina/shared/shell';
+import type { TonoEstado } from '@vitrina/shared/ui';
 import type { Alcance } from './asignacion';
 import type { EstadoAsignacion, EstadoMembresia } from './miembro';
 
@@ -74,6 +75,13 @@ export const ETIQUETAS_ESTADO_ASIGNACION: Readonly<Record<EstadoAsignacion, stri
   FUTURA: 'Futura',
   VENCIDA: 'Vencida',
   REVOCADA: 'Revocada',
+};
+
+export const TONOS_ESTADO_ASIGNACION: Readonly<Record<EstadoAsignacion, TonoEstado>> = {
+  VIGENTE: 'exito',
+  FUTURA: 'info',
+  VENCIDA: 'neutro',
+  REVOCADA: 'neutro',
 };
 
 export const COLUMNAS_MIEMBROS = {
@@ -192,6 +200,13 @@ export const ETIQUETAS_ESTADO_MEMBRESIA: Readonly<Record<EstadoMembresia, string
   ACTIVO: 'Activo',
   SUSPENDIDO: 'Suspendido',
   FINALIZADO: 'Finalizado',
+};
+
+export const TONOS_ESTADO_MEMBRESIA: Readonly<Record<EstadoMembresia, TonoEstado>> = {
+  ACTIVO: 'exito',
+  INVITADO: 'advertencia',
+  SUSPENDIDO: 'neutro',
+  FINALIZADO: 'neutro',
 };
 
 /**

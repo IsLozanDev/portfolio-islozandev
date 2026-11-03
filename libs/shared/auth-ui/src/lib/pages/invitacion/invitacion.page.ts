@@ -9,7 +9,8 @@ import { CONFIG_AUTH, PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/a
 import { ErrorInvitacion, type EstadoInvitacion } from '../../models/invitacion';
 import { InvitacionCliente } from '../../services/invitacion.cliente';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
-import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
+import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
+import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
 
 const PARAMETRO_TOKEN = 'token';
 const PARAMETRO_TOKEN_HASH = 'token_hash';
@@ -24,7 +25,7 @@ type EstadoPaginaInvitacion = 'cargando' | 'sin-sesion' | 'clave' | 'aceptar' | 
 /** TR-RF-010: el invitado abre el enlace, se autentica y acepta (spec 08). */
 @Component({
   selector: 'vit-invitacion',
-  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [MarcoAuthComponent, ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './invitacion.page.html',
 })
 export class InvitacionPage implements OnInit {

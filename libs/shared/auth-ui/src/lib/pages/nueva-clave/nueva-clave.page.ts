@@ -8,7 +8,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CONFIG_AUTH, ErrorAuth, MfaService, PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/auth';
 import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
-import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
+import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
+import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
 
 const PARAMETRO_TOKEN_HASH = 'token_hash';
 const PARAMETRO_TIPO = 'type';
@@ -22,7 +23,7 @@ type EstadoNuevaClave = 'verificando' | 'formulario' | 'enlace-invalido';
  */
 @Component({
   selector: 'vit-nueva-clave',
-  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [MarcoAuthComponent, ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './nueva-clave.page.html',
 })
 export class NuevaClavePage implements OnInit {
