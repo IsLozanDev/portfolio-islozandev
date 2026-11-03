@@ -2,7 +2,17 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { AccionesFilaDirective, FiltrosComponent, TablaComponent, type ColumnaTabla, type DefinicionFiltro, type ValorFiltros } from '@vitrina/shared/ui';
+import {
+  AccionesFilaDirective,
+  filasDePagina,
+  FiltrosComponent,
+  TablaComponent,
+  TAMANO_PAGINA_POR_DEFECTO,
+  type CambioPagina,
+  type ColumnaTabla,
+  type DefinicionFiltro,
+  type ValorFiltros,
+} from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import { ETIQUETAS_TIPO_PERFIL, MENSAJES_ADMIN, MENSAJES_PERFILES } from '../../models/mensajes-admin';
 import type { Perfil } from '../../models/perfil';
@@ -27,8 +37,8 @@ interface FiltroPerfiles {
 
 const CLAVE_FILTRO_TIPO = 'tipo';
 const SEPARADOR_PRODUCTOS = ', ';
-/** La lista no se pagina (pocos perfiles por tenant): una sola página que los cubre todos. */
-const TAMANO_SIN_PAGINAR = 1000;
+/** La API trae la lista entera (pocos perfiles por tenant): se pagina en el navegador. */
+const PRIMERA_PAGINA: CambioPagina = { indice: 0, tamano: TAMANO_PAGINA_POR_DEFECTO };
 
 const COLUMNAS: ColumnaTabla<FilaPerfil>[] = [
   { clave: 'nombre', titulo: MENSAJES_PERFILES.nombre },
@@ -59,7 +69,6 @@ export class PerfilesListaPage {
   protected readonly verDetalle = MENSAJES_ADMIN.verDetalle;
   protected readonly columnas = COLUMNAS;
   protected readonly filtros = FILTROS;
-  protected readonly tamanosPagina = [TAMANO_SIN_PAGINAR];
 
   private readonly todos = signal<Perfil[]>([]);
   private readonly filtro = signal<FiltroPerfiles>({ tipo: null, busqueda: '' });
@@ -67,16 +76,23 @@ export class PerfilesListaPage {
   protected readonly error = signal<string | null>(null);
 
   protected readonly filas = computed(() => this.todos().filter(cumpleFiltro(this.filtro())).map(filaDe));
+  protected readonly paginaActual = signal<CambioPagina>(PRIMERA_PAGINA);
+  protected readonly filasVisibles = computed(() => filasDePagina(this.filas(), this.paginaActual()));
 
   constructor() {
     void this.cargar();
   }
 
   protected filtrar(valor: ValorFiltros): void {
+    this.paginaActual.update(({ tamano }) => ({ indice: PRIMERA_PAGINA.indice, tamano }));
     this.filtro.set({
       tipo: (valor[CLAVE_FILTRO_TIPO] as TipoPerfil | null) ?? null,
       busqueda: valor.busqueda.trim().toLowerCase(),
     });
+  }
+
+  protected paginar(cambio: CambioPagina): void {
+    this.paginaActual.set(cambio);
   }
 
   private async cargar(): Promise<void> {

@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-medium">{{ detalle.codigo }}</h1>
       <p class="text-sobre-superficie-variante">{{ detalle.nombre }}</p>
       <p class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="rounded-tarjeta bg-contenedor-secundario px-2 py-0.5 text-sobre-contenedor-secundario" data-estado-tenant>{{ etiquetasEstado[detalle.estado] }}</span>
+        <vit-chip-estado data-estado-tenant [texto]="etiquetasEstado[detalle.estado]" [tono]="tonoEstado(detalle.estado)" />
         @if (detalle.estadoCambiadoEn) {
           <span>{{ mensajes.ultimoCambio }}: {{ formatearFechaHora(detalle.estadoCambiadoEn) }}</span>
         }
@@ -23,32 +23,33 @@
     @if (destinos().length > 0) {
       <div *siPermiso="permisos.tenantCambiarEstado" class="flex flex-wrap gap-2" data-acciones-estado>
         @for (destino of destinos(); track destino) {
-          <button mat-stroked-button type="button" [disabled]="ocupado()" (click)="cambiarEstado(destino)">{{ confirmaciones[destino].boton }}</button>
+          <button mat-stroked-button type="button" [class.vit-destructivo]="esDestructivo(destino)" [disabled]="ocupado()" (click)="cambiarEstado(destino)">{{ confirmaciones[destino].boton }}</button>
         }
       </div>
     }
 
     <h2 class="text-lg font-medium">{{ mensajes.suscripciones }}</h2>
-    <div class="overflow-x-auto rounded-tarjeta border border-borde">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-borde">
-            <th class="p-2 font-medium" scope="col">{{ mensajes.producto }}</th>
-            <th class="p-2 font-medium" scope="col">{{ mensajes.plan }}</th>
-            <th class="p-2 font-medium" scope="col">{{ mensajes.estado }}</th>
-            <th class="p-2 font-medium" scope="col">{{ mensajes.vigenteHasta }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (suscripcion of detalle.suscripciones; track suscripcion.productoCodigo) {
-            <tr data-suscripcion>
-              <td class="p-2">{{ suscripcion.productoCodigo }}</td>
-              <td class="p-2">{{ suscripcion.plan }}</td>
-              <td class="p-2">{{ suscripcion.estado }}</td>
-              <td class="p-2">{{ suscripcion.vigenteHasta ? formatearFechaCalendario(suscripcion.vigenteHasta) : mensajes.sinVencimiento }}</td>
-            </tr>
-          }
-        </tbody>
+    <div class="vit-tarjeta-tabla overflow-x-auto rounded-tarjeta">
+      <table mat-table class="vit-tabla-compacta w-full" [dataSource]="detalle.suscripciones">
+        <ng-container matColumnDef="producto">
+          <th *matHeaderCellDef mat-header-cell>{{ mensajes.producto }}</th>
+          <td *matCellDef="let suscripcion" mat-cell>{{ suscripcion.productoCodigo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="plan">
+          <th *matHeaderCellDef mat-header-cell>{{ mensajes.plan }}</th>
+          <td *matCellDef="let suscripcion" mat-cell>{{ suscripcion.plan }}</td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th *matHeaderCellDef mat-header-cell>{{ mensajes.estado }}</th>
+          <td *matCellDef="let suscripcion" mat-cell>{{ suscripcion.estado }}</td>
+        </ng-container>
+        <ng-container matColumnDef="vigenteHasta">
+          <th *matHeaderCellDef mat-header-cell>{{ mensajes.vigenteHasta }}</th>
+          <td *matCellDef="let suscripcion" mat-cell>{{ suscripcion.vigenteHasta ? formatearFechaCalendario(suscripcion.vigenteHasta) : mensajes.sinVencimiento }}</td>
+        </ng-container>
+
+        <tr *matHeaderRowDef="columnasSuscripciones" mat-header-row></tr>
+        <tr *matRowDef="let suscripcion; columns: columnasSuscripciones" mat-row data-suscripcion></tr>
       </table>
     </div>
 

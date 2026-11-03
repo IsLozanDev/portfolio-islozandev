@@ -10,12 +10,12 @@ import { AccionesFilaDirective } from '../../directives/acciones-fila.directive'
 import type { CambioOrden, CambioPagina, ColumnaTabla, RolMovil } from '../../models/columna-tabla';
 import { MENSAJES_UI } from '../../models/mensajes-ui';
 import { PaginadorEnEspanol } from '../../services/paginador-en-espanol.service';
+import { TAMANOS_PAGINA } from '../../utils/tamano-pagina';
 import { CargandoComponent } from '../cargando/cargando.component';
 import { ChipEstadoComponent } from '../chip-estado/chip-estado.component';
 import { EstadoVacioComponent } from '../estado-vacio/estado-vacio.component';
 
 export const COLUMNA_ACCIONES = 'acciones';
-export const TAMANOS_PAGINA_POR_DEFECTO = [10, 25, 50];
 export const BREAKPOINT_MOVIL = '(max-width: 599.98px)';
 
 /** Tabla con paginación y orden del lado del servidor: recibe la página actual y el total, y emite los cambios. En celular se pinta como lista. */
@@ -32,7 +32,9 @@ export class TablaComponent<Fila extends object> {
   readonly cargando = input<boolean>(false);
   /** Lo fija quien consume, p. ej. a 0 al cambiar un filtro, para que el paginador no quede desfasado del servidor. */
   readonly indicePagina = input<number>(0);
-  readonly tamanosPagina = input<number[]>(TAMANOS_PAGINA_POR_DEFECTO);
+  readonly tamanosPagina = input<readonly number[]>(TAMANOS_PAGINA);
+  /** Tamaño elegido, p. ej. el de la URL; sin él, la primera opción. */
+  readonly tamanoPagina = input<number | undefined>(undefined);
   readonly textoVacio = input<string>(MENSAJES_UI.sinRegistros);
   readonly pagina = output<CambioPagina>();
   readonly orden = output<CambioOrden>();
@@ -46,6 +48,7 @@ export class TablaComponent<Fila extends object> {
       .pipe(map((estado) => estado.matches)),
     { initialValue: false },
   );
+  protected readonly tamanoActual = computed(() => this.tamanoPagina() ?? this.tamanosPagina()[0]);
   protected readonly columnaTitulo = computed(() => this.columnaConRol('titulo'));
   protected readonly columnaEstado = computed(() => this.columnaConRol('estado'));
   protected readonly columnasDetalle = computed(() => this.columnas().filter((columna) => columna.movil === 'detalle'));

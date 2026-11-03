@@ -3,6 +3,7 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { MatPaginatorHarness } from '@angular/material/paginator/testing';
+import { MatSelectHarness } from '@angular/material/select/testing';
 import { MatSortHarness } from '@angular/material/sort/testing';
 import { of } from 'rxjs';
 import { AccionesFilaDirective } from '../../directives/acciones-fila.directive';
@@ -25,7 +26,7 @@ const USUARIOS: Usuario[] = Array.from({ length: 10 }, (_, indice) => ({
 @Component({
   imports: [TablaComponent, AccionesFilaDirective],
   template: `
-    <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="total()" [cargando]="cargando()" [indicePagina]="indicePagina()" (pagina)="paginas.push($event)" (orden)="ordenes.push($event)">
+    <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="total()" [cargando]="cargando()" [indicePagina]="indicePagina()" [tamanoPagina]="tamanoPagina()" (pagina)="paginas.push($event)" (orden)="ordenes.push($event)">
       <ng-template vitAccionesFila let-fila>
         <button type="button">Editar {{ fila.nombre }}</button>
       </ng-template>
@@ -41,6 +42,7 @@ class TablaDePrueba {
   readonly total = signal(TOTAL_USUARIOS);
   readonly cargando = signal(false);
   readonly indicePagina = signal(0);
+  readonly tamanoPagina = signal<number | undefined>(undefined);
   readonly paginas: CambioPagina[] = [];
   readonly ordenes: CambioOrden[] = [];
 }
@@ -85,26 +87,39 @@ describe('TablaComponent', () => {
 
   it('el paginador está en español', async () => {
     const paginador = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
-    expect(await paginador.getRangeLabel()).toBe('1 – 10 de 37');
+    expect(await paginador.getRangeLabel()).toBe('1 – 20 de 37');
     expect(texto()).toContain('Filas por página');
   });
 
-  it('ir a la página 2 emite { indice: 1, tamano: 10 }', async () => {
+  it('el combo ofrece 20, 50 y 100 filas y tamanoPagina elige una', async () => {
+    const paginador = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
+    anfitrion.tamanoPagina.set(50);
+    await fixture.whenStable();
+
+    expect(await paginador.getPageSize()).toBe(50);
+    expect(await paginador.getRangeLabel()).toBe('1 – 37 de 37');
+    const combo = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatSelectHarness);
+    await combo.open();
+    const opciones = await combo.getOptions();
+    expect(await Promise.all(opciones.map((opcion) => opcion.getText()))).toEqual(['20', '50', '100']);
+  });
+
+  it('ir a la página 2 emite { indice: 1, tamano: 20 }', async () => {
     const paginador = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
     await paginador.goToNextPage();
-    expect(anfitrion.paginas).toEqual([{ indice: 1, tamano: 10 }]);
-    expect(await paginador.getRangeLabel()).toBe('11 – 20 de 37');
+    expect(anfitrion.paginas).toEqual([{ indice: 1, tamano: 20 }]);
+    expect(await paginador.getRangeLabel()).toBe('21 – 37 de 37');
   });
 
   it('indicePagina vuelve el paginador a la primera página', async () => {
     const paginador = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatPaginatorHarness);
-    anfitrion.indicePagina.set(2);
+    anfitrion.indicePagina.set(1);
     await fixture.whenStable();
-    expect(await paginador.getRangeLabel()).toBe('21 – 30 de 37');
+    expect(await paginador.getRangeLabel()).toBe('21 – 37 de 37');
 
     anfitrion.indicePagina.set(0);
     await fixture.whenStable();
-    expect(await paginador.getRangeLabel()).toBe('1 – 10 de 37');
+    expect(await paginador.getRangeLabel()).toBe('1 – 20 de 37');
   });
 
   it('una cabecera ordenable emite orden; una no ordenable no', async () => {

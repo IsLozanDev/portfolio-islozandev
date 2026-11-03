@@ -1,4 +1,5 @@
 import { MENSAJES_SHELL } from '@vitrina/shared/shell';
+import type { TonoEstado } from '@vitrina/shared/ui';
 import type { EstadoTenant, Modalidad } from './catalogos';
 
 /** Textos de la consola de tenants, en español de Perú. */
@@ -102,6 +103,13 @@ export const ETIQUETAS_ESTADO_TENANT: Readonly<Record<EstadoTenant, string>> = {
   ACTIVO: 'Activo',
   SUSPENDIDO: 'Suspendido',
   BAJA: 'Baja',
+};
+
+export const TONOS_ESTADO_TENANT: Readonly<Record<EstadoTenant, TonoEstado>> = {
+  PRUEBA: 'info',
+  ACTIVO: 'exito',
+  SUSPENDIDO: 'advertencia',
+  BAJA: 'neutro',
 };
 
 /**

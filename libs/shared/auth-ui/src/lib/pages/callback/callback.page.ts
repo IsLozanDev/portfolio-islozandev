@@ -2,9 +2,9 @@ import { Component, inject, signal, type OnInit } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/auth';
-import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
-import { mensajeDeError } from '../../utils/mensaje-de-error';
 import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
+import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
+import { mensajeDeError } from '../../utils/mensaje-de-error';
 
 /** Regreso de Google o Microsoft: el canje PKCE ya ocurrió al iniciar la sesión. */
 @Component({

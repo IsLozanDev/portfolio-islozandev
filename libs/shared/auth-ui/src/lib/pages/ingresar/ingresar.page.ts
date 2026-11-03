@@ -6,9 +6,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PARAMETRO_RETORNO, rutaDeRetorno, SesionService, type ProveedorExterno } from '@vitrina/shared/auth';
-import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
-import { mensajeDeError } from '../../utils/mensaje-de-error';
 import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
+import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
+import { mensajeDeError } from '../../utils/mensaje-de-error';
 
 const PARAMETRO_MOTIVO = 'motivo';
 const MOTIVO_INACTIVIDAD = 'inactividad';

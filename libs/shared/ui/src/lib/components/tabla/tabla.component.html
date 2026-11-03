@@ -1,20 +1,20 @@
-<div class="flex flex-col">
-  <div class="relative overflow-x-auto rounded-tarjeta border border-borde">
+<div class="vit-tarjeta-tabla flex flex-col overflow-hidden rounded-tarjeta">
+  <div class="relative overflow-x-auto">
     @if (esMovil()) {
-      <ul class="divide-y divide-borde">
+      <ul class="vit-lista-movil">
         @for (fila of filas(); track fila) {
-          <li class="flex items-center gap-2 px-4 py-3">
+          <li class="flex min-h-14 items-center gap-3 py-1.5 pr-2 pl-4">
             <div class="flex min-w-0 flex-1 flex-col gap-1">
-              <div class="flex items-center justify-between gap-2">
+              <div class="flex min-w-0 items-center gap-2">
                 @if (columnaTitulo(); as titulo) {
-                  <span class="truncate font-medium">{{ valorDe(fila, titulo.clave) }}</span>
+                  <span class="truncate text-[15px] font-medium">{{ valorDe(fila, titulo.clave) }}</span>
                 }
                 @if (columnaEstado(); as estado) {
                   <ng-container *ngTemplateOutlet="celda; context: { $implicit: fila, columna: estado }" />
                 }
               </div>
               @for (detalle of columnasDetalle(); track detalle.clave) {
-                <span class="truncate text-sm text-sobre-superficie-variante">{{ valorDe(fila, detalle.clave) }}</span>
+                <span class="truncate text-[13px] text-sobre-superficie-variante">{{ valorDe(fila, detalle.clave) }}</span>
               }
             </div>
             @if (accionesFila(); as acciones) {
@@ -37,7 +37,7 @@
         }
         @if (accionesFila(); as acciones) {
           <ng-container [matColumnDef]="columnaAcciones">
-            <th *matHeaderCellDef mat-header-cell>{{ tituloAcciones }}</th>
+            <th *matHeaderCellDef mat-header-cell><span class="sr-only">{{ tituloAcciones }}</span></th>
             <td *matCellDef="let fila" mat-cell>
               <ng-container *ngTemplateOutlet="acciones.plantilla; context: { $implicit: fila }" />
             </td>
@@ -58,7 +58,7 @@
     }
   </div>
 
-  <mat-paginator [length]="total()" [pageIndex]="indicePagina()" [pageSize]="tamanosPagina()[0]" [pageSizeOptions]="tamanosPagina()" (page)="cambiarPagina($event)" />
+  <mat-paginator [length]="total()" [pageIndex]="indicePagina()" [pageSize]="tamanoActual()" [pageSizeOptions]="tamanosPagina()" (page)="cambiarPagina($event)" />
 </div>
 
 <ng-template #celda let-fila let-columna="columna">

@@ -12,13 +12,14 @@ import {
   type CambioPagina,
   type ColumnaTabla,
   type DefinicionFiltro,
+  type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
 import { map } from 'rxjs';
 import { ESTADOS_TENANT, PRODUCTOS, type EstadoTenant, type ProductoCodigo } from '../../models/catalogos';
 import { aErrorConsola } from '../../models/error-consola';
-import { TAMANO_PAGINA, type Listado } from '../../models/listado';
-import { COLUMNAS_TENANTS, ETIQUETAS_ESTADO_TENANT, MENSAJES_CONSOLA } from '../../models/mensajes-consola';
+import type { Listado } from '../../models/listado';
+import { COLUMNAS_TENANTS, ETIQUETAS_ESTADO_TENANT, MENSAJES_CONSOLA, TONOS_ESTADO_TENANT } from '../../models/mensajes-consola';
 import { PERMISOS_CONSOLA } from '../../models/permisos-consola';
 import type { FiltroTenants, TenantListado } from '../../models/tenant';
 import { TenantsCliente } from '../../services/tenants.cliente';
@@ -31,14 +32,15 @@ export interface FilaTenant {
   codigo: string;
   nombre: string;
   estado: string;
+  tonoEstado: TonoEstado;
   suscripciones: string;
   creadoEn: string;
 }
 
 const COLUMNAS: ColumnaTabla<FilaTenant>[] = [
-  { clave: 'codigo', titulo: COLUMNAS_TENANTS.codigo },
-  { clave: 'nombre', titulo: COLUMNAS_TENANTS.nombre },
-  { clave: 'estado', titulo: COLUMNAS_TENANTS.estado },
+  { clave: 'codigo', titulo: COLUMNAS_TENANTS.codigo, movil: 'detalle' },
+  { clave: 'nombre', titulo: COLUMNAS_TENANTS.nombre, movil: 'titulo' },
+  { clave: 'estado', titulo: COLUMNAS_TENANTS.estado, movil: 'estado', tono: (fila) => fila.tonoEstado },
   { clave: 'suscripciones', titulo: COLUMNAS_TENANTS.suscripciones },
   { clave: 'creadoEn', titulo: COLUMNAS_TENANTS.creadoEn },
 ];
@@ -74,7 +76,6 @@ export class TenantsListaPage {
   protected readonly permisos = PERMISOS_CONSOLA;
   protected readonly columnas = COLUMNAS;
   protected readonly filtros = FILTROS;
-  protected readonly tamanosPagina = [TAMANO_PAGINA];
 
   protected readonly filtro = signal<FiltroTenants>(filtroDesdeUrl(this.ruta.snapshot.queryParamMap));
   protected readonly valorInicialFiltros = valorFiltrosDe(this.filtro());
@@ -101,8 +102,8 @@ export class TenantsListaPage {
     });
   }
 
-  protected paginar({ indice }: CambioPagina): void {
-    this.navegar({ ...this.filtro(), pagina: indice + 1 });
+  protected paginar({ indice, tamano }: CambioPagina): void {
+    this.navegar({ ...this.filtro(), pagina: indice + 1, tamano });
   }
 
   protected async nuevoTenant(): Promise<void> {
@@ -139,6 +140,7 @@ function filaDe(tenant: TenantListado): FilaTenant {
     codigo: tenant.codigo,
     nombre: tenant.nombre,
     estado: ETIQUETAS_ESTADO_TENANT[tenant.estado],
+    tonoEstado: TONOS_ESTADO_TENANT[tenant.estado],
     suscripciones: suscripciones || MENSAJES_CONSOLA.sinSuscripciones,
     creadoEn: formatearFecha(tenant.creadoEn),
   };

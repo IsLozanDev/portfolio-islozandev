@@ -6,8 +6,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { SesionService } from '@vitrina/shared/auth';
-import { mensajeDeError } from '../../utils/mensaje-de-error';
 import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
+import { mensajeDeError } from '../../utils/mensaje-de-error';
 
 /** Igual exista o no la cuenta (TR-RNF-012). */
 export const CONFIRMACION_RECUPERAR = 'Si el correo está registrado, le enviamos un enlace para elegir una clave nueva.';

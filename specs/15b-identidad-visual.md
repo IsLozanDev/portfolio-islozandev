@@ -49,6 +49,8 @@ Se implementa después de que el 17c esté Implementado: los dos tocan `libs/pla
   - `ColumnaTabla` suma `tono` y `movil`.
   - `vit-tabla` pinta chips en las columnas con `tono` y, por debajo de 600 px, una lista en lugar de la tabla.
   - Tablas compactas: filas de 40 px, encabezado de texto a 13 px, líneas verticales entre columnas (`--color-borde`), resaltado de la fila al pasar el mouse con transición de 120 ms (sin transición con `prefers-reduced-motion`) y botones de acción de la fila a 32 px. Se aplica a `vit-tabla` y a las tablas `mat-table` de los detalles de usuario y tenant.
+  - Tabla del canvas (pedido del usuario en la implementación): encabezado `#F0F4F2` de 36 px, celdas en una línea con «…» y un ancho máximo, tarjeta blanca con el paginador dentro.
+  - Paginador (pedido del usuario en la implementación): combo «Filas por página» con 20, 50 y 100 en todas las listas con `vit-tabla` (usuarios, roles, perfiles, empresas, sucursales, unidades y tenants), y en celular combo, rango y flechas en una sola fila. El tamaño va en la URL (`?tamano=`) donde la página ya está en la URL; roles y perfiles, que traen la lista entera, paginan en el navegador.
 - **Shell (`libs/shared/shell`)**:
   - Menú lateral en noche, con la marca «Vitrina» y el nombre de la app arriba, y la opción activa en una cápsula menta.
   - Barra superior blanca en escritorio y noche en celular, con «Vitrina».
@@ -240,6 +242,7 @@ Cada feature guarda su mapa (`TONOS_ESTADO_MEMBRESIA`, `TONOS_ESTADO_ASIGNACION`
 - **Sí:** campos de formulario a 40 px (densidad −4), pedido del usuario. Iguala la altura de campos y botones.
 - **No:** densidad −4 en todo el tema. Achicaría también listas y menús, que no se pidieron.
 - **Sí:** tablas compactas de 40 px con líneas verticales y resaltado al pasar el mouse, pedido del usuario. Se fijan con `mat.table-overrides` y CSS propio de `vit-tabla`, no con la densidad global.
+- **Sí:** combo de filas por página en todas las listas, pedido del usuario durante la implementación. Toca la lógica de paginación de 16a, 16b, 16c, 17b y 17c; se hace aquí para no dejar paginadores distintos.
 - **Sí:** ilustración SVG propia. Pesa unos 5 KB y no depende de imágenes de terceros.
 - **Sí:** implementar después de cerrar el 17c (decisión del usuario).
 - **Sí:** fila 15b en `docs/roadmap-specs.md` (decisión del usuario).

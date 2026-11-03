@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink, type ParamMap, type Params } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, AvisosService, EstadoVacioComponent, TablaComponent, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, AvisosService, EstadoVacioComponent, TablaComponent, tamanoPaginaParaUrl, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
 import { aErrorAdmin, CODIGO_VERSION_OBSOLETA } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { ETIQUETAS_ESTADO_FILTRO, MENSAJES_ORGANIZACION, MENSAJES_UNIDADES } from '../../models/mensajes-organizacion';
@@ -24,7 +24,7 @@ import {
   PARAMETRO_URL_ORGANIZACION,
   paginaDesdeUrl,
   paginaParaUrl,
-  TAMANO_PAGINA_ORGANIZACION,
+  tamanoDesdeUrl,
   type EstadoFiltro,
 } from '../../utils/filtro-url-organizacion';
 
@@ -45,6 +45,7 @@ interface FiltroUnidadesUrl {
   tipo: TipoUnidad | null;
   estado: EstadoFiltro;
   pagina: number;
+  tamano: number;
 }
 
 const COLUMNAS: ColumnaTabla<FilaUnidad>[] = [
@@ -74,7 +75,6 @@ export class UnidadesListaPage {
   protected readonly comunes = MENSAJES_ORGANIZACION;
   protected readonly permisos = PERMISOS_ADMIN;
   protected readonly columnas = COLUMNAS;
-  protected readonly tamanosPagina = [TAMANO_PAGINA_ORGANIZACION];
   protected readonly estados = ESTADOS_FILTRO;
   protected readonly etiquetasEstado = ETIQUETAS_ESTADO_FILTRO;
   protected readonly tipos = TIPOS_UNIDAD;
@@ -118,8 +118,8 @@ export class UnidadesListaPage {
     this.navegar({ ...this.filtro(), estado, pagina: 1 });
   }
 
-  protected paginar({ indice }: CambioPagina): void {
-    this.navegar({ ...this.filtro(), pagina: indice + 1 });
+  protected paginar({ indice, tamano }: CambioPagina): void {
+    this.navegar({ ...this.filtro(), pagina: indice + 1, tamano });
   }
 
   protected parametrosDeNueva(): Params {
@@ -177,12 +177,13 @@ export class UnidadesListaPage {
       [PARAMETRO_URL_ORGANIZACION.tipo]: filtro.tipo,
       [PARAMETRO_URL_ORGANIZACION.activo]: estadoParaUrl(filtro.estado),
       [PARAMETRO_URL_ORGANIZACION.pagina]: paginaParaUrl(filtro.pagina),
+      [PARAMETRO_URL_ORGANIZACION.tamano]: tamanoPaginaParaUrl(filtro.tamano),
     };
     void this.router.navigate([], { relativeTo: this.ruta, queryParams, replaceUrl: reemplazar });
   }
 
   private async cargar(): Promise<void> {
-    const { empresaId, sucursalId, tipo, estado, pagina } = this.filtro();
+    const { empresaId, sucursalId, tipo, estado, pagina, tamano } = this.filtro();
     if (!empresaId) return;
     const consulta = ++this.consultaActual;
     this.cargando.set(true);
@@ -194,7 +195,7 @@ export class UnidadesListaPage {
           tipo: tipo ?? undefined,
           activo: activoDeEstado(estado),
           pagina,
-          tamano: TAMANO_PAGINA_ORGANIZACION,
+          tamano,
         }),
         this.sucursalesDe(empresaId),
       ]);
@@ -228,6 +229,7 @@ function filtroDesdeUrl(parametros: ParamMap): FiltroUnidadesUrl {
     tipo: esTipoUnidad(tipo) ? tipo : null,
     estado: estadoDesdeUrl(parametros),
     pagina: paginaDesdeUrl(parametros),
+    tamano: tamanoDesdeUrl(parametros),
   };
 }
 

@@ -6,10 +6,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CONFIG_AUTH, ErrorAuth, MfaService, PARAMETRO_RETORNO, SesionService } from '@vitrina/shared/auth';
+import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
 import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
-import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
-import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
+import { clavesCoinciden, ERROR_CLAVES_DISTINTAS, LONGITUD_MINIMA_CLAVE } from '../../utils/validadores-clave';
 
 const PARAMETRO_TOKEN_HASH = 'token_hash';
 const PARAMETRO_TIPO = 'type';

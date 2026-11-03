@@ -4,7 +4,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { CONFIG_AUTH } from '@vitrina/shared/auth';
-import { FiltrosComponent } from '@vitrina/shared/ui';
+import { FiltrosComponent, TablaComponent } from '@vitrina/shared/ui';
 import { estable } from '../../../testing/estable';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { MENSAJES_ROLES } from '../../models/mensajes-admin';
@@ -66,6 +66,22 @@ describe('RolesListaPage', () => {
     expect(filas()[3]).toContain('MOZO_TERRAZA');
     expect(filas()[3]).toContain('Propio');
     expect(filas()[3]).toContain('Inactivo');
+  });
+
+  it('pagina en el navegador: 20 filas por página y el combo cambia el tamaño sin pedir al servidor', async () => {
+    const muchos = Array.from({ length: 25 }, (_, indice) => rol(`r-${indice}`, `ROL_${indice}`, REST, false));
+    await abrir({ items: muchos });
+    const tabla = fixture.debugElement.query(By.directive(TablaComponent)).componentInstance as TablaComponent<object>;
+
+    expect(filas()).toHaveLength(20);
+
+    tabla.pagina.emit({ indice: 1, tamano: 20 });
+    await estable(fixture);
+    expect(filas()).toHaveLength(5);
+
+    tabla.pagina.emit({ indice: 0, tamano: 50 });
+    await estable(fixture);
+    expect(filas()).toHaveLength(25);
   });
 
   it('filtra por producto y tipo en el cliente, sin pedir otra vez al servidor', async () => {

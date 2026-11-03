@@ -14,9 +14,14 @@ describe('filtro de tenants en la URL', () => {
     expect(filtro).toEqual({ q: undefined, estado: undefined, producto: undefined, pagina: 1, tamano: 20 });
   });
 
-  it('deja fuera de la URL los filtros vacíos y la primera página', () => {
-    expect(parametrosUrlDe({ pagina: 1, tamano: 20 })).toEqual({ q: null, estado: null, producto: null, pagina: null });
-    expect(parametrosUrlDe({ estado: 'PRUEBA', pagina: 2, tamano: 20 })).toEqual({ q: null, estado: 'PRUEBA', producto: null, pagina: 2 });
+  it('lee el tamaño de página solo si es una de las opciones del combo', () => {
+    expect(filtroDesdeUrl(convertToParamMap({ tamano: '50' })).tamano).toBe(50);
+    expect(filtroDesdeUrl(convertToParamMap({ tamano: '35' })).tamano).toBe(20);
+  });
+
+  it('deja fuera de la URL los filtros vacíos, la primera página y el tamaño por defecto', () => {
+    expect(parametrosUrlDe({ pagina: 1, tamano: 20 })).toEqual({ q: null, estado: null, producto: null, pagina: null, tamano: null });
+    expect(parametrosUrlDe({ estado: 'PRUEBA', pagina: 2, tamano: 50 })).toEqual({ q: null, estado: 'PRUEBA', producto: null, pagina: 2, tamano: 50 });
   });
 
   it('arma el valor inicial de vit-filtros', () => {

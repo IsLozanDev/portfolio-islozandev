@@ -2,9 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
+import { TablaComponent } from '@vitrina/shared/ui';
 import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
@@ -84,6 +86,18 @@ describe('EmpresasListaPage', () => {
     const peticion = await abrir('/admin/empresas?pagina=2');
     expect(peticion.request.params.get('pagina')).toBe('2');
     await responder(peticion, { items: [], total: 21 });
+  });
+
+  it('el tamaño de la URL viaja a la API y el combo lo cambia en la URL', async () => {
+    const peticion = await abrir('/admin/empresas?tamano=50');
+    expect(peticion.request.params.get('tamano')).toBe('50');
+    await responder(peticion, { items: [SABORES], total: 60 });
+
+    harness.fixture.debugElement.query(By.directive(TablaComponent)).componentInstance.pagina.emit({ indice: 0, tamano: 100 });
+    await estable();
+
+    expect(url()).toBe('/admin/empresas?tamano=100');
+    expect(esperarLista().request.params.get('tamano')).toBe('100');
   });
 
   it('enlaza a las sucursales de la empresa y a su edición', async () => {

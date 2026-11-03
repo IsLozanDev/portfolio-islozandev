@@ -7,6 +7,7 @@ import {
   AccionesFilaDirective,
   FiltrosComponent,
   TablaComponent,
+  TAMANO_PAGINA_POR_DEFECTO,
   type CambioOrden,
   type CambioPagina,
   type ColumnaTabla,
@@ -34,12 +35,10 @@ export interface FilaMiembro {
   invitacionVence: string;
 }
 
-/** El primero es el de la API (spec 17a): 20 por página. */
-export const TAMANOS_PAGINA_MIEMBROS = [20, 50, 100];
 const CLAVE_FILTRO_ESTADO = 'estado';
 const ORDENES_PERMITIDOS: readonly string[] = ORDENES_MIEMBROS;
 
-export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANOS_PAGINA_MIEMBROS[0] };
+export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANO_PAGINA_POR_DEFECTO };
 
 const COLUMNAS: ColumnaTabla<FilaMiembro>[] = [
   { clave: 'nombre', titulo: COLUMNAS_MIEMBROS.nombre, ordenable: true, movil: 'titulo' },
@@ -71,7 +70,6 @@ export class UsuariosListaPage {
   protected readonly permisos = PERMISOS_ADMIN;
   protected readonly columnas = COLUMNAS;
   protected readonly filtros = FILTROS;
-  protected readonly tamanosPagina = TAMANOS_PAGINA_MIEMBROS;
 
   protected readonly filtro = signal<FiltroMiembros>(FILTRO_INICIAL);
   protected readonly listado = signal<Listado<FilaMiembro>>({ items: [], total: 0 });

@@ -101,6 +101,14 @@ describe('TenantDetallePage', () => {
     expect(botones()).toEqual(esperados);
   });
 
+  it('el estado es un chip con su tono y Suspender y Dar de baja se ven destructivos', async () => {
+    await abrir(gym('PRUEBA'));
+
+    expect(elemento().querySelector('[data-estado-tenant] span')?.classList).toContain('bg-chip-info');
+    const destructivos = [...elemento().querySelectorAll('[data-acciones-estado] button.vit-destructivo')].map((boton) => boton.textContent?.trim());
+    expect(destructivos).toEqual(['Suspender', 'Dar de baja']);
+  });
+
   it('muestra suscripciones en solo lectura, empresa principal e historial en el orden de la API', async () => {
     await abrir(
       gym('SUSPENDIDO', {
@@ -113,7 +121,7 @@ describe('TenantDetallePage', () => {
       }),
     );
 
-    expect(elemento().querySelector('[data-suscripcion]')?.textContent).toContain('31/12/2026');
+    expect(elemento().querySelector('table.vit-tabla-compacta [data-suscripcion]')?.textContent).toContain('31/12/2026');
     expect(elemento().querySelector('[data-suscripcion] input, [data-suscripcion] button')).toBeNull();
     expect(elemento().querySelector('[data-empresa-principal]')?.textContent).toContain('20512345671');
     const historial = [...elemento().querySelectorAll('[data-cambio-estado]')].map((cambio) => cambio.textContent ?? '');
