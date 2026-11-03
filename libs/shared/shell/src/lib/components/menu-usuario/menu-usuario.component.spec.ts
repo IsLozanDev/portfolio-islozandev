@@ -22,6 +22,10 @@ describe('MenuUsuarioComponent', () => {
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     const fixture = TestBed.createComponent(MenuUsuarioComponent);
     const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    const disparador: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    expect(disparador.textContent?.trim()).toBe('C');
+    expect(disparador.getAttribute('aria-label')).toBe('Menú de usuario');
+
 
     await menu.open();
     expect(document.querySelector('.mat-mdc-menu-panel')?.textContent).toContain('carmen@correo.pe');
@@ -30,5 +34,17 @@ describe('MenuUsuarioComponent', () => {
     expect(volverA.limpiar).toHaveBeenCalledTimes(1);
     expect(sesion.salir).toHaveBeenCalledTimes(1);
     expect(navegar).toHaveBeenCalledWith('/auth/ingresar');
+  });
+
+  it('sin correo muestra el ícono de cuenta en lugar de la inicial', async () => {
+    const sesion = new DobleSesion();
+    sesion.sesion.set(null);
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: SesionService, useValue: sesion }, { provide: CONFIG_AUTH, useValue: { rutas: RUTAS_DE_PRUEBA } }],
+    });
+    const fixture = TestBed.createComponent(MenuUsuarioComponent);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('button mat-icon')?.textContent?.trim()).toBe('account_circle');
   });
 });

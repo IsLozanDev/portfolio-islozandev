@@ -7,15 +7,17 @@ import {
   AccionesFilaDirective,
   FiltrosComponent,
   TablaComponent,
+  TAMANO_PAGINA_POR_DEFECTO,
   type CambioOrden,
   type CambioPagina,
   type ColumnaTabla,
   type DefinicionFiltro,
+  type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
-import { COLUMNAS_MIEMBROS, ETIQUETAS_ESTADO_MEMBRESIA, MENSAJES_ADMIN } from '../../models/mensajes-admin';
+import { COLUMNAS_MIEMBROS, ETIQUETAS_ESTADO_MEMBRESIA, MENSAJES_ADMIN, TONOS_ESTADO_MEMBRESIA } from '../../models/mensajes-admin';
 import { ESTADOS_MEMBRESIA, ORDENES_MIEMBROS, type EstadoMembresia, type FiltroMiembros, type Miembro, type OrdenMiembros } from '../../models/miembro';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { MiembrosCliente } from '../../services/miembros.cliente';
@@ -27,22 +29,21 @@ export interface FilaMiembro {
   nombre: string;
   correo: string;
   estado: string;
+  tonoEstado: TonoEstado;
   propietario: string;
   asignacionesVigentes: number;
   invitacionVence: string;
 }
 
-/** El primero es el de la API (spec 17a): 20 por página. */
-export const TAMANOS_PAGINA_MIEMBROS = [20, 50, 100];
 const CLAVE_FILTRO_ESTADO = 'estado';
 const ORDENES_PERMITIDOS: readonly string[] = ORDENES_MIEMBROS;
 
-export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANOS_PAGINA_MIEMBROS[0] };
+export const FILTRO_INICIAL: FiltroMiembros = { orden: 'nombre', direccion: 'asc', pagina: 1, tamano: TAMANO_PAGINA_POR_DEFECTO };
 
 const COLUMNAS: ColumnaTabla<FilaMiembro>[] = [
-  { clave: 'nombre', titulo: COLUMNAS_MIEMBROS.nombre, ordenable: true },
-  { clave: 'correo', titulo: COLUMNAS_MIEMBROS.correo, ordenable: true },
-  { clave: 'estado', titulo: COLUMNAS_MIEMBROS.estado, ordenable: true },
+  { clave: 'nombre', titulo: COLUMNAS_MIEMBROS.nombre, ordenable: true, movil: 'titulo' },
+  { clave: 'correo', titulo: COLUMNAS_MIEMBROS.correo, ordenable: true, movil: 'detalle' },
+  { clave: 'estado', titulo: COLUMNAS_MIEMBROS.estado, ordenable: true, movil: 'estado', tono: (fila) => fila.tonoEstado },
   { clave: 'propietario', titulo: COLUMNAS_MIEMBROS.propietario },
   { clave: 'asignacionesVigentes', titulo: COLUMNAS_MIEMBROS.asignacionesVigentes },
   { clave: 'invitacionVence', titulo: COLUMNAS_MIEMBROS.invitacionVence },
@@ -69,7 +70,6 @@ export class UsuariosListaPage {
   protected readonly permisos = PERMISOS_ADMIN;
   protected readonly columnas = COLUMNAS;
   protected readonly filtros = FILTROS;
-  protected readonly tamanosPagina = TAMANOS_PAGINA_MIEMBROS;
 
   protected readonly filtro = signal<FiltroMiembros>(FILTRO_INICIAL);
   protected readonly listado = signal<Listado<FilaMiembro>>({ items: [], total: 0 });
@@ -126,6 +126,7 @@ function filaDe(miembro: Miembro): FilaMiembro {
     nombre: miembro.nombre,
     correo: miembro.correo,
     estado: ETIQUETAS_ESTADO_MEMBRESIA[miembro.estado],
+    tonoEstado: TONOS_ESTADO_MEMBRESIA[miembro.estado],
     propietario: miembro.esPropietario ? MENSAJES_ADMIN.si : MENSAJES_ADMIN.no,
     asignacionesVigentes: miembro.asignacionesVigentes,
     invitacionVence: miembro.invitacionExpiraEn ? formatearFechaHora(miembro.invitacionExpiraEn) : MENSAJES_ADMIN.sinFecha,

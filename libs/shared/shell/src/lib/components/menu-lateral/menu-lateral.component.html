@@ -1,3 +1,8 @@
+<div class="flex flex-col px-4 pt-5 pb-3">
+  <span class="text-xl font-medium text-white">{{ mensajes.marca }}</span>
+  <span class="text-sm text-menta-suave">{{ nombreApp() }}</span>
+</div>
+
 @if (nodos().length === 0) {
   <vit-estado-vacio [icono]="iconoSinOpciones" [titulo]="mensajes.sinOpcionesMenu" />
 } @else {
@@ -37,6 +42,7 @@
         #enlace="routerLinkActive"
         [routerLinkActiveOptions]="{ exact: esRutaExacta(nodo.ruta) }"
         ariaCurrentWhenActive="page"
+        class="aria-[current=page]:[--mat-list-list-item-leading-icon-color:var(--color-menta)] aria-[current=page]:[--mat-list-list-item-hover-leading-icon-color:var(--color-menta)]"
         [activated]="enlace.isActive"
       >
         <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>

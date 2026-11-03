@@ -2,7 +2,17 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
-import { AccionesFilaDirective, FiltrosComponent, TablaComponent, type ColumnaTabla, type DefinicionFiltro, type ValorFiltros } from '@vitrina/shared/ui';
+import {
+  AccionesFilaDirective,
+  filasDePagina,
+  FiltrosComponent,
+  TablaComponent,
+  TAMANO_PAGINA_POR_DEFECTO,
+  type CambioPagina,
+  type ColumnaTabla,
+  type DefinicionFiltro,
+  type ValorFiltros,
+} from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import { ETIQUETAS_ESTADO_ROL, ETIQUETAS_TIPO_ROL, MENSAJES_ADMIN, MENSAJES_ROLES } from '../../models/mensajes-admin';
 import type { Rol } from '../../models/rol';
@@ -29,8 +39,8 @@ interface FiltroRoles {
 
 const CLAVE_FILTRO_PRODUCTO = 'producto';
 const CLAVE_FILTRO_TIPO = 'tipo';
-/** La lista no se pagina (pocos roles por tenant): una sola página que las cubre todas. */
-const TAMANO_SIN_PAGINAR = 1000;
+/** La API trae la lista entera (pocos roles por tenant): se pagina en el navegador. */
+const PRIMERA_PAGINA: CambioPagina = { indice: 0, tamano: TAMANO_PAGINA_POR_DEFECTO };
 
 const COLUMNAS: ColumnaTabla<FilaRol>[] = [
   { clave: 'nombre', titulo: MENSAJES_ROLES.nombre },
@@ -59,7 +69,6 @@ export class RolesListaPage {
   protected readonly mensajes = MENSAJES_ROLES;
   protected readonly verDetalle = MENSAJES_ADMIN.verDetalle;
   protected readonly columnas = COLUMNAS;
-  protected readonly tamanosPagina = [TAMANO_SIN_PAGINAR];
 
   private readonly todos = signal<Rol[]>([]);
   private readonly filtro = signal<FiltroRoles>({ producto: null, tipo: null, busqueda: '' });
@@ -68,17 +77,24 @@ export class RolesListaPage {
 
   protected readonly filtros = computed<DefinicionFiltro[]>(() => [filtroDeProducto(this.todos()), FILTRO_TIPO]);
   protected readonly filas = computed(() => this.todos().filter(cumpleFiltro(this.filtro())).map(filaDe));
+  protected readonly paginaActual = signal<CambioPagina>(PRIMERA_PAGINA);
+  protected readonly filasVisibles = computed(() => filasDePagina(this.filas(), this.paginaActual()));
 
   constructor() {
     void this.cargar();
   }
 
   protected filtrar(valor: ValorFiltros): void {
+    this.paginaActual.update(({ tamano }) => ({ indice: PRIMERA_PAGINA.indice, tamano }));
     this.filtro.set({
       producto: valor[CLAVE_FILTRO_PRODUCTO] ?? null,
       tipo: (valor[CLAVE_FILTRO_TIPO] as TipoRol | null) ?? null,
       busqueda: valor.busqueda.trim().toLowerCase(),
     });
+  }
+
+  protected paginar(cambio: CambioPagina): void {
+    this.paginaActual.set(cambio);
   }
 
   private async cargar(): Promise<void> {

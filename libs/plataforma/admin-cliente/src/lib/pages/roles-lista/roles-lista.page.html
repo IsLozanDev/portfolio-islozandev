@@ -15,11 +15,13 @@
 
   <vit-tabla
     [columnas]="columnas"
-    [filas]="filas()"
+    [filas]="filasVisibles()"
     [total]="filas().length"
     [cargando]="cargando()"
-    [tamanosPagina]="tamanosPagina"
+    [indicePagina]="paginaActual().indice"
+    [tamanoPagina]="paginaActual().tamano"
     [textoVacio]="mensajes.sinRoles"
+    (pagina)="paginar($event)"
   >
     <ng-template vitAccionesFila let-rol>
       <a mat-icon-button [routerLink]="rol.id" [attr.aria-label]="verDetalle + ': ' + rol.nombre">

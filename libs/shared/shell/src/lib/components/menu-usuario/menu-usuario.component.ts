@@ -20,6 +20,7 @@ export class MenuUsuarioComponent {
 
   protected readonly mensajes = MENSAJES_SHELL;
   protected readonly correo = computed(() => this.sesion.sesion()?.user.email ?? '');
+  protected readonly inicial = computed(() => this.correo().charAt(0).toLocaleUpperCase('es-PE'));
 
   protected async salir(): Promise<void> {
     this.volverA.limpiar();

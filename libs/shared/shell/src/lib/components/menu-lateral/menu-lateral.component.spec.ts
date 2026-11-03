@@ -21,6 +21,7 @@ describe('MenuLateralComponent', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(MenuLateralComponent);
     fixture.componentRef.setInput('nodos', nodos);
+    fixture.componentRef.setInput('nombreApp', 'Administración');
     await fixture.whenStable();
     return fixture.nativeElement;
   }
@@ -49,6 +50,13 @@ describe('MenuLateralComponent', () => {
 
     expect(grupo(elemento).getAttribute('aria-expanded')).toBe('true');
     expect(elemento.querySelector('a[href="/usuarios"]')?.textContent).toContain('Usuarios');
+  });
+
+  it('muestra la marca y el nombre de la app arriba', async () => {
+    const elemento = await abrir(MENU);
+
+    expect(elemento.textContent).toContain('Vitrina');
+    expect(elemento.textContent).toContain('Administración');
   });
 
   it('sin opciones muestra el estado vacío', async () => {

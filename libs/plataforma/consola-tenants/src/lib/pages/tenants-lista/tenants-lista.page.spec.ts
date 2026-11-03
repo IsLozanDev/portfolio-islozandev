@@ -91,6 +91,14 @@ describe('TenantsListaPage', () => {
     expect(elemento().querySelector('a[aria-label="Ver detalle: gym-fuerza-total"]')?.getAttribute('href')).toBe('/consola/tenants/t-gym');
   });
 
+  it('el estado se pinta como chip con el tono del estado', async () => {
+    await responder(await abrir(), { items: [GYM], total: 1 });
+
+    const chip = elemento().querySelector('tr[mat-row] vit-chip-estado span');
+    expect(chip?.textContent?.trim()).toBe('Suspendido');
+    expect(chip?.classList).toContain('bg-chip-advertencia');
+  });
+
   it('filtrar por SUSPENDIDO lo pone en la URL y pide estado=SUSPENDIDO desde la página 1', async () => {
     await responder(await abrir(`${RUTA_LISTA}?pagina=2`), { items: [], total: 0 });
 
@@ -119,6 +127,16 @@ describe('TenantsListaPage', () => {
 
     expect(url()).toBe(`${RUTA_LISTA}?pagina=2`);
     expect(parametros(esperarLista())).toEqual({ pagina: '2', tamano: '20' });
+  });
+
+  it('elegir 50 filas por página lo pone en la URL y lo pide a la API', async () => {
+    await responder(await abrir(), { items: [GYM], total: 60 });
+
+    harness.fixture.debugElement.query(By.directive(TablaComponent)).componentInstance.pagina.emit({ indice: 0, tamano: 50 });
+    await estable();
+
+    expect(url()).toBe(`${RUTA_LISTA}?tamano=50`);
+    expect(parametros(esperarLista())).toEqual({ pagina: '1', tamano: '50' });
   });
 
   it('un error de la API se muestra como alerta y sin filas', async () => {

@@ -1,12 +1,13 @@
 @if (sucursales().length > 1) {
   <button
     mat-button
+    class="vit-selector-sucursal"
     type="button"
     [matMenuTriggerFor]="menuDeSucursales"
     [disabled]="cambiando()"
     [attr.aria-label]="mensajes.sucursalActual + ': ' + (actual()?.nombre ?? '')"
   >
-    <mat-icon aria-hidden="true">store</mat-icon>
+    <mat-icon class="vit-icono-sucursal" aria-hidden="true">store</mat-icon>
     <span class="inline-block max-w-32 truncate align-middle sm:max-w-48">{{ actual()?.nombre }}</span>
     <mat-icon iconPositionEnd aria-hidden="true">arrow_drop_down</mat-icon>
   </button>
@@ -20,8 +21,8 @@
     }
   </mat-menu>
 } @else if (actual(); as unica) {
-  <span class="inline-flex items-center gap-1 text-sm" [attr.aria-label]="mensajes.sucursalActual + ': ' + unica.nombre">
-    <mat-icon aria-hidden="true">store</mat-icon>
+  <span class="inline-flex items-center gap-1.5 px-2 text-sm leading-none font-medium" [attr.aria-label]="mensajes.sucursalActual + ': ' + unica.nombre">
+    <mat-icon class="vit-icono-sucursal" aria-hidden="true">store</mat-icon>
     <span class="max-w-32 truncate sm:max-w-48">{{ unica.nombre }}</span>
   </span>
 }

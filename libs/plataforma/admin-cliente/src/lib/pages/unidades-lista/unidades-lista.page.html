@@ -60,7 +60,7 @@
       [total]="listado().total"
       [cargando]="cargando()"
       [indicePagina]="filtro().pagina - 1"
-      [tamanosPagina]="tamanosPagina"
+      [tamanoPagina]="filtro().tamano"
       [textoVacio]="mensajes.sinUnidades"
       (pagina)="paginar($event)"
     >

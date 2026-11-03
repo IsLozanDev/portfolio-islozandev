@@ -1,11 +1,217 @@
 @use '@angular/material' as mat;
+@use './paleta-vitrina' as paleta;
+
+/* El tono 40 de la paleta generada (#036b58) no es el esmeralda de marca: se fija `primary` aparte. */
+$primario-marca: #0B6E5B;
+
+$noche: #071A17;
+$sobre-noche: #C9DCD6;
+$menta: #5EE2C0;
+
+/* Tablas compactas del canvas «Pantallas tipo». */
+$tabla-encabezado: #F0F4F2;
+$tabla-texto-encabezado: #4A5853;
+$tabla-linea: #E8EDEB;
+$tabla-linea-encabezado: #DCE3E0;
+$tabla-fila-resaltada: #EEF6F3;
+$tabla-ancho-maximo-celda: 12rem;
+
+/* Superficie oscura del shell: los textos e iconos de Material que heredan on-surface pasan a sobre-noche. */
+@mixin sobre-noche() {
+  @include mat.theme-overrides((
+    on-surface: $sobre-noche,
+    on-surface-variant: $sobre-noche,
+  ));
+}
 
 /* Tema Material 3 único de la plataforma; la app lo aplica en `html`. */
 @mixin aplicar-tema() {
   color-scheme: light;
   @include mat.theme((
-    color: mat.$azure-palette,
+    color: (
+      primary: paleta.$primary-palette,
+      tertiary: paleta.$tertiary-palette,
+    ),
     typography: Roboto,
     density: 0,
   ));
+  @include mat.theme-overrides((
+    primary: $primario-marca,
+  ));
+
+  /* Campos a 40 px, igual que los botones; el resto del tema queda en densidad 0. */
+  @include mat.form-field-density(-4);
+
+  .vit-campo-codigo {
+    @include mat.form-field-density(-2);
+  }
+
+  .vit-menu-noche {
+    @include sobre-noche();
+    @include mat.sidenav-overrides((
+      container-background-color: $noche,
+      container-text-color: $sobre-noche,
+      container-shape: 0,
+    ));
+    @include mat.list-overrides((
+      active-indicator-color: color-mix(in srgb, #{$menta} 16%, transparent),
+      list-item-hover-state-layer-color: $menta,
+      list-item-focus-state-layer-color: $menta,
+    ));
+  }
+
+  .vit-barra-clara {
+    @include mat.toolbar-overrides((
+      container-background-color: var(--mat-sys-surface-container-lowest),
+      container-text-color: var(--mat-sys-on-surface),
+    ));
+  }
+
+  .vit-barra-noche {
+    @include sobre-noche();
+    @include mat.toolbar-overrides((
+      container-background-color: $noche,
+      container-text-color: $sobre-noche,
+    ));
+  }
+
+  /* Tarjeta blanca que envuelve la tabla, su lista en celular y el paginador. */
+  .vit-tarjeta-tabla {
+    background-color: var(--mat-sys-surface-container-lowest);
+    border: 1px solid $tabla-linea-encabezado;
+    @include mat.paginator-overrides((
+      container-background-color: transparent,
+      container-size: 56px,
+      container-text-size: 13px,
+      select-trigger-text-size: 13px,
+      form-field-container-height: 36px,
+      form-field-container-vertical-padding: 8px,
+    ));
+
+    .mat-mdc-paginator,
+    .vit-lista-movil > li + li {
+      border-top: 1px solid $tabla-linea;
+    }
+
+    /* «Filas por página» como texto con flecha: sin contorno salvo con el foco. */
+    .mat-mdc-paginator {
+      @include mat.form-field-overrides((
+        outlined-outline-color: transparent,
+        outlined-hover-outline-color: transparent,
+      ));
+    }
+
+    /* En celular, combo, rango y flechas en una sola fila; «Filas por página» queda para el lector de pantalla. */
+    @media (max-width: 599.98px) {
+      @include mat.paginator-overrides((
+        page-size-select-width: 72px,
+      ));
+
+      .mat-mdc-paginator-page-size-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
+
+      .mat-mdc-paginator-container {
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        padding: 0 4px 0 12px;
+      }
+
+      .mat-mdc-paginator-page-size {
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      .mat-mdc-paginator-page-size-select {
+        margin: 0 4px;
+      }
+
+      .mat-mdc-paginator-range-actions {
+        flex-wrap: nowrap;
+      }
+
+      .mat-mdc-paginator-range-label {
+        margin: 0 4px;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .vit-selector-sucursal {
+    @include mat.button-overrides((
+      text-label-text-color: var(--mat-sys-on-surface),
+    ));
+  }
+
+  .vit-icono-sucursal {
+    color: var(--mat-sys-primary);
+  }
+
+  .vit-barra-noche .vit-icono-sucursal {
+    color: $menta;
+  }
+
+  /* `vit-tabla` la trae puesta; las `mat-table` sueltas de los detalles la agregan. */
+  .vit-tabla-compacta {
+    @include mat.table-overrides((
+      background-color: var(--mat-sys-surface-container-lowest),
+      header-container-height: 36px,
+      row-item-container-height: 40px,
+      header-headline-size: 13px,
+      header-headline-weight: 500,
+      header-headline-color: $tabla-texto-encabezado,
+      row-item-label-text-size: 14px,
+      row-item-outline-color: $tabla-linea,
+    ));
+    /* Con un número, los mixins usan la escala M2: botones de la fila a 32 px. */
+    @include mat.icon-button-density(-4);
+    @include mat.button-density(-1);
+
+    .mat-mdc-header-row {
+      background-color: $tabla-encabezado;
+    }
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell {
+      padding: 0 12px;
+      /* Una línea por fila: el texto largo se corta con «…». */
+      white-space: nowrap;
+    }
+
+    .mat-mdc-cell {
+      max-width: $tabla-ancho-maximo-celda;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mat-column-acciones {
+      padding: 0 8px;
+    }
+
+    .mat-mdc-header-cell + .mat-mdc-header-cell {
+      border-left: 1px solid $tabla-linea-encabezado;
+    }
+
+    .mat-mdc-cell + .mat-mdc-cell {
+      border-left: 1px solid $tabla-linea;
+    }
+
+    .mat-mdc-row {
+      transition: background-color 120ms ease;
+
+      &:hover {
+        background-color: $tabla-fila-resaltada;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mat-mdc-row {
+        transition: none;
+      }
+    }
+  }
 }

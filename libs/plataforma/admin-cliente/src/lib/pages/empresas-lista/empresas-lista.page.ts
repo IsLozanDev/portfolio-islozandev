@@ -4,15 +4,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink, type Params } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, TablaComponent, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
-import { map } from 'rxjs';
+import { AccionesFilaDirective, TablaComponent, tamanoPaginaParaUrl, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
 import type { Empresa } from '../../models/empresa';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { MENSAJES_EMPRESAS, MENSAJES_ORGANIZACION } from '../../models/mensajes-organizacion';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { EmpresasCliente } from '../../services/empresas.cliente';
-import { PARAMETRO_URL_ORGANIZACION, paginaDesdeUrl, paginaParaUrl, TAMANO_PAGINA_ORGANIZACION } from '../../utils/filtro-url-organizacion';
+import { PARAMETRO_URL_ORGANIZACION, paginaDesdeUrl, paginaParaUrl, tamanoDesdeUrl } from '../../utils/filtro-url-organizacion';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaEmpresa {
@@ -45,9 +44,9 @@ export class EmpresasListaPage {
   protected readonly comunes = MENSAJES_ORGANIZACION;
   protected readonly permisos = PERMISOS_ADMIN;
   protected readonly columnas = COLUMNAS;
-  protected readonly tamanosPagina = [TAMANO_PAGINA_ORGANIZACION];
 
   protected readonly pagina = signal(paginaDesdeUrl(this.ruta.snapshot.queryParamMap));
+  protected readonly tamano = signal(tamanoDesdeUrl(this.ruta.snapshot.queryParamMap));
   protected readonly listado = signal<Listado<FilaEmpresa>>({ items: [], total: 0 });
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -55,8 +54,9 @@ export class EmpresasListaPage {
   private consultaActual = 0;
 
   constructor() {
-    this.ruta.queryParamMap.pipe(map(paginaDesdeUrl), takeUntilDestroyed()).subscribe((pagina) => {
-      this.pagina.set(pagina);
+    this.ruta.queryParamMap.pipe(takeUntilDestroyed()).subscribe((parametros) => {
+      this.pagina.set(paginaDesdeUrl(parametros));
+      this.tamano.set(tamanoDesdeUrl(parametros));
       void this.cargar();
     });
   }
@@ -66,8 +66,8 @@ export class EmpresasListaPage {
     return { [PARAMETRO_URL_ORGANIZACION.empresa]: empresaId };
   }
 
-  protected paginar({ indice }: CambioPagina): void {
-    const queryParams = { [PARAMETRO_URL_ORGANIZACION.pagina]: paginaParaUrl(indice + 1) };
+  protected paginar({ indice, tamano }: CambioPagina): void {
+    const queryParams = { [PARAMETRO_URL_ORGANIZACION.pagina]: paginaParaUrl(indice + 1), [PARAMETRO_URL_ORGANIZACION.tamano]: tamanoPaginaParaUrl(tamano) };
     void this.router.navigate([], { relativeTo: this.ruta, queryParams });
   }
 
@@ -76,7 +76,7 @@ export class EmpresasListaPage {
     this.cargando.set(true);
     this.error.set(null);
     try {
-      const listado = await this.empresas.listar({ pagina: this.pagina(), tamano: TAMANO_PAGINA_ORGANIZACION });
+      const listado = await this.empresas.listar({ pagina: this.pagina(), tamano: this.tamano() });
       if (consulta !== this.consultaActual) return;
       this.listado.set({ items: listado.items.map(filaDe), total: listado.total });
     } catch (error) {

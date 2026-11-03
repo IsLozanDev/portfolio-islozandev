@@ -14,4 +14,16 @@
   --color-sobre-contenedor-error: var(--mat-sys-on-error-container);
   --color-borde: var(--mat-sys-outline-variant);
   --radius-tarjeta: var(--mat-sys-corner-medium);
+  --color-noche: #071A17;
+  --color-sobre-noche: #C9DCD6;
+  --color-menta: #5EE2C0;
+  --color-menta-suave: #A8E9D7;
+  --color-chip-exito: #D8F3EA;
+  --color-sobre-chip-exito: #0B4D40;
+  --color-chip-advertencia: #FCEFD2;
+  --color-sobre-chip-advertencia: #5E4100;
+  --color-chip-info: #DDEBF7;
+  --color-sobre-chip-info: #173F5F;
+  --color-chip-neutro: #E6EAE8;
+  --color-sobre-chip-neutro: #37423F;
 }

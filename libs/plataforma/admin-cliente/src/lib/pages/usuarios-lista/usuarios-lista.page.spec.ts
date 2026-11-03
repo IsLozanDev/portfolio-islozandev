@@ -75,6 +75,11 @@ describe('UsuariosListaPage', () => {
     expect(filas[1]).toContain('Activo');
     expect(filas[1]).toContain(MENSAJES_ADMIN.si);
     expect(filas[1]).toContain(MENSAJES_ADMIN.sinFecha);
+
+    const chips = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tr[mat-row] vit-chip-estado span')];
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Invitado', 'Activo']);
+    expect(chips[0].classList).toContain('bg-chip-advertencia');
+    expect(chips[1].classList).toContain('bg-chip-exito');
   });
 
   it('cambiar el filtro o la búsqueda vuelve a pedir la página 1', async () => {

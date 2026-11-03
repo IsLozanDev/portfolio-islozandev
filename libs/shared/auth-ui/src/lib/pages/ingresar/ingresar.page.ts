@@ -6,6 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PARAMETRO_RETORNO, rutaDeRetorno, SesionService, type ProveedorExterno } from '@vitrina/shared/auth';
+import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
 import { DestinoTrasIngresoService } from '../../services/destino-tras-ingreso.service';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
 
@@ -17,7 +18,7 @@ export const AVISO_INACTIVIDAD = 'Su sesión se cerró por inactividad. Ingrese 
 
 @Component({
   selector: 'vit-ingresar',
-  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [MarcoAuthComponent, ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './ingresar.page.html',
 })
 export class IngresarPage {

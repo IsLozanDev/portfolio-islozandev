@@ -1,12 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
-import { AvisosService, CargandoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
-import { TRANSICIONES_TENANT } from '../../models/catalogos';
+import { AvisosService, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent, type TonoEstado } from '@vitrina/shared/ui';
+import { TRANSICIONES_TENANT, type EstadoTenant } from '../../models/catalogos';
 import { aErrorConsola } from '../../models/error-consola';
-import { CONFIRMACIONES_ESTADO, ETIQUETAS_ESTADO_TENANT, MENSAJES_DETALLE } from '../../models/mensajes-consola';
+import { CONFIRMACIONES_ESTADO, ETIQUETAS_ESTADO_TENANT, MENSAJES_DETALLE, TONOS_ESTADO_TENANT } from '../../models/mensajes-consola';
 import { PERMISOS_CONSOLA } from '../../models/permisos-consola';
 import type { TenantDetalle } from '../../models/tenant';
 import { TenantsCliente } from '../../services/tenants.cliente';
@@ -16,11 +17,13 @@ type DestinoEstado = keyof typeof CONFIRMACIONES_ESTADO;
 
 const PARAMETRO_TENANT = 'id';
 const CODIGO_NO_ENCONTRADO = 'NO_ENCONTRADO';
+const COLUMNAS_SUSCRIPCIONES = ['producto', 'plan', 'estado', 'vigenteHasta'];
+const DESTINOS_DESTRUCTIVOS: ReadonlySet<DestinoEstado> = new Set(['SUSPENDIDO', 'BAJA']);
 
 /** Detalle del tenant con suscripciones, empresa principal, historial y cambio de estado (TR-RF-006). */
 @Component({
   selector: 'vit-tenant-detalle',
-  imports: [MatButtonModule, RouterLink, SiPermisoDirective, CargandoComponent, EstadoVacioComponent],
+  imports: [MatButtonModule, MatTableModule, RouterLink, SiPermisoDirective, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent],
   templateUrl: './tenant-detalle.page.html',
 })
 export class TenantDetallePage {
@@ -33,6 +36,7 @@ export class TenantDetallePage {
   protected readonly permisos = PERMISOS_CONSOLA;
   protected readonly confirmaciones = CONFIRMACIONES_ESTADO;
   protected readonly etiquetasEstado = ETIQUETAS_ESTADO_TENANT;
+  protected readonly columnasSuscripciones = COLUMNAS_SUSCRIPCIONES;
   protected readonly formatearFechaHora = formatearFechaHora;
   protected readonly formatearFechaCalendario = formatearFechaCalendario;
 
@@ -76,6 +80,14 @@ export class TenantDetallePage {
     } finally {
       this.ocupado.set(false);
     }
+  }
+
+  protected tonoEstado(estado: EstadoTenant): TonoEstado {
+    return TONOS_ESTADO_TENANT[estado];
+  }
+
+  protected esDestructivo(destino: DestinoEstado): boolean {
+    return DESTINOS_DESTRUCTIVOS.has(destino);
   }
 
   private async cargar(): Promise<void> {

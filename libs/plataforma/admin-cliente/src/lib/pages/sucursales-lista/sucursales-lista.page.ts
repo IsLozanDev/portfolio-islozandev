@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, Router, RouterLink, type ParamMap, type Params } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, AvisosService, EstadoVacioComponent, TablaComponent, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, AvisosService, EstadoVacioComponent, TablaComponent, tamanoPaginaParaUrl, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
 import { aErrorAdmin, CODIGO_VERSION_OBSOLETA } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { ETIQUETAS_ESTADO_FILTRO, MENSAJES_ORGANIZACION, MENSAJES_SUCURSALES } from '../../models/mensajes-organizacion';
@@ -24,7 +24,7 @@ import {
   PARAMETRO_URL_ORGANIZACION,
   paginaDesdeUrl,
   paginaParaUrl,
-  TAMANO_PAGINA_ORGANIZACION,
+  tamanoDesdeUrl,
   type EstadoFiltro,
 } from '../../utils/filtro-url-organizacion';
 
@@ -44,6 +44,7 @@ interface FiltroSucursalesUrl {
   empresaId: string | null;
   estado: EstadoFiltro;
   pagina: number;
+  tamano: number;
 }
 
 const COLUMNAS: ColumnaTabla<FilaSucursal>[] = [
@@ -75,7 +76,6 @@ export class SucursalesListaPage {
   protected readonly comunes = MENSAJES_ORGANIZACION;
   protected readonly permisos = PERMISOS_ADMIN;
   protected readonly columnas = COLUMNAS;
-  protected readonly tamanosPagina = [TAMANO_PAGINA_ORGANIZACION];
   protected readonly estados = ESTADOS_FILTRO;
   protected readonly etiquetasEstado = ETIQUETAS_ESTADO_FILTRO;
   protected readonly rutaNuevaEmpresa = RUTA_NUEVA_EMPRESA;
@@ -105,8 +105,8 @@ export class SucursalesListaPage {
     this.navegar({ ...this.filtro(), estado, pagina: 1 });
   }
 
-  protected paginar({ indice }: CambioPagina): void {
-    this.navegar({ ...this.filtro(), pagina: indice + 1 });
+  protected paginar({ indice, tamano }: CambioPagina): void {
+    this.navegar({ ...this.filtro(), pagina: indice + 1, tamano });
   }
 
   protected parametrosDeNueva(): Params {
@@ -183,17 +183,18 @@ export class SucursalesListaPage {
       [PARAMETRO_URL_ORGANIZACION.empresa]: filtro.empresaId,
       [PARAMETRO_URL_ORGANIZACION.activo]: estadoParaUrl(filtro.estado),
       [PARAMETRO_URL_ORGANIZACION.pagina]: paginaParaUrl(filtro.pagina),
+      [PARAMETRO_URL_ORGANIZACION.tamano]: tamanoPaginaParaUrl(filtro.tamano),
     };
     void this.router.navigate([], { relativeTo: this.ruta, queryParams, replaceUrl: reemplazar });
   }
 
   private async cargar(): Promise<void> {
-    const { empresaId, estado, pagina } = this.filtro();
+    const { empresaId, estado, pagina, tamano } = this.filtro();
     if (!empresaId) return;
     const consulta = ++this.consultaActual;
     this.cargando.set(true);
     try {
-      const listado = await this.sucursales.listar(empresaId, { activo: activoDeEstado(estado), pagina, tamano: TAMANO_PAGINA_ORGANIZACION });
+      const listado = await this.sucursales.listar(empresaId, { activo: activoDeEstado(estado), pagina, tamano });
       if (consulta !== this.consultaActual) return;
       this.listado.set({ items: listado.items.map(filaDe), total: listado.total });
     } catch (error) {
@@ -207,7 +208,7 @@ export class SucursalesListaPage {
 }
 
 function filtroDesdeUrl(parametros: ParamMap): FiltroSucursalesUrl {
-  return { empresaId: parametros.get(PARAMETRO_URL_ORGANIZACION.empresa), estado: estadoDesdeUrl(parametros), pagina: paginaDesdeUrl(parametros) };
+  return { empresaId: parametros.get(PARAMETRO_URL_ORGANIZACION.empresa), estado: estadoDesdeUrl(parametros), pagina: paginaDesdeUrl(parametros), tamano: tamanoDesdeUrl(parametros) };
 }
 
 function filaDe(sucursal: Sucursal): FilaSucursal {

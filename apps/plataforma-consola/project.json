@@ -24,12 +24,18 @@
           {
             "glob": "**/*",
             "input": "apps/plataforma-consola/public"
+          },
+          {
+            "glob": "vitrina.svg",
+            "input": "libs/shared/auth-ui/src/assets",
+            "output": "assets/auth-ui"
           }
         ],
         "styles": [
           "apps/plataforma-consola/src/tailwind.css",
           "node_modules/sweetalert2/dist/sweetalert2.css",
           "libs/shared/ui/src/estilos/sweetalert.css",
+          "libs/shared/ui/src/estilos/destructivo.css",
           "apps/plataforma-consola/src/styles.scss"
         ],
         "allowedCommonJsDependencies": [

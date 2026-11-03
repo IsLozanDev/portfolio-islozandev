@@ -24,7 +24,7 @@ describe('MfaPage', () => {
       await abrir();
 
       expect(pagina.mfa.enrolarTotp).not.toHaveBeenCalled();
-      expect(pagina.elemento.querySelector('img')).toBeNull();
+      expect(pagina.elemento.querySelector('main img')).toBeNull();
       expect(pagina.elemento.querySelector('input[formControlName=codigo]')).not.toBeNull();
     });
 
@@ -74,7 +74,7 @@ describe('MfaPage', () => {
       await abrir();
 
       expect(pagina.mfa.enrolarTotp).toHaveBeenCalledTimes(1);
-      expect(pagina.elemento.querySelector('img')?.getAttribute('src')).toBe(ENROLAMIENTO_DE_PRUEBA.qr);
+      expect(pagina.elemento.querySelector('main img')?.getAttribute('src')).toBe(ENROLAMIENTO_DE_PRUEBA.qr);
       expect(pagina.elemento.querySelector('code')?.textContent?.trim()).toBe(ENROLAMIENTO_DE_PRUEBA.secreto);
     });
 

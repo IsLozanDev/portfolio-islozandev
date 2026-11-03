@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <radialGradient id="fondo" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#145247"></stop>
+      <stop offset=".55" stop-color="#0B2B26"></stop>
+      <stop offset="1" stop-color="#071A17"></stop>
+    </radialGradient>
+    <radialGradient id="piso" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#5EE2C0" stop-opacity=".35"></stop>
+      <stop offset="1" stop-color="#5EE2C0" stop-opacity="0"></stop>
+    </radialGradient>
+    <linearGradient id="haz" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#BFFBEA" stop-opacity=".28"></stop>
+      <stop offset="1" stop-color="#BFFBEA" stop-opacity="0"></stop>
+    </linearGradient>
+    <radialGradient id="esfera" cx="38%" cy="32%" r="70%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"></stop>
+      <stop offset=".35" stop-color="#9DF2DA" stop-opacity=".7"></stop>
+      <stop offset="1" stop-color="#1B7A66" stop-opacity=".25"></stop>
+    </radialGradient>
+    <linearGradient id="cilindro" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5EE2C0" stop-opacity=".15"></stop>
+      <stop offset=".4" stop-color="#D9FFF4" stop-opacity=".6"></stop>
+      <stop offset="1" stop-color="#5EE2C0" stop-opacity=".1"></stop>
+    </linearGradient>
+    <linearGradient id="vidrio" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5EE2C0" stop-opacity=".12"></stop>
+      <stop offset=".5" stop-color="#5EE2C0" stop-opacity=".03"></stop>
+      <stop offset="1" stop-color="#5EE2C0" stop-opacity=".09"></stop>
+    </linearGradient>
+    <linearGradient id="reflejo" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"></stop>
+      <stop offset=".5" stop-color="#FFFFFF" stop-opacity=".16"></stop>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"></stop>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="800" fill="url(#fondo)"></rect>
+
+  <g stroke="#5EE2C0" stroke-opacity=".12" fill="none">
+    <path d="M0 690 H800 M0 715 H800 M0 748 H800 M0 792 H800"></path>
+    <path d="M400 670 L-200 800 M400 670 L100 800 M400 670 L400 800 M400 670 L700 800 M400 670 L1000 800"></path>
+  </g>
+  <ellipse cx="420" cy="672" rx="300" ry="46" fill="url(#piso)"></ellipse>
+
+  <polygon points="300,92 640,92 600,650 260,650" fill="url(#haz)"></polygon>
+
+  <polygon points="230,140 300,90 640,90 570,140" fill="#5EE2C0" fill-opacity=".1"></polygon>
+  <polygon points="570,140 640,90 640,570 570,620" fill="#5EE2C0" fill-opacity=".05"></polygon>
+
+  <polygon points="230,300 300,250 640,250 570,300" fill="#5EE2C0" fill-opacity=".14"></polygon>
+  <polygon points="230,460 300,410 640,410 570,460" fill="#5EE2C0" fill-opacity=".14"></polygon>
+
+  <circle cx="390" cy="236" r="40" fill="url(#esfera)"></circle>
+  <ellipse cx="392" cy="280" rx="38" ry="6" fill="#5EE2C0" fill-opacity=".35"></ellipse>
+
+  <rect x="455" y="330" width="58" height="104" rx="4" fill="url(#cilindro)"></rect>
+  <ellipse cx="484" cy="330" rx="29" ry="8" fill="#D9FFF4" fill-opacity=".55"></ellipse>
+  <ellipse cx="484" cy="434" rx="29" ry="8" fill="none" stroke="#9DF2DA" stroke-opacity=".6"></ellipse>
+  <rect x="320" y="370" width="22" height="64" rx="11" fill="url(#cilindro)"></rect>
+  <rect x="352" y="390" width="22" height="44" rx="11" fill="url(#cilindro)"></rect>
+
+  <g fill="none" stroke="#9DF2DA" stroke-width="1.5" stroke-opacity=".85">
+    <polygon points="350,566 400,540 450,566 400,592"></polygon>
+    <polygon points="350,566 400,592 400,600 350,574" fill="#5EE2C0" fill-opacity=".18"></polygon>
+    <polygon points="400,592 450,566 450,574 400,600" fill="#5EE2C0" fill-opacity=".08"></polygon>
+    <path d="M350 516 L400 490 L450 516 L400 542 Z M350 516 V566 M450 516 V566 M400 542 V592" stroke-opacity=".6"></path>
+  </g>
+
+  <rect x="230" y="140" width="340" height="480" fill="url(#vidrio)"></rect>
+  <polygon points="300,140 360,140 260,620 230,620 230,480" fill="url(#reflejo)"></polygon>
+  <polygon points="470,140 490,140 420,620 400,620" fill="url(#reflejo)"></polygon>
+
+  <g fill="none" stroke="#5EE2C0" stroke-width="1.5" stroke-opacity=".55">
+    <polygon points="300,90 640,90 640,570 300,570"></polygon>
+    <path d="M230 140 L300 90 M570 140 L640 90 M570 620 L640 570 M230 620 L300 570"></path>
+  </g>
+  <g stroke="#7FF0D2" stroke-width="2.5" fill="none">
+    <line x1="230" y1="300" x2="570" y2="300"></line>
+    <line x1="230" y1="460" x2="570" y2="460"></line>
+    <line x1="250" y1="141" x2="550" y2="141" stroke="#E6FFF8" stroke-width="3"></line>
+  </g>
+  <g fill="none" stroke="#BFFBEA" stroke-width="2" stroke-opacity=".9">
+    <rect x="230" y="140" width="340" height="480"></rect>
+  </g>
+
+  <polygon points="214,620 586,620 586,664 214,664" fill="#0B2A25"></polygon>
+  <polygon points="586,620 656,570 656,614 586,664" fill="#08201C"></polygon>
+  <polygon points="214,620 284,570 656,570 586,620" fill="#123F37"></polygon>
+  <line x1="214" y1="620" x2="586" y2="620" stroke="#7FF0D2" stroke-width="2"></line>
+  <line x1="240" y1="664" x2="560" y2="664" stroke="#5EE2C0" stroke-opacity=".4"></line>
+</svg>

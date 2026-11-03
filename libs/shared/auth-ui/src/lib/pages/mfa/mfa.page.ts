@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CONFIG_AUTH, MfaService, PARAMETRO_RETORNO, rutaDeRetorno, SesionService, type EnrolamientoTotp } from '@vitrina/shared/auth';
+import { MarcoAuthComponent } from '../../components/marco-auth/marco-auth.component';
 import { mensajeDeError } from '../../utils/mensaje-de-error';
 
 const PATRON_CODIGO_TOTP = /^\d{6}$/;
@@ -16,7 +17,7 @@ type EstadoPaginaMfa = 'cargando' | 'verificar' | 'enrolar' | 'sin-estado';
 /** Segundo factor al ingresar y en el step-up: verifica si hay TOTP; si no, lo enrola primero. */
 @Component({
   selector: 'vit-mfa',
-  imports: [ReactiveFormsModule, CdkCopyToClipboard, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [MarcoAuthComponent, ReactiveFormsModule, CdkCopyToClipboard, MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './mfa.page.html',
 })
 export class MfaPage implements OnInit {

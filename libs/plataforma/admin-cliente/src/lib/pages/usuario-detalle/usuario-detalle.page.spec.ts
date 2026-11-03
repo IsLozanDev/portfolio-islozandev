@@ -113,6 +113,16 @@ describe('UsuarioDetallePage', () => {
     expect(botones()).toEqual(esperadas);
   });
 
+  it('pinta la membresía y las asignaciones como chips, y Finalizar y Revocar en el color de error', async () => {
+    await abrir(pedro('ACTIVO', [asignacion('a-cajero', 'VIGENTE', 'Cajero'), asignacion('a-mozo', 'FUTURA', 'Mozo')]));
+
+    expect(elemento().querySelector('[data-estado-membresia] span')?.classList).toContain('bg-chip-exito');
+    const chipsAsignacion = [...elemento().querySelectorAll('tr[mat-row] vit-chip-estado span')];
+    expect(chipsAsignacion.map((chip) => chip.classList.contains('bg-chip-exito') ? 'exito' : chip.classList.contains('bg-chip-info') ? 'info' : 'otro')).toEqual(['exito', 'info']);
+    const destructivos = [...elemento().querySelectorAll('button.vit-destructivo')].map((boton) => boton.textContent?.trim());
+    expect(destructivos).toEqual([MENSAJES_DETALLE.finalizar, MENSAJES_DETALLE.revocar, MENSAJES_DETALLE.revocar]);
+  });
+
   it('sin plat.asignacion.revocar no ve suspender, finalizar ni revocar; sin otorgar no ve asignar', async () => {
     sesion.contexto.set({ permisos: [PERMISOS_ADMIN.usuarioInvitar], mfaVigente: true });
     await abrir(pedro('ACTIVO'));

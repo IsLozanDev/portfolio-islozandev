@@ -1,10 +1,10 @@
 import type { Params, ParamMap } from '@angular/router';
+import { tamanoPaginaDesdeTexto, tamanoPaginaParaUrl } from '@vitrina/shared/ui';
 import { ESTADOS_TENANT, PRODUCTOS, type EstadoTenant, type ProductoCodigo } from '../models/catalogos';
-import { TAMANO_PAGINA } from '../models/listado';
 import type { FiltroTenants } from '../models/tenant';
 
 /** Nombres de los query params de la lista; los mismos que la API. */
-export const PARAMETRO_URL = { busqueda: 'q', estado: 'estado', producto: 'producto', pagina: 'pagina' } as const;
+export const PARAMETRO_URL = { busqueda: 'q', estado: 'estado', producto: 'producto', pagina: 'pagina', tamano: 'tamano' } as const;
 
 const PRIMERA_PAGINA = 1;
 
@@ -16,17 +16,18 @@ export function filtroDesdeUrl(parametros: ParamMap): FiltroTenants {
     estado: delCatalogo(ESTADOS_TENANT, parametros.get(PARAMETRO_URL.estado)) as EstadoTenant | undefined,
     producto: delCatalogo(PRODUCTOS, parametros.get(PARAMETRO_URL.producto)) as ProductoCodigo | undefined,
     pagina: Number.isInteger(pagina) && pagina >= PRIMERA_PAGINA ? pagina : PRIMERA_PAGINA,
-    tamano: TAMANO_PAGINA,
+    tamano: tamanoPaginaDesdeTexto(parametros.get(PARAMETRO_URL.tamano)),
   };
 }
 
-/** Query params del filtro; los vacíos y la primera página quedan fuera de la URL. */
+/** Query params del filtro; los vacíos, la primera página y el tamaño por defecto quedan fuera de la URL. */
 export function parametrosUrlDe(filtro: FiltroTenants): Params {
   return {
     [PARAMETRO_URL.busqueda]: filtro.q ?? null,
     [PARAMETRO_URL.estado]: filtro.estado ?? null,
     [PARAMETRO_URL.producto]: filtro.producto ?? null,
     [PARAMETRO_URL.pagina]: filtro.pagina > PRIMERA_PAGINA ? filtro.pagina : null,
+    [PARAMETRO_URL.tamano]: tamanoPaginaParaUrl(filtro.tamano),
   };
 }
 
