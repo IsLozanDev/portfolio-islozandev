@@ -1,6 +1,6 @@
 # SPEC 15b — Identidad visual: tema esmeralda, shell oscuro, marco de autenticación, chips de estado y tabla móvil
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 14, SPEC 15, SPEC 16a, SPEC 17b, SPEC 17c
 > **Date:** 2026-10-30
 > **Objective:** Aplicar la identidad visual aprobada en el canvas (tema Material esmeralda con Roboto, menú lateral oscuro, marco con la ilustración de la vitrina en las páginas `/auth`, chips de estado y `vit-tabla` como lista en celular) sobre `shared/ui`, `shared/shell` y `shared/auth-ui`, y adoptarla en usuarios (16a) y tenants (17b).
