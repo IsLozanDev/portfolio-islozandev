@@ -1,0 +1,64 @@
+<div class="px-3 pb-3">
+  <label class="vit-caja-busqueda">
+    <mat-icon class="shrink-0 text-menta-suave" aria-hidden="true">search</mat-icon>
+    <input
+      #caja
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      aria-autocomplete="list"
+      class="min-w-0 grow"
+      [placeholder]="mensajes.buscarEnMenu"
+      [attr.aria-label]="mensajes.buscarEnMenu"
+      [attr.aria-controls]="hayResultados() ? idLista : null"
+      [attr.aria-expanded]="hayResultados()"
+      [attr.aria-activedescendant]="idActivo()"
+      [value]="consulta()"
+      (input)="alEscribir(caja.value)"
+      (keydown)="alPulsarTecla($event)"
+    />
+    @if (consulta()) {
+      <button type="button" class="vit-boton-borrar" [attr.aria-label]="mensajes.borrarBusqueda" (click)="borrar()">
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    } @else {
+      <kbd class="vit-atajo" aria-hidden="true">{{ mensajes.atajoBusqueda }}</kbd>
+    }
+  </label>
+</div>
+
+<p class="vit-anuncio" aria-live="polite">{{ anuncio() }}</p>
+
+@if (hayResultados()) {
+  <ul role="listbox" class="m-0 list-none px-3 pb-4" [id]="idLista" [attr.aria-label]="mensajes.buscarEnMenu">
+    @for (resultado of resultados(); track resultado.codigo; let indice = $index) {
+      @let partes = partesNombre(resultado);
+      <!-- Patrón combobox: el foco se queda en la caja y el teclado llega por aria-activedescendant. -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+      <li
+        role="option"
+        class="vit-resultado"
+        [id]="idOpcion(indice)"
+        [attr.aria-selected]="indice === indiceActivo()"
+        (click)="elegir(resultado)"
+        (mouseenter)="indiceActivo.set(indice)"
+      >
+        <mat-icon class="shrink-0 text-menta" aria-hidden="true">{{ resultado.icono }}</mat-icon>
+        <span class="flex min-w-0 flex-col gap-0.5">
+          <span class="truncate text-sm text-white">{{ partes.antes }}@if (partes.coincide) {<mark>{{ partes.coincide }}</mark>}{{ partes.despues }}</span>
+          @if (resultado.grupos.length > 0) {
+            <span class="vit-texto-tenue truncate text-xs">{{ rutaDeGrupos(resultado) }}</span>
+          }
+        </span>
+      </li>
+    }
+  </ul>
+} @else if (buscando()) {
+  <div class="flex flex-col items-center gap-2 px-6 py-8 text-center">
+    <mat-icon class="vit-icono-sin-resultados" aria-hidden="true">search_off</mat-icon>
+    <p class="m-0 text-sm font-medium text-white">{{ mensajeSinResultados() }}</p>
+    <p class="vit-texto-tenue m-0 text-[13px] leading-snug">{{ mensajes.ayudaSinResultados }}</p>
+  </div>
+} @else {
+  <ng-content />
+}
