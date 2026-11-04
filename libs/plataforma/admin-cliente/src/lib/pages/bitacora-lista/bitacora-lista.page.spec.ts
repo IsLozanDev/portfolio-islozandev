@@ -5,6 +5,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
+import { AvisosService } from '@vitrina/shared/ui';
+import { vi } from 'vitest';
 import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { MENSAJES_BITACORA } from '../../models/mensajes-bitacora';
@@ -18,6 +20,21 @@ const DENEGADO = {
   usuario: { id: 'u-luis', nombre: 'Luis Quispe', correo: 'luis.quispe@saboresdelsur.pe' },
   resumen: 'plat.rol.gestionar',
 };
+const BLOQUEO = {
+  id: '1044',
+  tipo: 'LOGIN_FALLIDO',
+  ocurrido_en: '2026-11-02T20:30:00.000Z',
+  usuario: { id: 'u-rosa', nombre: 'Rosa Huamán', correo: 'rosa.huaman@gmail.com' },
+  resumen: 'BLOQUEO_INGRESO',
+};
+const RUTA_MFA = '/auth/mfa';
+const URL_EXPORTAR = `${API_URL}/seg/bitacora/exportar`;
+
+interface OpcionesApertura {
+  permisos?: string[];
+  mfaVigente?: boolean;
+}
+
 const VENCIDO = { id: '1043', tipo: 'ACCESO_SOPORTE', ocurrido_en: '2026-10-30T16:00:00.000Z', usuario: null, resumen: 'SOP-000245' };
 
 @Component({ selector: 'vit-destino-bitacora', template: '' })
@@ -26,6 +43,7 @@ class Destino {}
 describe('BitacoraListaPage', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;
+  let avisos: { error: ReturnType<typeof vi.fn> };
 
   const elemento = () => harness.routeNativeElement as HTMLElement;
   const url = () => TestBed.inject(Router).url;
@@ -36,7 +54,10 @@ describe('BitacoraListaPage', () => {
     await harness.fixture.whenStable();
   }
 
-  async function abrir(ruta: string): Promise<TestRequest> {
+  async function abrir(ruta: string, opciones: OpcionesApertura = {}): Promise<TestRequest> {
+    const sesion = new DobleSesion().conPermisos(...(opciones.permisos ?? [PERMISOS_ADMIN.seguridadBitacora]));
+    sesion.contexto.set({ permisos: sesion.contexto()?.permisos ?? [], mfaVigente: opciones.mfaVigente ?? false });
+    avisos = { error: vi.fn(async () => undefined) };
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -45,8 +66,9 @@ describe('BitacoraListaPage', () => {
           { path: 'admin/bitacora', component: BitacoraListaPage },
           { path: '**', component: Destino },
         ]),
-        { provide: SesionService, useValue: new DobleSesion().conPermisos(PERMISOS_ADMIN.seguridadBitacora) },
-        { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL } },
+        { provide: SesionService, useValue: sesion },
+        { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL, rutas: { mfa: RUTA_MFA } } },
+        { provide: AvisosService, useValue: avisos },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -118,5 +140,75 @@ describe('BitacoraListaPage', () => {
     );
     await estable();
     expect(elemento().querySelector('[role="alert"]')?.textContent).toContain('de hasta 92 días');
+  });
+
+  describe('Exportar (spec 18b)', () => {
+    const SEMANA = '/admin/bitacora?desde=2026-10-27&hasta=2026-11-02&tipo=LOGIN_FALLIDO&usuario=rosa';
+    const PERMISOS_EXPORTAR = [PERMISOS_ADMIN.seguridadBitacora, PERMISOS_ADMIN.seguridadBitacoraExportar];
+    const botonExportar = () => elemento().querySelector<HTMLButtonElement>('[data-accion="exportar"]');
+
+    async function clicExportar(): Promise<void> {
+      botonExportar()?.click();
+      await estable();
+    }
+
+    it('sin plat.seguridad.bitacora_exportar no se ve el botón', async () => {
+      await responder(await abrir(SEMANA), { items: [], total: 0 });
+      expect(botonExportar()).toBeNull();
+    });
+
+    it('con MFA vigente descarga con los filtros aplicados, sin página, y deshabilita el botón mientras tanto', async () => {
+      const crear = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:bitacora');
+      const liberar = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+      const clic = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+      await responder(await abrir(SEMANA, { permisos: PERMISOS_EXPORTAR, mfaVigente: true }), { items: [], total: 0 });
+
+      await clicExportar();
+      const peticion = http.expectOne((solicitud) => solicitud.url === URL_EXPORTAR);
+      expect(botonExportar()?.disabled).toBe(true);
+      expect(elemento().textContent).toContain(MENSAJES_BITACORA.exportando);
+      expect(peticion.request.params.keys().sort()).toEqual(['desde', 'hasta', 'tipo', 'usuario']);
+      expect(peticion.request.params.get('usuario')).toBe('rosa');
+      peticion.flush(new Blob(['xlsx']), { headers: { 'Content-Disposition': 'attachment; filename="bitacora-20261027-20261102.xlsx"' } });
+      await estable();
+
+      expect(clic).toHaveBeenCalledOnce();
+      expect(botonExportar()?.disabled).toBe(false);
+      crear.mockRestore();
+      liberar.mockRestore();
+      clic.mockRestore();
+    });
+
+    it('sin MFA vigente lleva a la verificación y vuelve a la bitácora, sin pedir el archivo', async () => {
+      await responder(await abrir(SEMANA, { permisos: PERMISOS_EXPORTAR, mfaVigente: false }), { items: [], total: 0 });
+
+      await clicExportar();
+
+      http.expectNone(URL_EXPORTAR);
+      expect(decodeURIComponent(url())).toBe(`${RUTA_MFA}?returnUrl=${SEMANA}`);
+    });
+
+    it('un 422 muestra el mensaje de la API en un aviso', async () => {
+      await responder(await abrir(SEMANA, { permisos: PERMISOS_EXPORTAR, mfaVigente: true }), { items: [], total: 0 });
+      const mensaje = 'La exportación tiene 10 001 filas; el máximo es 10 000. Acote el rango o los filtros';
+
+      await clicExportar();
+      http
+        .expectOne((solicitud) => solicitud.url === URL_EXPORTAR)
+        .flush(new Blob([JSON.stringify({ codigo: 'EXPORTACION_DEMASIADO_GRANDE', mensaje })], { type: 'application/json' }), {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+        });
+      await vi.waitFor(() => expect(avisos.error).toHaveBeenCalledWith(MENSAJES_BITACORA.tituloErrorExportar, mensaje));
+    });
+
+    it('el resumen del ingreso fallido se lee con la etiqueta del motivo y el tipo va en advertencia', async () => {
+      await responder(await abrir(SEMANA), { items: [BLOQUEO], total: 1 });
+
+      const fila = elemento().querySelector('tr[mat-row]')?.textContent?.replace(/\s+/g, ' ');
+      expect(fila).toContain('Ingreso fallido');
+      expect(fila).toContain('Bloqueo por intentos fallidos (correo e IP, o IP)');
+      expect(elemento().querySelector('tr[mat-row] vit-chip-estado span')?.classList).toContain('bg-chip-advertencia');
+    });
   });
 });

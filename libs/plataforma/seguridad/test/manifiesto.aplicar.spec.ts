@@ -46,8 +46,9 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
 
     const primera = await aplicar.ejecutar(plat);
     expect(primera).toMatchObject({ producto: 'PLAT', version: '1.8.0', yaAplicado: false });
-    // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10), 2 de evt (spec 11), 1 de org (spec 12), 6 de org (spec 17a) y 3 de seg (spec 18).
-    expect(primera.cambios.permisos.insertados).toBe(25);
+    // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10), 2 de evt (spec 11), 1 de org (spec 12), 6 de org (spec 17a), 3 de seg (spec 18)
+    // y 1 de seg (spec 18b).
+    expect(primera.cambios.permisos.insertados).toBe(26);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);
@@ -57,6 +58,8 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     // Spec 08: revocar y suspender son sensibles (TR-RN-009); invitar no.
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.asignacion.revocar'")).toEqual({ sensible: true });
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.usuario.invitar'")).toEqual({ sensible: false });
+    // Spec 18b: exportar la bitácora es sensible (TR-RN-009).
+    expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.seguridad.bitacora_exportar'")).toEqual({ sensible: true });
   });
 
   // Los plat.parametro.* son de cfg, los plat.serie.* de seq, los plat.evento.* de evt y los de tenants y organización de org: los verifican sus libs.

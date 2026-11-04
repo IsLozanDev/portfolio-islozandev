@@ -9,6 +9,13 @@ import { SupabaseCliente } from '../lib/services/supabase.cliente';
 
 export const API_URL = 'https://api.test/v1';
 export const URL_MI_CONTEXTO = `${API_URL}/seg/mi-contexto`;
+export const URL_INGRESAR = `${API_URL}/seg/auth/ingresar`;
+export const URL_VERIFICAR_MFA = `${API_URL}/seg/auth/mfa/verificar`;
+
+/** Lo que devuelve la API al ingresar o al verificar el MFA (spec 18b). */
+export function sesionApiDePrueba(token = 'token-api') {
+  return { access_token: token, refresh_token: `refresh-${token}`, expires_in: 3600, token_type: 'bearer' as const };
+}
 
 export const MIRAFLORES = { id: 'sucursal-miraflores', empresa_id: 'empresa-1', codigo: 'MIR', nombre: 'Miraflores' };
 export const SURCO = { id: 'sucursal-surco', empresa_id: 'empresa-1', codigo: 'SUR', nombre: 'Surco' };
@@ -78,7 +85,11 @@ export class DobleSupabase {
       this.oyentes.push(oyente);
       return { data: { subscription: { unsubscribe: vi.fn() } } };
     }),
-    signInWithPassword: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
+    // Spec 18b: el ingreso con contraseña y el MFA pasan por la API; el cliente solo adopta la sesión.
+    setSession: vi.fn<(tokens: { access_token: string; refresh_token: string }) => Promise<RespuestaSesion>>(async (tokens) => ({
+      data: { session: sesionDePrueba(tokens.access_token) },
+      error: null,
+    })),
     signInWithOAuth: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
     resetPasswordForEmail: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
     updateUser: vi.fn(async () => ({ data: {}, error: null as AuthError | null })),
@@ -101,10 +112,6 @@ export class DobleSupabase {
       enroll: vi.fn(async () => ({
         data: { id: 'factor-nuevo', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,<svg/>', secret: 'SECRETO', uri: 'otpauth://x' } },
         error: null as AuthError | null,
-      })),
-      challengeAndVerify: vi.fn<(parametros: { factorId: string; code: string }) => Promise<RespuestaVacia>>(async () => ({
-        data: {},
-        error: null,
       })),
     },
   };

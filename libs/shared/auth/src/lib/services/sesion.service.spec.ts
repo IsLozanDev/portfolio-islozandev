@@ -1,9 +1,18 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError, AuthRetryableFetchError, AuthWeakPasswordError } from '@supabase/supabase-js';
-import { API_URL, DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
+import {
+  API_URL,
+  DobleSupabase,
+  proveerAuthDePrueba,
+  responderMiContexto,
+  sesionApiDePrueba,
+  sesionDePrueba,
+  URL_INGRESAR,
+} from '../../testing/doble-supabase';
 import { authInterceptor } from '../interceptors/auth.interceptor';
 import { ErrorAuth, MENSAJES_AUTH } from '../models/errores';
+import { OMITIR_AVISO_ERROR } from '../models/omitir-aviso-error';
 import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
 
 describe('SesionService (sesión)', () => {
@@ -74,23 +83,72 @@ describe('SesionService (sesión)', () => {
     });
   });
 
-  describe('ingresarConClave', () => {
-    it('envía correo y clave a Supabase', async () => {
-      await servicio.ingresarConClave('rosa@correo.pe', 'secreta');
+  describe('ingresarConClave (por la API, spec 18b)', () => {
+    /** Lanza el ingreso, espera la petición y la devuelve con su resultado. */
+    async function ingresar(correo = 'rosa@correo.pe', clave = 'secreta') {
+      const resultado = servicio.ingresarConClave(correo, clave).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      const peticion = await vi.waitFor(() => http.expectOne(URL_INGRESAR));
+      return { peticion, resultado };
+    }
 
-      expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'rosa@correo.pe', password: 'secreta' });
+    it('manda correo y clave a la API sin aviso global y adopta la sesión que devuelve', async () => {
+      const { peticion, resultado } = await ingresar();
+
+      expect(peticion.request.method).toBe('POST');
+      expect(peticion.request.body).toEqual({ correo: 'rosa@correo.pe', clave: 'secreta' });
+      expect(peticion.request.context.get(OMITIR_AVISO_ERROR)).toBe(true);
+      peticion.flush(sesionApiDePrueba('token-ingreso'));
+
+      expect(await resultado).toBeNull();
+      expect(supabase.auth.setSession).toHaveBeenCalledWith({ access_token: 'token-ingreso', refresh_token: 'refresh-token-ingreso' });
+      expect(servicio.token()).toBe('token-ingreso');
     });
 
-    it('con clave errónea lanza CREDENCIALES_INVALIDAS con el mismo mensaje que una cuenta inexistente', async () => {
-      supabase.auth.signInWithPassword.mockResolvedValueOnce({ data: {}, error: new AuthApiError('Invalid login credentials', 400, 'invalid_credentials') });
-      const claveErronea = await servicio.ingresarConClave('rosa@correo.pe', 'mala').catch((error: unknown) => error);
+    it('401 CREDENCIALES_INVALIDAS lanza el mensaje que no revela si la cuenta existe y no toca la sesión', async () => {
+      const { peticion, resultado } = await ingresar();
+      peticion.flush({ codigo: 'CREDENCIALES_INVALIDAS', mensaje: 'x' }, { status: 401, statusText: 'Unauthorized' });
 
-      supabase.auth.signInWithPassword.mockResolvedValueOnce({ data: {}, error: new AuthApiError('User not found', 400, 'user_not_found') });
-      const cuentaInexistente = await servicio.ingresarConClave('nadie@correo.pe', 'x').catch((error: unknown) => error);
+      expect(await resultado).toMatchObject({ codigo: 'CREDENCIALES_INVALIDAS', message: MENSAJES_AUTH.CREDENCIALES_INVALIDAS });
+      expect(supabase.auth.setSession).not.toHaveBeenCalled();
+    });
 
-      expect(claveErronea).toBeInstanceOf(ErrorAuth);
-      expect((claveErronea as ErrorAuth).codigo).toBe('CREDENCIALES_INVALIDAS');
-      expect((cuentaInexistente as ErrorAuth).message).toBe((claveErronea as ErrorAuth).message);
+    it('429 INGRESO_BLOQUEADO dice los minutos que faltan', async () => {
+      const { peticion, resultado } = await ingresar();
+      peticion.flush(
+        { codigo: 'INGRESO_BLOQUEADO', reintentarEnSeg: 900 },
+        { status: 429, statusText: 'Too Many Requests', headers: { 'Retry-After': '900' } },
+      );
+
+      expect(await resultado).toMatchObject({
+        codigo: 'INGRESO_BLOQUEADO',
+        reintentarEnSeg: 900,
+        message: 'Demasiados intentos. Vuelva a intentarlo en 15 minutos.',
+      });
+    });
+
+    it('503 INGRESO_NO_DISPONIBLE y la red caída son SIN_CONEXION', async () => {
+      const caida = await ingresar();
+      caida.peticion.flush({ codigo: 'INGRESO_NO_DISPONIBLE' }, { status: 503, statusText: 'Service Unavailable' });
+      expect(await caida.resultado).toMatchObject({ codigo: 'SIN_CONEXION' });
+
+      const sinRed = await ingresar();
+      sinRed.peticion.error(new ProgressEvent('error'), { status: 0 });
+      expect(await sinRed.resultado).toMatchObject({ codigo: 'SIN_CONEXION' });
+    });
+
+    it('si Supabase no adopta la sesión, lanza ErrorAuth', async () => {
+      supabase.auth.setSession.mockResolvedValueOnce({
+        data: { session: null },
+        error: new AuthApiError('Invalid Refresh Token', 400, 'refresh_token_not_found'),
+      });
+      const { peticion, resultado } = await ingresar();
+      peticion.flush(sesionApiDePrueba());
+
+      expect(await resultado).toBeInstanceOf(ErrorAuth);
+      expect(servicio.autenticado()).toBe(false);
     });
   });
 

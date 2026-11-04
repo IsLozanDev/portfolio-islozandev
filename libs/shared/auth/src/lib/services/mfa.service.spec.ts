@@ -1,8 +1,16 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { AuthApiError } from '@supabase/supabase-js';
-import { contextoDePrueba, DobleSupabase, esperarMiContexto, proveerAuthDePrueba, responderMiContexto } from '../../testing/doble-supabase';
+import {
+  contextoDePrueba,
+  DobleSupabase,
+  esperarMiContexto,
+  proveerAuthDePrueba,
+  responderMiContexto,
+  sesionApiDePrueba,
+  URL_VERIFICAR_MFA,
+} from '../../testing/doble-supabase';
 import { MENSAJES_AUTH } from '../models/errores';
+import { OMITIR_AVISO_ERROR } from '../models/omitir-aviso-error';
 import { MfaService } from './mfa.service';
 import { SesionService } from './sesion.service';
 
@@ -70,36 +78,51 @@ describe('MfaService (TR-RF-017)', () => {
     });
   });
 
-  describe('verificarTotp', () => {
-    it('con código erróneo lanza CODIGO_MFA_INVALIDO y no recarga el contexto', async () => {
-      supabase.auth.mfa.challengeAndVerify.mockResolvedValueOnce({
-        data: {},
-        error: new AuthApiError('Invalid TOTP code entered', 422, 'mfa_verification_failed'),
-      });
+  describe('verificarTotp (por la API, spec 18b)', () => {
+    async function verificar(codigo: string) {
+      const resultado = mfa.verificarTotp('factor-1', codigo).then(
+        () => null,
+        (error: unknown) => error,
+      );
+      const peticion = await vi.waitFor(() => http.expectOne(URL_VERIFICAR_MFA));
+      return { peticion, resultado };
+    }
 
-      await expect(mfa.verificarTotp('factor-1', '000000')).rejects.toMatchObject({
-        codigo: 'CODIGO_MFA_INVALIDO',
-        message: MENSAJES_AUTH.CODIGO_MFA_INVALIDO,
-      });
+    it('con código erróneo lanza CODIGO_MFA_INVALIDO y no recarga el contexto', async () => {
+      const { peticion, resultado } = await verificar('000000');
+      peticion.flush({ codigo: 'CODIGO_MFA_INVALIDO' }, { status: 400, statusText: 'Bad Request' });
+
+      expect(await resultado).toMatchObject({ codigo: 'CODIGO_MFA_INVALIDO', message: MENSAJES_AUTH.CODIGO_MFA_INVALIDO });
+      expect(supabase.auth.setSession).not.toHaveBeenCalled();
       http.expectNone(() => true);
     });
 
-    it('con código bueno verifica y recarga el contexto', async () => {
-      await Promise.all([
-        mfa.verificarTotp('factor-1', '123456'),
-        responderMiContexto(http, contextoDePrueba({ aal: 'aal2', mfa_vigente: true, mfa_en: '2026-10-26T14:00:00.000Z' })),
-      ]);
+    it('el quinto código erróneo (429) dice los minutos del bloqueo', async () => {
+      const { peticion, resultado } = await verificar('000000');
+      peticion.flush({ codigo: 'INGRESO_BLOQUEADO', reintentarEnSeg: 60 }, { status: 429, statusText: 'Too Many Requests' });
 
-      expect(supabase.auth.mfa.challengeAndVerify).toHaveBeenCalledWith({ factorId: 'factor-1', code: '123456' });
+      expect(await resultado).toMatchObject({ codigo: 'INGRESO_BLOQUEADO', message: 'Demasiados intentos. Vuelva a intentarlo en 1 minuto.' });
+    });
+
+    it('con código bueno adopta la sesión aal2 y recarga el contexto', async () => {
+      const { peticion, resultado } = await verificar('123456');
+      expect(peticion.request.body).toEqual({ factorId: 'factor-1', codigo: '123456' });
+      expect(peticion.request.context.get(OMITIR_AVISO_ERROR)).toBe(true);
+      peticion.flush(sesionApiDePrueba('token-aal2'));
+      await responderMiContexto(http, contextoDePrueba({ aal: 'aal2', mfa_vigente: true, mfa_en: '2026-10-26T14:00:00.000Z' }));
+
+      expect(await resultado).toBeNull();
+      expect(supabase.auth.setSession).toHaveBeenCalledWith({ access_token: 'token-aal2', refresh_token: 'refresh-token-aal2' });
       expect(TestBed.inject(SesionService).contexto()?.mfaVigente).toBe(true);
     });
 
     it('si mi-contexto responde SIN_TENANT, la verificación igual resuelve y el contexto queda en null', async () => {
-      const verificacion = mfa.verificarTotp('factor-1', '123456');
+      const { peticion, resultado } = await verificar('123456');
+      peticion.flush(sesionApiDePrueba('token-aal2'));
 
       (await esperarMiContexto(http)).flush({ codigo: 'SIN_TENANT' }, { status: 403, statusText: 'Forbidden' });
 
-      await expect(verificacion).resolves.toBeUndefined();
+      expect(await resultado).toBeNull();
       expect(TestBed.inject(SesionService).contexto()).toBeNull();
     });
   });

@@ -43,6 +43,24 @@
       <dd class="tabular-nums" data-dato="ip">{{ detalle.ip ?? mensajes.sinDato }}</dd>
     </dl>
 
+    @if (tituloLegibles(); as titulo) {
+      <section class="flex flex-col gap-2" aria-labelledby="titulo-datos-legibles" data-seccion="legibles">
+        <h2 id="titulo-datos-legibles" class="text-lg font-medium">{{ titulo }}</h2>
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-3 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+          @for (dato of legibles(); track dato.clave) {
+            <dt class="text-sobre-superficie-variante">{{ dato.etiqueta }}</dt>
+            <dd class="break-words" [attr.data-legible]="dato.clave">
+              @if (dato.tono; as tono) {
+                <vit-chip-estado [texto]="dato.valor" [tono]="tono" />
+              } @else {
+                <span [class.font-medium]="dato.clave === 'motivo'">{{ dato.valor }}</span>
+              }
+            </dd>
+          }
+        </dl>
+      </section>
+    }
+
     <section class="flex flex-col gap-2" aria-labelledby="titulo-datos-evento">
       <h2 id="titulo-datos-evento" class="text-lg font-medium">{{ mensajes.datosDelEvento }}</h2>
       @if (datos().length === 0) {

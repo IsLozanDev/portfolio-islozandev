@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DOCUMENT, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,8 +8,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CONFIG_AUTH, PARAMETRO_RETORNO, SesionService, SiPermisoDirective } from '@vitrina/shared/auth';
 import {
   AccionesFilaDirective,
+  AvisosService,
+  CargandoComponent,
   FiltrosComponent,
   TablaComponent,
   type CambioPagina,
@@ -18,18 +21,23 @@ import {
   type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
-import { aErrorAdmin } from '../../models/error-admin';
+import { aErrorAdmin, type ErrorAdmin } from '../../models/error-admin';
 import { TIPOS_EVENTO, type EventoSeguridad, type FiltroBitacora, type TipoEvento } from '../../models/evento-seguridad';
 import type { Listado } from '../../models/listado';
 import { COLUMNAS_BITACORA, ETIQUETAS_TIPO_EVENTO, MENSAJES_BITACORA, TONOS_TIPO_EVENTO } from '../../models/mensajes-bitacora';
+import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service';
 import { BitacoraCliente } from '../../services/bitacora.cliente';
 import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
+import { resumenLegible } from '../../utils/datos-ingreso-bitacora';
+import { descargarArchivo } from '../../utils/descarga';
 import { filtroBitacoraDesdeUrl, filtroBitacoraParaUrl, LONGITUD_MINIMA_USUARIO, PARAMETRO_URL_BITACORA } from '../../utils/filtro-url-bitacora';
 import { formatearFechaHora } from '../../utils/formato';
 import { fechaCalendario } from '../../utils/formulario-asignacion';
 
 const LOCALE_PERU = 'es-PE';
+/** `plat.seguridad.bitacora_exportar` es sensible: sin MFA reciente la API responde 401 con este código. */
+const CODIGO_MFA_REQUERIDA = 'MFA_REQUERIDA';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaEvento {
@@ -67,7 +75,9 @@ const FILTROS: DefinicionFiltro[] = [
     MatIconModule,
     MatInputModule,
     RouterLink,
+    SiPermisoDirective,
     AccionesFilaDirective,
+    CargandoComponent,
     FiltrosComponent,
     TablaComponent,
   ],
@@ -83,8 +93,14 @@ export class BitacoraListaPage {
   private readonly bitacora = inject(BitacoraCliente);
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
+  private readonly sesion = inject(SesionService);
+  private readonly avisos = inject(AvisosService);
+  private readonly rutaMfa = inject(CONFIG_AUTH).rutas?.mfa;
+  private readonly documento = inject(DOCUMENT);
 
   protected readonly mensajes = MENSAJES_BITACORA;
+  protected readonly permisos = PERMISOS_ADMIN;
+  protected readonly exportando = signal(false);
   protected readonly columnas = COLUMNAS;
   protected readonly filtros = FILTROS;
 
@@ -125,6 +141,40 @@ export class BitacoraListaPage {
     this.navegar({ pagina: indice + 1, tamano });
   }
 
+  /** Spec 18b: los filtros aplicados (los de la URL), sin la página. Sin MFA reciente, primero la verificación. */
+  protected async exportar(): Promise<void> {
+    if (this.exportando()) return;
+    if (!this.sesion.contexto()?.mfaVigente) {
+      await this.irAVerificarMfa();
+      return;
+    }
+    const { desde, hasta, tipo, usuario } = this.filtro();
+    this.exportando.set(true);
+    try {
+      const { archivo, nombre } = await this.bitacora.exportar({ desde, hasta, tipo, usuario });
+      descargarArchivo(this.documento, archivo, nombre);
+    } catch (error) {
+      await this.avisarErrorDeExportacion(aErrorAdmin(error));
+    } finally {
+      this.exportando.set(false);
+    }
+  }
+
+  /** El MFA pudo vencer entre la carga del contexto y el clic: el mismo camino que sin MFA. */
+  private async avisarErrorDeExportacion(error: ErrorAdmin): Promise<void> {
+    if (error.codigo === CODIGO_MFA_REQUERIDA) {
+      await this.irAVerificarMfa();
+      return;
+    }
+    await this.avisos.error(MENSAJES_BITACORA.tituloErrorExportar, error.message);
+  }
+
+  /** El XLSX llega como Blob y el interceptor de auth no lee su código: la página lleva al MFA y vuelve aquí. */
+  private async irAVerificarMfa(): Promise<void> {
+    if (!this.rutaMfa) return;
+    await this.router.navigate([this.rutaMfa], { queryParams: { [PARAMETRO_RETORNO]: this.router.url } });
+  }
+
   private navegar(cambios: Partial<FiltroBitacora>): void {
     void this.router.navigate([], { relativeTo: this.ruta, queryParams: filtroBitacoraParaUrl({ ...this.filtro(), ...cambios }) });
   }
@@ -154,7 +204,7 @@ function filaDe(evento: EventoSeguridad): FilaEvento {
     tipo: ETIQUETAS_TIPO_EVENTO[evento.tipo],
     tonoTipo: TONOS_TIPO_EVENTO[evento.tipo],
     usuario: evento.usuario?.nombre ?? MENSAJES_BITACORA.sistema,
-    resumen: evento.resumen ?? MENSAJES_BITACORA.sinDato,
+    resumen: resumenLegible(evento) ?? MENSAJES_BITACORA.sinDato,
   };
 }
 

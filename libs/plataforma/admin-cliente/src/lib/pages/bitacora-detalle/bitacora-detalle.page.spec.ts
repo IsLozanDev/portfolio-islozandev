@@ -97,4 +97,31 @@ describe('BitacoraDetallePage', () => {
     await abrir('9', { codigo: 'NO_ENCONTRADO', mensaje: 'El evento no existe' }, 404);
     expect(elemento().querySelector('[role="alert"]')?.textContent).toContain('El evento no existe');
   });
+
+  it('un ingreso fallido por bloqueo muestra etapa, el motivo como chip de advertencia, el bloqueo, el correo y el navegador (spec 18b)', async () => {
+    await abrir('1044', {
+      id: '1044',
+      tipo: 'LOGIN_FALLIDO',
+      ocurrido_en: '2026-11-02T20:30:00.000Z',
+      usuario: null,
+      resumen: 'BLOQUEO_INGRESO',
+      ip: '190.42.10.8',
+      detalle: { etapa: 'CLAVE', motivo: 'BLOQUEO_INGRESO', alcance: 'IP', hasta: '2026-11-02T20:45:00.000Z', correo: 'na****@gmail.com', agente: 'Firefox/140' },
+    });
+
+    const legible = (clave: string) => elemento().querySelector(`[data-legible="${clave}"]`);
+    expect(elemento().querySelector('[data-seccion="legibles"] h2')?.textContent).toContain('Ingreso');
+    expect(legible('etapa')?.textContent).toContain('Contraseña');
+    expect(legible('motivo')?.querySelector('vit-chip-estado')?.textContent).toContain('Bloqueo por intentos fallidos');
+    expect(legible('motivo')?.querySelector('vit-chip-estado span')?.classList).toContain('bg-chip-advertencia');
+    expect(legible('alcance')?.textContent).toContain('IP');
+    expect(legible('hasta')?.textContent).toContain('3:45');
+    expect(legible('correo')?.textContent).toContain('na****@gmail.com');
+    expect(legible('agente')?.textContent).toContain('Firefox/140');
+  });
+
+  it('un evento de otro tipo no tiene la sección legible', async () => {
+    await abrir('1042', { id: '1042', tipo: 'ACCESO_DENEGADO', ocurrido_en: '2026-10-30T15:00:00.000Z', usuario: null, resumen: 'x', ip: null, detalle: { permiso: 'x' } });
+    expect(elemento().querySelector('[data-seccion="legibles"]')).toBeNull();
+  });
 });

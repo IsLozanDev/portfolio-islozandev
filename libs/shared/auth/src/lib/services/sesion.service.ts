@@ -3,9 +3,11 @@ import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
 import type { AuthChangeEvent, AuthError, EmailOtpType, Session } from '@supabase/supabase-js';
 import { firstValueFrom } from 'rxjs';
 import { CONFIG_AUTH } from '../config/config';
+import { aErrorDeIngreso } from '../models/error-ingreso-api';
 import { aErrorAuth, ErrorAuth, type CodigoErrorAuth } from '../models/errores';
 import { aContextoUsuario, type ContextoUsuario, type MiContextoRespuesta } from '../models/mi-contexto';
 import { OMITIR_AVISO_ERROR, type OpcionesCargaContexto } from '../models/omitir-aviso-error';
+import type { SesionApiRespuesta } from '../models/sesion-api';
 import { PARAMETRO_RETORNO } from '../utils/navegacion';
 import { SupabaseCliente } from './supabase.cliente';
 
@@ -16,6 +18,8 @@ export type TipoEnlace = Extract<EmailOtpType, 'invite' | 'email' | 'recovery'>;
 export const CABECERA_SUCURSAL = 'X-Sucursal-Id';
 const RUTA_MI_CONTEXTO = '/seg/mi-contexto';
 const RUTA_SALIR_DE_SOPORTE = '/seg/soporte/salir';
+/** Spec 18b: el ingreso con contraseña pasa por la API, que registra los fallos y bloquea la fuerza bruta. */
+export const RUTA_INGRESAR = '/seg/auth/ingresar';
 const EVENTO_SALIDA: AuthChangeEvent = 'SIGNED_OUT';
 const PARAMETROS_ERROR_CALLBACK = ['error', 'error_code', 'error_description'];
 /** Errores de `recuperarClave` que sí se muestran; el resto se calla para no revelar si la cuenta existe. */
@@ -74,9 +78,22 @@ export class SesionService {
     await this.cargarContexto(sucursalId, opciones);
   }
 
+  /** La página muestra el error: sin aviso global. */
   async ingresarConClave(correo: string, clave: string): Promise<void> {
-    const { error } = await this.supabase.auth.signInWithPassword({ email: correo, password: clave });
-    if (error) throw aErrorAuth(error);
+    const context = new HttpContext().set(OMITIR_AVISO_ERROR, true);
+    const respuesta = await firstValueFrom(this.http.post<SesionApiRespuesta>(this.config.apiUrl + RUTA_INGRESAR, { correo, clave }, { context })).catch(
+      (error: unknown) => {
+        throw aErrorDeIngreso(error, 'CREDENCIALES_INVALIDAS');
+      },
+    );
+    await this.establecerSesion(respuesta);
+  }
+
+  /** Adopta en Supabase la sesión que devolvió la API (ingreso o MFA): desde ahí la renueva el cliente. */
+  async establecerSesion(respuesta: SesionApiRespuesta): Promise<void> {
+    const { data, error } = await this.supabase.auth.setSession({ access_token: respuesta.access_token, refresh_token: respuesta.refresh_token });
+    if (error || !data.session) throw aErrorAuth(error);
+    this.sesionActual.set(data.session);
   }
 
   /** `retorno` viaja como `?returnUrl=` en `redirectTo` y Supabase lo devuelve tal cual al callback. */

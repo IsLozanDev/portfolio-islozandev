@@ -1,6 +1,15 @@
 <section class="flex flex-col gap-4">
   <header class="flex flex-wrap items-center justify-between gap-3">
     <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <div *siPermiso="permisos.seguridadBitacoraExportar" class="flex items-center gap-3">
+      @if (exportando()) {
+        <vit-cargando [texto]="mensajes.exportando" />
+      }
+      <button mat-button type="button" data-accion="exportar" [disabled]="exportando()" (click)="exportar()">
+        <mat-icon aria-hidden="true">download</mat-icon>
+        {{ mensajes.exportar }}
+      </button>
+    </div>
   </header>
 
   <div class="flex flex-wrap items-start gap-3">

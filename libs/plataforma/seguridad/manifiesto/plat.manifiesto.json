@@ -59,7 +59,7 @@
     {
       "codigo": "PLAT_ADMIN_SEGURIDAD",
       "nombre": "Administrador de seguridad",
-      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar", "plat.organizacion.consultar", "plat.seguridad.bitacora"]
+      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar", "plat.organizacion.consultar", "plat.seguridad.bitacora", "plat.seguridad.bitacora_exportar"]
     },
     {
       "codigo": "PLAT_ADMIN_CONFIGURACION",
@@ -88,7 +88,7 @@
         "plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto",
         "plat.usuario.invitar", "plat.asignacion.revocar", "plat.parametro.leer", "plat.parametro.editar", "plat.serie.gestionar",
         "plat.evento.consultar", "plat.evento.reprocesar", "plat.organizacion.consultar", "plat.empresa.crear", "plat.sucursal.gestionar",
-        "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar"
+        "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar"
       ]
     }
   ],
