@@ -398,3 +398,12 @@ export class AuditoriaNoDisponibleError extends DomainError {
     super('No se pudo registrar la acción de soporte; intente de nuevo');
   }
 }
+
+/** Solo el tenant operador solicita accesos de soporte, como solo él administra tenants (spec 17a). */
+export class OperadorRequeridoError extends ForbiddenError {
+  override readonly code = 'OPERADOR_REQUERIDO';
+
+  constructor() {
+    super('Solo el tenant operador puede solicitar accesos de soporte');
+  }
+}

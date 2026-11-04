@@ -9,6 +9,11 @@ import { describeConDb } from './support/temp-db.js';
 
 const HORA = 3_600_000;
 
+function presente<T>(valor: T | null | undefined): T {
+  if (valor === null || valor === undefined) throw new Error('Se esperaba un valor');
+  return valor;
+}
+
 describeConDb('Persistencia de soporte y bitácora (spec 18, PostgreSQL 16)', () => {
   let e: Entorno;
   let repositorio: AccesoSoporteRepositorioTypeOrm;
@@ -66,30 +71,30 @@ describeConDb('Persistencia de soporte y bitácora (spec 18, PostgreSQL 16)', ()
       });
 
       await enTenant(clienteA, async () => {
-        const leido = await repositorio.buscar(acceso.id);
-        expect(leido?.estado).toBe('PENDIENTE');
-        leido!.aprobar({ aprobadoPor: administradorA, horas: 2, membresiaId, asignacionId: e.ids.next() }, ahora);
-        await repositorio.guardar(leido!);
+        const leido = presente(await repositorio.buscar(acceso.id));
+        expect(leido.estado).toBe('PENDIENTE');
+        leido.aprobar({ aprobadoPor: administradorA, horas: 2, membresiaId, asignacionId: e.ids.next() }, ahora);
+        await repositorio.guardar(leido);
       });
 
-      const fila = await enTenant(clienteA, () => repositorio.buscar(acceso.id));
+      const fila = presente(await enTenant(clienteA, () => repositorio.buscar(acceso.id)));
       expect(fila).toMatchObject({ estado: 'APROBADO', aprobadoPor: administradorA, horasAprobadas: 2, membresiaId, version: 2 });
-      expect(fila!.hasta!.getTime() - fila!.desde!.getTime()).toBe(2 * HORA);
+      expect(presente(fila.hasta).getTime() - presente(fila.desde).getTime()).toBe(2 * HORA);
     });
 
     it('una segunda escritura con la versión vieja falla', async () => {
       const acceso = AccesoSoporte.solicitar(e.ids.next(), solicitud(clienteB, { ticket: 'SOP-000300' }), new Date());
       await enTenant(clienteB, () => repositorio.guardar(acceso));
 
-      const vieja = await enTenant(clienteB, () => repositorio.buscar(acceso.id));
+      const vieja = presente(await enTenant(clienteB, () => repositorio.buscar(acceso.id)));
       await enTenant(clienteB, async () => {
-        const vigente = await repositorio.buscar(acceso.id);
-        vigente!.rechazar('No autorizado', administradorA, new Date());
-        await repositorio.guardar(vigente!);
+        const vigente = presente(await repositorio.buscar(acceso.id));
+        vigente.rechazar('No autorizado', administradorA, new Date());
+        await repositorio.guardar(vigente);
       });
 
-      vieja!.rechazar('Duplicado', administradorA, new Date());
-      await expect(enTenant(clienteB, () => repositorio.guardar(vieja!))).rejects.toThrow(ConflictError);
+      vieja.rechazar('Duplicado', administradorA, new Date());
+      await expect(enTenant(clienteB, () => repositorio.guardar(vieja))).rejects.toThrow(ConflictError);
       expect((await enTenant(clienteB, () => repositorio.buscar(acceso.id)))?.motivoCierre).toBe('No autorizado');
     });
 

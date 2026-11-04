@@ -2,7 +2,7 @@ import { EntitySchema } from 'typeorm';
 import type { Alcance } from '../../domain/alcance.js';
 import type { Fecha } from '../../domain/asignacion.js';
 import type { EstadoMembresia } from '../../domain/membresia.js';
-import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
+import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, TenantCodigoEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
 
 // Mapeo ORM de solo lectura para la administración de miembros (spec 16a) y de roles (spec 16b). La
 // escritura sigue en los repositorios con SQL (anteriores al spec 10, regla 11).
@@ -326,6 +326,7 @@ export const ENTIDADES_SEG_LECTURA = [
   PerfilLecturaEntidad,
   PerfilRolLecturaEntidad,
   EmpresaUbicacionEntidad,
+  TenantCodigoEntidad,
   SucursalUbicacionEntidad,
   UnidadUbicacionEntidad,
 ];

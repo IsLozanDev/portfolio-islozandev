@@ -38,6 +38,16 @@ import { AsignacionesController } from './interface/asignaciones.controller.js';
 import { OtorgarAsignacion } from './application/otorgar-asignacion.js';
 import { ConsultarMiembro, ListarAsignables, ListarMiembros } from './application/lecturas-miembros.js';
 import { LecturaMiembrosTypeOrm } from './infrastructure/typeorm/lectura-miembros.typeorm.js';
+import { ConsultarBitacora, ConsultarEventoSeguridad } from './application/lecturas-bitacora.js';
+import { LecturaBitacoraTypeOrm } from './infrastructure/typeorm/lectura-bitacora.typeorm.js';
+import { BitacoraController } from './interface/bitacora.controller.js';
+import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from './application/solicitar-acceso-soporte.js';
+import { VERIFICADOR_TICKET, type VerificadorTicket } from './application/ports/verificador-ticket.port.js';
+import { AccesoSoporteRepositorioTypeOrm } from './infrastructure/typeorm/acceso-soporte.repositorio.js';
+import { LecturaSoporteTypeOrm } from './infrastructure/typeorm/lectura-soporte.typeorm.js';
+import { TenantsSoporteTypeOrm } from './infrastructure/typeorm/tenants-soporte.typeorm.js';
+import { VerificadorTicketPorFormato } from './infrastructure/verificador-ticket.formato.js';
+import { SoporteController } from './interface/soporte.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
@@ -74,6 +84,8 @@ export interface SeguridadOpciones {
   jwksUrl?: string;
   /** Solo pruebas. */
   enfriamientoMs?: number;
+  /** Código del tenant operador (ORG_TENANT_OPERADOR): el único que solicita soporte (spec 18). Por defecto, `plataforma`. */
+  tenantOperador?: string;
   /** Invitaciones (spec 08). */
   invitaciones: {
     /** Secret key de Supabase para la Admin API. Solo apps/api (regla 9). */
@@ -101,10 +113,14 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
     catalogo: new CatalogoPermisosTypeOrm(uow, ctx),
     ubicaciones: new UbicacionesOrgTypeOrm(uow, ctx),
     bitacora: new BitacoraSeguridadTypeOrm(uow, ctx),
+    accesosSoporte: new AccesoSoporteRepositorioTypeOrm(uow, ctx),
+    lecturaSoporte: new LecturaSoporteTypeOrm(uow, ctx, dataSource),
+    tenantsSoporte: new TenantsSoporteTypeOrm(uow),
   };
 }
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
+const TENANT_OPERADOR_DEFECTO = 'plataforma';
 type ReposMembresias = ReturnType<typeof reposMembresias>;
 const DEPENDENCIAS_LECTURA_ROLES = Symbol('DEPENDENCIAS_LECTURA_ROLES');
 const DEPENDENCIAS_LECTURA_PERFILES = Symbol('DEPENDENCIAS_LECTURA_PERFILES');
@@ -135,7 +151,7 @@ export class SeguridadModule {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
       global: true,
-      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController, BitacoraController, SoporteController],
       providers: [
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
@@ -195,6 +211,50 @@ export class SeguridadModule {
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock) =>
             new ConsultarMiembro({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), reloj }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
+        },
+        { provide: VERIFICADOR_TICKET, useClass: VerificadorTicketPorFormato },
+        {
+          provide: SolicitarAccesoSoporte,
+          useFactory: (
+            unidadDeTrabajo: UnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            eventos: EventPublisher,
+            repositorios: ReposMembresias,
+            verificador: VerificadorTicket,
+          ) =>
+            new SolicitarAccesoSoporte({
+              unidadDeTrabajo,
+              contexto,
+              ids,
+              reloj,
+              eventos,
+              accesos: repositorios.accesosSoporte,
+              membresias: repositorios.ciclo,
+              bitacora: repositorios.bitacora,
+              tenants: repositorios.tenantsSoporte,
+              verificador,
+              tenantOperador: op.tenantOperador ?? TENANT_OPERADOR_DEFECTO,
+            }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, VERIFICADOR_TICKET],
+        },
+        {
+          provide: ListarMisAccesosSoporte,
+          useFactory: (repositorios: ReposMembresias) => new ListarMisAccesosSoporte(repositorios.lecturaSoporte),
+          inject: [REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ConsultarBitacora,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ConsultarBitacora({ unidadDeTrabajo, lectura: new LecturaBitacoraTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        {
+          provide: ConsultarEventoSeguridad,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ConsultarEventoSeguridad({ unidadDeTrabajo, lectura: new LecturaBitacoraTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
         {
           provide: ListarAsignables,

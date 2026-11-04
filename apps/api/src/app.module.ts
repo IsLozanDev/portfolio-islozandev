@@ -35,7 +35,7 @@ export class AppModule {
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
         OrgModule,
-        SeguridadModule.register({ ...seguridad, dataSource }),
+        SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         ParametrosModule.register({ redisUrl: seguridad.redisUrl }),
         CorrelativosModule.register(),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),

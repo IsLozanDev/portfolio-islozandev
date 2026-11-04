@@ -39,6 +39,10 @@ export class AccesoSoporteRepositorioTypeOrm implements RepositorioAccesosSoport
     return filas.map((fila) => this.recordar(accesoDesdeFila(fila)));
   }
 
+  async existeConMembresia(membresiaId: string): Promise<boolean> {
+    return this.accesos().existsBy({ tenantId: this.tenantId(), membresiaId });
+  }
+
   async guardar(acceso: AccesoSoporte): Promise<void> {
     const versionLeida = this.versionesLeidas.get(acceso);
     if (versionLeida === undefined) {
@@ -46,8 +50,7 @@ export class AccesoSoporteRepositorioTypeOrm implements RepositorioAccesosSoport
       return;
     }
     if (versionLeida === acceso.version) return;
-    const { id, tenantId, agenteId, ticket, motivo, modo, horasSolicitadas, solicitadoEn, caducaEn, ...cambios } = filaDesdeAcceso(acceso);
-    const resultado = await this.accesos().update({ id, tenantId: this.tenantId(), version: String(versionLeida) }, cambios);
+    const resultado = await this.accesos().update({ id: acceso.id, tenantId: this.tenantId(), version: String(versionLeida) }, cambiosDe(acceso));
     if (resultado.affected === 0) throw new ConflictError(MENSAJE_CONCURRENCIA);
     this.versionesLeidas.set(acceso, acceso.version);
   }
@@ -93,6 +96,24 @@ function filaDesdeAcceso(acceso: AccesoSoporte): FilaAccesoSoporte {
     estado: acceso.estado,
     solicitadoEn: acceso.solicitadoEn,
     caducaEn: acceso.caducaEn,
+    aprobadoPor: acceso.aprobadoPor,
+    horasAprobadas: acceso.horasAprobadas,
+    desde: acceso.desde,
+    hasta: acceso.hasta,
+    membresiaId: acceso.membresiaId,
+    asignacionId: acceso.asignacionId,
+    cerradoPor: acceso.cerradoPor,
+    cerradoEn: acceso.cerradoEn,
+    motivoCierre: acceso.motivoCierre,
+    causaCierre: acceso.causaCierre,
+    version: String(acceso.version),
+  };
+}
+
+/** Lo que cambia tras la solicitud: estado, aprobación y cierre. */
+function cambiosDe(acceso: AccesoSoporte): Partial<FilaAccesoSoporte> {
+  return {
+    estado: acceso.estado,
     aprobadoPor: acceso.aprobadoPor,
     horasAprobadas: acceso.horasAprobadas,
     desde: acceso.desde,
