@@ -27,6 +27,7 @@ export function contextoDePrueba(cambios: Partial<MiContextoRespuesta> = {}): Mi
     sin_accesos: false,
     permisos: ['rest.caja.abrir'],
     menu: [{ codigo: 'rest.caja', padre: null, nombre: 'Caja', ruta: '/caja', icono: 'point_of_sale', orden: 1 }],
+    soporte: null,
     ...cambios,
   };
 }

@@ -1,0 +1,24 @@
+@if (soporte()) {
+  <div class="vit-banner-soporte flex items-center gap-2.5 bg-chip-advertencia py-2 ps-4 pe-2 text-sobre-chip-advertencia md:min-h-10 md:py-0 md:ps-5 md:pe-3" role="status">
+    <mat-icon class="shrink-0" aria-hidden="true">support_agent</mat-icon>
+
+    <!-- En celular, dos líneas; desde 768 px, una sola separada por puntos. -->
+    <div class="flex min-w-0 flex-1 flex-col gap-0.5 text-sm md:flex-row md:items-center md:gap-2.5">
+      <span class="font-medium">
+        {{ mensajes.sesionSoporte }}<span class="md:hidden"> · {{ soporte()?.ticket }}</span>
+      </span>
+      <span class="hidden opacity-60 md:inline" aria-hidden="true">·</span>
+      <span class="hidden md:inline">{{ ticket() }}</span>
+      <span class="hidden opacity-60 md:inline" aria-hidden="true">·</span>
+      <span class="tabular-nums">
+        {{ modo() }}<span aria-hidden="true" class="opacity-60"> · </span>{{ termina() }}
+      </span>
+    </div>
+
+    <button mat-stroked-button type="button" class="vit-boton-banner shrink-0" data-accion="salir-de-soporte" [disabled]="saliendo()" (click)="salir()">
+      <mat-icon aria-hidden="true">logout</mat-icon>
+      <span class="md:hidden">{{ mensajes.salirCorto }}</span>
+      <span class="hidden md:inline">{{ mensajes.salirDeSoporte }}</span>
+    </button>
+  </div>
+}

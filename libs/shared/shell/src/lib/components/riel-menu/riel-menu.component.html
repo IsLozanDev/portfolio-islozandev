@@ -24,13 +24,16 @@
           type="button"
           class="vit-boton-riel"
           [class.vit-riel-activo]="gruposActivos().has(nodo.codigo)"
-          [attr.aria-label]="nodo.nombre"
+          [attr.aria-label]="etiqueta(nodo)"
           [matTooltip]="nodo.nombre"
           matTooltipPosition="right"
           [matMenuTriggerFor]="submenu"
           [matMenuTriggerData]="{ $implicit: nodo }"
         >
           <mat-icon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+          @if (insignia(nodo); as cantidad) {
+            <span class="vit-insignia-riel" aria-hidden="true">{{ cantidad }}</span>
+          }
         </button>
       } @else {
         <a
@@ -40,11 +43,14 @@
           routerLinkActive="vit-riel-activo"
           [routerLinkActiveOptions]="{ exact: esRutaExacta(nodo.ruta) }"
           ariaCurrentWhenActive="page"
-          [attr.aria-label]="nodo.nombre"
+          [attr.aria-label]="etiqueta(nodo)"
           [matTooltip]="nodo.nombre"
           matTooltipPosition="right"
         >
           <mat-icon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+          @if (insignia(nodo); as cantidad) {
+            <span class="vit-insignia-riel" aria-hidden="true">{{ cantidad }}</span>
+          }
         </a>
       }
     }
@@ -67,6 +73,10 @@
           ariaCurrentWhenActive="page"
         >
           {{ entrada.nodo.nombre }}
+          @if (insignia(entrada.nodo); as cantidad) {
+            <span class="vit-insignia-menu ms-2" aria-hidden="true">{{ cantidad }}</span>
+            <span class="sr-only">{{ etiqueta(entrada.nodo) }}</span>
+          }
         </a>
       }
     }

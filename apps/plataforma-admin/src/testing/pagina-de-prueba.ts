@@ -22,6 +22,7 @@ const CONTEXTO_DE_PRUEBA: ContextoUsuario = {
   sinAccesos: false,
   permisos: [],
   menu: [],
+  soporte: null,
 };
 
 /** Doble de `SesionService` con el estado en signals, como el real. */

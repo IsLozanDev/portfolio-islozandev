@@ -15,6 +15,7 @@ export type TipoEnlace = Extract<EmailOtpType, 'invite' | 'email' | 'recovery'>;
 
 export const CABECERA_SUCURSAL = 'X-Sucursal-Id';
 const RUTA_MI_CONTEXTO = '/seg/mi-contexto';
+const RUTA_SALIR_DE_SOPORTE = '/seg/soporte/salir';
 const EVENTO_SALIDA: AuthChangeEvent = 'SIGNED_OUT';
 const PARAMETROS_ERROR_CALLBACK = ['error', 'error_code', 'error_description'];
 /** Errores de `recuperarClave` que sí se muestran; el resto se calla para no revelar si la cuenta existe. */
@@ -122,6 +123,12 @@ export class SesionService {
     this.sesionActual.set(data.session);
     this.contextoActual.set(null);
     await this.cargarContexto();
+  }
+
+  /** Spec 18: la API devuelve el tenant preferido al operador; el token nuevo lo trae y se recarga el contexto. */
+  async salirDeSoporte(): Promise<void> {
+    await firstValueFrom(this.http.post<void>(this.config.apiUrl + RUTA_SALIR_DE_SOPORTE, {}));
+    await this.refrescarSesion();
   }
 
   async actualizarClave(nueva: string): Promise<void> {

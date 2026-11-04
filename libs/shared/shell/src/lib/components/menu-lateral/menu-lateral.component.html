@@ -28,7 +28,11 @@
         <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
         <span matListItemTitle>{{ nodo.nombre }}</span>
         <!-- El span recibe la tipografía del slot final; directo en mat-icon, esa tipografía le quita la fuente de iconos. -->
-        <span matListItemMeta>
+        <span matListItemMeta class="flex items-center gap-1">
+          @if (insignia(nodo); as cantidad) {
+            <span class="vit-insignia-menu" aria-hidden="true">{{ cantidad }}</span>
+            <span class="sr-only">{{ mensajeInsignia(cantidad) }}</span>
+          }
           <mat-icon aria-hidden="true">{{ estaExpandido(nodo.codigo) ? 'expand_less' : 'expand_more' }}</mat-icon>
         </span>
       </button>
@@ -49,6 +53,12 @@
       >
         <mat-icon matListItemIcon aria-hidden="true">{{ nodo.icono }}</mat-icon>
         <span matListItemTitle>{{ nodo.nombre }}</span>
+        @if (insignia(nodo); as cantidad) {
+          <span matListItemMeta>
+            <span class="vit-insignia-menu" aria-hidden="true">{{ cantidad }}</span>
+            <span class="sr-only">{{ mensajeInsignia(cantidad) }}</span>
+          </span>
+        }
       </a>
     }
   }

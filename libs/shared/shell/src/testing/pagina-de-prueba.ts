@@ -34,6 +34,7 @@ export function contextoDePrueba(cambios: Partial<ContextoUsuario> = {}): Contex
     sinAccesos: false,
     permisos: [],
     menu: [],
+    soporte: null,
     ...cambios,
   };
 }
@@ -48,6 +49,9 @@ export class DobleSesion {
   readonly salir = vi.fn(async (): Promise<void> => undefined);
   readonly cargarContexto = vi.fn<(sucursalId?: string, opciones?: OpcionesCargaContexto) => Promise<ContextoUsuario>>(async () => contextoDePrueba());
   readonly seleccionarSucursal = vi.fn<(sucursalId: string, opciones?: OpcionesCargaContexto) => Promise<void>>(async () => undefined);
+  readonly salirDeSoporte = vi.fn(async (): Promise<void> => undefined);
+  readonly refrescarSesion = vi.fn(async (): Promise<void> => undefined);
+  readonly intentarCargarContexto = vi.fn(async (): Promise<void> => undefined);
 }
 
 /** Monta una página de la app en su ruta con el doble de sesión; el resto de rutas cae en una página vacía. */

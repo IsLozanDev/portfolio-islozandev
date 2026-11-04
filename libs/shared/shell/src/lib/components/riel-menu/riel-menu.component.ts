@@ -4,10 +4,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MENSAJES_SHELL } from '../../models/mensajes-shell';
+import { INSIGNIAS_MENU } from '../../config/insignias-menu';
+import { MENSAJES_SHELL, mensajeInsigniaMenu } from '../../models/mensajes-shell';
 import type { NodoMenu } from '../../models/nodo-menu';
 import { RutaActualService } from '../../services/ruta-actual.service';
 import { esRutaExacta, gruposDeRuta } from '../../utils/buscar-en-menu';
+import { insigniaDe } from '../../utils/insignias-menu';
 
 /** Relleno inicial de `mat-menu-item` (12 px) más un escalón por nivel de anidación. */
 const SANGRIA_BASE_PX = 12;
@@ -34,11 +36,22 @@ export class RielMenuComponent {
   readonly buscar = output<void>();
 
   private readonly urlActual = inject(RutaActualService).url;
+  private readonly insignias = inject(INSIGNIAS_MENU);
 
   protected readonly mensajes = MENSAJES_SHELL;
   protected readonly inicialMarca = INICIAL_MARCA;
   protected readonly esRutaExacta = esRutaExacta;
   protected readonly gruposActivos = computed(() => gruposDeRuta(this.nodos(), this.urlActual()));
+
+  protected insignia(nodo: NodoMenu): number {
+    return insigniaDe(nodo, this.insignias());
+  }
+
+  /** En el riel solo hay ícono: el nombre accesible lleva el número. */
+  protected etiqueta(nodo: NodoMenu): string {
+    const cantidad = this.insignia(nodo);
+    return cantidad > 0 ? `${nodo.nombre}, ${mensajeInsigniaMenu(cantidad)}` : nodo.nombre;
+  }
 
   protected subarbol(grupo: NodoMenu): EntradaSubmenu[] {
     return aplanar(grupo.hijos, 0);

@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
+import { INSIGNIAS_MENU, type InsigniasMenu } from '../../config/insignias-menu';
 import type { NodoMenu } from '../../models/nodo-menu';
 import { MenuLateralComponent } from './menu-lateral.component';
 
@@ -112,5 +113,53 @@ describe('MenuLateralComponent', () => {
 
     expect(elemento.querySelector('nav')).toBeNull();
     expect(elemento.textContent).toContain('No tiene opciones de menú');
+  });
+});
+
+describe('MenuLateralComponent: insignias (spec 18)', () => {
+  const insignias = signal<InsigniasMenu>({ usuarios: 3 });
+
+  async function abrir(): Promise<HTMLElement> {
+    TestBed.configureTestingModule({
+      providers: [provideRouter([{ path: '**', component: Pagina }]), { provide: INSIGNIAS_MENU, useValue: insignias.asReadonly() }],
+    });
+    const fixture = TestBed.createComponent(MenuLateralComponent);
+    fixture.componentRef.setInput('nodos', MENU);
+    fixture.componentRef.setInput('nombreApp', 'Administración');
+    await fixture.whenStable();
+    return fixture.nativeElement;
+  }
+
+  const textoDe = (elemento: Element | null | undefined) => elemento?.textContent?.replace(/\s+/g, ' ').trim();
+
+  it('con el grupo cerrado la suma va en el grupo, con texto para el lector de pantalla', async () => {
+    insignias.set({ usuarios: 3 });
+    const elemento = await abrir();
+
+    const grupo = [...elemento.querySelectorAll('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
+    expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBe('3');
+    expect(textoDe(grupo?.querySelector('.sr-only'))).toBe('3 pendientes');
+  });
+
+  it('con el grupo abierto la insignia pasa a la opción y se actualiza con la señal', async () => {
+    insignias.set({ usuarios: 3 });
+    const elemento = await abrir();
+    const grupo = [...elemento.querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
+    grupo?.click();
+    TestBed.tick();
+
+    const usuarios = [...elemento.querySelectorAll('a')].find((enlace) => enlace.textContent?.includes('Usuarios'));
+    expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBeUndefined();
+    expect(textoDe(usuarios?.querySelector('.vit-insignia-menu'))).toBe('3');
+
+    insignias.set({ usuarios: 1 });
+    TestBed.tick();
+    expect(textoDe(usuarios?.querySelector('.sr-only'))).toBe('1 pendiente');
+  });
+
+  it('en 0 no muestra nada', async () => {
+    insignias.set({ usuarios: 0 });
+    const elemento = await abrir();
+    expect(elemento.querySelector('.vit-insignia-menu')).toBeNull();
   });
 });

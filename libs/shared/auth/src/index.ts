@@ -1,7 +1,7 @@
 export { CONFIG_AUTH, type ConfigAuth, type RutasAuth } from './lib/config/config';
 export { provideAuth } from './lib/config/provide-auth';
 export { ErrorAuth, MENSAJES_AUTH } from './lib/models/errores';
-export type { ContextoUsuario } from './lib/models/mi-contexto';
+export type { ContextoUsuario, ModoSoporte, SesionSoporte } from './lib/models/mi-contexto';
 export { OMITIR_AVISO_ERROR, type OpcionesCargaContexto } from './lib/models/omitir-aviso-error';
 export { SesionService, type ProveedorExterno } from './lib/services/sesion.service';
 export { MfaService, type EnrolamientoTotp } from './lib/services/mfa.service';

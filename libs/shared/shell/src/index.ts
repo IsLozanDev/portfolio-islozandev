@@ -5,3 +5,4 @@ export { MENSAJES_SHELL } from './lib/models/mensajes-shell';
 export { AccionSensibleService } from './lib/services/accion-sensible.service';
 export { provideVolverA } from './lib/config/provide-volver-a';
 export type { OrigenesVolverA } from './lib/config/volver-a.config';
+export { INSIGNIAS_MENU, type InsigniasMenu } from './lib/config/insignias-menu';
