@@ -26,6 +26,7 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
         import('./pages/roles-lista/roles-lista.page'),
         import('./pages/perfiles-lista/perfiles-lista.page'),
         import('./pages/empresas-lista/empresas-lista.page'),
+        import('./pages/bitacora-lista/bitacora-lista.page'),
       ]),
     ESPERA_PRECARGA_MS,
   );
@@ -55,6 +56,15 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     sesion.conPermisos(PERMISOS_ADMIN.usuarioInvitar);
 
     expect(await navegar('/admin/usuarios')).toEqual({ url: '/admin/usuarios', titulo: 'Usuarios' });
+  });
+
+  it('/admin/bitacora abre la bitácora con plat.seguridad.bitacora y sin él va a /403 (spec 18)', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.seguridadBitacora);
+    expect((await navegar('/admin/bitacora?desde=2026-10-27&hasta=2026-11-02')).titulo).toBe('Bitácora de seguridad');
+
+    TestBed.resetTestingModule();
+    sesion = new DobleSesion().conPermisos(PERMISOS_ADMIN.usuarioInvitar);
+    expect((await navegar('/admin/bitacora')).url).toBe(RUTA_PROHIBIDO);
   });
 
   it('/admin/usuarios sin el permiso va a /403', async () => {

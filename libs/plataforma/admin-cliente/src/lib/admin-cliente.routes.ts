@@ -109,6 +109,16 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_ADMIN.unidadGestionar)],
     loadComponent: () => import('./pages/unidad-formulario/unidad-formulario.page').then((modulo) => modulo.UnidadFormularioPage),
   },
+  {
+    path: 'bitacora',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.seguridadBitacora)],
+    loadComponent: () => import('./pages/bitacora-lista/bitacora-lista.page').then((modulo) => modulo.BitacoraListaPage),
+  },
+  {
+    path: 'bitacora/:eventoId',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.seguridadBitacora)],
+    loadComponent: () => import('./pages/bitacora-detalle/bitacora-detalle.page').then((modulo) => modulo.BitacoraDetallePage),
+  },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.
   { path: 'asignaciones', redirectTo: 'usuarios' },

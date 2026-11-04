@@ -1,4 +1,4 @@
-/** Permisos de PLAT que usa la administración del cliente (manifiesto PLAT 1.6.0). */
+/** Permisos de PLAT que usa la administración del cliente (manifiesto PLAT 1.7.0). */
 export const PERMISOS_ADMIN = {
   usuarioInvitar: 'plat.usuario.invitar',
   asignacionOtorgar: 'plat.asignacion.otorgar',
@@ -9,4 +9,6 @@ export const PERMISOS_ADMIN = {
   empresaCrear: 'plat.empresa.crear',
   sucursalGestionar: 'plat.sucursal.gestionar',
   unidadGestionar: 'plat.unidad.gestionar',
+  seguridadBitacora: 'plat.seguridad.bitacora',
+  soporteAutorizar: 'plat.soporte.autorizar',
 } as const;
