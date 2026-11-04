@@ -140,12 +140,13 @@ export class BitacoraSeguridadTypeOrm extends RepositorioBase implements Bitacor
     super(uow, tenants);
   }
 
-  async registrar(tipo: TipoEventoSeguridad, usuarioId: string, detalle: Record<string, unknown>): Promise<void> {
-    await this.consultar('INSERT INTO seg.evento_seguridad (tenant_id, usuario_id, tipo, detalle) VALUES ($1, $2, $3, $4::jsonb)', [
+  async registrar(tipo: TipoEventoSeguridad, usuarioId: string | null, detalle: Record<string, unknown>, ip: string | null = null): Promise<void> {
+    await this.consultar('INSERT INTO seg.evento_seguridad (tenant_id, usuario_id, tipo, detalle, ip) VALUES ($1, $2, $3, $4::jsonb, $5::inet)', [
       this.tenantId,
       usuarioId,
       tipo,
       JSON.stringify(detalle),
+      ip,
     ]);
   }
 }

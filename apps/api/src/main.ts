@@ -6,7 +6,7 @@ import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
-import { ENTIDADES_SEG_LECTURA, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
+import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
@@ -18,7 +18,7 @@ const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE],
 });
 await dataSource.initialize();
 

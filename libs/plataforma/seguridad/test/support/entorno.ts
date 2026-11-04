@@ -14,6 +14,7 @@ import {
 import { PerfilRepositorioTypeOrm } from '../../src/infrastructure/typeorm/perfil.repositorio.js';
 import { RolRepositorioTypeOrm } from '../../src/infrastructure/typeorm/rol.repositorio.js';
 import { ENTIDADES_SEG_LECTURA } from '../../src/infrastructure/typeorm/entidades-lectura.js';
+import { ENTIDADES_SEG_SOPORTE } from '../../src/infrastructure/typeorm/entidades-soporte.js';
 import { createTempDb, type TempDb } from './temp-db.js';
 
 /** Pila real de los casos de uso: base temporal con db/ aplicado, UoW, outbox y repositorios. */
@@ -75,7 +76,7 @@ const PRODUCTOS = ['PLAT', 'REST', 'GYM', 'LIB', 'ECO', 'CLI'];
 
 export async function crearEntorno(): Promise<Entorno> {
   const db = await createTempDb();
-  const dataSource = new DataSource({ type: 'postgres', url: db.url, entities: ENTIDADES_SEG_LECTURA });
+  const dataSource = new DataSource({ type: 'postgres', url: db.url, entities: [...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE] });
   await dataSource.initialize();
   const contexto = new AlsTenantContext();
   const uow = new TypeOrmUnitOfWork(dataSource, contexto);

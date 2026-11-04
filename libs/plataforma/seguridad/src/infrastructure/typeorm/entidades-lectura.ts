@@ -283,7 +283,35 @@ export const PerfilRolLecturaEntidad = new EntitySchema<FilaPerfilRol>({
   },
 });
 
+/** `seg.evento_seguridad` es de solo inserción: este mapeo solo lee la bitácora (spec 18). */
+export interface FilaEventoSeguridad {
+  /** bigserial: node-pg lo devuelve como string. */
+  id: string;
+  tenantId: string | null;
+  usuarioId: string | null;
+  tipo: string;
+  detalle: Record<string, unknown>;
+  ip: string | null;
+  ocurridoEn: Date;
+}
+
+export const EventoSeguridadEntidad = new EntitySchema<FilaEventoSeguridad>({
+  name: 'SegEventoSeguridad',
+  schema: 'seg',
+  tableName: 'evento_seguridad',
+  columns: {
+    id: { type: 'bigint', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid', nullable: true },
+    usuarioId: { name: 'usuario_id', type: 'uuid', nullable: true },
+    tipo: { type: 'varchar' },
+    detalle: { type: 'jsonb' },
+    ip: { type: 'inet', nullable: true },
+    ocurridoEn: { name: 'ocurrido_en', type: 'timestamptz' },
+  },
+});
+
 export const ENTIDADES_SEG_LECTURA = [
+  EventoSeguridadEntidad,
   MembresiaLecturaEntidad,
   UsuarioLecturaEntidad,
   InvitacionLecturaEntidad,
