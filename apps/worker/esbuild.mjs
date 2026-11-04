@@ -11,7 +11,11 @@ const alias = Object.fromEntries(
 );
 
 await build({
-  entryPoints: { main: 'apps/worker/dist/tsc/main.js', 'cli/ejecutar-vencimientos': 'apps/worker/dist/tsc/cli/ejecutar-vencimientos.js' },
+  entryPoints: {
+    main: 'apps/worker/dist/tsc/main.js',
+    'cli/ejecutar-vencimientos': 'apps/worker/dist/tsc/cli/ejecutar-vencimientos.js',
+    'cli/ejecutar-vencimiento-soporte': 'apps/worker/dist/tsc/cli/ejecutar-vencimiento-soporte.js',
+  },
   outdir: 'apps/worker/dist',
   bundle: true,
   platform: 'node',

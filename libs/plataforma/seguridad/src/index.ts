@@ -67,6 +67,9 @@ export { ENTIDADES_SEG_LECTURA } from './infrastructure/typeorm/entidades-lectur
 export { ENTIDADES_SEG_SOPORTE } from './infrastructure/typeorm/entidades-soporte.js';
 // TR-SOP (R3) lo llama al cerrar un ticket (TR-CA-055).
 export { RevocarAccesosPorTicket } from './application/cerrar-acceso-soporte.js';
+// apps/worker: vencimiento de accesos de soporte cada minuto (spec 18).
+export { VencerAccesosSoporte, type ResultadoVencimientoSoporte } from './application/vencer-accesos-soporte.js';
+export { crearVencerAccesosSoporte, type PiezasVencimientoSoporte } from './infrastructure/typeorm/vencimiento-soporte.fabrica.js';
 export { clavePermisos, ResolverPermisos, TTL_PERMISOS_SEG } from './application/resolver-permisos.js';
 export {
   CACHE_PERMISOS,

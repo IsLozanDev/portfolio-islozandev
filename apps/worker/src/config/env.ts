@@ -18,6 +18,8 @@ const esquema = z.object({
   EVT_BACKOFF_MS: entero(5000),
   EVT_BACKOFF_MAX_MS: entero(600_000),
   EVT_CONCURRENCIA: entero(5),
+  // Spec 18: cada cuánto se vencen los accesos de soporte (el corte real es membresia.hasta, al instante).
+  SOPORTE_VENCIMIENTO_CADA_MS: entero(60_000),
 });
 
 export type Config = z.infer<typeof esquema>;
