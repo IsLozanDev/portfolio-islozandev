@@ -13,5 +13,7 @@ export const environment = {
     apiUrl: '/v1',
     dominioCookie: '.vitrina.test',
   } satisfies ConfigAuth,
+  /** Destino de «Entrar» del agente de soporte (spec 18). */
+  urlAdministracion: 'http://admin.vitrina.test:4200',
   origenesVolverA: { 'http://admin.vitrina.test:4200': 'Administración' } satisfies OrigenesVolverA,
 };

@@ -12,7 +12,8 @@ import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { CONFIRMACIONES, MENSAJES_DETALLE } from '../../models/mensajes-admin';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
-import { LONGITUD_MINIMA_MOTIVO_SEG, UsuarioDetallePage } from './usuario-detalle.page';
+import { LONGITUD_MINIMA_MOTIVO_SEG } from '../../models/motivo-seg';
+import { UsuarioDetallePage } from './usuario-detalle.page';
 
 const RUTA_PEDRO = '/admin/usuarios/m-pedro';
 const RUTA_MFA = '/auth/mfa';

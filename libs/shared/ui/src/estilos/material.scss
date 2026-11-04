@@ -124,6 +124,41 @@ $tabla-ancho-maximo-celda: 12rem;
     }
   }
 
+  /* Insignia numérica de una opción del menú (spec 18): menú lateral, riel y su submenú, que vive en el overlay. */
+  .vit-insignia-menu,
+  .vit-insignia-riel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: $menta;
+    color: $noche;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .vit-insignia-menu {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+
+  /* En el riel, sobre la esquina del ícono con un borde del color de la franja. */
+  .vit-insignia-riel {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border: 2px solid $noche;
+    border-radius: 9px;
+    font-size: 11px;
+  }
+
   .vit-barra-clara {
     @include mat.toolbar-overrides((
       container-background-color: var(--mat-sys-surface-container-lowest),

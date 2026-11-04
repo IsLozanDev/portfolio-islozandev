@@ -14,6 +14,7 @@ import { MENSAJES_SHELL, mensajeVolverA } from '../../models/mensajes-shell';
 import { PreferenciaMenuService } from '../../services/preferencia-menu.service';
 import { VolverAService } from '../../services/volver-a.service';
 import { construirArbolMenu, filtrarMenuPorPrefijo } from '../../utils/arbol-menu';
+import { BannerSoporteComponent } from '../banner-soporte/banner-soporte.component';
 import { MenuLateralComponent } from '../menu-lateral/menu-lateral.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
 import { RielMenuComponent } from '../riel-menu/riel-menu.component';
@@ -32,6 +33,7 @@ const FOCO_INICIAL_MENU_MOVIL = 'vit-buscador-menu input';
   selector: 'vit-layout',
   imports: [
     RouterOutlet,
+    BannerSoporteComponent,
     MatButtonModule,
     MatIconModule,
     MatSidenavModule,

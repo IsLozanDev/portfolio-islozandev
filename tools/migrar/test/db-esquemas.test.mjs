@@ -72,6 +72,7 @@ const CASOS = [
   { migracion: '01b_seg.sql', esquema: 'seg', prueba: 'tests/01b_seg.test.sql' },
   { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01b_seg_membresias.sql', esquema: 'seg', prueba: 'tests/01b_seg_membresias.test.sql' },
+  { migracion: '01b_seg_soporte.sql', esquema: 'seg', prueba: 'tests/01b_seg_soporte.test.sql' },
   { migracion: '01c_cfg.sql', esquema: 'cfg', prueba: 'tests/01c_cfg.test.sql' },
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
@@ -121,6 +122,20 @@ const objetosMembresias = async () =>
            OR (table_name = 'asignacion' AND column_name IN ('revocada_en', 'revocada_por', 'motivo_revocacion')))
        UNION ALL SELECT 'seg.invitacion' WHERE to_regclass('seg.invitacion') IS NOT NULL
        UNION ALL SELECT 'seg.invitacion_por_token' WHERE to_regprocedure('seg.invitacion_por_token(char)') IS NOT NULL
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+// Tabla, funciones, índices y CHECK que agrega 01b_seg_soporte (7 en total).
+const objetosSoporte = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'seg.acceso_soporte' AS o WHERE to_regclass('seg.acceso_soporte') IS NOT NULL
+       UNION ALL SELECT 'seg.accesos_soporte_de_agente' WHERE to_regprocedure('seg.accesos_soporte_de_agente(uuid)') IS NOT NULL
+       UNION ALL SELECT 'seg.accesos_soporte_por_vencer' WHERE to_regprocedure('seg.accesos_soporte_por_vencer(timestamptz)') IS NOT NULL
+       UNION ALL SELECT indexname FROM pg_indexes WHERE schemaname = 'seg' AND tablename = 'evento_seguridad' AND indexname LIKE 'ix_evento_seguridad_%'
+       UNION ALL SELECT conname FROM pg_constraint WHERE conname = 'ck_evento_seguridad_tipo'
        ORDER BY 1`,
     )
   ).rows.map((r) => r.o);
@@ -201,6 +216,13 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('cfg')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01c_cfg.sql'), 'utf8'));
     expect(await existeEsquema('cfg')).toBe(true);
+
+    // El inverso de 01b_seg_soporte deja seg como lo dejó 01b_seg_membresias (con datos) y se puede
+    // reaplicar. Va antes que el de 01b_seg_membresias: acceso_soporte referencia la membresía.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01b_seg_soporte.sql'), 'utf8'));
+    expect(await objetosSoporte()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01b_seg_soporte.sql'), 'utf8'));
+    expect(await objetosSoporte()).toHaveLength(7);
 
     // El inverso de 01b_seg_membresias deja seg como lo dejó 01b_seg_autorizacion (con datos, y la
     // membresía FINALIZADO como SUSPENDIDO). Va primero: reemplaza funciones de autorización.

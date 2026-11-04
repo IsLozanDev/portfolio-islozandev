@@ -18,14 +18,12 @@ import {
   TONOS_ESTADO_MEMBRESIA,
 } from '../../models/mensajes-admin';
 import type { AsignacionDelMiembro, EstadoMembresia, MiembroDetalle } from '../../models/miembro';
+import { LONGITUD_MINIMA_MOTIVO_SEG } from '../../models/motivo-seg';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { AsignacionesCliente } from '../../services/asignaciones.cliente';
 import { MembresiasCliente, type AccionMembresia } from '../../services/membresias.cliente';
 import { MiembrosCliente } from '../../services/miembros.cliente';
 import { formatearFecha, formatearFechaHora } from '../../utils/formato';
-
-/** SEG valida el motivo de 4 a 300 caracteres: TR-CA-039 usa «Cese» (D1 del spec 16a). */
-export const LONGITUD_MINIMA_MOTIVO_SEG = 4;
 
 const PARAMETRO_MEMBRESIA = 'membresiaId';
 const COLUMNAS_ASIGNACIONES = ['rolOPerfil', 'alcance', 'vigencia', 'estado', 'acciones'];

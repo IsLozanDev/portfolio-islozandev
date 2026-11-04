@@ -33,6 +33,14 @@ export const MENSAJES_SHELL = {
   temaSistema: 'Sistema',
   temaClaro: 'Claro',
   temaOscuro: 'Oscuro',
+  sesionSoporte: 'Sesión de soporte',
+  soloLectura: 'Solo lectura',
+  lecturaYEscritura: 'Lectura y escritura',
+  salirDeSoporte: 'Salir de soporte',
+  salirCorto: 'Salir',
+  soporteTermino: 'El acceso de soporte terminó',
+  saliDeSoporte: 'Salió de la sesión de soporte',
+  errorSalirDeSoporte: 'No se pudo salir de la sesión de soporte. Inténtelo de nuevo.',
 } as const;
 
 /** Anuncio del número de resultados de la búsqueda en el menú. */
@@ -52,4 +60,18 @@ export function mensajeVolverA(nombreApp: string): string {
 /** Toast tras cambiar de sucursal desde el encabezado (TR-CA-045). */
 export function mensajeAhoraTrabajaEn(sucursal: string): string {
   return `Ahora trabaja en ${sucursal}`;
+}
+
+export function mensajeTicketSoporte(ticket: string): string {
+  return `Ticket ${ticket}`;
+}
+
+/** Hora de fin del banner de soporte, ya en hora de Lima. */
+export function mensajeTerminaA(hora: string): string {
+  return `Termina a las ${hora}`;
+}
+
+/** Lo que oye el lector de pantalla junto a la insignia numérica de una opción del menú. */
+export function mensajeInsigniaMenu(cantidad: number): string {
+  return cantidad === 1 ? '1 pendiente' : `${cantidad} pendientes`;
 }

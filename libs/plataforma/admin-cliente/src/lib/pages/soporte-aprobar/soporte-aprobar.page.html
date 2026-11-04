@@ -1,0 +1,64 @@
+<section class="flex max-w-2xl flex-col gap-4">
+  <a mat-button class="self-start" routerLink="../..">{{ mensajes.volver }}</a>
+  <h1 class="text-2xl font-medium">{{ mensajes.tituloAprobar }}</h1>
+
+  @if (cargando()) {
+    <vit-cargando />
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (solicitud(); as pedida) {
+    <section class="flex flex-col gap-2" aria-labelledby="titulo-solicitud">
+      <h2 id="titulo-solicitud" class="text-lg font-medium">{{ mensajes.solicitud }}</h2>
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+        <dt class="text-sobre-superficie-variante">{{ mensajes.agente }}</dt>
+        <dd data-dato="agente">
+          <span class="font-medium">{{ pedida.agente.nombre }}</span>
+          <span class="text-sobre-superficie-variante"> · {{ pedida.agente.correo }}</span>
+        </dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.ticket }}</dt>
+        <dd class="tabular-nums" data-dato="ticket">{{ pedida.ticket }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.modo }}</dt>
+        <dd data-dato="modo">{{ etiquetasModo[pedida.modo] }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.motivo }}</dt>
+        <dd class="whitespace-pre-line" data-dato="motivo">{{ pedida.motivo }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.solicitada }}</dt>
+        <dd class="tabular-nums">{{ formatearFechaHora(pedida.solicitadoEn) }} · {{ etiquetaHoras(pedida.horasSolicitadas) }}</dd>
+      </dl>
+    </section>
+
+    <form class="flex flex-col gap-2" [formGroup]="formulario" (ngSubmit)="aprobar()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.horas }}</mat-label>
+        <mat-select formControlName="horas" data-campo="horas" required>
+          @for (horas of horasPosibles; track horas) {
+            <mat-option [value]="horas">{{ etiquetaHoras(horas) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.rolOPerfil }}</mat-label>
+        <mat-select formControlName="asignable" data-campo="asignable" required>
+          <mat-optgroup [label]="mensajes.roles">
+            @for (rol of asignables().roles; track rol.id) {
+              <mat-option [value]="prefijoRol + rol.id">{{ rol.nombre }} · {{ rol.productoCodigo }}</mat-option>
+            }
+          </mat-optgroup>
+          <mat-optgroup [label]="mensajes.perfiles">
+            @for (perfil of asignables().perfiles; track perfil.id) {
+              <mat-option [value]="prefijoPerfil + perfil.id">{{ perfil.nombre }}</mat-option>
+            }
+          </mat-optgroup>
+        </mat-select>
+        <mat-hint>{{ mensajes.ayudaRol }}</mat-hint>
+        <mat-error>{{ formulario.controls.asignable.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.aprobar" (cancelar)="cancelar()" />
+    </form>
+  }
+</section>

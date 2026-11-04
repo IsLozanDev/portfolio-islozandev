@@ -9,5 +9,7 @@ export const environment = {
     supabasePublishableKey: '',
     apiUrl: '',
   } satisfies ConfigAuth,
+  /** Destino de «Entrar» del agente de soporte (spec 18); se fija al publicar. */
+  urlAdministracion: '',
   origenesVolverA: {} satisfies OrigenesVolverA,
 };

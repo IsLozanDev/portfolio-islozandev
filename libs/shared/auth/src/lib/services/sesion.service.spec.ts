@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { AuthApiError, AuthRetryableFetchError, AuthWeakPasswordError } from '@supabase/supabase-js';
-import { DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
+import { API_URL, DobleSupabase, proveerAuthDePrueba, responderMiContexto, sesionDePrueba } from '../../testing/doble-supabase';
 import { authInterceptor } from '../interceptors/auth.interceptor';
 import { ErrorAuth, MENSAJES_AUTH } from '../models/errores';
 import { CABECERA_SUCURSAL, SesionService } from './sesion.service';
@@ -250,6 +250,31 @@ describe('SesionService (sesión)', () => {
       supabase.auth.refreshSession.mockResolvedValueOnce({ data: { session: null }, error: new AuthRetryableFetchError('red', 0) });
 
       await expect(servicio.refrescarSesion()).rejects.toMatchObject({ codigo: 'SIN_CONEXION' });
+    });
+  });
+
+  describe('salirDeSoporte (spec 18)', () => {
+    it('pide salir a la API, renueva el token y recarga mi-contexto', async () => {
+      await iniciarConSesion();
+
+      const salida = servicio.salirDeSoporte();
+      const peticion = http.expectOne(`${API_URL}/seg/soporte/salir`);
+      expect(peticion.request.method).toBe('POST');
+      peticion.flush(null, { status: 204, statusText: 'No Content' });
+      await Promise.all([salida, responderMiContexto(http)]);
+
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(servicio.token()).toBe('token-refrescado');
+    });
+
+    it('si la API falla no renueva el token', async () => {
+      await iniciarConSesion();
+
+      const salida = servicio.salirDeSoporte();
+      http.expectOne(`${API_URL}/seg/soporte/salir`).flush({ codigo: 'X' }, { status: 503, statusText: 'Service Unavailable' });
+
+      await expect(salida).rejects.toBeTruthy();
+      expect(supabase.auth.refreshSession).not.toHaveBeenCalled();
     });
   });
 

@@ -1,6 +1,6 @@
 # SPEC 15c — Tema oscuro con selector Sistema, Claro y Oscuro
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 15b, SPEC 15d
 > **Date:** 2026-11-01
 > **Objective:** Agregar a `shared/ui` y `shared/shell` un tema oscuro pensado para reducir la fatiga visual, con un selector Sistema / Claro / Oscuro en el menú de usuario que se recuerda por dispositivo y se aplica sin parpadeo en las dos apps.

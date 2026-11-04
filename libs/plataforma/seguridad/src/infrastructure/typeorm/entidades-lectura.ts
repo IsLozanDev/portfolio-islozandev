@@ -2,7 +2,7 @@ import { EntitySchema } from 'typeorm';
 import type { Alcance } from '../../domain/alcance.js';
 import type { Fecha } from '../../domain/asignacion.js';
 import type { EstadoMembresia } from '../../domain/membresia.js';
-import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
+import { EmpresaUbicacionEntidad, SucursalUbicacionEntidad, TenantCodigoEntidad, UnidadUbicacionEntidad } from './entidades-org.js';
 
 // Mapeo ORM de solo lectura para la administración de miembros (spec 16a) y de roles (spec 16b). La
 // escritura sigue en los repositorios con SQL (anteriores al spec 10, regla 11).
@@ -283,7 +283,35 @@ export const PerfilRolLecturaEntidad = new EntitySchema<FilaPerfilRol>({
   },
 });
 
+/** `seg.evento_seguridad` es de solo inserción: este mapeo solo lee la bitácora (spec 18). */
+export interface FilaEventoSeguridad {
+  /** bigserial: node-pg lo devuelve como string. */
+  id: string;
+  tenantId: string | null;
+  usuarioId: string | null;
+  tipo: string;
+  detalle: Record<string, unknown>;
+  ip: string | null;
+  ocurridoEn: Date;
+}
+
+export const EventoSeguridadEntidad = new EntitySchema<FilaEventoSeguridad>({
+  name: 'SegEventoSeguridad',
+  schema: 'seg',
+  tableName: 'evento_seguridad',
+  columns: {
+    id: { type: 'bigint', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid', nullable: true },
+    usuarioId: { name: 'usuario_id', type: 'uuid', nullable: true },
+    tipo: { type: 'varchar' },
+    detalle: { type: 'jsonb' },
+    ip: { type: 'inet', nullable: true },
+    ocurridoEn: { name: 'ocurrido_en', type: 'timestamptz' },
+  },
+});
+
 export const ENTIDADES_SEG_LECTURA = [
+  EventoSeguridadEntidad,
   MembresiaLecturaEntidad,
   UsuarioLecturaEntidad,
   InvitacionLecturaEntidad,
@@ -298,6 +326,7 @@ export const ENTIDADES_SEG_LECTURA = [
   PerfilLecturaEntidad,
   PerfilRolLecturaEntidad,
   EmpresaUbicacionEntidad,
+  TenantCodigoEntidad,
   SucursalUbicacionEntidad,
   UnidadUbicacionEntidad,
 ];

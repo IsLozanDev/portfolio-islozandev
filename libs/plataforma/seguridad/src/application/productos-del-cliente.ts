@@ -1,4 +1,5 @@
-import { ProductoNoContratadoError } from '../domain/errores.js';
+import { ProductoNoContratadoError, RolFueraDelTechoError } from '../domain/errores.js';
+import type { Rol } from '../domain/rol.js';
 import { ROL_PROPIETARIO } from './invitar-propietario.js';
 import type { CatalogoPermisos, ProductosContratados } from './ports/repositorios.js';
 
@@ -23,4 +24,12 @@ export async function productosDelCliente(productos: ProductosContratados): Prom
  */
 export async function permisosPlatDelCliente(catalogo: Pick<CatalogoPermisos, 'permisosDeRolPredefinido'>): Promise<ReadonlySet<string>> {
   return new Set(await catalogo.permisosDeRolPredefinido(ROL_PROPIETARIO));
+}
+
+/** Lanza RolFueraDelTechoError si un rol PLAT (predefinido o propio) tiene un permiso fuera de PLAT_PROPIETARIO. */
+export function exigirRolesDentroDelTecho(roles: readonly Rol[], permitidos: ReadonlySet<string>): void {
+  const fueraDelTecho = roles.find(
+    (rol) => rol.productoCodigo === PRODUCTO_PLATAFORMA && rol.permisos.some((permiso) => !permitidos.has(permiso)),
+  );
+  if (fueraDelTecho) throw new RolFueraDelTechoError(fueraDelTecho.datos.codigo);
 }

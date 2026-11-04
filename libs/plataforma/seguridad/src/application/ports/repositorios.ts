@@ -134,11 +134,16 @@ export interface UbicacionesOrg {
   resolver(ambito: Ambito): Promise<Ambito>;
 }
 
-export type TipoEventoSeguridad = 'ASIGNACION_OTORGADA' | 'ASIGNACION_REVOCADA' | 'ACCESO_DENEGADO';
+/** Catálogo de `ck_evento_seguridad_tipo`. LOGIN no tiene productor todavía (spec 18). */
+export const TIPOS_EVENTO_SEGURIDAD = ['LOGIN', 'ACCESO_DENEGADO', 'ASIGNACION_OTORGADA', 'ASIGNACION_REVOCADA', 'ACCESO_SOPORTE'] as const;
+export type TipoEventoSeguridad = (typeof TIPOS_EVENTO_SEGURIDAD)[number];
 
-/** `seg.evento_seguridad`, de solo inserción. `usuarioId` es quien actúa. */
+/**
+ * `seg.evento_seguridad`, de solo inserción, en el tenant del contexto. `usuarioId` es quien actúa:
+ * NULL cuando actúa el sistema (vencimiento o TR-SOP). `ip`, la de la petición cuando la hay.
+ */
 export interface BitacoraSeguridad {
-  registrar(tipo: TipoEventoSeguridad, usuarioId: string, detalle: Record<string, unknown>): Promise<void>;
+  registrar(tipo: TipoEventoSeguridad, usuarioId: string | null, detalle: Record<string, unknown>, ip?: string | null): Promise<void>;
 }
 
 /** Lo que hace falta para aplicar un manifiesto dentro de una transacción. Es global: no usa tenant. */

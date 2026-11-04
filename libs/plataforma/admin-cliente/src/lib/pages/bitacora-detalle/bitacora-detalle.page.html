@@ -1,0 +1,60 @@
+<section class="flex flex-col gap-4">
+  <a mat-button class="self-start" routerLink="..">{{ mensajes.volver }}</a>
+
+  @if (cargando()) {
+    <vit-cargando />
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (evento(); as detalle) {
+    <header class="flex flex-col gap-2">
+      <h1 class="text-2xl font-medium">{{ mensajes.tituloDetalle }}</h1>
+      <p class="flex flex-wrap items-center gap-2 text-sm">
+        <vit-chip-estado data-tipo-evento [texto]="etiquetaTipo(detalle)" [tono]="tonoTipo(detalle)" />
+        <span class="tabular-nums text-sobre-superficie-variante">{{ fecha() }}</span>
+      </p>
+    </header>
+
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+      <dt class="text-sobre-superficie-variante">{{ mensajes.usuario }}</dt>
+      <dd data-dato="usuario">
+        @if (detalle.usuario; as usuario) {
+          <span class="font-medium">{{ usuario.nombre }}</span>
+          <span class="text-sobre-superficie-variante"> · {{ usuario.correo }}</span>
+        } @else {
+          {{ mensajes.sistema }}
+        }
+      </dd>
+      @if (detalle.destinatario; as destinatario) {
+        <dt class="text-sobre-superficie-variante">{{ mensajes.destinatario }}</dt>
+        <dd data-dato="destinatario">
+          <span class="font-medium">{{ destinatario.nombre }}</span>
+          <span class="text-sobre-superficie-variante"> · {{ destinatario.correo }}</span>
+        </dd>
+      }
+      @if (detalle.asignado; as asignado) {
+        <dt class="text-sobre-superficie-variante">{{ etiquetasAsignado[asignado.tipo] }}</dt>
+        <dd data-dato="asignado">{{ asignado.nombre }}</dd>
+      }
+      <dt class="text-sobre-superficie-variante">{{ mensajes.ip }}</dt>
+      <dd class="tabular-nums" data-dato="ip">{{ detalle.ip ?? mensajes.sinDato }}</dd>
+    </dl>
+
+    <section class="flex flex-col gap-2" aria-labelledby="titulo-datos-evento">
+      <h2 id="titulo-datos-evento" class="text-lg font-medium">{{ mensajes.datosDelEvento }}</h2>
+      @if (datos().length === 0) {
+        <p class="text-sm text-sobre-superficie-variante">{{ mensajes.sinDatos }}</p>
+      } @else {
+        <dl class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+          @for (dato of datos(); track dato.clave) {
+            <dt class="font-mono text-sobre-superficie-variante">{{ dato.clave }}</dt>
+            <dd class="break-all font-mono" [attr.data-dato]="dato.clave">{{ dato.valor }}</dd>
+          }
+        </dl>
+      }
+    </section>
+  }
+</section>

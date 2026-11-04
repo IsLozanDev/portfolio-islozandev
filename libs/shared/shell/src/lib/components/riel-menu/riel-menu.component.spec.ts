@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import type { NodoMenu } from '../../models/nodo-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { RielMenuComponent } from './riel-menu.component';
 
 @Component({ selector: 'vit-pagina-riel', template: '' })
@@ -115,5 +116,29 @@ describe('RielMenuComponent', () => {
     elemento.querySelector<HTMLButtonElement>('button[aria-label="Buscar en el menú"]')?.click();
 
     expect(pedidos).toBe(1);
+  });
+});
+
+describe('RielMenuComponent: insignias (spec 18)', () => {
+  afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((contenedor) => contenedor.replaceChildren()));
+
+  it('el grupo lleva la suma sobre el ícono y en su nombre accesible; el submenú, la de cada opción', async () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: '**', component: Pagina }])] });
+    const insignias = TestBed.inject(InsigniasMenuService);
+    insignias.fijar('pedidos', 2);
+    insignias.fijar('boletas', 1);
+    const fixture = TestBed.createComponent(RielMenuComponent);
+    fixture.componentRef.setInput('nodos', MENU);
+    await fixture.whenStable();
+    const elemento: HTMLElement = fixture.nativeElement;
+
+    const ventas = elemento.querySelector<HTMLButtonElement>('nav [aria-label="Ventas, 3 pendientes"]');
+    expect(ventas?.querySelector('.vit-insignia-riel')?.textContent?.trim()).toBe('3');
+    expect(elemento.querySelector('nav [aria-label="Inicio"] .vit-insignia-riel')).toBeNull();
+
+    ventas?.click();
+    await fixture.whenStable();
+    const pedidos = [...document.querySelectorAll('.vit-submenu-riel a')].find((enlace) => enlace.textContent?.includes('Pedidos'));
+    expect(pedidos?.querySelector('.vit-insignia-menu')?.textContent?.trim()).toBe('2');
   });
 });

@@ -1,5 +1,6 @@
 import { EventSchemaValidationError, type DomainEvent } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
+import { AccesoSoporte } from '../src/domain/acceso-soporte.js';
 import { Asignacion } from '../src/domain/asignacion.js';
 import { EVENTOS_SEG } from '../src/domain/eventos.js';
 import { Membresia } from '../src/domain/membresia.js';
@@ -36,7 +37,26 @@ function eventosDelDominio(): DomainEvent[] {
   membresia.suspender('Licencia médica', OTRO, ahora);
   membresia.reactivar('Fin de licencia', OTRO, ahora);
   membresia.finalizar('Fin de contrato', OTRO, ahora, [ID]);
-  return [rol, copia, perfil, asignacion, membresia].flatMap((a) => a.pullEvents());
+  const solicitud = { tenantId: ID, agenteId: OTRO, ticket: 'SOP-000245', motivo: 'Revisar series de boletas', modo: 'LECTURA' as const, horas: 2 };
+  const aprobacion = { aprobadoPor: ID, horas: 2, membresiaId: ID, asignacionId: ID };
+  const revocado = AccesoSoporte.solicitar(ID, solicitud, ahora);
+  revocado.aprobar(aprobacion, ahora);
+  revocado.revocar('TICKET_CERRADO', 'Ticket cerrado', null, ahora);
+  const rechazado = AccesoSoporte.solicitar(OTRO, solicitud, ahora);
+  rechazado.rechazar('No autorizado', ID, ahora);
+  const vencido = AccesoSoporte.solicitar(ID, solicitud, ahora);
+  vencido.aprobar(aprobacion, ahora);
+  vencido.expirar(new Date('2026-10-22T17:00:00Z'));
+  const deSoporte = Membresia.abrirSoporte(ID, { usuarioId: OTRO, tenantId: ID, hasta: new Date('2026-10-22T17:00:00Z') }, ahora);
+  deSoporte.finalizar('Acceso de soporte vencido', null, new Date('2026-10-22T17:00:00Z'), [ID]);
+  const asignacionDeSoporte = Asignacion.otorgar(
+    OTRO,
+    ID,
+    { membresiaId: ID, rolId: ID, perfilId: null, alcance: 'TENANT', empresaId: null, sucursalId: null, unidadId: null, vigenteHasta: null },
+    { hoy: '2026-10-22', otorgadoPor: ID, permisos: [] },
+  );
+  asignacionDeSoporte.revocar('Ticket cerrado', null, ahora);
+  return [rol, copia, perfil, asignacion, membresia, revocado, rechazado, vencido, deSoporte, asignacionDeSoporte].flatMap((a) => a.pullEvents());
 }
 
 describe('Esquemas de eventos de seg', () => {

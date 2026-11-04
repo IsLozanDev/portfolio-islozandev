@@ -41,3 +41,19 @@ export const UnidadUbicacionEntidad = new EntitySchema<FilaUbicacion>({
     nombre: { type: 'varchar' },
   },
 });
+
+/** Código del tenant: la solicitud de soporte comprueba el tenant operador y que el destino exista (spec 18). */
+export interface FilaTenantCodigo {
+  id: string;
+  codigo: string;
+}
+
+export const TenantCodigoEntidad = new EntitySchema<FilaTenantCodigo>({
+  name: 'SegTenant',
+  schema: 'org',
+  tableName: 'tenant',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    codigo: { type: 'varchar' },
+  },
+});

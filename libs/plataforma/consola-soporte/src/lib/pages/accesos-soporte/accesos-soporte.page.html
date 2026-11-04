@@ -1,0 +1,33 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <a mat-flat-button routerLink="solicitar" data-accion="solicitar">
+      <mat-icon aria-hidden="true">support_agent</mat-icon>
+      {{ mensajes.solicitarAcceso }}
+    </a>
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filasVisibles()"
+    [total]="filas().length"
+    [cargando]="cargando()"
+    [indicePagina]="paginaActual().indice"
+    [tamanoPagina]="paginaActual().tamano"
+    [textoVacio]="mensajes.sinAccesos"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-acceso>
+      @if (acceso.vigente) {
+        <button mat-button type="button" data-accion="entrar" [disabled]="entrando()" [attr.aria-label]="mensajes.entrar + ': ' + acceso.tenant" (click)="entrar(acceso)">
+          <mat-icon aria-hidden="true">login</mat-icon>
+          {{ mensajes.entrar }}
+        </button>
+      }
+    </ng-template>
+  </vit-tabla>
+</section>

@@ -1,9 +1,8 @@
 import { NotFoundError, type EventPublisher, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
-import { RolFueraDelTechoError } from '../domain/errores.js';
 import { Perfil, type DatosPerfil } from '../domain/perfil.js';
 import type { Rol } from '../domain/rol.js';
 import type { CatalogoPermisos, ProductosContratados, RepositorioPerfiles, RepositorioRoles } from './ports/repositorios.js';
-import { permisosPlatDelCliente, PRODUCTO_PLATAFORMA } from './productos-del-cliente.js';
+import { exigirRolesDentroDelTecho, permisosPlatDelCliente } from './productos-del-cliente.js';
 import { publicarEventos } from './publicar-eventos.js';
 
 export interface PerfilRepos {
@@ -33,14 +32,6 @@ async function cargarRoles(roles: RepositorioRoles, ids: readonly string[]): Pro
   const encontrados = await roles.buscarVarios(unicos);
   if (encontrados.length !== unicos.length) throw new NotFoundError('Alguno de los roles no existe');
   return encontrados;
-}
-
-/** Lanza RolFueraDelTechoError si un rol PLAT (predefinido o propio) tiene un permiso fuera de PLAT_PROPIETARIO. */
-function exigirRolesDentroDelTecho(roles: readonly Rol[], permitidos: ReadonlySet<string>): void {
-  const fueraDelTecho = roles.find(
-    (rol) => rol.productoCodigo === PRODUCTO_PLATAFORMA && rol.permisos.some((permiso) => !permitidos.has(permiso)),
-  );
-  if (fueraDelTecho) throw new RolFueraDelTechoError(fueraDelTecho.datos.codigo);
 }
 
 /** Roles del perfil, ya validados contra el techo PLAT del cliente (spec 16c). */

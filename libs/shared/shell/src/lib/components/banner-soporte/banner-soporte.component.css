@@ -1,0 +1,18 @@
+:host {
+  display: block;
+}
+
+.vit-banner-soporte {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-sobre-chip-advertencia) 25%, transparent);
+}
+
+/* Borde y texto del tono del banner: el botón contorneado de Material usa el primario por defecto. */
+.vit-boton-banner {
+  --mat-button-outlined-label-text-color: var(--color-sobre-chip-advertencia);
+  --mat-button-outlined-outline-color: var(--color-sobre-chip-advertencia);
+}
+
+.vit-boton-banner:focus-visible {
+  outline: 3px solid var(--color-sobre-chip-advertencia);
+  outline-offset: 2px;
+}

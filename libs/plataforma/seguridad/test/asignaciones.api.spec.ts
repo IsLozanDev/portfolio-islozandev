@@ -113,10 +113,14 @@ describeConDb('API de asignaciones (TR-RF-013; PostgreSQL 16 y Redis 7)', () => 
     expect((await permisosDeLuis(null)).permisos).toEqual([]);
     expect(await e.eventosDe(asignacionId)).toEqual([['asignacion.otorgada', 1]]);
     expect(
-      await contar("SELECT count(*) AS n FROM seg.evento_seguridad WHERE tipo = 'ASIGNACION_OTORGADA' AND usuario_id = $1 AND detalle->>'asignacion_id' = $2", [
-        ana.usuarioId,
-        asignacionId,
-      ]),
+      // La IP llega por OrigenPeticion: el caso de uso no la recibe en el comando (spec 18).
+      await contar(
+        "SELECT count(*) AS n FROM seg.evento_seguridad WHERE tipo = 'ASIGNACION_OTORGADA' AND usuario_id = $1 AND detalle->>'asignacion_id' = $2 AND ip IS NOT NULL",
+        [
+          ana.usuarioId,
+          asignacionId,
+        ],
+      ),
     ).toBe(1);
   });
 

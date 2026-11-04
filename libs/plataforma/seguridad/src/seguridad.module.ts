@@ -16,6 +16,8 @@ import { ResolverPermisos } from './application/resolver-permisos.js';
 import { CachePermisosRedis, crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';
 import { PermisosSqlRepositorio } from './infrastructure/typeorm/permisos.sql.repositorio.js';
 import { BitacoraSeguridadTypeOrm } from './infrastructure/typeorm/asignacion.repositorio.js';
+import { OrigenPeticion } from './infrastructure/origen-peticion.js';
+import { OrigenPeticionInterceptor } from './interface/origen-peticion.interceptor.js';
 import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm, ProductosContratadosTypeOrm } from './infrastructure/typeorm/lecturas.js';
 import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia-sucursal.repositorio.js';
 import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
@@ -38,6 +40,23 @@ import { AsignacionesController } from './interface/asignaciones.controller.js';
 import { OtorgarAsignacion } from './application/otorgar-asignacion.js';
 import { ConsultarMiembro, ListarAsignables, ListarMiembros } from './application/lecturas-miembros.js';
 import { LecturaMiembrosTypeOrm } from './infrastructure/typeorm/lectura-miembros.typeorm.js';
+import { ConsultarBitacora, ConsultarEventoSeguridad } from './application/lecturas-bitacora.js';
+import { LecturaBitacoraTypeOrm } from './infrastructure/typeorm/lectura-bitacora.typeorm.js';
+import { BitacoraController } from './interface/bitacora.controller.js';
+import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from './application/solicitar-acceso-soporte.js';
+import { AprobarAccesoSoporte } from './application/aprobar-acceso-soporte.js';
+import { RechazarAccesoSoporte, RevocarAccesoSoporte, RevocarAccesosPorTicket, type DependenciasCierreSoporte } from './application/cerrar-acceso-soporte.js';
+import { ContarSolicitudesPendientes, ListarSolicitudesSoporte } from './application/lecturas-soporte.js';
+import { ResolverAccesoSoporteVigente } from './application/resolver-acceso-soporte.js';
+import { RegistrarPeticionSoporte } from './application/registrar-peticion-soporte.js';
+import { SoporteInterceptor } from './interface/soporte.interceptor.js';
+import { EntrarComoSoporte, SalirDeSoporte, type DependenciasSesionSoporte } from './application/sesion-soporte.js';
+import { VERIFICADOR_TICKET, type VerificadorTicket } from './application/ports/verificador-ticket.port.js';
+import { AccesoSoporteRepositorioTypeOrm } from './infrastructure/typeorm/acceso-soporte.repositorio.js';
+import { LecturaSoporteTypeOrm } from './infrastructure/typeorm/lectura-soporte.typeorm.js';
+import { TenantsSoporteTypeOrm } from './infrastructure/typeorm/tenants-soporte.typeorm.js';
+import { VerificadorTicketPorFormato } from './infrastructure/verificador-ticket.formato.js';
+import { SoporteController } from './interface/soporte.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
@@ -74,6 +93,8 @@ export interface SeguridadOpciones {
   jwksUrl?: string;
   /** Solo pruebas. */
   enfriamientoMs?: number;
+  /** Código del tenant operador (ORG_TENANT_OPERADOR): el único que solicita soporte (spec 18). Por defecto, `plataforma`. */
+  tenantOperador?: string;
   /** Invitaciones (spec 08). */
   invitaciones: {
     /** Secret key de Supabase para la Admin API. Solo apps/api (regla 9). */
@@ -88,7 +109,7 @@ export interface SeguridadOpciones {
 }
 
 /** Repositorios sobre la UoW activa: los del spec 06 más los de membresías. */
-function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource: DataSource) {
+function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource: DataSource, origen: OrigenPeticion) {
   return {
     ciclo: new MembresiaRepositorioTypeOrm(uow, ctx),
     membresias: new MembresiasLecturaTypeOrm(uow, ctx),
@@ -100,11 +121,26 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
     perfiles: new PerfilRepositorioTypeOrm(uow, ctx),
     catalogo: new CatalogoPermisosTypeOrm(uow, ctx),
     ubicaciones: new UbicacionesOrgTypeOrm(uow, ctx),
-    bitacora: new BitacoraSeguridadTypeOrm(uow, ctx),
+    bitacora: new BitacoraSeguridadTypeOrm(uow, ctx, origen),
+    accesosSoporte: new AccesoSoporteRepositorioTypeOrm(uow, ctx),
+    lecturaSoporte: new LecturaSoporteTypeOrm(uow, ctx, dataSource),
+    tenantsSoporte: new TenantsSoporteTypeOrm(uow, dataSource),
   };
 }
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
+const ORIGEN_PETICION = Symbol('ORIGEN_PETICION');
+const TENANT_OPERADOR_DEFECTO = 'plataforma';
+const DEPENDENCIAS_CIERRE_SOPORTE = Symbol('DEPENDENCIAS_CIERRE_SOPORTE');
+const DEPENDENCIAS_SESION_SOPORTE = Symbol('DEPENDENCIAS_SESION_SOPORTE');
+type CasoDeCierreDeSoporte<T> = new (dependencias: DependenciasCierreSoporte) => T;
+
+/** Rechazar, revocar y cerrar por ticket reciben las mismas dependencias (spec 18). */
+const cierreDeSoporte = <T>(Clase: CasoDeCierreDeSoporte<T>) => ({
+  provide: Clase,
+  useFactory: (dependencias: DependenciasCierreSoporte) => new Clase(dependencias),
+  inject: [DEPENDENCIAS_CIERRE_SOPORTE],
+});
 type ReposMembresias = ReturnType<typeof reposMembresias>;
 const DEPENDENCIAS_LECTURA_ROLES = Symbol('DEPENDENCIAS_LECTURA_ROLES');
 const DEPENDENCIAS_LECTURA_PERFILES = Symbol('DEPENDENCIAS_LECTURA_PERFILES');
@@ -135,14 +171,15 @@ export class SeguridadModule {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
       global: true,
-      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController],
+      controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController, BitacoraController, SoporteController],
       providers: [
+        { provide: ORIGEN_PETICION, useValue: new OrigenPeticion() },
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
         {
           provide: REPOS_MEMBRESIAS,
-          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext) => reposMembresias(uow, ctx, op.dataSource),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext, origen: OrigenPeticion) => reposMembresias(uow, ctx, op.dataSource, origen),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ORIGEN_PETICION],
         },
         {
           provide: PROVEEDOR_IDENTIDAD,
@@ -195,6 +232,97 @@ export class SeguridadModule {
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock) =>
             new ConsultarMiembro({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), reloj }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
+        },
+        { provide: VERIFICADOR_TICKET, useClass: VerificadorTicketPorFormato },
+        {
+          provide: SolicitarAccesoSoporte,
+          useFactory: (
+            unidadDeTrabajo: UnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            eventos: EventPublisher,
+            repositorios: ReposMembresias,
+            verificador: VerificadorTicket,
+          ) =>
+            new SolicitarAccesoSoporte({
+              unidadDeTrabajo,
+              contexto,
+              ids,
+              reloj,
+              eventos,
+              accesos: repositorios.accesosSoporte,
+              membresias: repositorios.ciclo,
+              bitacora: repositorios.bitacora,
+              tenants: repositorios.tenantsSoporte,
+              verificador,
+              tenantOperador: op.tenantOperador ?? TENANT_OPERADOR_DEFECTO,
+            }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, VERIFICADOR_TICKET],
+        },
+        {
+          provide: DEPENDENCIAS_CIERRE_SOPORTE,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, reloj: Clock, eventos: EventPublisher, repositorios: ReposMembresias): DependenciasCierreSoporte => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            eventos,
+            accesos: repositorios.accesosSoporte,
+            membresias: repositorios.ciclo,
+            asignaciones: repositorios.asignaciones,
+            bitacora: repositorios.bitacora,
+          }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        cierreDeSoporte(RechazarAccesoSoporte),
+        cierreDeSoporte(RevocarAccesoSoporte),
+        cierreDeSoporte(RevocarAccesosPorTicket),
+        {
+          provide: AprobarAccesoSoporte,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher, repositorios: ReposMembresias) =>
+            new AprobarAccesoSoporte({
+              unidadDeTrabajo,
+              contexto,
+              ids,
+              reloj,
+              eventos,
+              accesos: repositorios.accesosSoporte,
+              membresias: repositorios.ciclo,
+              asignaciones: repositorios.asignaciones,
+              roles: repositorios.roles,
+              perfiles: repositorios.perfiles,
+              catalogo: repositorios.catalogo,
+              bitacora: repositorios.bitacora,
+            }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ListarSolicitudesSoporte,
+          useFactory: (unidadDeTrabajo: UnitOfWork, repositorios: ReposMembresias) => new ListarSolicitudesSoporte({ unidadDeTrabajo, lectura: repositorios.lecturaSoporte }),
+          inject: [UNIT_OF_WORK, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ContarSolicitudesPendientes,
+          useFactory: (unidadDeTrabajo: UnitOfWork, reloj: Clock, repositorios: ReposMembresias) =>
+            new ContarSolicitudesPendientes({ unidadDeTrabajo, lectura: repositorios.lecturaSoporte, reloj }),
+          inject: [UNIT_OF_WORK, CLOCK, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ListarMisAccesosSoporte,
+          useFactory: (repositorios: ReposMembresias) => new ListarMisAccesosSoporte(repositorios.lecturaSoporte),
+          inject: [REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ConsultarBitacora,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ConsultarBitacora({ unidadDeTrabajo, lectura: new LecturaBitacoraTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        {
+          provide: ConsultarEventoSeguridad,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ConsultarEventoSeguridad({ unidadDeTrabajo, lectura: new LecturaBitacoraTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
         {
           provide: ListarAsignables,
@@ -303,13 +431,48 @@ export class SeguridadModule {
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, PERMISOS_REPOSITORIO, CACHE_PERMISOS],
         },
         {
-          provide: ObtenerMiContexto,
-          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext, repo: PermisosRepositorio, resolver: ResolverPermisos) =>
-            new ObtenerMiContexto(uow, ctx, repo, new MembresiasLecturaTypeOrm(uow, ctx), new PreferenciaSucursalTypeOrm(uow, ctx), resolver, (mensaje, datos) =>
-              logger.warn({ mensaje, ...datos }),
-            ),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PERMISOS_REPOSITORIO, ResolverPermisos],
+          provide: ResolverAccesoSoporteVigente,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, versiones: PermisosRepositorio, reloj: Clock, repositorios: ReposMembresias) =>
+            new ResolverAccesoSoporteVigente({ unidadDeTrabajo, contexto, versiones, reloj, lectura: repositorios.lecturaSoporte }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, PERMISOS_REPOSITORIO, CLOCK, REPOS_MEMBRESIAS],
         },
+        {
+          provide: ObtenerMiContexto,
+          useFactory: (
+            uow: TypeOrmUnitOfWork,
+            ctx: TenantContext,
+            repo: PermisosRepositorio,
+            resolver: ResolverPermisos,
+            soporte: ResolverAccesoSoporteVigente,
+            repositorios: ReposMembresias,
+          ) =>
+            new ObtenerMiContexto(
+              uow,
+              ctx,
+              repo,
+              new MembresiasLecturaTypeOrm(uow, ctx),
+              new PreferenciaSucursalTypeOrm(uow, ctx),
+              resolver,
+              { resolver: soporte, lectura: repositorios.lecturaSoporte },
+              (mensaje, datos) => logger.warn({ mensaje, ...datos }),
+            ),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PERMISOS_REPOSITORIO, ResolverPermisos, ResolverAccesoSoporteVigente, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: DEPENDENCIAS_SESION_SOPORTE,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, reloj: Clock, repositorios: ReposMembresias): DependenciasSesionSoporte => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            lectura: repositorios.lecturaSoporte,
+            usuarios: repositorios.usuarios,
+            tenants: repositorios.tenantsSoporte,
+            tenantOperador: op.tenantOperador ?? TENANT_OPERADOR_DEFECTO,
+          }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, REPOS_MEMBRESIAS],
+        },
+        { provide: EntrarComoSoporte, useFactory: (dependencias: DependenciasSesionSoporte) => new EntrarComoSoporte(dependencias), inject: [DEPENDENCIAS_SESION_SOPORTE] },
+        { provide: SalirDeSoporte, useFactory: (dependencias: DependenciasSesionSoporte) => new SalirDeSoporte(dependencias), inject: [DEPENDENCIAS_SESION_SOPORTE] },
         // APP_GUARD se ejecuta en el orden de registro: autenticación, MFA y permiso.
         {
           provide: APP_GUARD,
@@ -323,9 +486,22 @@ export class SeguridadModule {
             new PermisoGuard(r, resolver, new CatalogoPermisosTypeOrm(uow, ctx), new BitacoraSeguridadTypeOrm(uow, ctx), uow, ctx, op.mfaMaxEdadSeg),
           inject: [Reflector, ResolverPermisos, TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
+        { provide: APP_INTERCEPTOR, useFactory: (origen: OrigenPeticion) => new OrigenPeticionInterceptor(origen), inject: [ORIGEN_PETICION] },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
+        // Después del de tenant: veta, aplica el modo y audita cada petición de una sesión de soporte (spec 18).
+        {
+          provide: APP_INTERCEPTOR,
+          useFactory: (reflector: Reflector, resolver: ResolverAccesoSoporteVigente, unidadDeTrabajo: UnitOfWork, contexto: TenantContext, repositorios: ReposMembresias) =>
+            new SoporteInterceptor(
+              reflector,
+              resolver,
+              new RegistrarPeticionSoporte({ unidadDeTrabajo, contexto, bitacora: repositorios.bitacora }),
+              (mensaje, datos) => logger.error({ mensaje, ...datos }),
+            ),
+          inject: [Reflector, ResolverAccesoSoporteVigente, UNIT_OF_WORK, TENANT_CONTEXT, REPOS_MEMBRESIAS],
+        },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
     };
   }
 }

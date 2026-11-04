@@ -1,5 +1,14 @@
 export type TipoUsuario = 'INTERNO' | 'EXTERNO' | 'SOPORTE';
 export type NivelAutenticacion = 'aal1' | 'aal2';
+export type ModoSoporte = 'LECTURA' | 'ESCRITURA';
+
+/** Acceso de soporte vigente del usuario en este tenant (spec 18): el shell muestra el banner. */
+export interface SesionSoporte {
+  accesoId: string;
+  ticket: string;
+  modo: ModoSoporte;
+  hasta: Date;
+}
 
 export interface OpcionMenu {
   codigo: string;
@@ -24,6 +33,7 @@ export interface MiContextoRespuesta {
   sin_accesos: boolean;
   permisos: string[];
   menu: OpcionMenu[];
+  soporte: { acceso_id: string; ticket: string; modo: ModoSoporte; hasta: string } | null;
 }
 
 export interface SucursalAccesible {
@@ -46,6 +56,7 @@ export interface ContextoUsuario {
   sinAccesos: boolean;
   permisos: readonly string[];
   menu: OpcionMenu[];
+  soporte: SesionSoporte | null;
 }
 
 export function aContextoUsuario(respuesta: MiContextoRespuesta): ContextoUsuario {
@@ -67,5 +78,9 @@ export function aContextoUsuario(respuesta: MiContextoRespuesta): ContextoUsuari
     sinAccesos: respuesta.sin_accesos,
     permisos: respuesta.permisos,
     menu: respuesta.menu,
+    // Una API anterior al spec 18 no manda el campo: también queda en null.
+    soporte: respuesta.soporte
+      ? { accesoId: respuesta.soporte.acceso_id, ticket: respuesta.soporte.ticket, modo: respuesta.soporte.modo, hasta: new Date(respuesta.soporte.hasta) }
+      : null,
   };
 }

@@ -149,7 +149,8 @@ export class Asignacion extends AggregateRoot {
   }
 
   /** Deja de dar acceso desde el commit; la vigencia original se conserva (TR-RF-014). */
-  revocar(motivo: string, por: string, ahora: Date): void {
+  /** `por` es NULL cuando revoca el sistema (vencimiento o cierre del ticket de soporte). */
+  revocar(motivo: string, por: string | null, ahora: Date): void {
     if (this.revocadaEn !== null) throw new AsignacionYaRevocadaError();
     const texto = validarMotivo(motivo);
     this.props = { ...this.props, revocadaEn: ahora, revocadaPor: por, motivoRevocacion: texto };

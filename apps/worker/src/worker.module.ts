@@ -3,7 +3,9 @@ import type { DataSource } from 'typeorm';
 import { EventosModule } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
+import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import type { Config } from './config/env.js';
+import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
 
 /** Cierra la base al final: después de que EventosModule esperó los trabajos en curso (beforeApplicationShutdown). */
@@ -22,6 +24,7 @@ export class WorkerModule {
     // La tarea de vencimientos publica eventos de org; cada componente que publique registra los suyos aquí.
     const validator = new InMemoryEventSchemaValidator();
     registrarEsquemasOrg(validator);
+    registrarEsquemasSeg(validator);
     return {
       module: WorkerModule,
       imports: [
@@ -40,6 +43,7 @@ export class WorkerModule {
           concurrencia: config.EVT_CONCURRENCIA,
         }),
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
+        SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };

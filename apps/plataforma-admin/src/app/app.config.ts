@@ -5,6 +5,7 @@ import { authInterceptor, provideAuth } from '@vitrina/shared/auth';
 import { erroresHttpInterceptor, provideVolverA } from '@vitrina/shared/shell';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { iniciarInsigniasSoporte } from './iniciar-insignias-soporte';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,5 +14,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, erroresHttpInterceptor])),
     provideAuth(environment.auth),
     provideVolverA(environment.origenesVolverA),
+    // Spec 18: solicitudes de soporte pendientes junto a «Soporte» en el menú.
+    iniciarInsigniasSoporte(),
   ],
 };

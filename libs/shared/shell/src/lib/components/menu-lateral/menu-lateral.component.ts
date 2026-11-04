@@ -4,11 +4,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { EstadoVacioComponent } from '@vitrina/shared/ui';
-import { MENSAJES_SHELL } from '../../models/mensajes-shell';
+import { MENSAJES_SHELL, mensajeInsigniaMenu } from '../../models/mensajes-shell';
 import type { NodoMenu } from '../../models/nodo-menu';
 import type { ResultadoBusquedaMenu } from '../../models/resultado-busqueda-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { RutaActualService } from '../../services/ruta-actual.service';
 import { esRutaExacta, gruposDeRuta } from '../../utils/buscar-en-menu';
+import { insigniaDe } from '../../utils/insignias-menu';
 import { BuscadorMenuComponent } from '../buscador-menu/buscador-menu.component';
 
 const ICONO_SIN_OPCIONES = 'menu_open';
@@ -33,6 +35,8 @@ export class MenuLateralComponent {
   private readonly expandidos = signal<ReadonlySet<string>>(new Set());
   private readonly urlActual = inject(RutaActualService).url;
   private readonly buscador = viewChild(BuscadorMenuComponent);
+  private readonly insignias = inject(InsigniasMenuService).insignias;
+  protected readonly mensajeInsignia = mensajeInsigniaMenu;
 
   constructor() {
     effect(() => this.expandir(gruposDeRuta(this.nodos(), this.urlActual())));
@@ -59,6 +63,12 @@ export class MenuLateralComponent {
       if (!siguientes.delete(codigo)) siguientes.add(codigo);
       return siguientes;
     });
+  }
+
+  /** Un grupo abierto no repite la suma: la muestran sus opciones. */
+  protected insignia(nodo: NodoMenu): number {
+    if (nodo.hijos.length > 0 && this.estaExpandido(nodo.codigo)) return 0;
+    return insigniaDe(nodo, this.insignias());
   }
 
   protected sangria(nivel: number): number {

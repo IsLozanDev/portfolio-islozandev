@@ -16,7 +16,7 @@ interface Manifiesto {
   parametros: { codigo: string; tipo: string; valor_defecto: unknown; alcance_maximo: string }[];
 }
 
-describe('Manifiesto PLAT 1.6.0: parte de org (specs 12 y 17a)', () => {
+describe('Manifiesto PLAT 1.7.0: parte de org (specs 12 y 17a)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (codigo: string) => manifiesto.roles_predefinidos.find((rol) => rol.codigo === codigo)?.permisos ?? [];
   const permiso = (codigo: string) => manifiesto.permisos.find((declarado) => declarado.codigo === codigo);
@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.6.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.6.0');
+    expect(manifiesto.version).toBe('1.7.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -47,8 +47,9 @@ describe('Manifiesto PLAT 1.6.0: parte de org (specs 12 y 17a)', () => {
     expect([...permisosDe('PLAT_ADMIN_TENANTS')].sort()).toEqual([...PERMISOS_TENANTS, 'plat.sesion.contexto'].sort());
   });
 
-  it('PLAT_PROPIETARIO junta los tres administradores y los permisos de organización, sin ninguno de tenants', () => {
-    const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...PERMISOS_ORGANIZACION]);
+  it('PLAT_PROPIETARIO junta los tres administradores, los permisos de organización y autorizar soporte, sin ninguno de tenants', () => {
+    // plat.soporte.autorizar es del cliente (spec 18): solo lo tiene el propietario.
+    const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...PERMISOS_ORGANIZACION, 'plat.soporte.autorizar']);
     expect(new Set(permisosDe('PLAT_PROPIETARIO'))).toEqual(esperados);
     expect(permisosDe('PLAT_PROPIETARIO').filter((codigo) => codigo.startsWith('plat.tenant.') || codigo.startsWith('plat.suscripcion.'))).toEqual([]);
   });
@@ -70,6 +71,8 @@ describe('Manifiesto PLAT 1.6.0: parte de org (specs 12 y 17a)', () => {
       ['plat.organizacion.unidades', 'plat.organizacion', '/admin/unidades', ['plat.organizacion.consultar']],
       ['plat.consola', null, undefined, []],
       ['plat.consola.tenants', 'plat.consola', '/consola/tenants', ['plat.tenant.consultar']],
+      // De seguridad (spec 18): vive en el módulo Consola, pero su permiso no es de org.
+      ['plat.consola.soporte', 'plat.consola', '/consola/soporte', ['plat.soporte.solicitar']],
     ]);
   });
 

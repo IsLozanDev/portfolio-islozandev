@@ -1,64 +1,97 @@
-<!-- Ancho por la variable de Material: una clase de ancho de Tailwind pierde contra su CSS, que carga después. -->
-<mat-sidenav-container class="vit-contenedor-menu h-dvh" [style]="medidasMenu()">
-  <mat-sidenav
-    #menuLateralRef
-    class="vit-menu-noche"
-    [class.vit-menu-escritorio]="escritorio()"
-    [mode]="escritorio() ? 'side' : 'over'"
-    [opened]="escritorio()"
-    [autoFocus]="focoInicialMenu()"
-    [disableClose]="escritorio()"
+<!-- El banner de soporte va a todo el ancho y encima del menú (spec 18): con el menú oculto o en celular sigue a la vista. -->
+<div class="flex h-dvh flex-col">
+  <vit-banner-soporte />
+  <!-- Ancho por la variable de Material: una clase de ancho de Tailwind pierde contra su CSS, que carga después. -->
+  <mat-sidenav-container
+    class="vit-contenedor-menu min-h-0 flex-1"
+    [style]="medidasMenu()"
   >
-    @if (menuOculto()) {
-      <vit-riel-menu [nodos]="menu()" (buscar)="mostrarBusqueda()" />
-    } @else {
-      <vit-menu-lateral [nodos]="menu()" [nombreApp]="nombreApp" />
-    }
-  </mat-sidenav>
+    <mat-sidenav
+      #menuLateralRef
+      class="vit-menu-noche"
+      [class.vit-menu-escritorio]="escritorio()"
+      [mode]="escritorio() ? 'side' : 'over'"
+      [opened]="escritorio()"
+      [autoFocus]="focoInicialMenu()"
+      [disableClose]="escritorio()"
+    >
+      @if (menuOculto()) {
+        <vit-riel-menu [nodos]="menu()" (buscar)="mostrarBusqueda()" />
+      } @else {
+        <vit-menu-lateral [nodos]="menu()" [nombreApp]="nombreApp" />
+      }
+    </mat-sidenav>
 
-  <mat-sidenav-content class="flex flex-col" [class.vit-contenido-escritorio]="escritorio()">
-    <header class="sticky top-0 z-10">
-      <!-- La marca va en el menú lateral; en celular, con el menú cerrado, la muestra la barra. -->
-      <mat-toolbar class="gap-2" [class]="escritorio() ? 'vit-barra-clara border-b border-borde' : 'vit-barra-noche'">
-        @if (escritorio()) {
-          <button
-            mat-icon-button
-            type="button"
-            data-accion="alternar-menu"
-            [attr.aria-label]="menuOculto() ? mensajes.mostrarMenu : mensajes.ocultarMenu"
-            [attr.aria-expanded]="!menuOculto()"
-            (click)="alternarMenuEscritorio()"
-          >
-            <mat-icon aria-hidden="true">{{ menuOculto() ? 'menu' : 'menu_open' }}</mat-icon>
-          </button>
-        } @else {
-          <button mat-icon-button type="button" [attr.aria-label]="mensajes.abrirMenu" (click)="menuLateralRef.toggle()">
-            <mat-icon aria-hidden="true">menu</mat-icon>
-          </button>
-          <span class="truncate text-lg font-medium text-white">{{ mensajes.marca }}</span>
-        }
-        <span class="flex-1"></span>
-        @if (volverA(); as destino) {
-          <!-- A menos de 768 px solo el ícono: el texto no cabe junto al selector. El span oculta: el CSS de mat-button le gana a `hidden`. -->
-          <span class="hidden md:inline">
-            <a mat-button [href]="destino.url" data-accion="volver-a">
-              <mat-icon aria-hidden="true">arrow_back</mat-icon>
-              {{ mensajeVolverA(destino.nombreApp) }}
-            </a>
-          </span>
-          <span class="md:hidden">
-            <a mat-icon-button [href]="destino.url" [attr.aria-label]="mensajeVolverA(destino.nombreApp)" data-accion="volver-a-icono">
-              <mat-icon aria-hidden="true">arrow_back</mat-icon>
-            </a>
-          </span>
-        }
-        <vit-selector-sucursal />
-        <vit-menu-usuario />
-      </mat-toolbar>
-    </header>
+    <mat-sidenav-content
+      class="flex flex-col"
+      [class.vit-contenido-escritorio]="escritorio()"
+    >
+      <header class="sticky top-0 z-10">
+        <!-- La marca va en el menú lateral; en celular, con el menú cerrado, la muestra la barra. -->
+        <mat-toolbar
+          class="gap-2"
+          [class]="
+            escritorio()
+              ? 'vit-barra-clara border-b border-borde'
+              : 'vit-barra-noche'
+          "
+        >
+          @if (escritorio()) {
+            <button
+              mat-icon-button
+              type="button"
+              data-accion="alternar-menu"
+              [attr.aria-label]="
+                menuOculto() ? mensajes.mostrarMenu : mensajes.ocultarMenu
+              "
+              [attr.aria-expanded]="!menuOculto()"
+              (click)="alternarMenuEscritorio()"
+            >
+              <mat-icon aria-hidden="true">{{
+                menuOculto() ? "menu" : "menu_open"
+              }}</mat-icon>
+            </button>
+          } @else {
+            <button
+              mat-icon-button
+              type="button"
+              [attr.aria-label]="mensajes.abrirMenu"
+              (click)="menuLateralRef.toggle()"
+            >
+              <mat-icon aria-hidden="true">menu</mat-icon>
+            </button>
+            <span class="truncate text-lg font-medium text-white">{{
+              mensajes.marca
+            }}</span>
+          }
+          <span class="flex-1"></span>
+          @if (volverA(); as destino) {
+            <!-- A menos de 768 px solo el ícono: el texto no cabe junto al selector. El span oculta: el CSS de mat-button le gana a `hidden`. -->
+            <span class="hidden md:inline">
+              <a mat-button [href]="destino.url" data-accion="volver-a">
+                <mat-icon aria-hidden="true">arrow_back</mat-icon>
+                {{ mensajeVolverA(destino.nombreApp) }}
+              </a>
+            </span>
+            <span class="md:hidden">
+              <a
+                mat-icon-button
+                [href]="destino.url"
+                [attr.aria-label]="mensajeVolverA(destino.nombreApp)"
+                data-accion="volver-a-icono"
+              >
+                <mat-icon aria-hidden="true">arrow_back</mat-icon>
+              </a>
+            </span>
+          }
+          <vit-selector-sucursal />
+          <vit-menu-usuario />
+        </mat-toolbar>
+      </header>
 
-    <main class="flex-1 p-4">
-      <router-outlet />
-    </main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+      <main class="flex-1 p-4">
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

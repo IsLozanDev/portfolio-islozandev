@@ -2,6 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import type { NodoMenu } from '../../models/nodo-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { MenuLateralComponent } from './menu-lateral.component';
 
 @Component({ selector: 'vit-pagina-menu', template: '' })
@@ -112,5 +113,47 @@ describe('MenuLateralComponent', () => {
 
     expect(elemento.querySelector('nav')).toBeNull();
     expect(elemento.textContent).toContain('No tiene opciones de menú');
+  });
+});
+
+describe('MenuLateralComponent: insignias (spec 18)', () => {
+  async function abrir(usuarios: number): Promise<HTMLElement> {
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: '**', component: Pagina }])] });
+    TestBed.inject(InsigniasMenuService).fijar('usuarios', usuarios);
+    const fixture = TestBed.createComponent(MenuLateralComponent);
+    fixture.componentRef.setInput('nodos', MENU);
+    fixture.componentRef.setInput('nombreApp', 'Administración');
+    await fixture.whenStable();
+    return fixture.nativeElement;
+  }
+
+  const textoDe = (elemento: Element | null | undefined) => elemento?.textContent?.replace(/\s+/g, ' ').trim();
+
+  it('con el grupo cerrado la suma va en el grupo, con texto para el lector de pantalla', async () => {
+    const elemento = await abrir(3);
+
+    const grupo = [...elemento.querySelectorAll('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
+    expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBe('3');
+    expect(textoDe(grupo?.querySelector('.sr-only'))).toBe('3 pendientes');
+  });
+
+  it('con el grupo abierto la insignia pasa a la opción y se actualiza con la señal', async () => {
+    const elemento = await abrir(3);
+    const grupo = [...elemento.querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
+    grupo?.click();
+    TestBed.tick();
+
+    const usuarios = [...elemento.querySelectorAll('a')].find((enlace) => enlace.textContent?.includes('Usuarios'));
+    expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBeUndefined();
+    expect(textoDe(usuarios?.querySelector('.vit-insignia-menu'))).toBe('3');
+
+    TestBed.inject(InsigniasMenuService).fijar('usuarios', 1);
+    TestBed.tick();
+    expect(textoDe(usuarios?.querySelector('.sr-only'))).toBe('1 pendiente');
+  });
+
+  it('en 0 no muestra nada', async () => {
+    const elemento = await abrir(0);
+    expect(elemento.querySelector('.vit-insignia-menu')).toBeNull();
   });
 });
