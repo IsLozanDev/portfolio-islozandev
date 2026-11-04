@@ -9,11 +9,15 @@ export const PERMISOS_SEG = {
   usuarioInvitar: 'plat.usuario.invitar',
   asignacionRevocar: 'plat.asignacion.revocar',
   seguridadBitacora: 'plat.seguridad.bitacora',
+  seguridadBitacoraExportar: 'plat.seguridad.bitacora_exportar',
   soporteAutorizar: 'plat.soporte.autorizar',
   soporteSolicitar: 'plat.soporte.solicitar',
 } as const;
 
-/** Lo que una sesión de soporte nunca puede usar, aunque el rol aprobado lo tenga (spec 18). */
+/**
+ * Lo que una sesión de soporte nunca puede usar, aunque el rol aprobado lo tenga (spec 18). El agente
+ * tampoco saca la bitácora del cliente en un archivo (spec 18b).
+ */
 export const PERMISOS_VETADOS_SOPORTE: readonly string[] = [
   PERMISOS_SEG.soporteAutorizar,
   PERMISOS_SEG.soporteSolicitar,
@@ -22,4 +26,5 @@ export const PERMISOS_VETADOS_SOPORTE: readonly string[] = [
   PERMISOS_SEG.asignacionRevocar,
   PERMISOS_SEG.rolGestionar,
   PERMISOS_SEG.perfilGestionar,
+  PERMISOS_SEG.seguridadBitacoraExportar,
 ];

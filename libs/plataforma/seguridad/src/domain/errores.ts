@@ -407,3 +407,64 @@ export class OperadorRequeridoError extends ForbiddenError {
     super('Solo el tenant operador puede solicitar accesos de soporte');
   }
 }
+
+// Ingreso por la API y exportación de la bitácora (spec 18b). Ningún mensaje revela si la cuenta existe.
+
+/** HTTP 401. También para correo sin confirmar o usuario suspendido: el motivo real va solo a la bitácora. */
+export class CredencialesInvalidasError extends DomainError {
+  readonly code = 'CREDENCIALES_INVALIDAS';
+
+  constructor() {
+    super('Correo o contraseña incorrectos');
+  }
+}
+
+/** HTTP 429 con `Retry-After`. */
+export class IngresoBloqueadoError extends DomainError {
+  readonly code = 'INGRESO_BLOQUEADO';
+
+  constructor(readonly reintentarEnSeg: number) {
+    const minutos = minutosRedondeados(reintentarEnSeg);
+    super(`Demasiados intentos. Vuelva a intentarlo en ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`);
+  }
+}
+
+export class CodigoMfaInvalidoError extends ValidationError {
+  override readonly code = 'CODIGO_MFA_INVALIDO';
+
+  constructor() {
+    super('El código no es válido o ya expiró');
+  }
+}
+
+/** HTTP 503. GoTrue no respondió a tiempo o falló; no cuenta como intento fallido. */
+export class ProveedorIngresoNoDisponibleError extends DomainError {
+  readonly code = 'INGRESO_NO_DISPONIBLE';
+
+  constructor() {
+    super('No se pudo iniciar sesión; intente de nuevo');
+  }
+}
+
+/** HTTP 422. */
+export class ExportacionDemasiadoGrandeError extends DomainError {
+  readonly code = 'EXPORTACION_DEMASIADO_GRANDE';
+
+  constructor(
+    readonly filas: number,
+    readonly maximo: number,
+  ) {
+    super(`La exportación tiene ${conMiles(filas)} filas; el máximo es ${conMiles(maximo)}. Acote el rango o los filtros`);
+  }
+}
+
+const SEGUNDOS_POR_MINUTO = 60;
+
+/** «10 000»: separador de miles con espacio, como los mensajes del spec. */
+function conMiles(numero: number): string {
+  return String(numero).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+function minutosRedondeados(segundos: number): number {
+  return Math.max(1, Math.ceil(segundos / SEGUNDOS_POR_MINUTO));
+}

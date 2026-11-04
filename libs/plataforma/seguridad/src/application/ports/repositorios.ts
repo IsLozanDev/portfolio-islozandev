@@ -134,8 +134,16 @@ export interface UbicacionesOrg {
   resolver(ambito: Ambito): Promise<Ambito>;
 }
 
-/** Catálogo de `ck_evento_seguridad_tipo`. LOGIN no tiene productor todavía (spec 18). */
-export const TIPOS_EVENTO_SEGURIDAD = ['LOGIN', 'ACCESO_DENEGADO', 'ASIGNACION_OTORGADA', 'ASIGNACION_REVOCADA', 'ACCESO_SOPORTE'] as const;
+/** Catálogo de `ck_evento_seguridad_tipo` (specs 18 y 18b). */
+export const TIPOS_EVENTO_SEGURIDAD = [
+  'LOGIN',
+  'LOGIN_FALLIDO',
+  'ACCESO_DENEGADO',
+  'ASIGNACION_OTORGADA',
+  'ASIGNACION_REVOCADA',
+  'ACCESO_SOPORTE',
+  'EXPORTACION',
+] as const;
 export type TipoEventoSeguridad = (typeof TIPOS_EVENTO_SEGURIDAD)[number];
 
 /**

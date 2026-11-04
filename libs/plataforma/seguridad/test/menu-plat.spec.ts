@@ -5,7 +5,7 @@ import { crearEntorno, type Entorno } from './support/entorno.js';
 import { describeConDb } from './support/temp-db.js';
 
 /** Raíces del menú que arma seg.menu_usuario con el manifiesto PLAT real aplicado. */
-describeConDb('Menú del manifiesto PLAT 1.7.0 (specs 17a y 18, PostgreSQL 16)', () => {
+describeConDb('Menú del manifiesto PLAT 1.8.0 (specs 17a y 18, PostgreSQL 16)', () => {
   let e: Entorno;
 
   const idDeRol = async (codigo: string): Promise<string> =>
