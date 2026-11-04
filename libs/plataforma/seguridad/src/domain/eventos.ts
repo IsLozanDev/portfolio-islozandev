@@ -14,6 +14,11 @@ export const EVENTOS_SEG = {
   membresiaSuspendida: 'membresia.suspendida',
   membresiaReactivada: 'membresia.reactivada',
   membresiaFinalizada: 'membresia.finalizada',
+  soporteSolicitado: 'soporte.solicitado',
+  soporteAprobado: 'soporte.aprobado',
+  soporteRechazado: 'soporte.rechazado',
+  soporteRevocado: 'soporte.revocado',
+  soporteExpirado: 'soporte.expirado',
 } as const;
 
 export interface RolCreado {
@@ -80,6 +85,38 @@ export interface MembresiaCambiada {
 
 export interface MembresiaFinalizada extends MembresiaCambiada {
   asignaciones_revocadas: string[];
+}
+
+// Soporte: sin motivo ni datos personales (TR-RNF-026). El motivo se lee de seg.acceso_soporte.
+
+interface IdentidadSoporte {
+  acceso_id: string;
+  tenant_id: string;
+}
+
+export interface SoporteSolicitado extends IdentidadSoporte {
+  agente_id: string;
+  ticket: string;
+  modo: string;
+  horas_solicitadas: number;
+}
+
+export interface SoporteAprobado extends IdentidadSoporte {
+  agente_id: string;
+  aprobado_por: string;
+  desde: string;
+  hasta: string;
+  modo: string;
+}
+
+/** `soporte.rechazado` y `soporte.revocado`. `cerrado_por` es NULL cuando cierra TR-SOP. */
+export interface SoporteCerrado extends IdentidadSoporte {
+  cerrado_por: string | null;
+  causa: string;
+}
+
+export interface SoporteExpirado extends IdentidadSoporte {
+  estado_anterior: string;
 }
 
 /** Diferencia entre dos conjuntos, ordenada para que el payload sea estable. */

@@ -1,5 +1,6 @@
 import { EventSchemaValidationError, type DomainEvent } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
+import { AccesoSoporte } from '../src/domain/acceso-soporte.js';
 import { Asignacion } from '../src/domain/asignacion.js';
 import { EVENTOS_SEG } from '../src/domain/eventos.js';
 import { Membresia } from '../src/domain/membresia.js';
@@ -36,7 +37,17 @@ function eventosDelDominio(): DomainEvent[] {
   membresia.suspender('Licencia médica', OTRO, ahora);
   membresia.reactivar('Fin de licencia', OTRO, ahora);
   membresia.finalizar('Fin de contrato', OTRO, ahora, [ID]);
-  return [rol, copia, perfil, asignacion, membresia].flatMap((a) => a.pullEvents());
+  const solicitud = { tenantId: ID, agenteId: OTRO, ticket: 'SOP-000245', motivo: 'Revisar series de boletas', modo: 'LECTURA' as const, horas: 2 };
+  const aprobacion = { aprobadoPor: ID, horas: 2, membresiaId: ID, asignacionId: ID };
+  const revocado = AccesoSoporte.solicitar(ID, solicitud, ahora);
+  revocado.aprobar(aprobacion, ahora);
+  revocado.revocar('TICKET_CERRADO', 'Ticket cerrado', null, ahora);
+  const rechazado = AccesoSoporte.solicitar(OTRO, solicitud, ahora);
+  rechazado.rechazar('No autorizado', ID, ahora);
+  const vencido = AccesoSoporte.solicitar(ID, solicitud, ahora);
+  vencido.aprobar(aprobacion, ahora);
+  vencido.expirar(new Date('2026-10-22T17:00:00Z'));
+  return [rol, copia, perfil, asignacion, membresia, revocado, rechazado, vencido].flatMap((a) => a.pullEvents());
 }
 
 describe('Esquemas de eventos de seg', () => {

@@ -13,6 +13,12 @@ export interface DatosInvitacionMembresia {
   esPropietario?: boolean;
 }
 
+export interface DatosMembresiaSoporte {
+  usuarioId: string;
+  tenantId: string;
+  hasta: Date;
+}
+
 export interface MembresiaProps {
   usuarioId: string;
   tenantId: string;
@@ -53,6 +59,22 @@ export class Membresia extends AggregateRoot {
     });
     m.publicarInvitada(datos.invitadoPor, false, expiraEn);
     return m;
+  }
+
+  /** Membresía temporal del agente al aprobarse un acceso de soporte (spec 18). El evento lo publica AccesoSoporte. */
+  static abrirSoporte(id: string, datos: DatosMembresiaSoporte, ahora: Date): Membresia {
+    return new Membresia(id, 0, {
+      usuarioId: datos.usuarioId,
+      tenantId: datos.tenantId,
+      estado: 'ACTIVO',
+      esPropietario: false,
+      invitadoPor: null,
+      desde: ahora,
+      hasta: datos.hasta,
+      motivo: null,
+      cambiadoPor: null,
+      cambiadoEn: null,
+    });
   }
 
   static reconstituir(id: string, version: number, props: MembresiaProps): Membresia {
@@ -107,6 +129,12 @@ export class Membresia extends AggregateRoot {
       this.props = { ...this.props, estado: 'INVITADO', desde: ahora, hasta: null, invitadoPor: por };
     }
     this.publicarInvitada(por, true, expiraEn);
+  }
+
+  /** Un acceso de soporte nuevo reusa la fila del anterior: UNIQUE (usuario_id, tenant_id). */
+  reabrirSoporte(hasta: Date, ahora: Date): void {
+    this.exigir(['FINALIZADO'], 'reabrir para soporte');
+    this.props = { ...this.props, estado: 'ACTIVO', desde: ahora, hasta };
   }
 
   aceptar(ahora: Date): void {

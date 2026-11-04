@@ -61,6 +61,14 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
 - `src/index.ts` es la única API pública; exporta por ruta explícita, sin `export *`.
 - Referencia: `libs/shared/auth`.
 
+## Diseño UI (desde los specs 15b, 15c y 15d; aplica a toda pantalla nueva)
+- Referencia visual: canvas «Vitrina · Diseño UI» (https://claude.ai/artifact/UGvcmiWUiBsMuWerqMiWxh), con las pantallas tipo (lista, detalle, formulario, confirmación, móvil), el shell y las versiones oscuras. Una pantalla nueva parte de la pantalla tipo más parecida. Si no encaja en ninguna, se diseña primero en el canvas y después se escribe el spec.
+- Colores solo por tokens: `--color-*` de `libs/shared/ui/src/estilos/tema.css` y el tema M3 esmeralda de `material.scss`. Nada de hex sueltos en componentes. Los tokens usan `light-dark()`, así que una pantalla que solo usa tokens ya funciona en tema oscuro; `dark:` de Tailwind solo para casos que el token no cubre.
+- Reutilizar `shared/ui` antes de crear algo: `vit-tabla` (compacta, filas de 40 px, líneas verticales y hover; `ColumnaTabla.movil` para la vista de celular), `vit-chip-estado` con `TonoEstado` (cada feature define su mapa de tonos), `vit-filtros`, `vit-estado-vacio`, `vit-cargando`, `vit-acciones-formulario`, `AvisosService` para confirmaciones y la clase `vit-destructivo` para acciones que borran o revocan.
+- Densidad media: campos de formulario de 40 px (densidad −4 de Material) y botones de fila de 32 px. No se sobreescriben alturas por componente.
+- Tipografía Roboto e íconos Material Symbols Outlined. El shell (menú colapsable, buscador, tema) es de `shared/shell` y las pantallas de `/auth` usan `vit-marco-auth`: las features no los tocan.
+- Cada spec con UI declara qué pantalla tipo usa, en qué cambia y que se verifica en tema claro y oscuro y a 600 px de ancho.
+
 ## Verificación del frontend (MCP Playwright)
 - Todo spec que toque una app Angular se verifica en el navegador real con el MCP `playwright`, además de las pruebas unitarias.
 - `/spec-impl` lo usa al final de la implementación, con la app levantada (`nx serve`): recorre los criterios GWT de UI del spec, revisa la consola sin errores y toma capturas de las pantallas nuevas o modificadas.

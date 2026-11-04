@@ -9,6 +9,9 @@ const uuidNulo = { anyOf: [uuid, nulo] };
 const fecha = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' };
 const textos = { type: 'array', items: texto };
 const uuids = { type: 'array', items: uuid };
+const ticket = { type: 'string', pattern: '^SOP-\\d{6}$' };
+const modoSoporte = { enum: ['LECTURA', 'ESCRITURA'] };
+const horasSoporte = { type: 'integer', minimum: 1, maximum: 4 };
 
 const objeto = (properties: Record<string, object>) => ({
   type: 'object',
@@ -42,6 +45,26 @@ export const ESQUEMAS_SEG: Readonly<Record<string, object>> = {
   [EVENTOS_SEG.membresiaSuspendida]: objeto({ usuario_id: uuid, motivo: texto, por: uuid }),
   [EVENTOS_SEG.membresiaReactivada]: objeto({ usuario_id: uuid, motivo: texto, por: uuid }),
   [EVENTOS_SEG.membresiaFinalizada]: objeto({ usuario_id: uuid, motivo: texto, por: uuid, asignaciones_revocadas: uuids }),
+  [EVENTOS_SEG.soporteSolicitado]: objeto({
+    acceso_id: uuid,
+    tenant_id: uuid,
+    agente_id: uuid,
+    ticket: ticket,
+    modo: modoSoporte,
+    horas_solicitadas: horasSoporte,
+  }),
+  [EVENTOS_SEG.soporteAprobado]: objeto({
+    acceso_id: uuid,
+    tenant_id: uuid,
+    agente_id: uuid,
+    aprobado_por: uuid,
+    desde: texto,
+    hasta: texto,
+    modo: modoSoporte,
+  }),
+  [EVENTOS_SEG.soporteRechazado]: objeto({ acceso_id: uuid, tenant_id: uuid, cerrado_por: uuidNulo, causa: { enum: ['RECHAZO', 'TICKET_CERRADO'] } }),
+  [EVENTOS_SEG.soporteRevocado]: objeto({ acceso_id: uuid, tenant_id: uuid, cerrado_por: uuidNulo, causa: { enum: ['ADMINISTRADOR', 'TICKET_CERRADO'] } }),
+  [EVENTOS_SEG.soporteExpirado]: objeto({ acceso_id: uuid, tenant_id: uuid, estado_anterior: { enum: ['PENDIENTE', 'APROBADO'] } }),
 };
 
 export function registrarEsquemasSeg(validator: Pick<InMemoryEventSchemaValidator, 'register'>): void {

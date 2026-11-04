@@ -280,3 +280,121 @@ export class ActorSinAlcanceError extends ForbiddenError {
     super('No tiene alcance sobre todos los accesos de este usuario');
   }
 }
+
+// Acceso temporal de soporte (TR-RF-020, TR-RN-011) y bitácora (TR-RF-019).
+
+export class VigenciaSoporteExcedidaError extends ValidationError {
+  override readonly code = 'VIGENCIA_SOPORTE_EXCEDIDA';
+
+  constructor() {
+    super('La vigencia máxima es 4 horas');
+  }
+}
+
+export class VigenciaSoporteInvalidaError extends ValidationError {
+  override readonly code = 'VIGENCIA_SOPORTE_INVALIDA';
+
+  constructor() {
+    super('La vigencia debe ser un número entero de horas entre 1 y 4');
+  }
+}
+
+export class TicketInvalidoError extends ValidationError {
+  override readonly code = 'TICKET_INVALIDO';
+
+  constructor() {
+    super('El ticket debe tener el formato SOP-######');
+  }
+}
+
+export class MotivoSoporteInvalidoError extends ValidationError {
+  override readonly code = 'MOTIVO_SOPORTE_INVALIDO';
+
+  constructor() {
+    super('El motivo debe tener entre 10 y 300 caracteres');
+  }
+}
+
+export class SoporteAbiertoExistenteError extends ConflictError {
+  override readonly code = 'SOPORTE_ABIERTO_EXISTENTE';
+
+  constructor() {
+    super('Ya tiene una solicitud pendiente o un acceso vigente en este tenant');
+  }
+}
+
+export class SoporteAgenteEsMiembroError extends ConflictError {
+  override readonly code = 'SOPORTE_AGENTE_ES_MIEMBRO';
+
+  constructor() {
+    super('El agente ya es miembro de este tenant');
+  }
+}
+
+export class SoporteNoEncontradoError extends NotFoundError {
+  override readonly code = 'SOPORTE_NO_ENCONTRADO';
+
+  constructor() {
+    super('La solicitud de soporte no existe');
+  }
+}
+
+export class TransicionSoporteError extends ConflictError {
+  override readonly code = 'TRANSICION_SOPORTE_INVALIDA';
+
+  constructor(
+    readonly estado: string,
+    readonly accion: string,
+  ) {
+    super(`No se puede ${accion} un acceso de soporte ${estado}`);
+  }
+}
+
+export class SoporteAutoaprobacionError extends ForbiddenError {
+  override readonly code = 'SOPORTE_AUTOAPROBACION';
+
+  constructor() {
+    super('El agente no puede aprobar su propio acceso');
+  }
+}
+
+export class SoporteNoVigenteError extends ConflictError {
+  override readonly code = 'SOPORTE_NO_VIGENTE';
+
+  constructor() {
+    super('El acceso de soporte no está vigente');
+  }
+}
+
+export class SoporteSoloLecturaError extends ForbiddenError {
+  override readonly code = 'SOPORTE_SOLO_LECTURA';
+
+  constructor() {
+    super('La sesión de soporte es de solo lectura');
+  }
+}
+
+export class SoportePermisoVetadoError extends ForbiddenError {
+  override readonly code = 'SOPORTE_PERMISO_VETADO';
+
+  constructor(readonly permiso: string) {
+    super(`Una sesión de soporte no puede usar ${permiso}`);
+  }
+}
+
+export class RangoBitacoraInvalidoError extends ValidationError {
+  override readonly code = 'RANGO_BITACORA_INVALIDO';
+
+  constructor() {
+    super('El rango debe tener fecha inicial y final, en orden, de hasta 92 días');
+  }
+}
+
+/** HTTP 503. La petición del agente no se ejecuta si no quedó auditada (TR-RNF-110). */
+export class AuditoriaNoDisponibleError extends DomainError {
+  readonly code = 'AUDITORIA_NO_DISPONIBLE';
+
+  constructor() {
+    super('No se pudo registrar la acción de soporte; intente de nuevo');
+  }
+}
