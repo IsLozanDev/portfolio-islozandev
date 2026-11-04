@@ -1,6 +1,6 @@
 # SPEC 15d — Menú lateral colapsable y búsqueda de opciones
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 15, SPEC 15b
 > **Date:** 2026-11-01
 > **Objective:** Permitir en `shared/shell` ocultar el menú lateral a una franja de iconos con submenú, recordar esa elección por dispositivo y buscar opciones del menú por texto, con atajo Ctrl K y navegación por teclado.
