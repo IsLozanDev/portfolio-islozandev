@@ -4,7 +4,7 @@ import type { RegistroAcceso } from '../application/ports/registro-acceso.port.j
 import type { VerificadorToken } from '../application/ports/verificador-token.port.js';
 import { AutenticacionNoDisponibleError, TokenInvalidoError } from '../domain/errores.js';
 import { PUBLICO, type SolicitudAutenticada } from './decoradores.js';
-import { rechazar, TOKEN_INVALIDO } from './respuestas.js';
+import { rechazar, TOKEN_INVALIDO, tokenBearer } from './respuestas.js';
 
 interface Solicitud extends SolicitudAutenticada {
   headers: Record<string, string | string[] | undefined>;
@@ -24,8 +24,7 @@ export class AutenticacionGuard implements CanActivate {
     if (this.reflector.getAllAndOverride<boolean>(PUBLICO, [ctx.getHandler(), ctx.getClass()])) return true;
 
     const req = ctx.switchToHttp().getRequest<Solicitud>();
-    const cabecera = req.headers['authorization'];
-    const token = typeof cabecera === 'string' ? /^Bearer\s+(\S+)$/i.exec(cabecera)?.[1] : undefined;
+    const token = tokenBearer(req);
     if (!token) throw rechazar(ctx, { ...TOKEN_INVALIDO, motivo: 'sin_bearer' });
 
     try {
