@@ -30,7 +30,7 @@
       </dl>
     </section>
 
-    <form class="flex flex-col" [formGroup]="formulario" (ngSubmit)="aprobar()" novalidate>
+    <form class="flex flex-col gap-2" [formGroup]="formulario" (ngSubmit)="aprobar()" novalidate>
       <mat-form-field appearance="outline">
         <mat-label>{{ mensajes.horas }}</mat-label>
         <mat-select formControlName="horas" data-campo="horas" required>

@@ -78,7 +78,7 @@ export function aContextoUsuario(respuesta: MiContextoRespuesta): ContextoUsuari
     sinAccesos: respuesta.sin_accesos,
     permisos: respuesta.permisos,
     menu: respuesta.menu,
-    // `?? null`: una API anterior al spec 18 no manda el campo.
+    // Una API anterior al spec 18 no manda el campo: también queda en null.
     soporte: respuesta.soporte
       ? { accesoId: respuesta.soporte.acceso_id, ticket: respuesta.soporte.ticket, modo: respuesta.soporte.modo, hasta: new Date(respuesta.soporte.hasta) }
       : null,

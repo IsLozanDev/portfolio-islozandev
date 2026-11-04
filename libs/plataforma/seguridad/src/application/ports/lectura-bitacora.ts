@@ -7,7 +7,7 @@ export interface FiltroBitacora extends Pagina {
   desde: Fecha;
   hasta: Fecha;
   tipo?: TipoEventoSeguridad;
-  /** Parte del correo o del nombre, sin distinguir mayúsculas. */
+  /** Parte del correo o del nombre de quien actuó o de quien recibió la asignación, sin distinguir mayúsculas. */
   usuario?: string;
 }
 
@@ -23,12 +23,22 @@ export interface EventoBitacora {
   tipo: TipoEventoSeguridad;
   ocurridoEn: Date;
   usuario: UsuarioDelEvento | null;
-  /** Permiso faltante, ticket o rol, según el tipo (TR-CA-051). */
+  /** Permiso faltante, ticket, o «rol → destinatario» en las asignaciones (TR-CA-051). */
   resumen: string | null;
+}
+
+export type TipoAsignado = 'ROL' | 'PERFIL';
+
+export interface AsignadoDelEvento {
+  tipo: TipoAsignado;
+  nombre: string;
 }
 
 export interface EventoBitacoraDetalle extends EventoBitacora {
   ip: string | null;
+  /** A quién se le otorgó o revocó, en los eventos de asignación. */
+  destinatario: UsuarioDelEvento | null;
+  asignado: AsignadoDelEvento | null;
   detalle: Record<string, unknown>;
 }
 

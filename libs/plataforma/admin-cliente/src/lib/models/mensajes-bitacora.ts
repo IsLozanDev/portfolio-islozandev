@@ -1,5 +1,5 @@
 import type { TonoEstado } from '@vitrina/shared/ui';
-import type { TipoEvento } from './evento-seguridad';
+import type { TipoAsignado, TipoEvento } from './evento-seguridad';
 
 /** Textos de la bitácora de seguridad (spec 18, TR-RF-019) en español de Perú. */
 export const MENSAJES_BITACORA = {
@@ -19,10 +19,16 @@ export const MENSAJES_BITACORA = {
   sinDatos: 'El evento no trae más datos.',
   ip: 'IP',
   usuario: 'Usuario',
+  destinatario: 'Destinatario',
   fecha: 'Fecha',
   tipo: 'Tipo',
   rangoIncompleto: 'Elija la fecha inicial y la final.',
 } as const;
+
+export const ETIQUETAS_TIPO_ASIGNADO: Readonly<Record<TipoAsignado, string>> = {
+  ROL: 'Rol',
+  PERFIL: 'Perfil',
+};
 
 export const COLUMNAS_BITACORA = {
   fecha: 'Fecha',

@@ -151,6 +151,16 @@ describe('SoporteListaPage', () => {
     expect(TestBed.inject(InsigniasMenuService).insignias()[OPCION_MENU_SOPORTE]).toBe(0);
   });
 
+  it('Vigentes muestra las horas aprobadas, no las pedidas', async () => {
+    await responder(await abrir('/admin/soporte?vista=vigentes'), {
+      items: [solicitud({ estado: 'APROBADO', horas_solicitadas: 2, horas_aprobadas: 1, hasta: '2026-11-04T21:10:00.000Z' })],
+      total: 1,
+    });
+
+    const celdas = [...elemento().querySelectorAll('tr[mat-row] td')].map((celda) => celda.textContent?.trim());
+    expect(celdas[3]).toBe('1');
+  });
+
   it('revocar un vigente manda confirmar: true', async () => {
     await responder(await abrir('/admin/soporte?vista=vigentes'), { items: [solicitud({ estado: 'APROBADO', hasta: '2026-11-04T21:10:00.000Z' })], total: 1 });
 

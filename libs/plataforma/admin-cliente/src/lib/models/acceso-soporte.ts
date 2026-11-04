@@ -50,6 +50,7 @@ export interface SolicitudSoporte {
   motivo: string;
   modo: ModoSoporte;
   horasSolicitadas: number;
+  horasAprobadas: number | null;
   estado: EstadoSoporte;
   solicitadoEn: Date;
   hasta: Date | null;
@@ -71,7 +72,9 @@ export interface AccesoAprobado {
   hasta: Date;
 }
 
-const fecha = (valor: string | null): Date | null => (valor ? new Date(valor) : null);
+function fechaOpcional(valor: string | null): Date | null {
+  return valor ? new Date(valor) : null;
+}
 
 export function aSolicitudSoporte(respuesta: SolicitudSoporteRespuesta): SolicitudSoporte {
   return {
@@ -81,11 +84,12 @@ export function aSolicitudSoporte(respuesta: SolicitudSoporteRespuesta): Solicit
     motivo: respuesta.motivo,
     modo: respuesta.modo,
     horasSolicitadas: respuesta.horas_solicitadas,
+    horasAprobadas: respuesta.horas_aprobadas,
     estado: respuesta.estado,
     solicitadoEn: new Date(respuesta.solicitado_en),
-    hasta: fecha(respuesta.hasta),
+    hasta: fechaOpcional(respuesta.hasta),
     cerradoPor: respuesta.cerrado_por,
-    cerradoEn: fecha(respuesta.cerrado_en),
+    cerradoEn: fechaOpcional(respuesta.cerrado_en),
     motivoCierre: respuesta.motivo_cierre,
     causaCierre: respuesta.causa_cierre,
   };

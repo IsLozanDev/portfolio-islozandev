@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 import type { ConsultaBitacora } from '../application/lecturas-bitacora.js';
-import type { EventoBitacora, EventoBitacoraDetalle, UsuarioDelEvento } from '../application/ports/lectura-bitacora.js';
+import type { AsignadoDelEvento, EventoBitacora, EventoBitacoraDetalle, UsuarioDelEvento } from '../application/ports/lectura-bitacora.js';
 import type { Listado } from '../application/ports/lectura-miembros.js';
 import { TIPOS_EVENTO_SEGURIDAD } from '../application/ports/repositorios.js';
 import { TAMANO_PAGINA_DEFECTO, TAMANO_PAGINA_MAXIMO } from './miembros.http.js';
@@ -56,13 +56,29 @@ export class EventoBitacoraDto {
   @ApiPropertyOptional({ type: UsuarioDelEventoDto, nullable: true })
   usuario!: UsuarioDelEventoDto | null;
 
-  @ApiPropertyOptional({ nullable: true, type: String, description: 'Permiso faltante, ticket o alcance, según el tipo' })
+  @ApiPropertyOptional({ nullable: true, type: String, description: 'Permiso faltante, ticket, o «rol → destinatario» en las asignaciones' })
   resumen!: string | null;
+}
+
+const TIPOS_ASIGNADO = ['ROL', 'PERFIL'] as const;
+
+export class AsignadoDelEventoDto {
+  @ApiProperty({ enum: TIPOS_ASIGNADO })
+  tipo!: string;
+
+  @ApiProperty()
+  nombre!: string;
 }
 
 export class EventoBitacoraDetalleDto extends EventoBitacoraDto {
   @ApiPropertyOptional({ nullable: true, type: String })
   ip!: string | null;
+
+  @ApiPropertyOptional({ type: UsuarioDelEventoDto, nullable: true, description: 'A quién se le otorgó o revocó, en las asignaciones' })
+  destinatario!: UsuarioDelEventoDto | null;
+
+  @ApiPropertyOptional({ type: AsignadoDelEventoDto, nullable: true, description: 'Rol o perfil otorgado o revocado' })
+  asignado!: AsignadoDelEventoDto | null;
 
   @ApiProperty({ type: 'object', additionalProperties: true })
   detalle!: Record<string, unknown>;
@@ -79,6 +95,8 @@ export class ListadoBitacoraDto {
 const usuarioDto = (usuario: UsuarioDelEvento | null): UsuarioDelEventoDto | null =>
   usuario ? { id: usuario.id, nombre: usuario.nombre, correo: usuario.correo } : null;
 
+const asignadoDto = (asignado: AsignadoDelEvento | null): AsignadoDelEventoDto | null => (asignado ? { tipo: asignado.tipo, nombre: asignado.nombre } : null);
+
 export function eventoBitacoraDto(evento: EventoBitacora): EventoBitacoraDto {
   return {
     id: evento.id,
@@ -90,7 +108,13 @@ export function eventoBitacoraDto(evento: EventoBitacora): EventoBitacoraDto {
 }
 
 export function eventoBitacoraDetalleDto(evento: EventoBitacoraDetalle): EventoBitacoraDetalleDto {
-  return { ...eventoBitacoraDto(evento), ip: evento.ip, detalle: evento.detalle };
+  return {
+    ...eventoBitacoraDto(evento),
+    ip: evento.ip,
+    destinatario: usuarioDto(evento.destinatario),
+    asignado: asignadoDto(evento.asignado),
+    detalle: evento.detalle,
+  };
 }
 
 export function listadoBitacoraDto(listado: Listado<EventoBitacora>): ListadoBitacoraDto {

@@ -21,7 +21,9 @@ const PARAMETRO_ACCESO = 'accesoId';
 const TAMANO_PENDIENTES = 100;
 const FORMATO_HORA_LIMA = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
-const idConPrefijo = (valor: string, prefijo: string): string | null => (valor.startsWith(prefijo) ? valor.slice(prefijo.length) : null);
+function idConPrefijo(valor: string, prefijo: string): string | null {
+  return valor.startsWith(prefijo) ? valor.slice(prefijo.length) : null;
+}
 
 /**
  * Aprobar una solicitud: horas de 1 a 4 (por defecto, las pedidas) y el rol o perfil del agente
@@ -81,7 +83,7 @@ export class SoporteAprobarPage implements OnInit {
       });
       this.avisos.toast('exito', mensajeAprobadoHasta(FORMATO_HORA_LIMA.format(aprobado.hasta)));
       void this.insignias.actualizar();
-      await this.router.navigate(['../..'], { relativeTo: this.ruta });
+      await this.volverALista();
     } catch (error) {
       this.error.set(aErrorAdmin(error).message);
     } finally {
@@ -90,7 +92,11 @@ export class SoporteAprobarPage implements OnInit {
   }
 
   protected cancelar(): void {
-    void this.router.navigate(['../..'], { relativeTo: this.ruta });
+    void this.volverALista();
+  }
+
+  private volverALista(): Promise<boolean> {
+    return this.router.navigate(['../..'], { relativeTo: this.ruta });
   }
 
   private async cargar(): Promise<void> {

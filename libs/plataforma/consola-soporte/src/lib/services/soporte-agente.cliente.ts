@@ -10,20 +10,20 @@ const RUTA_SOPORTE = '/seg/soporte';
 @Injectable({ providedIn: 'root' })
 export class SoporteAgenteCliente {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = inject(CONFIG_AUTH).apiUrl;
+  private readonly urlSoporte = inject(CONFIG_AUTH).apiUrl + RUTA_SOPORTE;
 
   async misAccesos(): Promise<AccesoDelAgente[]> {
-    const respuesta = await solicitar(this.http.get<AccesoDelAgenteRespuesta[]>(`${this.apiUrl}${RUTA_SOPORTE}/mis-accesos`));
+    const respuesta = await solicitar(this.http.get<AccesoDelAgenteRespuesta[]>(`${this.urlSoporte}/mis-accesos`));
     return respuesta.map(aAccesoDelAgente);
   }
 
   async solicitar(solicitud: SolicitudDeAcceso): Promise<string> {
     const cuerpo = { tenant_id: solicitud.tenantId, ticket: solicitud.ticket, motivo: solicitud.motivo, modo: solicitud.modo, horas: solicitud.horas };
-    return (await solicitar(this.http.post<{ id: string }>(`${this.apiUrl}${RUTA_SOPORTE}/solicitudes`, cuerpo))).id;
+    return (await solicitar(this.http.post<{ id: string }>(`${this.urlSoporte}/solicitudes`, cuerpo))).id;
   }
 
   /** La API fija el tenant preferido; el token nuevo lo trae tras `refrescarSesion()`. */
   async entrar(accesoId: string): Promise<void> {
-    await solicitar(this.http.post(`${this.apiUrl}${RUTA_SOPORTE}/accesos/${encodeURIComponent(accesoId)}/entrar`, {}));
+    await solicitar(this.http.post(`${this.urlSoporte}/accesos/${encodeURIComponent(accesoId)}/entrar`, {}));
   }
 }

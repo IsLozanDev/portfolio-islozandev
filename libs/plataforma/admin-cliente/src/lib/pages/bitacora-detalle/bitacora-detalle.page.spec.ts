@@ -66,6 +66,25 @@ describe('BitacoraDetallePage', () => {
     expect(elemento().querySelector('[data-dato="ruta"] b')).toBeNull();
   });
 
+  it('una asignación muestra a quién se le dio y qué rol, con nombre', async () => {
+    await abrir('51', {
+      id: '51',
+      tipo: 'ASIGNACION_OTORGADA',
+      ocurrido_en: '2026-10-30T15:00:00.000Z',
+      usuario: { id: 'u-ana', nombre: 'Ana Torres', correo: 'ana.torres@polleria.pe' },
+      resumen: 'Cajero → Luis Quispe',
+      ip: '190.42.10.8',
+      destinatario: { id: 'u-luis', nombre: 'Luis Quispe', correo: 'luis.quispe@polleria.pe' },
+      asignado: { tipo: 'ROL', nombre: 'Cajero' },
+      detalle: { asignacion_id: 'a-1', usuario_destino: 'u-luis', alcance: 'SUCURSAL' },
+    });
+
+    expect(elemento().querySelector('[data-dato="usuario"]')?.textContent).toContain('Ana Torres');
+    expect(elemento().querySelector('[data-dato="destinatario"]')?.textContent).toContain('Luis Quispe');
+    expect(elemento().querySelector('[data-dato="asignado"]')?.textContent?.trim()).toBe('Cajero');
+    expect(elemento().textContent).toContain('Rol');
+  });
+
   it('un evento del sistema dice «Sistema» y sin IP «—»', async () => {
     await abrir('7', { id: '7', tipo: 'ACCESO_SOPORTE', ocurrido_en: '2026-10-30T15:00:00.000Z', usuario: null, resumen: null, ip: null, detalle: {} });
 

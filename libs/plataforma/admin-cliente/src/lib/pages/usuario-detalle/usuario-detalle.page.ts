@@ -5,7 +5,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent, ChipEstadoComponent, type TonoEstado } from '@vitrina/shared/ui';
-import { LONGITUD_MINIMA_MOTIVO_SEG } from '../../models/motivo-seg';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EstadoReenvio } from '../../models/invitacion';
 import {
@@ -19,12 +18,12 @@ import {
   TONOS_ESTADO_MEMBRESIA,
 } from '../../models/mensajes-admin';
 import type { AsignacionDelMiembro, EstadoMembresia, MiembroDetalle } from '../../models/miembro';
+import { LONGITUD_MINIMA_MOTIVO_SEG } from '../../models/motivo-seg';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { AsignacionesCliente } from '../../services/asignaciones.cliente';
 import { MembresiasCliente, type AccionMembresia } from '../../services/membresias.cliente';
 import { MiembrosCliente } from '../../services/miembros.cliente';
 import { formatearFecha, formatearFechaHora } from '../../utils/formato';
-
 
 const PARAMETRO_MEMBRESIA = 'membresiaId';
 const COLUMNAS_ASIGNACIONES = ['rolOPerfil', 'alcance', 'vigencia', 'estado', 'acciones'];

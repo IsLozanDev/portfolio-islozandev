@@ -12,6 +12,7 @@ interface Solicitud extends SolicitudAutenticada {
   headers: Record<string, string | string[] | undefined>;
   method: string;
   path: string;
+  ip?: string;
 }
 
 /**
@@ -59,7 +60,7 @@ export class PermisoGuard implements CanActivate {
 
     const enTenant = <T>(fn: () => Promise<T>) => this.contexto.run({ tenantId, branchId: sucursalId }, () => this.uow.run(fn));
     if (!permisos.includes(permiso)) {
-      await enTenant(() => this.bitacora.registrar('ACCESO_DENEGADO', usuarioId, { permiso, ruta: req.path, metodo: req.method, sucursal_id: sucursalId })).catch(
+      await enTenant(() => this.bitacora.registrar('ACCESO_DENEGADO', usuarioId, { permiso, ruta: req.path, metodo: req.method, sucursal_id: sucursalId }, req.ip || null)).catch(
         (e: unknown) => this.logger.warn({ evento: 'seg.acceso_denegado.error', error: e instanceof Error ? e.name : typeof e }),
       );
       throw rechazar(ctx, { estado: 403, cuerpo: { codigo: 'SIN_PERMISO', permiso }, motivo: 'sin_permiso', usuarioId });

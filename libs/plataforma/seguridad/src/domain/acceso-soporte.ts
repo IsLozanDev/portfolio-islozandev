@@ -43,7 +43,9 @@ export function vigenciaSoporte(horas: number): number {
   return horas;
 }
 
-const sumarHoras = (fecha: Date, horas: number) => new Date(fecha.getTime() + horas * MILISEGUNDOS_POR_HORA);
+function sumarHoras(fecha: Date, horas: number): Date {
+  return new Date(fecha.getTime() + horas * MILISEGUNDOS_POR_HORA);
+}
 
 export interface DatosSolicitudSoporte {
   tenantId: string;
@@ -215,6 +217,11 @@ export class AccesoSoporte extends AggregateRoot {
     return this.props.estado === 'PENDIENTE' && this.props.caducaEn <= ahora;
   }
 
+  /** Aprobado cuya vigencia terminó, o pendiente caducado: lo que `expirar` acepta. */
+  vencible(ahora: Date): boolean {
+    return (this.props.estado === 'APROBADO' && !this.vigente(ahora)) || this.caducada(ahora);
+  }
+
   /** Devuelve la vigencia aprobada: la membresía y la asignación del agente la copian. */
   aprobar(datos: DatosAprobacionSoporte, ahora: Date): { desde: Date; hasta: Date } {
     const horas = vigenciaSoporte(datos.horas);
@@ -262,8 +269,7 @@ export class AccesoSoporte extends AggregateRoot {
 
   expirar(ahora: Date): void {
     const estadoAnterior = this.props.estado;
-    const vencido = estadoAnterior === 'APROBADO' && !this.vigente(ahora);
-    if (!vencido && !this.caducada(ahora)) throw new TransicionSoporteError(estadoAnterior, 'expirar');
+    if (!this.vencible(ahora)) throw new TransicionSoporteError(estadoAnterior, 'expirar');
     this.props = { ...this.props, estado: 'EXPIRADO', cerradoEn: ahora, causaCierre: 'VENCIMIENTO' };
     const payload: SoporteExpirado = { ...this.identidad(), estado_anterior: estadoAnterior };
     this.publicar(EVENTOS_SEG.soporteExpirado, payload);

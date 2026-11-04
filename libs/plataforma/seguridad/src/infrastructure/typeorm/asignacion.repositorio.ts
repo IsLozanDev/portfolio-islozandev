@@ -3,6 +3,7 @@ import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { BitacoraSeguridad, RepositorioAsignaciones, TipoEventoSeguridad, UbicacionesOrg } from '../../application/ports/repositorios.js';
 import type { Alcance, Ambito } from '../../domain/alcance.js';
 import { Asignacion, type Fecha } from '../../domain/asignacion.js';
+import { ipLegible, type OrigenPeticion } from '../origen-peticion.js';
 import { RepositorioBase } from './repositorio-base.js';
 
 interface Fila {
@@ -135,12 +136,18 @@ export class UbicacionesOrgTypeOrm extends RepositorioBase implements Ubicacione
   }
 }
 
+/** Sin `ip` explícita guarda la de la petición en curso (`OrigenPeticion`); en el worker queda NULL. */
 export class BitacoraSeguridadTypeOrm extends RepositorioBase implements BitacoraSeguridad {
-  constructor(uow: TypeOrmUnitOfWork, tenants: TenantContext) {
+  constructor(
+    uow: TypeOrmUnitOfWork,
+    tenants: TenantContext,
+    private readonly origen: OrigenPeticion | null = null,
+  ) {
     super(uow, tenants);
   }
 
-  async registrar(tipo: TipoEventoSeguridad, usuarioId: string | null, detalle: Record<string, unknown>, ip: string | null = null): Promise<void> {
+  async registrar(tipo: TipoEventoSeguridad, usuarioId: string | null, detalle: Record<string, unknown>, ipExplicita: string | null = null): Promise<void> {
+    const ip = ipLegible(ipExplicita ?? this.origen?.ipActual() ?? null);
     await this.consultar('INSERT INTO seg.evento_seguridad (tenant_id, usuario_id, tipo, detalle, ip) VALUES ($1, $2, $3, $4::jsonb, $5::inet)', [
       this.tenantId,
       usuarioId,

@@ -7,7 +7,7 @@ export interface FiltroBitacora {
   desde: string;
   hasta: string;
   tipo?: TipoEvento;
-  /** Parte del correo o del nombre; la API exige 2 caracteres como mínimo. */
+  /** Parte del correo o del nombre de quien actuó o recibió la asignación; la API exige 2 caracteres como mínimo. */
   usuario?: string;
   pagina: number;
   tamano: number;
@@ -17,6 +17,14 @@ export interface UsuarioDelEvento {
   id: string;
   nombre: string;
   correo: string;
+}
+
+export type TipoAsignado = 'ROL' | 'PERFIL';
+
+/** Rol o perfil otorgado o revocado en los eventos de asignación. */
+export interface AsignadoDelEvento {
+  tipo: TipoAsignado;
+  nombre: string;
 }
 
 export interface EventoSeguridadRespuesta {
@@ -29,6 +37,8 @@ export interface EventoSeguridadRespuesta {
 
 export interface EventoSeguridadDetalleRespuesta extends EventoSeguridadRespuesta {
   ip: string | null;
+  destinatario: UsuarioDelEvento | null;
+  asignado: AsignadoDelEvento | null;
   detalle: Record<string, unknown>;
 }
 
@@ -37,12 +47,15 @@ export interface EventoSeguridad {
   tipo: TipoEvento;
   ocurridoEn: Date;
   usuario: UsuarioDelEvento | null;
-  /** Permiso faltante, ticket o alcance, según el tipo (TR-CA-051). */
+  /** Permiso faltante, ticket, o «rol → destinatario» en las asignaciones (TR-CA-051). */
   resumen: string | null;
 }
 
 export interface EventoSeguridadDetalle extends EventoSeguridad {
   ip: string | null;
+  /** A quién se le otorgó o revocó; null fuera de las asignaciones. */
+  destinatario: UsuarioDelEvento | null;
+  asignado: AsignadoDelEvento | null;
   detalle: Record<string, unknown>;
 }
 
@@ -57,5 +70,12 @@ export function aEventoSeguridad(respuesta: EventoSeguridadRespuesta): EventoSeg
 }
 
 export function aEventoSeguridadDetalle(respuesta: EventoSeguridadDetalleRespuesta): EventoSeguridadDetalle {
-  return { ...aEventoSeguridad(respuesta), ip: respuesta.ip, detalle: respuesta.detalle };
+  return {
+    ...aEventoSeguridad(respuesta),
+    ip: respuesta.ip,
+    // Una API anterior a este cambio no manda los campos.
+    destinatario: respuesta.destinatario ?? null,
+    asignado: respuesta.asignado ?? null,
+    detalle: respuesta.detalle,
+  };
 }

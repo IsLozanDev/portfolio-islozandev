@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CargandoComponent, ChipEstadoComponent, type TonoEstado } from '@vitrina/shared/ui';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EventoSeguridadDetalle } from '../../models/evento-seguridad';
-import { ETIQUETAS_TIPO_EVENTO, MENSAJES_BITACORA, TONOS_TIPO_EVENTO } from '../../models/mensajes-bitacora';
+import { ETIQUETAS_TIPO_ASIGNADO, ETIQUETAS_TIPO_EVENTO, MENSAJES_BITACORA, TONOS_TIPO_EVENTO } from '../../models/mensajes-bitacora';
 import { BitacoraCliente } from '../../services/bitacora.cliente';
 import { formatearFechaHora } from '../../utils/formato';
 
@@ -27,6 +27,7 @@ export class BitacoraDetallePage implements OnInit {
   private readonly eventoId = inject(ActivatedRoute).snapshot.paramMap.get(PARAMETRO_EVENTO) ?? '';
 
   protected readonly mensajes = MENSAJES_BITACORA;
+  protected readonly etiquetasAsignado = ETIQUETAS_TIPO_ASIGNADO;
   protected readonly evento = signal<EventoSeguridadDetalle | null>(null);
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);

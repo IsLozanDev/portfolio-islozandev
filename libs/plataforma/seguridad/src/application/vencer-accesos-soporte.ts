@@ -1,5 +1,4 @@
 import type { Clock, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
-import type { AccesoSoporte } from '../domain/acceso-soporte.js';
 import { liberarAgente } from './cerrar-acceso-soporte.js';
 import type { RepositorioAccesosSoporte } from './ports/acceso-soporte.repositorio.js';
 import type { AccesoPorVencer, LecturaSoporte } from './ports/lectura-soporte.js';
@@ -64,7 +63,7 @@ export class VencerAccesosSoporte {
       unidadDeTrabajo.run(async () => {
         const acceso = await accesos.buscar(id);
         // Otro proceso lo cerró entre la lectura y esta transacción.
-        if (!acceso || !esVencible(acceso, ahora)) return false;
+        if (!acceso || !acceso.vencible(ahora)) return false;
         const estadoAnterior = acceso.estado;
         acceso.expirar(ahora);
         await accesos.guardar(acceso);
@@ -75,8 +74,4 @@ export class VencerAccesosSoporte {
       }),
     );
   }
-}
-
-function esVencible(acceso: AccesoSoporte, ahora: Date): boolean {
-  return (acceso.estado === 'APROBADO' && !acceso.vigente(ahora)) || acceso.caducada(ahora);
 }

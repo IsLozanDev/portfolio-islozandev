@@ -1,6 +1,6 @@
 # SPEC 18 — Seguridad: bitácora de seguridad y acceso temporal de soporte con aprobación, banner y auditoría por petición
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 08, SPEC 11, SPEC 12, SPEC 15, SPEC 16a, SPEC 16b, SPEC 17a, SPEC 17b, SPEC 17c
 > **Date:** 2026-11-03
 > **Objective:** Permitir al administrador del cliente consultar la bitácora de seguridad de su tenant y aprobar, rechazar o revocar accesos temporales de soporte (ticket, motivo, modo, 1-4 h) que el agente solicita desde la consola, opera con banner visible y auditoría de cada petición, y que vencen solos (S-06).
@@ -69,11 +69,11 @@ Estimado: 15-17 h. El plan da 4 h y el roadmap 4-6 h. **Decisión del usuario:**
 
 **Out of scope (para otros specs):**
 
-- Exportación a Excel de la bitácora y TR-RN-047 (TR-REP, R3).
+- Exportación a Excel de la bitácora y TR-RN-047: pasa al spec 18b (XLSX al vuelo, permiso propio y auditada).
 - Tickets reales: validar que el ticket existe, está abierto y asignado al agente, y el disparo al cerrarlo (TR-SOP, R3-08).
 - Correo o aviso al administrador de una solicitud nueva (TR-NOT, R2). En este spec solo la bandeja y la insignia.
 - Auditoría inmutable encadenada por hash y migrar el evento por petición a TR-AUD (spec 20).
-- Productor del tipo `LOGIN`. El filtro lo acepta, pero nadie lo escribe todavía.
+- Productor del tipo `LOGIN` e intentos fallidos: pasan al spec 18b (ingreso con contraseña y MFA a través de la API).
 - Selector genérico de tenant para usuarios con varias membresías.
 - Cierre explícito de sesiones en Supabase al vencer o revocar (como el 08).
 - Sesiones activas (TR-RF-018) y transferir propiedad (TR-RF-021), R2.
@@ -491,9 +491,11 @@ Reglas que aplican a todas:
 
 - [ ] `GET /v1/seg/bitacora` nunca devuelve eventos de otro tenant (prueba con dos tenants).
 - [ ] Sin `desde` o `hasta`, con `desde > hasta` o con más de 92 días: 400 `RANGO_BITACORA_INVALIDO`.
-- [ ] El filtro `usuario` encuentra por parte del correo o del nombre, sin distinguir mayúsculas.
+- [ ] El filtro `usuario` encuentra por parte del correo o del nombre, sin distinguir mayúsculas, a quien actuó y a quien recibió la asignación.
 - [ ] `EXPLAIN` de la consulta con 100 000 eventos en un tenant usa `ix_evento_seguridad_fecha` o `ix_evento_seguridad_tipo_fecha`, no un barrido secuencial.
 - [ ] `GET /v1/seg/bitacora/:id` devuelve la IP y el detalle; un id de otro tenant da 404.
+- [ ] Los accesos denegados y las asignaciones guardan la IP de la petición (IPv4 sin el prefijo `::ffff:`); los eventos del worker quedan sin IP.
+- [ ] Una asignación se resume en la lista como «rol → destinatario» y su detalle muestra destinatario y rol o perfil con nombre, también en eventos anteriores que solo traen `asignacion_id`.
 
 **Ciclo de soporte:**
 
@@ -581,6 +583,12 @@ Reglas que aplican a todas:
 - **Sí:** el banner va a todo el ancho y por encima del menú lateral. **No:** dentro del área de contenido; con el menú oculto o en celular se perdería de vista.
 - **Sí:** con soporte vigente, `mi-contexto` quita de `permisos` y de `menu` lo que está en `PERMISOS_VETADOS_SOPORTE`. Así el agente no ve opciones que el interceptor le negaría (salió al diseñar el menú del agente).
 - **No:** productor de `LOGIN` en este spec. El tipo queda en el CHECK y el filtro para cuando exista.
+- **Sí (paso 16):** en la bandeja, la columna «Horas» muestra las aprobadas cuando existen y las pedidas mientras está pendiente. Salió en el navegador: un acceso aprobado por 1 h mostraba 2.
+- **Sí (paso 16):** los formularios de solicitar y aprobar llevan `gap-2`, como el resto de formularios de admin; sin él, el texto de ayuda pisaba la etiqueta del campo siguiente.
+- **Sí (tras el cierre, pedido del usuario):** la IP de la bitácora sale de `OrigenPeticion`, un `AsyncLocalStorage` que llena `OrigenPeticionInterceptor`; el adaptador la usa cuando el caso de uso no pasa una. `PermisoGuard` corre antes que los interceptores y pasa `req.ip` directo. **No:** agregar `ip` a cada comando de asignaciones y membresías.
+- **Sí (tras el cierre, pedido del usuario):** destinatario y rol o perfil de una asignación se derivan al leer (`asignacion_id` → asignación → membresía → usuario, o `usuario_destino`/`rol_id` del detalle). Las asignaciones no cambian después de creadas, así que el dato es exacto y sirve para los eventos ya escritos. El filtro `usuario` busca también al destinatario. **No:** guardar nombres en el `detalle` (datos personales copiados en cada evento).
+- **Nota:** detrás de un proxy, `req.ip` es la del proxy hasta configurar `trust proxy`; es del spec de despliegue.
+- **Nota (paso 16):** `vit-tabla` pasa a la vista móvil por debajo de 600 px (`BREAKPOINT_MOVIL`, spec 15b). A 600 px exactos las tablas usan la vista de escritorio con scroll interno, igual que el resto de listas; el criterio «a 600 px las tablas muestran la vista móvil» no se cumple tal como está escrito.
 
 ## Riesgos
 

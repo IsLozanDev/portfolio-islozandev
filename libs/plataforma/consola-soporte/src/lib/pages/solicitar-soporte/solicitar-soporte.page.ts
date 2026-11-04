@@ -53,11 +53,12 @@ export class SolicitarSoportePage {
 
   protected escribirTenant(texto: string): void {
     clearTimeout(this.esperaBusqueda);
-    if (texto.trim().length < LONGITUD_MINIMA_BUSQUEDA) {
+    const busqueda = texto.trim();
+    if (busqueda.length < LONGITUD_MINIMA_BUSQUEDA) {
       this.mostrarTenants([]);
       return;
     }
-    this.esperaBusqueda = setTimeout(() => void this.buscarTenants(texto.trim()), ESPERA_BUSQUEDA_TENANT_MS);
+    this.esperaBusqueda = setTimeout(() => void this.buscarTenants(busqueda), ESPERA_BUSQUEDA_TENANT_MS);
   }
 
   protected async enviar(): Promise<void> {

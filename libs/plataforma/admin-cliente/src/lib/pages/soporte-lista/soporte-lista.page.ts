@@ -186,7 +186,7 @@ function filaDe(solicitud: SolicitudSoporte, vista: VistaSoporte): FilaSolicitud
     agente: solicitud.agente.nombre,
     ticket: solicitud.ticket,
     modo: ETIQUETAS_MODO_SOPORTE[solicitud.modo],
-    horas: solicitud.horasSolicitadas,
+    horas: solicitud.horasAprobadas ?? solicitud.horasSolicitadas,
     fecha: fechaDe(solicitud, vista),
     estado: ETIQUETAS_ESTADO_SOPORTE[solicitud.estado],
     tonoEstado: TONOS_ESTADO_SOPORTE[solicitud.estado],

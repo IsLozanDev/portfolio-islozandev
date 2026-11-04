@@ -46,7 +46,8 @@ describe('aContextoUsuario', () => {
   });
 
   it('una API sin el campo soporte deja soporte en null', () => {
-    const { soporte: _sinCampo, ...anterior } = RESPUESTA;
+    const anterior: Partial<typeof RESPUESTA> = { ...RESPUESTA };
+    delete anterior.soporte;
     expect(aContextoUsuario(anterior as typeof RESPUESTA).soporte).toBeNull();
   });
 

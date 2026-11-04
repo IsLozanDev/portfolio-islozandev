@@ -16,6 +16,8 @@ import { ResolverPermisos } from './application/resolver-permisos.js';
 import { CachePermisosRedis, crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';
 import { PermisosSqlRepositorio } from './infrastructure/typeorm/permisos.sql.repositorio.js';
 import { BitacoraSeguridadTypeOrm } from './infrastructure/typeorm/asignacion.repositorio.js';
+import { OrigenPeticion } from './infrastructure/origen-peticion.js';
+import { OrigenPeticionInterceptor } from './interface/origen-peticion.interceptor.js';
 import { CatalogoPermisosTypeOrm, MembresiasLecturaTypeOrm, ProductosContratadosTypeOrm } from './infrastructure/typeorm/lecturas.js';
 import { PreferenciaSucursalTypeOrm } from './infrastructure/typeorm/preferencia-sucursal.repositorio.js';
 import { ObtenerMiContexto } from './application/obtener-mi-contexto.js';
@@ -107,7 +109,7 @@ export interface SeguridadOpciones {
 }
 
 /** Repositorios sobre la UoW activa: los del spec 06 más los de membresías. */
-function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource: DataSource) {
+function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource: DataSource, origen: OrigenPeticion) {
   return {
     ciclo: new MembresiaRepositorioTypeOrm(uow, ctx),
     membresias: new MembresiasLecturaTypeOrm(uow, ctx),
@@ -119,7 +121,7 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
     perfiles: new PerfilRepositorioTypeOrm(uow, ctx),
     catalogo: new CatalogoPermisosTypeOrm(uow, ctx),
     ubicaciones: new UbicacionesOrgTypeOrm(uow, ctx),
-    bitacora: new BitacoraSeguridadTypeOrm(uow, ctx),
+    bitacora: new BitacoraSeguridadTypeOrm(uow, ctx, origen),
     accesosSoporte: new AccesoSoporteRepositorioTypeOrm(uow, ctx),
     lecturaSoporte: new LecturaSoporteTypeOrm(uow, ctx, dataSource),
     tenantsSoporte: new TenantsSoporteTypeOrm(uow, dataSource),
@@ -127,6 +129,7 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
 }
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
+const ORIGEN_PETICION = Symbol('ORIGEN_PETICION');
 const TENANT_OPERADOR_DEFECTO = 'plataforma';
 const DEPENDENCIAS_CIERRE_SOPORTE = Symbol('DEPENDENCIAS_CIERRE_SOPORTE');
 const DEPENDENCIAS_SESION_SOPORTE = Symbol('DEPENDENCIAS_SESION_SOPORTE');
@@ -170,12 +173,13 @@ export class SeguridadModule {
       global: true,
       controllers: [MiContextoController, InvitacionesController, MembresiasController, MiembrosController, AsignacionesController, RolesController, CatalogoController, PerfilesController, BitacoraController, SoporteController],
       providers: [
+        { provide: ORIGEN_PETICION, useValue: new OrigenPeticion() },
         { provide: LIMITE_TASA, useValue: { limite: inv.aceptarPorMinuto ?? 10, ventanaMs: 60_000 } },
         LimiteTasaGuard,
         {
           provide: REPOS_MEMBRESIAS,
-          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext) => reposMembresias(uow, ctx, op.dataSource),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext, origen: OrigenPeticion) => reposMembresias(uow, ctx, op.dataSource, origen),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ORIGEN_PETICION],
         },
         {
           provide: PROVEEDOR_IDENTIDAD,
@@ -482,6 +486,7 @@ export class SeguridadModule {
             new PermisoGuard(r, resolver, new CatalogoPermisosTypeOrm(uow, ctx), new BitacoraSeguridadTypeOrm(uow, ctx), uow, ctx, op.mfaMaxEdadSeg),
           inject: [Reflector, ResolverPermisos, TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
+        { provide: APP_INTERCEPTOR, useFactory: (origen: OrigenPeticion) => new OrigenPeticionInterceptor(origen), inject: [ORIGEN_PETICION] },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
         // Después del de tenant: veta, aplica el modo y audita cada petición de una sesión de soporte (spec 18).
         {

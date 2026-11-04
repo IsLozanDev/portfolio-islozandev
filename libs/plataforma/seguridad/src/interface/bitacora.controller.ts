@@ -26,6 +26,8 @@ import { Permiso } from './decoradores.js';
 import { MembresiasFiltro, validar } from './membresias.http.js';
 import { TAMANO_PAGINA_DEFECTO, TAMANO_PAGINA_MAXIMO } from './miembros.http.js';
 
+const HTTP_NO_ENCONTRADO = 404;
+
 /** Bitácora de seguridad del tenant del token (spec 18, TR-RF-019). Sin exportación: va con TR-REP. */
 @ApiTags('seg')
 @ApiBearerAuth()
@@ -45,7 +47,7 @@ export class BitacoraController {
   @ApiQuery({ name: 'desde', required: true, example: '2026-10-27', description: 'Día en America/Lima, incluido' })
   @ApiQuery({ name: 'hasta', required: true, example: '2026-11-02', description: `Incluido; ${DIAS_MAXIMOS_BITACORA} días como máximo` })
   @ApiQuery({ name: 'tipo', required: false, enum: TIPOS_EVENTO_SEGURIDAD })
-  @ApiQuery({ name: 'usuario', required: false, description: 'Parte del correo o del nombre (2 a 100 caracteres)' })
+  @ApiQuery({ name: 'usuario', required: false, description: 'Parte del correo o del nombre de quien actuó o de quien recibió la asignación (2 a 100 caracteres)' })
   @ApiQuery({ name: 'pagina', required: false, example: 1 })
   @ApiQuery({ name: 'tamano', required: false, example: TAMANO_PAGINA_DEFECTO, description: `Máximo ${TAMANO_PAGINA_MAXIMO}` })
   @ApiOkResponse({ type: ListadoBitacoraDto, description: 'Del más reciente al más antiguo' })
@@ -60,7 +62,7 @@ export class BitacoraController {
   @ApiOkResponse({ type: EventoBitacoraDetalleDto })
   @ApiNotFoundResponse({ description: 'NO_ENCONTRADO: no existe en el tenant del token' })
   async consultar(@Param('id') id: string): Promise<EventoBitacoraDetalleDto> {
-    if (!ID_EVENTO.test(id)) throw new HttpException({ codigo: 'NO_ENCONTRADO', mensaje: 'El evento no existe' }, 404);
+    if (!ID_EVENTO.test(id)) throw new HttpException({ codigo: 'NO_ENCONTRADO', mensaje: 'El evento no existe' }, HTTP_NO_ENCONTRADO);
     return eventoBitacoraDetalleDto(await this.consultarEvento.ejecutar(id));
   }
 }

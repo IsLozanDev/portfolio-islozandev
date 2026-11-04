@@ -28,6 +28,17 @@
           {{ mensajes.sistema }}
         }
       </dd>
+      @if (detalle.destinatario; as destinatario) {
+        <dt class="text-sobre-superficie-variante">{{ mensajes.destinatario }}</dt>
+        <dd data-dato="destinatario">
+          <span class="font-medium">{{ destinatario.nombre }}</span>
+          <span class="text-sobre-superficie-variante"> · {{ destinatario.correo }}</span>
+        </dd>
+      }
+      @if (detalle.asignado; as asignado) {
+        <dt class="text-sobre-superficie-variante">{{ etiquetasAsignado[asignado.tipo] }}</dt>
+        <dd data-dato="asignado">{{ asignado.nombre }}</dd>
+      }
       <dt class="text-sobre-superficie-variante">{{ mensajes.ip }}</dt>
       <dd class="tabular-nums" data-dato="ip">{{ detalle.ip ?? mensajes.sinDato }}</dd>
     </dl>

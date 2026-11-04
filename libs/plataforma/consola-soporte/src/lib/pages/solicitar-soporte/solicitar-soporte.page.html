@@ -6,7 +6,7 @@
     <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
   }
 
-  <form class="flex flex-col" [formGroup]="grupo" (ngSubmit)="enviar()" novalidate>
+  <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="enviar()" novalidate>
     <mat-form-field appearance="outline">
       <mat-label>{{ mensajes.tenant }}</mat-label>
       <input
