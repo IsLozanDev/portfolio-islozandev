@@ -29,6 +29,10 @@ export const MENSAJES_SHELL = {
   borrarBusqueda: 'Borrar búsqueda',
   atajoBusqueda: 'Ctrl K',
   ayudaSinResultados: 'Revise cómo lo escribió o pruebe con otra palabra.',
+  tema: 'Tema',
+  temaSistema: 'Sistema',
+  temaClaro: 'Claro',
+  temaOscuro: 'Oscuro',
 } as const;
 
 /** Anuncio del número de resultados de la búsqueda en el menú. */

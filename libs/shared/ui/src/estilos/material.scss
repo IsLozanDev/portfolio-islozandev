@@ -73,6 +73,7 @@ $tabla-ancho-maximo-celda: 12rem;
       container-background-color: $noche,
       container-text-color: $sobre-noche,
       container-shape: 0,
+      container-divider-color: var(--color-borde-lateral),
     ));
     @include mat.list-overrides((
       active-indicator-color: color-mix(in srgb, #{$menta} 16%, transparent),

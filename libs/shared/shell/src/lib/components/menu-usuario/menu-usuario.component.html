@@ -8,6 +8,20 @@
 
 <mat-menu #menuDeUsuario="matMenu" xPosition="before">
   <p class="max-w-64 truncate px-4 py-2 text-sm text-sobre-superficie-variante">{{ correo() }}</p>
+  <div role="group" aria-labelledby="vit-etiqueta-tema">
+    <p id="vit-etiqueta-tema" class="px-4 pt-2 pb-1 text-sm font-medium text-sobre-superficie">{{ mensajes.tema }}</p>
+    @for (opcion of opcionesTema; track opcion.valor) {
+      <button mat-menu-item type="button" role="menuitemradio" [attr.aria-checked]="preferenciaTema() === opcion.valor" (click)="elegirTema(opcion.valor)">
+        <mat-icon aria-hidden="true">{{ opcion.icono }}</mat-icon>
+        <span class="flex items-center justify-between gap-4">
+          {{ opcion.etiqueta }}
+          @if (preferenciaTema() === opcion.valor) {
+            <mat-icon aria-hidden="true">check</mat-icon>
+          }
+        </span>
+      </button>
+    }
+  </div>
   <button mat-menu-item type="button" (click)="salir()">
     <mat-icon aria-hidden="true">logout</mat-icon>
     <span>{{ mensajes.salir }}</span>
