@@ -1,0 +1,20 @@
+/* Colgadas del contenedor para ganarle a `.mat-drawer-transition .mat-drawer`, que solo anima `transform` a 400 ms. */
+.vit-contenedor-menu .vit-menu-escritorio {
+  transition: width var(--vit-duracion-menu) ease;
+}
+
+/*
+ * Sin `autosize`: el contenedor mide el ancho del menú una sola vez, a mitad de la animación. El margen
+ * sale del mismo ancho y anima a la par; `!important` porque Material lo escribe en línea.
+ */
+.vit-contenedor-menu .vit-contenido-escritorio {
+  margin-left: var(--mat-sidenav-container-width) !important;
+  transition: margin-left var(--vit-duracion-menu) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vit-contenedor-menu .vit-menu-escritorio,
+  .vit-contenedor-menu .vit-contenido-escritorio {
+    transition: none;
+  }
+}

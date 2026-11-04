@@ -1,0 +1,74 @@
+<div class="flex h-16 items-center justify-center">
+  <span class="vit-inicial-marca" role="img" [attr.aria-label]="mensajes.marca">{{ inicialMarca }}</span>
+</div>
+
+<div class="flex flex-col items-center gap-1 pt-2">
+  <button
+    mat-icon-button
+    type="button"
+    class="vit-boton-riel"
+    [attr.aria-label]="mensajes.buscarEnMenu"
+    [matTooltip]="mensajes.buscarEnMenu"
+    matTooltipPosition="right"
+    (click)="buscar.emit()"
+  >
+    <mat-icon aria-hidden="true">search</mat-icon>
+  </button>
+  <span class="vit-separador-riel" aria-hidden="true"></span>
+
+  <nav class="flex flex-col items-center gap-1" [attr.aria-label]="mensajes.menuPrincipal">
+    @for (nodo of nodos(); track nodo.codigo) {
+      @if (nodo.ruta === null) {
+        <button
+          mat-icon-button
+          type="button"
+          class="vit-boton-riel"
+          [class.vit-riel-activo]="gruposActivos().has(nodo.codigo)"
+          [attr.aria-label]="nodo.nombre"
+          [matTooltip]="nodo.nombre"
+          matTooltipPosition="right"
+          [matMenuTriggerFor]="submenu"
+          [matMenuTriggerData]="{ $implicit: nodo }"
+        >
+          <mat-icon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+        </button>
+      } @else {
+        <a
+          mat-icon-button
+          class="vit-boton-riel"
+          [routerLink]="nodo.ruta"
+          routerLinkActive="vit-riel-activo"
+          [routerLinkActiveOptions]="{ exact: esRutaExacta(nodo.ruta) }"
+          ariaCurrentWhenActive="page"
+          [attr.aria-label]="nodo.nombre"
+          [matTooltip]="nodo.nombre"
+          matTooltipPosition="right"
+        >
+          <mat-icon aria-hidden="true">{{ nodo.icono }}</mat-icon>
+        </a>
+      }
+    }
+  </nav>
+</div>
+
+<mat-menu #submenu="matMenu" class="vit-submenu-riel" overlapTrigger>
+  <ng-template matMenuContent let-grupo>
+    <p class="vit-titulo-submenu" aria-hidden="true">{{ grupo.nombre }}</p>
+    @for (entrada of subarbol(grupo); track entrada.nodo.codigo) {
+      @if (entrada.nodo.ruta === null) {
+        <p class="vit-grupo-submenu" [style.padding-inline-start.px]="sangria(entrada.nivel)">{{ entrada.nodo.nombre }}</p>
+      } @else {
+        <a
+          mat-menu-item
+          [style.padding-inline-start.px]="sangria(entrada.nivel)"
+          [routerLink]="entrada.nodo.ruta"
+          routerLinkActive="vit-submenu-activo"
+          [routerLinkActiveOptions]="{ exact: esRutaExacta(entrada.nodo.ruta) }"
+          ariaCurrentWhenActive="page"
+        >
+          {{ entrada.nodo.nombre }}
+        </a>
+      }
+    }
+  </ng-template>
+</mat-menu>

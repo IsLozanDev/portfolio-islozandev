@@ -23,7 +23,22 @@ export const MENSAJES_SHELL = {
   errorServidor: 'Ocurrió un error en el servidor. Inténtelo de nuevo.',
   tituloMfaRequerida: 'Verificación requerida',
   mfaRequerida: 'Esta acción es sensible. Verifique su identidad con el segundo factor y vuelva a intentarlo.',
+  ocultarMenu: 'Ocultar menú',
+  mostrarMenu: 'Mostrar menú',
+  buscarEnMenu: 'Buscar en el menú',
+  borrarBusqueda: 'Borrar búsqueda',
+  atajoBusqueda: 'Ctrl K',
+  ayudaSinResultados: 'Revise cómo lo escribió o pruebe con otra palabra.',
 } as const;
+
+/** Anuncio del número de resultados de la búsqueda en el menú. */
+export function mensajeResultadosMenu(cantidad: number): string {
+  return cantidad === 1 ? '1 opción' : `${cantidad} opciones`;
+}
+
+export function mensajeSinResultadosMenu(consulta: string): string {
+  return `Ninguna opción coincide con «${consulta}»`;
+}
 
 /** Enlace de la barra tras una entrada profunda desde otra app (U-06). */
 export function mensajeVolverA(nombreApp: string): string {

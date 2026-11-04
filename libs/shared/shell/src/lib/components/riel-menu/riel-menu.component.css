@@ -1,0 +1,38 @@
+:host {
+  display: block;
+}
+
+.vit-inicial-marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-menta) 16%, transparent);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.vit-boton-riel {
+  --mat-icon-button-icon-color: var(--color-sobre-noche);
+}
+
+.vit-boton-riel.vit-riel-activo {
+  --mat-icon-button-icon-color: var(--color-menta);
+
+  background: color-mix(in srgb, var(--color-menta) 16%, transparent);
+}
+
+.vit-boton-riel:focus-visible {
+  outline: 3px solid var(--color-menta);
+  outline-offset: 2px;
+}
+
+.vit-separador-riel {
+  width: 32px;
+  height: 1px;
+  margin: 4px 0;
+  background: rgb(201 220 214 / 20%);
+}

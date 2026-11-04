@@ -7,6 +7,7 @@ $primario-marca: #0B6E5B;
 $noche: #071A17;
 $sobre-noche: #C9DCD6;
 $menta: #5EE2C0;
+$menta-suave: #A8E9D7;
 
 /* Tablas compactas del canvas «Pantallas tipo». */
 $tabla-encabezado: #F0F4F2;
@@ -58,6 +59,48 @@ $tabla-ancho-maximo-celda: 12rem;
       list-item-hover-state-layer-color: $menta,
       list-item-focus-state-layer-color: $menta,
     ));
+
+    /* Mientras el ancho anima (15d), el contenido no saca barra horizontal. */
+    .mat-drawer-inner-container {
+      overflow-x: hidden;
+    }
+  }
+
+  /* Submenú de la franja de iconos (15d): vive en el overlay del CDK, fuera del componente. */
+  .vit-submenu-riel {
+    /* `mat-menu` solo abre debajo del botón; con `overlapTrigger` y este margen queda a la derecha de la franja de 72 px. */
+    margin-inline-start: 68px;
+    min-width: 240px;
+    @include mat.menu-overrides((
+      container-color: #10302A,
+      container-shape: 12px,
+      item-label-text-color: $sobre-noche,
+      item-hover-state-layer-color: color-mix(in srgb, #{$sobre-noche} 10%, transparent),
+      item-focus-state-layer-color: color-mix(in srgb, #{$menta} 16%, transparent),
+    ));
+
+    .vit-titulo-submenu,
+    .vit-grupo-submenu {
+      margin: 6px 0;
+      padding-inline: 12px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .vit-titulo-submenu {
+      color: $menta-suave;
+    }
+
+    .vit-grupo-submenu {
+      color: $sobre-noche;
+    }
+
+    .vit-submenu-activo {
+      background: color-mix(in srgb, #{$menta} 16%, transparent);
+      @include mat.menu-overrides((
+        item-label-text-color: #fff,
+      ));
+    }
   }
 
   .vit-barra-clara {

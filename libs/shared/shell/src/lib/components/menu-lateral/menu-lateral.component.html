@@ -6,10 +6,12 @@
 @if (nodos().length === 0) {
   <vit-estado-vacio [icono]="iconoSinOpciones" [titulo]="mensajes.sinOpcionesMenu" />
 } @else {
-  <!-- Una sola lista para todos los niveles: cada mat-nav-list es una región «navigation» y anidarlas las repite sin nombre. -->
-  <mat-nav-list [attr.aria-label]="mensajes.menuPrincipal">
-    <ng-container *ngTemplateOutlet="nivelDelMenu; context: { $implicit: nodos(), nivel: 0 }" />
-  </mat-nav-list>
+  <vit-buscador-menu [nodos]="nodos()" (elegido)="abrir($event)">
+    <!-- Una sola lista para todos los niveles: cada mat-nav-list es una región «navigation» y anidarlas las repite sin nombre. -->
+    <mat-nav-list [attr.aria-label]="mensajes.menuPrincipal">
+      <ng-container *ngTemplateOutlet="nivelDelMenu; context: { $implicit: nodos(), nivel: 0 }" />
+    </mat-nav-list>
+  </vit-buscador-menu>
 }
 
 <ng-template #nivelDelMenu let-nodosDelNivel let-nivel="nivel">
