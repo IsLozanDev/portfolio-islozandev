@@ -370,6 +370,7 @@ type CodigoErrorAuth = ... | 'INGRESO_BLOQUEADO';
 - **Sí:** `bitacora_exportar` en `PERMISOS_VETADOS_SOPORTE`: un agente de soporte no saca datos personales del cliente en un archivo.
 - **Sí (paso 2, decisión del usuario):** el permiso `plat.seguridad.bitacora_exportar` y la versión `1.8.0` del manifiesto se declaran en el paso 2, junto con el veto. `manifiesto-soporte.spec.ts` exige que todo permiso vetado exista en el manifiesto. Los roles siguen en el paso 8.
 - **Sí (paso 2):** el mensaje de bloqueo usa el singular con 1 minuto («en 1 minuto»).
+- **Sí (paso 4):** `mfa_verification_rejected` (demasiados intentos en GoTrue) y `mfa_factor_not_found` cuentan como `CODIGO_MFA`. Un 4xx de GoTrue con un `error_code` que no está en la tabla cuenta como fallo de la etapa (`CREDENCIALES` o `CODIGO_MFA`): nunca abre el paso ni se presenta como caída del proveedor. 5xx, red, timeout, JSON roto o un 200 sin tokens son `INGRESO_NO_DISPONIBLE`.
 - **Sí:** migración con nombre `01b_seg_tipos_ingreso.sql` para correr después de `01b_seg_soporte.sql` (`migrar.mjs` ordena por nombre).
 - **Sí:** `SUPABASE_PUBLISHABLE_KEY` en la API para el grant de contraseña. **No:** usar la secret key en un flujo que actúa por el usuario.
 

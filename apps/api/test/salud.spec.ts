@@ -21,6 +21,7 @@ const ENV_MINIMO = {
   SUPABASE_URL,
   REDIS_URL: 'redis://localhost:6379',
   SUPABASE_SECRET_KEY: 'sb_secret_prueba',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_prueba',
   SEG_URL_INVITACION: 'http://127.0.0.1:4200/auth/invitacion',
 };
 
@@ -187,6 +188,12 @@ describe('api', () => {
     expect(cargarConfig(ENV_MINIMO).SEG_MFA_MAX_EDAD_SEG).toBe(900);
     expect(cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '60' }).SEG_MFA_MAX_EDAD_SEG).toBe(60);
     expect(() => cargarConfig({ ...ENV_MINIMO, SEG_MFA_MAX_EDAD_SEG: '0' })).toThrow(/SEG_MFA_MAX_EDAD_SEG/);
+  });
+
+  it('cargarConfig exige la publishable key para el ingreso por la API (spec 18b)', () => {
+    const { SUPABASE_PUBLISHABLE_KEY: _publica, ...sinPublica } = ENV_MINIMO;
+    expect(() => cargarConfig(sinPublica)).toThrow(/SUPABASE_PUBLISHABLE_KEY/);
+    expect(cargarConfig(ENV_MINIMO).SUPABASE_PUBLISHABLE_KEY).toBe('sb_publishable_prueba');
   });
 
   it('cargarConfig exige la secret key y la URL de invitación, y toma 72 h por defecto', () => {
