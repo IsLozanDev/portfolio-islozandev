@@ -1,7 +1,16 @@
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { SelectQueryBuilder } from 'typeorm';
-import type { AsignadoDelEvento, EventoBitacora, EventoBitacoraDetalle, FiltroBitacora, LecturaBitacora, UsuarioDelEvento } from '../../application/ports/lectura-bitacora.js';
+import type {
+  AsignadoDelEvento,
+  EventoBitacora,
+  EventoBitacoraDetalle,
+  EventoBitacoraExportado,
+  FiltroBitacora,
+  FiltroExportacion,
+  LecturaBitacora,
+  UsuarioDelEvento,
+} from '../../application/ports/lectura-bitacora.js';
 import type { Listado } from '../../application/ports/lectura-miembros.js';
 import type { TipoEventoSeguridad } from '../../application/ports/repositorios.js';
 import type { Fecha } from '../../domain/asignacion.js';
@@ -28,7 +37,14 @@ const CLAVE_DE_RESUMEN: Readonly<Partial<Record<TipoEventoSeguridad, string>>> =
   ACCESO_SOPORTE: 'ticket',
   ASIGNACION_OTORGADA: 'alcance',
   ASIGNACION_REVOCADA: 'motivo',
+  // Spec 18b: el método del ingreso, el motivo del fallo y las filas exportadas.
+  LOGIN: 'metodo',
+  LOGIN_FALLIDO: 'motivo',
+  EXPORTACION: 'filas',
 };
+
+/** Lote de la exportación: memoria acotada sin offset. */
+const TAMANO_LOTE_EXPORTACION = 1_000;
 
 const TIPOS_DE_ASIGNACION: readonly TipoEventoSeguridad[] = ['ASIGNACION_OTORGADA', 'ASIGNACION_REVOCADA'];
 const SEPARADOR_DE_RESUMEN = ' → ';
@@ -49,6 +65,16 @@ interface FilaEventoListado {
   perfil_nombre: string | null;
 }
 
+/** El cursor lleva la fecha como texto: `Date` pierde los microsegundos y el keyset saltaría filas. */
+interface FilaEventoExportado extends FilaEventoListado {
+  cursor_fecha: string;
+}
+
+interface CursorExportacion {
+  fecha: string;
+  id: string;
+}
+
 /** Bitácora del tenant del contexto. Filtra por tenant además de la RLS (regla 3). */
 export class LecturaBitacoraTypeOrm implements LecturaBitacora {
   constructor(
@@ -57,6 +83,44 @@ export class LecturaBitacoraTypeOrm implements LecturaBitacora {
   ) {}
 
   async listar(filtro: FiltroBitacora): Promise<Listado<EventoBitacora>> {
+    const consulta = this.filtrados(filtro);
+    const total = await consulta.getCount();
+    const filas = await ordenDeLista(this.conColumnas(consulta))
+      .offset((filtro.pagina - 1) * filtro.tamano)
+      .limit(filtro.tamano)
+      .getRawMany<FilaEventoListado>();
+    return { items: filas.map(eventoListado), total };
+  }
+
+  contar(filtro: FiltroExportacion): Promise<number> {
+    return this.filtrados(filtro).getCount();
+  }
+
+  async recorrer(filtro: FiltroExportacion, alLote: (eventos: EventoBitacoraExportado[]) => Promise<void>): Promise<void> {
+    let cursor: CursorExportacion | null = null;
+    for (;;) {
+      const filas = await this.loteExportado(filtro, cursor);
+      if (filas.length === 0) return;
+      await alLote(filas.map((fila) => ({ ...eventoListado(fila), ip: fila.ip })));
+      if (filas.length < TAMANO_LOTE_EXPORTACION) return;
+      const ultima = filas[filas.length - 1];
+      cursor = { fecha: ultima.cursor_fecha, id: String(ultima.id) };
+    }
+  }
+
+  private loteExportado(filtro: FiltroExportacion, cursor: CursorExportacion | null): Promise<FilaEventoExportado[]> {
+    const consulta = this.conColumnas(this.filtrados(filtro)).addSelect('CAST(evento.ocurridoEn AS text)', 'cursor_fecha');
+    if (cursor) {
+      consulta.andWhere('(evento.ocurridoEn, evento.id) < (CAST(:fechaCursor AS timestamptz), CAST(:idCursor AS bigint))', {
+        fechaCursor: cursor.fecha,
+        idCursor: cursor.id,
+      });
+    }
+    return ordenDeLista(consulta).limit(TAMANO_LOTE_EXPORTACION).getRawMany<FilaEventoExportado>();
+  }
+
+  /** Rango en America/Lima, tipo y búsqueda por persona: lo mismo para la lista y la exportación. */
+  private filtrados(filtro: FiltroExportacion): SelectQueryBuilder<FilaEventoSeguridad> {
     const consulta = this.eventos()
       .andWhere('evento.ocurridoEn >= :inicio', { inicio: inicioDelDia(filtro.desde) })
       .andWhere('evento.ocurridoEn < :fin', { fin: inicioDelDiaSiguiente(filtro.hasta) });
@@ -67,14 +131,7 @@ export class LecturaBitacoraTypeOrm implements LecturaBitacora {
         { patron: patronDeBusqueda(filtro.usuario) },
       );
     }
-    const total = await consulta.getCount();
-    const filas = await this.conColumnas(consulta)
-      .orderBy('evento.ocurridoEn', 'DESC')
-      .addOrderBy('evento.id', 'DESC')
-      .offset((filtro.pagina - 1) * filtro.tamano)
-      .limit(filtro.tamano)
-      .getRawMany<FilaEventoListado>();
-    return { items: filas.map(eventoListado), total };
+    return consulta;
   }
 
   async detalle(id: string): Promise<EventoBitacoraDetalle | null> {
@@ -123,6 +180,10 @@ export class LecturaBitacoraTypeOrm implements LecturaBitacora {
   }
 }
 
+function ordenDeLista(consulta: SelectQueryBuilder<FilaEventoSeguridad>): SelectQueryBuilder<FilaEventoSeguridad> {
+  return consulta.orderBy('evento.ocurridoEn', 'DESC').addOrderBy('evento.id', 'DESC');
+}
+
 function inicioDelDia(fecha: Fecha): Date {
   return new Date(`${fecha}T00:00:00${DESFASE_LIMA}`);
 }
@@ -162,6 +223,7 @@ function resumenDe(fila: FilaEventoListado): string | null {
   }
   const clave = CLAVE_DE_RESUMEN[fila.tipo];
   const valor = clave ? fila.detalle[clave] : undefined;
+  if (typeof valor === 'number') return String(valor);
   return typeof valor === 'string' ? valor : null;
 }
 

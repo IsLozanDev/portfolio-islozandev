@@ -43,6 +43,9 @@ import { LecturaMiembrosTypeOrm } from './infrastructure/typeorm/lectura-miembro
 import { ConsultarBitacora, ConsultarEventoSeguridad } from './application/lecturas-bitacora.js';
 import { LecturaBitacoraTypeOrm } from './infrastructure/typeorm/lectura-bitacora.typeorm.js';
 import { BitacoraController } from './interface/bitacora.controller.js';
+import { ExportarBitacora } from './application/exportar-bitacora.js';
+import { FABRICA_ESCRITOR_BITACORA, type FabricaEscritorBitacora } from './application/ports/escritor-bitacora.port.js';
+import { EscritorBitacoraXlsx } from './infrastructure/xlsx/escritor-bitacora.xlsx.js';
 import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from './application/solicitar-acceso-soporte.js';
 import { AprobarAccesoSoporte } from './application/aprobar-acceso-soporte.js';
 import { RechazarAccesoSoporte, RevocarAccesoSoporte, RevocarAccesosPorTicket, type DependenciasCierreSoporte } from './application/cerrar-acceso-soporte.js';
@@ -78,6 +81,8 @@ import { ProveedorIngresoGotrue } from './infrastructure/supabase/proveedor-ingr
 import { ContadorIntentosRedis, type AlFallarRedis } from './infrastructure/redis/contador-intentos.redis.js';
 import { BitacoraIngresoTypeorm } from './infrastructure/typeorm/bitacora-ingreso.typeorm.js';
 import { IngresoController } from './interface/ingreso.controller.js';
+import { RegistrarInicioSesion } from './application/registrar-inicio-sesion.js';
+import { RegistroSesionesRedis } from './infrastructure/redis/registro-sesiones.redis.js';
 
 const CLIENTE_REDIS = Symbol('CLIENTE_REDIS');
 const DEPENDENCIAS_INGRESO = Symbol('DEPENDENCIAS_INGRESO');
@@ -187,6 +192,9 @@ export class SeguridadModule {
   static register(op: SeguridadOpciones): DynamicModule {
     const logger = new Logger('Seguridad');
     const inv = op.invitaciones;
+    // Solo la operación y el nombre del error: ni correo ni IP (TR-RNF-026).
+    const alFallarRedis: AlFallarRedis = (operacion, error) =>
+      logger.warn({ evento: 'seg.ingreso.redis_error', operacion, error: error instanceof Error ? error.name : typeof error });
     return {
       module: SeguridadModule,
       // Global, como KernelInfraModule: los componentes que dependen de seg (cfg, seq, cat) inyectan sus puertos.
@@ -345,6 +353,18 @@ export class SeguridadModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
         {
+          provide: ExportarBitacora,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, repositorios: ReposMembresias) =>
+            new ExportarBitacora({
+              unidadDeTrabajo,
+              lectura: new LecturaBitacoraTypeOrm(unidadDeTrabajo, contexto),
+              bitacora: repositorios.bitacora,
+              avisar: (mensaje, datos) => logger.error({ evento: mensaje, ...datos }),
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, REPOS_MEMBRESIAS],
+        },
+        { provide: FABRICA_ESCRITOR_BITACORA, useValue: ((destino) => new EscritorBitacoraXlsx(destino)) satisfies FabricaEscritorBitacora },
+        {
           provide: ListarAsignables,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, productos: ProductosContratados) =>
             new ListarAsignables({ unidadDeTrabajo, lectura: new LecturaMiembrosTypeOrm(unidadDeTrabajo, contexto), productos }),
@@ -441,9 +461,6 @@ export class SeguridadModule {
         {
           provide: DEPENDENCIAS_INGRESO,
           useFactory: (redis: Redis): DependenciasIngreso => {
-            // Solo la operación y el nombre del error: ni correo ni IP (TR-RNF-026).
-            const alFallarRedis: AlFallarRedis = (operacion, error) =>
-              logger.warn({ evento: 'seg.ingreso.redis_error', operacion, error: error instanceof Error ? error.name : typeof error });
             const proveedor = op.ingreso
               ? new ProveedorIngresoGotrue(op.supabaseUrl, op.ingreso.supabasePublishableKey)
               : PROVEEDOR_INGRESO_SIN_CONFIGURAR;
@@ -455,6 +472,16 @@ export class SeguridadModule {
             };
           },
           inject: [CLIENTE_REDIS],
+        },
+        {
+          provide: RegistrarInicioSesion,
+          useFactory: (redis: Redis, dependencias: DependenciasIngreso) =>
+            new RegistrarInicioSesion({
+              sesiones: new RegistroSesionesRedis(redis, alFallarRedis),
+              bitacora: dependencias.bitacora,
+              avisar: dependencias.avisar,
+            }),
+          inject: [CLIENTE_REDIS, DEPENDENCIAS_INGRESO],
         },
         { provide: IngresarConClave, useFactory: (dependencias: DependenciasIngreso) => new IngresarConClave(dependencias), inject: [DEPENDENCIAS_INGRESO] },
         { provide: VerificarMfa, useFactory: (dependencias: DependenciasIngreso) => new VerificarMfa(dependencias), inject: [DEPENDENCIAS_INGRESO] },
@@ -516,8 +543,8 @@ export class SeguridadModule {
         // APP_GUARD se ejecuta en el orden de registro: autenticación, MFA y permiso.
         {
           provide: APP_GUARD,
-          useFactory: (r: Reflector, v: VerificadorToken, a: RegistroAcceso) => new AutenticacionGuard(r, v, a),
-          inject: [Reflector, VERIFICADOR_TOKEN, REGISTRO_ACCESO],
+          useFactory: (r: Reflector, v: VerificadorToken, a: RegistroAcceso, inicioSesion: RegistrarInicioSesion) => new AutenticacionGuard(r, v, a, inicioSesion),
+          inject: [Reflector, VERIFICADOR_TOKEN, REGISTRO_ACCESO, RegistrarInicioSesion],
         },
         { provide: APP_GUARD, useFactory: (r: Reflector) => new MfaGuard(r, op.mfaMaxEdadSeg), inject: [Reflector] },
         {

@@ -4,7 +4,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { NotFoundError, type UnitOfWork } from '@vitrina/plataforma/kernel';
+import { ExportarBitacora } from '../src/application/exportar-bitacora.js';
 import { ConsultarBitacora, ConsultarEventoSeguridad } from '../src/application/lecturas-bitacora.js';
+import { FABRICA_ESCRITOR_BITACORA } from '../src/application/ports/escritor-bitacora.port.js';
 import type { EventoBitacora, FiltroBitacora, LecturaBitacora } from '../src/application/ports/lectura-bitacora.js';
 import { RangoBitacoraInvalidoError } from '../src/domain/errores.js';
 import { BitacoraController } from '../src/interface/bitacora.controller.js';
@@ -29,6 +31,8 @@ describe('ConsultarBitacora: rango obligatorio de hasta 92 días', () => {
       return { items: [], total: 0 };
     },
     detalle: async () => null,
+    contar: async () => 0,
+    recorrer: async () => undefined,
   };
   const unidadDeTrabajo = { run: <T>(trabajo: () => Promise<T>) => trabajo() } as UnitOfWork;
   const consultar = new ConsultarBitacora({ unidadDeTrabajo, lectura });
@@ -69,6 +73,9 @@ describe('Rutas de la bitácora (HTTP, sin base)', () => {
         { provide: APP_GUARD, useClass: PrincipalDePrueba },
         { provide: ConsultarBitacora, useValue: casos.listar },
         { provide: ConsultarEventoSeguridad, useValue: casos.consultar },
+        // La exportación tiene su propia prueba (exportar-bitacora.spec.ts).
+        { provide: ExportarBitacora, useValue: new Doble() },
+        { provide: FABRICA_ESCRITOR_BITACORA, useValue: () => undefined },
       ],
     }).compile();
     app = modulo.createNestApplication({ logger: false });

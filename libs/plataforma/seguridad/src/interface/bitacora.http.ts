@@ -21,6 +21,13 @@ export const EsquemaConsultarBitacora = z.object({
   tamano: z.coerce.number().int().min(1).max(TAMANO_PAGINA_MAXIMO).default(TAMANO_PAGINA_DEFECTO),
 });
 
+/** Los mismos filtros que la lista, sin página: se exporta todo lo filtrado (spec 18b). */
+export const EsquemaExportarBitacora = EsquemaConsultarBitacora.omit({ pagina: true, tamano: true });
+
+export function nombreArchivoExportacion(desde: string, hasta: string): string {
+  return `bitacora-${desde.replaceAll('-', '')}-${hasta.replaceAll('-', '')}.xlsx`;
+}
+
 export function consultaBitacoraDe(consulta: z.infer<typeof EsquemaConsultarBitacora>): ConsultaBitacora {
   return {
     desde: consulta.desde || undefined,

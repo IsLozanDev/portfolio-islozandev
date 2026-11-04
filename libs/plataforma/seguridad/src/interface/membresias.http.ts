@@ -1,7 +1,13 @@
 import { Catch, HttpException, Inject, Injectable, type ArgumentsHost, type CanActivate, type ExceptionFilter, type ExecutionContext } from '@nestjs/common';
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
-import { IdentidadNoDisponibleError, InvitacionExpiradaError, MfaRequeridaError } from '../domain/errores.js';
+import {
+  AuditoriaNoDisponibleError,
+  ExportacionDemasiadoGrandeError,
+  IdentidadNoDisponibleError,
+  InvitacionExpiradaError,
+  MfaRequeridaError,
+} from '../domain/errores.js';
 import { UUID } from './respuestas.js';
 
 interface Respuesta {
@@ -12,6 +18,9 @@ interface Respuesta {
 const ESTADOS: ReadonlyArray<readonly [abstract new (...args: never[]) => DomainError, number]> = [
   [InvitacionExpiradaError, 410],
   [IdentidadNoDisponibleError, 503],
+  // Exportación de la bitácora (spec 18b).
+  [ExportacionDemasiadoGrandeError, 422],
+  [AuditoriaNoDisponibleError, 503],
   [ValidationError, 400],
   [NotFoundError, 404],
   [ConflictError, 409],

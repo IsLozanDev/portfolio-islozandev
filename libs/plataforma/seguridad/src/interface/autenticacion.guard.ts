@@ -1,13 +1,15 @@
 import { Logger, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import type { RegistroAcceso } from '../application/ports/registro-acceso.port.js';
+import type { RegistrarInicioSesion } from '../application/registrar-inicio-sesion.js';
 import type { VerificadorToken } from '../application/ports/verificador-token.port.js';
 import { AutenticacionNoDisponibleError, TokenInvalidoError } from '../domain/errores.js';
 import { PUBLICO, type SolicitudAutenticada } from './decoradores.js';
-import { rechazar, TOKEN_INVALIDO, tokenBearer } from './respuestas.js';
+import { cabecera, rechazar, TOKEN_INVALIDO, tokenBearer } from './respuestas.js';
 
 interface Solicitud extends SolicitudAutenticada {
   headers: Record<string, string | string[] | undefined>;
+  ip?: string;
 }
 
 /** Guard global: toda ruta sin `@Publico()` exige un Bearer válido. */
@@ -18,6 +20,8 @@ export class AutenticacionGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly verificador: VerificadorToken,
     private readonly registroAcceso: RegistroAcceso,
+    /** LOGIN en la primera petición de cada sesión (spec 18b). */
+    private readonly inicioSesion: RegistrarInicioSesion | null = null,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -40,6 +44,8 @@ export class AutenticacionGuard implements CanActivate {
     this.registroAcceso.marcar(req.principal.usuarioId).catch((e: unknown) => {
       this.logger.warn({ evento: 'auth.ultimo_acceso.error', error: e instanceof Error ? e.name : typeof e });
     });
+    // Sin esperar: no agrega latencia a la petición (TR-RNF-001) y nunca falla (avisa por log).
+    void this.inicioSesion?.ejecutar({ principal: req.principal, ip: req.ip ?? null, agente: cabecera(req, 'user-agent') ?? null });
     return true;
   }
 }
