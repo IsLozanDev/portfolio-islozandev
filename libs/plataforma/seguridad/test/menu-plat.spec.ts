@@ -5,7 +5,7 @@ import { crearEntorno, type Entorno } from './support/entorno.js';
 import { describeConDb } from './support/temp-db.js';
 
 /** Raíces del menú que arma seg.menu_usuario con el manifiesto PLAT real aplicado. */
-describeConDb('Menú del manifiesto PLAT 1.6.0 (spec 17a, PostgreSQL 16)', () => {
+describeConDb('Menú del manifiesto PLAT 1.7.0 (specs 17a y 18, PostgreSQL 16)', () => {
   let e: Entorno;
 
   const idDeRol = async (codigo: string): Promise<string> =>
@@ -36,6 +36,20 @@ describeConDb('Menú del manifiesto PLAT 1.6.0 (spec 17a, PostgreSQL 16)', () =>
 
     expect(menu).toEqual(expect.arrayContaining(['plat.organizacion', 'plat.organizacion.empresas', 'plat.organizacion.sucursales', 'plat.organizacion.unidades']));
     expect(menu.filter((codigo) => codigo.startsWith('plat.consola'))).toEqual([]);
+  });
+
+  it('el propietario ve «Bitácora» y «Soporte» en Seguridad (spec 18)', async () => {
+    expect(await menuCon('PLAT_PROPIETARIO')).toEqual(expect.arrayContaining(['plat.seguridad', 'plat.seguridad.bitacora', 'plat.seguridad.soporte']));
+  });
+
+  it('el administrador de seguridad ve «Bitácora» pero no «Soporte»', async () => {
+    const menu = await menuCon('PLAT_ADMIN_SEGURIDAD');
+    expect(menu).toContain('plat.seguridad.bitacora');
+    expect(menu).not.toContain('plat.seguridad.soporte');
+  });
+
+  it('el agente de soporte ve «Consola» con Tenants y Soporte, y nada más', async () => {
+    expect([...(await menuCon('PLAT_AGENTE_SOPORTE'))].sort()).toEqual(['plat.consola', 'plat.consola.soporte', 'plat.consola.tenants']);
   });
 
   it('el administrador de tenants ve «Consola» con Tenants, y no ve «Organización»', async () => {

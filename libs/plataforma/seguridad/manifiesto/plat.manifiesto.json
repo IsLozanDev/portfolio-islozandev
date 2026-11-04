@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -14,6 +14,8 @@
     { "codigo": "plat.seguridad.perfiles", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Perfiles", "ruta": "/admin/perfiles", "icono": "groups", "orden": 2, "permisos": ["plat.perfil.gestionar"] },
     { "codigo": "plat.seguridad.asignaciones", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Asignaciones", "ruta": "/admin/asignaciones", "icono": "assignment_ind", "orden": 3, "permisos": ["plat.asignacion.otorgar"] },
     { "codigo": "plat.seguridad.usuarios", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Usuarios", "ruta": "/admin/usuarios", "icono": "person_add", "orden": 4, "permisos": ["plat.usuario.invitar"] },
+    { "codigo": "plat.seguridad.bitacora", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Bitácora", "ruta": "/admin/bitacora", "icono": "history", "orden": 5, "permisos": ["plat.seguridad.bitacora"] },
+    { "codigo": "plat.seguridad.soporte", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Soporte", "ruta": "/admin/soporte", "icono": "support_agent", "orden": 6, "permisos": ["plat.soporte.autorizar"] },
     { "codigo": "plat.configuracion", "modulo": "configuracion", "padre": null, "nombre": "Configuración", "icono": "settings", "orden": 2, "permisos": [] },
     { "codigo": "plat.configuracion.parametros", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Parámetros", "ruta": "/admin/parametros", "icono": "tune", "orden": 1, "permisos": ["plat.parametro.leer"] },
     { "codigo": "plat.configuracion.series", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Series", "ruta": "/admin/series", "icono": "format_list_numbered", "orden": 2, "permisos": ["plat.serie.gestionar"] },
@@ -22,7 +24,8 @@
     { "codigo": "plat.organizacion.sucursales", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Sucursales", "ruta": "/admin/sucursales", "icono": "store", "orden": 2, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.organizacion.unidades", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Unidades", "ruta": "/admin/unidades", "icono": "view_module", "orden": 3, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.consola", "modulo": "consola", "padre": null, "nombre": "Consola", "icono": "dns", "orden": 4, "permisos": [] },
-    { "codigo": "plat.consola.tenants", "modulo": "consola", "padre": "plat.consola", "nombre": "Tenants", "ruta": "/consola/tenants", "icono": "apartment", "orden": 1, "permisos": ["plat.tenant.consultar"] }
+    { "codigo": "plat.consola.tenants", "modulo": "consola", "padre": "plat.consola", "nombre": "Tenants", "ruta": "/consola/tenants", "icono": "apartment", "orden": 1, "permisos": ["plat.tenant.consultar"] },
+    { "codigo": "plat.consola.soporte", "modulo": "consola", "padre": "plat.consola", "nombre": "Soporte", "ruta": "/consola/soporte", "icono": "support_agent", "orden": 2, "permisos": ["plat.soporte.solicitar"] }
   ],
   "permisos": [
     { "codigo": "plat.manifiesto.aplicar", "descripcion": "Aplicar el manifiesto funcional de un producto", "alcance_minimo": "TENANT", "sensible": false },
@@ -46,13 +49,16 @@
     { "codigo": "plat.organizacion.consultar", "descripcion": "Ver empresas, sucursales y unidades del tenant", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.empresa.crear", "descripcion": "Registrar y editar empresas del tenant", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.sucursal.gestionar", "descripcion": "Registrar, editar e inactivar sucursales y marcar la principal", "alcance_minimo": "EMPRESA", "sensible": false },
-    { "codigo": "plat.unidad.gestionar", "descripcion": "Registrar, editar e inactivar unidades operativas", "alcance_minimo": "SUCURSAL", "sensible": false }
+    { "codigo": "plat.unidad.gestionar", "descripcion": "Registrar, editar e inactivar unidades operativas", "alcance_minimo": "SUCURSAL", "sensible": false },
+    { "codigo": "plat.seguridad.bitacora", "descripcion": "Consultar la bitácora de seguridad del tenant", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.soporte.autorizar", "descripcion": "Aprobar, rechazar y revocar accesos temporales de soporte", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.soporte.solicitar", "descripcion": "Solicitar y usar accesos temporales de soporte (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": false }
   ],
   "roles_predefinidos": [
     {
       "codigo": "PLAT_ADMIN_SEGURIDAD",
       "nombre": "Administrador de seguridad",
-      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar", "plat.organizacion.consultar"]
+      "permisos": ["plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto", "plat.usuario.invitar", "plat.asignacion.revocar", "plat.organizacion.consultar", "plat.seguridad.bitacora"]
     },
     {
       "codigo": "PLAT_ADMIN_CONFIGURACION",
@@ -70,13 +76,18 @@
       "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto"]
     },
     {
+      "codigo": "PLAT_AGENTE_SOPORTE",
+      "nombre": "Agente de soporte",
+      "permisos": ["plat.soporte.solicitar", "plat.tenant.consultar", "plat.sesion.contexto"]
+    },
+    {
       "codigo": "PLAT_PROPIETARIO",
       "nombre": "Propietario del tenant",
       "permisos": [
         "plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto",
         "plat.usuario.invitar", "plat.asignacion.revocar", "plat.parametro.leer", "plat.parametro.editar", "plat.serie.gestionar",
         "plat.evento.consultar", "plat.evento.reprocesar", "plat.organizacion.consultar", "plat.empresa.crear", "plat.sucursal.gestionar",
-        "plat.unidad.gestionar"
+        "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar"
       ]
     }
   ],

@@ -395,7 +395,7 @@ Roles:
 
 - `PLAT_PROPIETARIO` suma `plat.seguridad.bitacora` y `plat.soporte.autorizar`.
 - `PLAT_ADMIN_SEGURIDAD` suma `plat.seguridad.bitacora`.
-- Nuevo `PLAT_AGENTE_SOPORTE`: `plat.soporte.solicitar` y `plat.tenant.consultar`. Queda fuera del techo de `PLAT_PROPIETARIO` (16b), así que un cliente no lo puede asignar.
+- Nuevo `PLAT_AGENTE_SOPORTE`: `plat.soporte.solicitar`, `plat.tenant.consultar` y `plat.sesion.contexto` (este último, como todo rol predefinido; se agregó en el paso 10). Queda fuera del techo de `PLAT_PROPIETARIO` (16b), así que un cliente no lo puede asignar.
 
 ### Worker (`apps/worker/src/soporte/`)
 
