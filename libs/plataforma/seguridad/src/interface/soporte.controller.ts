@@ -17,6 +17,7 @@ import {
 import { AprobarAccesoSoporte } from '../application/aprobar-acceso-soporte.js';
 import { RechazarAccesoSoporte, RevocarAccesoSoporte } from '../application/cerrar-acceso-soporte.js';
 import { ContarSolicitudesPendientes, ListarSolicitudesSoporte } from '../application/lecturas-soporte.js';
+import { EntrarComoSoporte, SalirDeSoporte } from '../application/sesion-soporte.js';
 import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from '../application/solicitar-acceso-soporte.js';
 import { PERMISOS_SEG } from '../domain/permisos-seg.js';
 import type { Principal } from '../domain/principal.js';
@@ -29,6 +30,7 @@ import {
   AccesoDelAgenteDto,
   accesoDelAgenteDto,
   AprobarSoporteDto,
+  EntradaASoporteDto,
   EsquemaAprobarSoporte,
   EsquemaListarSolicitudes,
   EsquemaRechazarSoporte,
@@ -68,6 +70,8 @@ export class SoporteController {
     @Inject(AprobarAccesoSoporte) private readonly aprobarAcceso: AprobarAccesoSoporte,
     @Inject(RechazarAccesoSoporte) private readonly rechazarAcceso: RechazarAccesoSoporte,
     @Inject(RevocarAccesoSoporte) private readonly revocarAcceso: RevocarAccesoSoporte,
+    @Inject(EntrarComoSoporte) private readonly entrarComoSoporte: EntrarComoSoporte,
+    @Inject(SalirDeSoporte) private readonly salirDeSoporte: SalirDeSoporte,
   ) {}
 
   @Post('solicitudes')
@@ -179,5 +183,25 @@ export class SoporteController {
       actorId: principal.usuarioId,
       ip: ip || null,
     });
+  }
+
+  @Post('accesos/:id/entrar')
+  @HttpCode(HTTP_OK)
+  @Permiso(PERMISOS_SEG.soporteSolicitar)
+  @ApiOkResponse({ type: EntradaASoporteDto })
+  @ApiForbiddenResponse({ description: 'SIN_PERMISO' })
+  @ApiNotFoundResponse({ description: 'NO_ENCONTRADO o SOPORTE_NO_ENCONTRADO: no es un acceso del agente' })
+  @ApiConflictResponse({ description: 'SOPORTE_NO_VIGENTE' })
+  async entrar(@PrincipalActual() principal: Principal, @Param('id') id: string): Promise<EntradaASoporteDto> {
+    const entrada = await this.entrarComoSoporte.ejecutar(exigirUuid(id, ACCESO), principal.usuarioId, principal.tenantId ?? '');
+    return { tenant_id: entrada.tenantId, hasta: entrada.hasta.toISOString() };
+  }
+
+  /** Sin @Permiso: en el tenant del cliente el agente no tiene plat.soporte.solicitar. */
+  @Post('salir')
+  @HttpCode(HTTP_SIN_CONTENIDO)
+  @ApiNoContentResponse({ description: 'El próximo token vuelve al tenant operador: hacer refreshSession()' })
+  async salir(@PrincipalActual() principal: Principal): Promise<void> {
+    await this.salirDeSoporte.ejecutar(principal.usuarioId, principal.tenantId ?? '');
   }
 }

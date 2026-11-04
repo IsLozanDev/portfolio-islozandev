@@ -45,6 +45,8 @@ import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from './application/s
 import { AprobarAccesoSoporte } from './application/aprobar-acceso-soporte.js';
 import { RechazarAccesoSoporte, RevocarAccesoSoporte, RevocarAccesosPorTicket, type DependenciasCierreSoporte } from './application/cerrar-acceso-soporte.js';
 import { ContarSolicitudesPendientes, ListarSolicitudesSoporte } from './application/lecturas-soporte.js';
+import { ResolverAccesoSoporteVigente } from './application/resolver-acceso-soporte.js';
+import { EntrarComoSoporte, SalirDeSoporte, type DependenciasSesionSoporte } from './application/sesion-soporte.js';
 import { VERIFICADOR_TICKET, type VerificadorTicket } from './application/ports/verificador-ticket.port.js';
 import { AccesoSoporteRepositorioTypeOrm } from './infrastructure/typeorm/acceso-soporte.repositorio.js';
 import { LecturaSoporteTypeOrm } from './infrastructure/typeorm/lectura-soporte.typeorm.js';
@@ -118,13 +120,14 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
     bitacora: new BitacoraSeguridadTypeOrm(uow, ctx),
     accesosSoporte: new AccesoSoporteRepositorioTypeOrm(uow, ctx),
     lecturaSoporte: new LecturaSoporteTypeOrm(uow, ctx, dataSource),
-    tenantsSoporte: new TenantsSoporteTypeOrm(uow),
+    tenantsSoporte: new TenantsSoporteTypeOrm(uow, dataSource),
   };
 }
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
 const TENANT_OPERADOR_DEFECTO = 'plataforma';
 const DEPENDENCIAS_CIERRE_SOPORTE = Symbol('DEPENDENCIAS_CIERRE_SOPORTE');
+const DEPENDENCIAS_SESION_SOPORTE = Symbol('DEPENDENCIAS_SESION_SOPORTE');
 type CasoDeCierreDeSoporte<T> = new (dependencias: DependenciasCierreSoporte) => T;
 
 /** Rechazar, revocar y cerrar por ticket reciben las mismas dependencias (spec 18). */
@@ -422,13 +425,48 @@ export class SeguridadModule {
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, PERMISOS_REPOSITORIO, CACHE_PERMISOS],
         },
         {
-          provide: ObtenerMiContexto,
-          useFactory: (uow: TypeOrmUnitOfWork, ctx: TenantContext, repo: PermisosRepositorio, resolver: ResolverPermisos) =>
-            new ObtenerMiContexto(uow, ctx, repo, new MembresiasLecturaTypeOrm(uow, ctx), new PreferenciaSucursalTypeOrm(uow, ctx), resolver, (mensaje, datos) =>
-              logger.warn({ mensaje, ...datos }),
-            ),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PERMISOS_REPOSITORIO, ResolverPermisos],
+          provide: ResolverAccesoSoporteVigente,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, versiones: PermisosRepositorio, reloj: Clock, repositorios: ReposMembresias) =>
+            new ResolverAccesoSoporteVigente({ unidadDeTrabajo, contexto, versiones, reloj, lectura: repositorios.lecturaSoporte }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, PERMISOS_REPOSITORIO, CLOCK, REPOS_MEMBRESIAS],
         },
+        {
+          provide: ObtenerMiContexto,
+          useFactory: (
+            uow: TypeOrmUnitOfWork,
+            ctx: TenantContext,
+            repo: PermisosRepositorio,
+            resolver: ResolverPermisos,
+            soporte: ResolverAccesoSoporteVigente,
+            repositorios: ReposMembresias,
+          ) =>
+            new ObtenerMiContexto(
+              uow,
+              ctx,
+              repo,
+              new MembresiasLecturaTypeOrm(uow, ctx),
+              new PreferenciaSucursalTypeOrm(uow, ctx),
+              resolver,
+              { resolver: soporte, lectura: repositorios.lecturaSoporte },
+              (mensaje, datos) => logger.warn({ mensaje, ...datos }),
+            ),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PERMISOS_REPOSITORIO, ResolverPermisos, ResolverAccesoSoporteVigente, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: DEPENDENCIAS_SESION_SOPORTE,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, reloj: Clock, repositorios: ReposMembresias): DependenciasSesionSoporte => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            lectura: repositorios.lecturaSoporte,
+            usuarios: repositorios.usuarios,
+            tenants: repositorios.tenantsSoporte,
+            tenantOperador: op.tenantOperador ?? TENANT_OPERADOR_DEFECTO,
+          }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, REPOS_MEMBRESIAS],
+        },
+        { provide: EntrarComoSoporte, useFactory: (dependencias: DependenciasSesionSoporte) => new EntrarComoSoporte(dependencias), inject: [DEPENDENCIAS_SESION_SOPORTE] },
+        { provide: SalirDeSoporte, useFactory: (dependencias: DependenciasSesionSoporte) => new SalirDeSoporte(dependencias), inject: [DEPENDENCIAS_SESION_SOPORTE] },
         // APP_GUARD se ejecuta en el orden de registro: autenticación, MFA y permiso.
         {
           provide: APP_GUARD,
@@ -444,7 +482,7 @@ export class SeguridadModule {
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
     };
   }
 }

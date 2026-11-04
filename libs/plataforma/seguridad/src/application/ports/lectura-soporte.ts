@@ -68,4 +68,6 @@ export interface LecturaSoporte {
   deAgente(agenteId: string): Promise<AccesoDelAgente[]>;
   porVencer(ahora: Date): Promise<AccesoPorVencer[]>;
   vigenteDe(usuarioId: string, ahora: Date): Promise<SesionSoporte | null>;
+  /** Permisos que muestran cada opción del menú (`seg.opcion_permiso`); las agrupadoras no tienen. */
+  permisosDeOpciones(codigos: readonly string[]): Promise<Map<string, string[]>>;
 }

@@ -110,6 +110,7 @@ describeConDb('GET /seg/mi-contexto (TR-CA-044 a 046, parte back)', () => {
       requiere_seleccion: false,
       sin_accesos: false,
       permisos: ['rest.caja.abrir'],
+      soporte: null,
     });
     expect(res.body.sucursales).toEqual([expect.objectContaining({ id: org.sucursales[0], empresa_id: org.empresaId })]);
     expect(res.body.menu.map((o: { codigo: string }) => o.codigo)).toEqual(['rest.caja.apertura']);

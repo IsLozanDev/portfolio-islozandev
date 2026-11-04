@@ -12,7 +12,7 @@ import type {
   SolicitudSoporte,
 } from '../../application/ports/lectura-soporte.js';
 import type { CausaCierreSoporte, EstadoSoporte, ModoSoporte } from '../../domain/acceso-soporte.js';
-import { UsuarioLecturaEntidad } from './entidades-lectura.js';
+import { OpcionLecturaEntidad, OpcionPermisoLecturaEntidad, UsuarioLecturaEntidad } from './entidades-lectura.js';
 import { AccesoSoporteEntidad, type FilaAccesoSoporte } from './entidades-soporte.js';
 
 // SQL crudo justificado (regla 11): llamadas a las funciones SECURITY DEFINER de 01b_seg_soporte, que el
@@ -106,6 +106,21 @@ export class LecturaSoporteTypeOrm implements LecturaSoporte {
   async porVencer(ahora: Date): Promise<AccesoPorVencer[]> {
     const filas: { id: string; tenant_id: string }[] = await this.dataSource.query(ACCESOS_POR_VENCER, [ahora]);
     return filas.map((fila) => ({ id: fila.id, tenantId: fila.tenant_id }));
+  }
+
+  async permisosDeOpciones(codigos: readonly string[]): Promise<Map<string, string[]>> {
+    const porOpcion = new Map<string, string[]>(codigos.map((codigo) => [codigo, []]));
+    if (codigos.length === 0) return porOpcion;
+    const filas = await this.unidadDeTrabajo.manager
+      .getRepository(OpcionPermisoLecturaEntidad)
+      .createQueryBuilder('opcionPermiso')
+      .innerJoin(OpcionLecturaEntidad.options.name, 'opcion', 'opcion.id = opcionPermiso.opcionId')
+      .select('opcion.codigo', 'codigo')
+      .addSelect('opcionPermiso.permisoCodigo', 'permiso')
+      .where('opcion.codigo IN (:...codigos)', { codigos })
+      .getRawMany<{ codigo: string; permiso: string }>();
+    for (const fila of filas) porOpcion.get(fila.codigo)?.push(fila.permiso);
+    return porOpcion;
   }
 
   private conPersonas(consulta: SelectQueryBuilder<FilaAccesoSoporte>): SelectQueryBuilder<FilaAccesoSoporte> {

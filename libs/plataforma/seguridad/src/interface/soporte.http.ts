@@ -248,3 +248,11 @@ export function listadoSolicitudesDto(listado: Listado<SolicitudSoporte>): Lista
 export function accesoAprobadoDto(acceso: AccesoAprobado): AccesoAprobadoDto {
   return { desde: acceso.desde.toISOString(), hasta: acceso.hasta.toISOString() };
 }
+
+export class EntradaASoporteDto {
+  @ApiProperty({ format: 'uuid', description: 'Tenant que pondrá el próximo token: hacer refreshSession()' })
+  tenant_id!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  hasta!: string;
+}

@@ -52,6 +52,20 @@ export class OpcionMenuDto {
   orden!: number;
 }
 
+export class SesionSoporteDto {
+  @ApiProperty({ format: 'uuid' })
+  acceso_id!: string;
+
+  @ApiProperty({ example: 'SOP-000245' })
+  ticket!: string;
+
+  @ApiProperty({ enum: ['LECTURA', 'ESCRITURA'] })
+  modo!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  hasta!: string;
+}
+
 export class MiContextoDto {
   @ApiProperty({ format: 'uuid' })
   usuario_id!: string;
@@ -88,6 +102,9 @@ export class MiContextoDto {
 
   @ApiProperty({ type: [OpcionMenuDto] })
   menu!: OpcionMenuDto[];
+
+  @ApiPropertyOptional({ type: SesionSoporteDto, nullable: true, description: 'Acceso de soporte vigente en este tenant (banner, spec 18)' })
+  soporte!: SesionSoporteDto | null;
 }
 
 /** Sin `@Permiso`: un usuario sin asignaciones tiene que poder recibir `sin_accesos` (decisión del spec 06). */
@@ -131,6 +148,7 @@ export class MiContextoController {
       sin_accesos: c.sinAccesos,
       permisos: c.permisos,
       menu: c.menu,
+      soporte: c.soporte ? { acceso_id: c.soporte.accesoId, ticket: c.soporte.ticket, modo: c.soporte.modo, hasta: c.soporte.hasta.toISOString() } : null,
     };
   }
 }
