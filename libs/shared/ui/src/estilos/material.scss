@@ -1,20 +1,34 @@
+@use 'sass:map';
 @use '@angular/material' as mat;
 @use './paleta-vitrina' as paleta;
 
-/* El tono 40 de la paleta generada (#036b58) no es el esmeralda de marca: se fija `primary` aparte. */
+/* El tono 40 de la paleta generada (#036b58) no es el esmeralda de marca: se fija `primary` aparte.
+   En oscuro queda el tono 80, el que M3 usa como `primary` oscuro. */
 $primario-marca: #0B6E5B;
+$primario-oscuro: map.get(paleta.$primary-palette, 80);
+
+/* Superficies, textos y bordes del canvas «Tema oscuro» (15c), claro y oscuro. */
+$superficies-por-tema: (
+  surface: light-dark(#F5F7F6, #0F1513),
+  surface-container-lowest: light-dark(#FFFFFF, #161D1B),
+  surface-container-high: light-dark(#F0F4F2, #1C2422),
+  on-surface: light-dark(#14201D, #DCE5E1),
+  on-surface-variant: light-dark(#4A5853, #A3B3AD),
+  outline-variant: light-dark(#DCE3E0, #2A3532),
+  outline: light-dark(#73807B, #6F7D78),
+);
 
 $noche: #071A17;
 $sobre-noche: #C9DCD6;
 $menta: #5EE2C0;
 $menta-suave: #A8E9D7;
 
-/* Tablas compactas del canvas «Pantallas tipo». */
-$tabla-encabezado: #F0F4F2;
-$tabla-texto-encabezado: #4A5853;
-$tabla-linea: #E8EDEB;
-$tabla-linea-encabezado: #DCE3E0;
-$tabla-fila-resaltada: #EEF6F3;
+/* Tablas compactas del canvas «Pantallas tipo»; siguen el tema por los tokens de sistema. */
+$tabla-encabezado: var(--mat-sys-surface-container-high);
+$tabla-texto-encabezado: var(--mat-sys-on-surface-variant);
+$tabla-linea: var(--mat-sys-outline-variant);
+$tabla-linea-encabezado: var(--mat-sys-outline-variant);
+$tabla-fila-resaltada: light-dark(#EEF6F3, #1E2A27);
 $tabla-ancho-maximo-celda: 12rem;
 
 /* Superficie oscura del shell: los textos e iconos de Material que heredan on-surface pasan a sobre-noche. */
@@ -25,20 +39,26 @@ $tabla-ancho-maximo-celda: 12rem;
   ));
 }
 
-/* Tema Material 3 único de la plataforma; la app lo aplica en `html`. */
+/* Tema Material 3 único de la plataforma; la app lo aplica en `html`. `data-tema` lo fijan el script de `index.html` y `TemaService`. */
 @mixin aplicar-tema() {
   color-scheme: light;
+
+  &[data-tema='oscuro'] {
+    color-scheme: dark;
+  }
+
   @include mat.theme((
     color: (
       primary: paleta.$primary-palette,
       tertiary: paleta.$tertiary-palette,
+      theme-type: color-scheme,
     ),
     typography: Roboto,
     density: 0,
   ));
-  @include mat.theme-overrides((
-    primary: $primario-marca,
-  ));
+  @include mat.theme-overrides(map.merge($superficies-por-tema, (
+    primary: light-dark($primario-marca, $primario-oscuro),
+  )));
 
   /* Campos a 40 px, igual que los botones; el resto del tema queda en densidad 0. */
   @include mat.form-field-density(-4);

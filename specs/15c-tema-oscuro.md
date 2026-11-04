@@ -1,6 +1,6 @@
 # SPEC 15c — Tema oscuro con selector Sistema, Claro y Oscuro
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 15b, SPEC 15d
 > **Date:** 2026-11-01
 > **Objective:** Agregar a `shared/ui` y `shared/shell` un tema oscuro pensado para reducir la fatiga visual, con un selector Sistema / Claro / Oscuro en el menú de usuario que se recuerda por dispositivo y se aplica sin parpadeo en las dos apps.
@@ -125,6 +125,7 @@ La sintaxis exacta de `theme-type`, `theme-overrides` y `@custom-variant` se con
 | `on-surface-variant` | `#4A5853` | `#A3B3AD` |
 | `outline-variant` (bordes) | `#DCE3E0` | `#2A3532` |
 | `outline` (campos) | `#73807B` | `#6F7D78` |
+| Líneas de tabla (encabezado y celdas) | `outline-variant` | `outline-variant` |
 | `--color-fila-resaltada` | `#EEF6F3` | `#1E2A27` |
 | `--color-chip-exito` / sobre | `#D8F3EA` / `#0B4D40` | `#1E3A32` / `#9EE6CC` |
 | `--color-chip-advertencia` / sobre | `#FCEFD2` / `#5E4100` | `#3A2E12` / `#F2D08A` |
