@@ -21,7 +21,7 @@ import { EntrarComoSoporte, SalirDeSoporte } from '../application/sesion-soporte
 import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from '../application/solicitar-acceso-soporte.js';
 import { PERMISOS_SEG } from '../domain/permisos-seg.js';
 import type { Principal } from '../domain/principal.js';
-import { Permiso, PrincipalActual } from './decoradores.js';
+import { EscrituraPermitidaEnSoporte, Permiso, PrincipalActual } from './decoradores.js';
 import { exigirUuid, MembresiasFiltro, validar } from './membresias.http.js';
 import { TAMANO_PAGINA_DEFECTO, TAMANO_PAGINA_MAXIMO } from './miembros.http.js';
 import {
@@ -200,6 +200,7 @@ export class SoporteController {
   /** Sin @Permiso: en el tenant del cliente el agente no tiene plat.soporte.solicitar. */
   @Post('salir')
   @HttpCode(HTTP_SIN_CONTENIDO)
+  @EscrituraPermitidaEnSoporte()
   @ApiNoContentResponse({ description: 'El próximo token vuelve al tenant operador: hacer refreshSession()' })
   async salir(@PrincipalActual() principal: Principal): Promise<void> {
     await this.salirDeSoporte.ejecutar(principal.usuarioId, principal.tenantId ?? '');

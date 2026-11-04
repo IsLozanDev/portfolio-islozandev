@@ -6,8 +6,12 @@ export const PUBLICO = 'seg:publico';
 export const REQUIERE_MFA = 'seg:requiere-mfa';
 export const PERMISO = 'seg:permiso';
 
+export const ESCRITURA_PERMITIDA_EN_SOPORTE = 'seg:escritura-permitida-en-soporte';
+
 export const Publico = () => SetMetadata(PUBLICO, true);
 export const RequiereMfa = () => SetMetadata(REQUIERE_MFA, true);
+/** Ruta que no es de datos y que una sesión de soporte de solo lectura igual puede usar: salir de soporte. Se audita igual. */
+export const EscrituraPermitidaEnSoporte = () => SetMetadata(ESCRITURA_PERMITIDA_EN_SOPORTE, true);
 
 /**
  * `@Permiso('rest.caja.abrir')`. Un código mal formado falla al decorar, es decir al cargar el

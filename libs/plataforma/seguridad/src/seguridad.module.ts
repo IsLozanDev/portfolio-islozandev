@@ -46,6 +46,8 @@ import { AprobarAccesoSoporte } from './application/aprobar-acceso-soporte.js';
 import { RechazarAccesoSoporte, RevocarAccesoSoporte, RevocarAccesosPorTicket, type DependenciasCierreSoporte } from './application/cerrar-acceso-soporte.js';
 import { ContarSolicitudesPendientes, ListarSolicitudesSoporte } from './application/lecturas-soporte.js';
 import { ResolverAccesoSoporteVigente } from './application/resolver-acceso-soporte.js';
+import { RegistrarPeticionSoporte } from './application/registrar-peticion-soporte.js';
+import { SoporteInterceptor } from './interface/soporte.interceptor.js';
 import { EntrarComoSoporte, SalirDeSoporte, type DependenciasSesionSoporte } from './application/sesion-soporte.js';
 import { VERIFICADOR_TICKET, type VerificadorTicket } from './application/ports/verificador-ticket.port.js';
 import { AccesoSoporteRepositorioTypeOrm } from './infrastructure/typeorm/acceso-soporte.repositorio.js';
@@ -481,6 +483,18 @@ export class SeguridadModule {
           inject: [Reflector, ResolverPermisos, TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
+        // Después del de tenant: veta, aplica el modo y audita cada petición de una sesión de soporte (spec 18).
+        {
+          provide: APP_INTERCEPTOR,
+          useFactory: (reflector: Reflector, resolver: ResolverAccesoSoporteVigente, unidadDeTrabajo: UnitOfWork, contexto: TenantContext, repositorios: ReposMembresias) =>
+            new SoporteInterceptor(
+              reflector,
+              resolver,
+              new RegistrarPeticionSoporte({ unidadDeTrabajo, contexto, bitacora: repositorios.bitacora }),
+              (mensaje, datos) => logger.error({ mensaje, ...datos }),
+            ),
+          inject: [Reflector, ResolverAccesoSoporteVigente, UNIT_OF_WORK, TENANT_CONTEXT, REPOS_MEMBRESIAS],
+        },
       ],
       exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
     };

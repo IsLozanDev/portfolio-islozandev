@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import type { Principal } from '../src/domain/principal.js';
 import { REGISTRO_ACCESO, type RegistroAcceso } from '../src/application/ports/registro-acceso.port.js';
+import { ResolverAccesoSoporteVigente } from '../src/application/resolver-acceso-soporte.js';
 import { SeguridadModule, type SeguridadOpciones } from '../src/seguridad.module.js';
 import { PrincipalActual, Publico, RequiereMfa } from '../src/interface/decoradores.js';
 import { ahoraSeg, claimsBase, firmar, JwksLocal, nuevaLlave, type Llave } from './support/jwks-local.js';
@@ -77,6 +78,9 @@ async function crearApp(registro: RegistroAcceso, op: Partial<SeguridadOpciones>
   })
     .overrideProvider(REGISTRO_ACCESO)
     .useValue(registro)
+    // El interceptor de soporte lee la base en cada petición con tenant (spec 18): aquí nadie es soporte.
+    .overrideProvider(ResolverAccesoSoporteVigente)
+    .useValue({ ejecutar: async () => null })
     .compile();
   const app = modulo.createNestApplication({ logger: false });
   await app.init();

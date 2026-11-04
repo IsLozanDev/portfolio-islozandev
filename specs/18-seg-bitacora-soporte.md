@@ -555,6 +555,7 @@ Reglas que aplican a todas:
 - **Sí:** dos permisos, `plat.soporte.solicitar` (operador) y `plat.soporte.autorizar` (cliente, sensible). El SRS daba uno solo a dos actores distintos.
 - **Sí:** rol o perfil elegido por el administrador al aprobar, con el techo del 16b. Cubre permisos de productos, que un rol PLAT fijo no cubre.
 - **Sí:** `LECTURA` se aplica por método HTTP. **No:** clasificar todo el catálogo en lectura y escritura; obliga a tocar todos los manifiestos.
+- **Sí (paso 8):** `@EscrituraPermitidaEnSoporte()` en `POST /seg/soporte/salir`. Sin la marca, el bloqueo por método no dejaría salir a una sesión de solo lectura. La petición se audita igual.
 - **Sí:** lista fija de permisos vetados en soporte. El agente nunca gestiona usuarios, roles ni soporte.
 - **Sí:** entrar y salir con `tenant_preferido` y `refreshSession()`. **No:** selector genérico de tenant; merece su propio spec.
 - **Sí:** auditar toda petición, antes del controlador y fallando cerrado. Garantiza el 100 % de TR-RNF-110 aunque el controlador falle.
