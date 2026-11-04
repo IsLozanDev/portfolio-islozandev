@@ -4,9 +4,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { INSIGNIAS_MENU } from '../../config/insignias-menu';
 import { MENSAJES_SHELL, mensajeInsigniaMenu } from '../../models/mensajes-shell';
 import type { NodoMenu } from '../../models/nodo-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { RutaActualService } from '../../services/ruta-actual.service';
 import { esRutaExacta, gruposDeRuta } from '../../utils/buscar-en-menu';
 import { insigniaDe } from '../../utils/insignias-menu';
@@ -36,7 +36,7 @@ export class RielMenuComponent {
   readonly buscar = output<void>();
 
   private readonly urlActual = inject(RutaActualService).url;
-  private readonly insignias = inject(INSIGNIAS_MENU);
+  private readonly insignias = inject(InsigniasMenuService).insignias;
 
   protected readonly mensajes = MENSAJES_SHELL;
   protected readonly inicialMarca = INICIAL_MARCA;

@@ -1,8 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { INSIGNIAS_MENU } from '../../config/insignias-menu';
 import type { NodoMenu } from '../../models/nodo-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { RielMenuComponent } from './riel-menu.component';
 
 @Component({ selector: 'vit-pagina-riel', template: '' })
@@ -123,9 +123,10 @@ describe('RielMenuComponent: insignias (spec 18)', () => {
   afterEach(() => document.querySelectorAll('.cdk-overlay-container').forEach((contenedor) => contenedor.replaceChildren()));
 
   it('el grupo lleva la suma sobre el ícono y en su nombre accesible; el submenú, la de cada opción', async () => {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: '**', component: Pagina }]), { provide: INSIGNIAS_MENU, useValue: signal({ pedidos: 2, boletas: 1 }).asReadonly() }],
-    });
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: '**', component: Pagina }])] });
+    const insignias = TestBed.inject(InsigniasMenuService);
+    insignias.fijar('pedidos', 2);
+    insignias.fijar('boletas', 1);
     const fixture = TestBed.createComponent(RielMenuComponent);
     fixture.componentRef.setInput('nodos', MENU);
     await fixture.whenStable();

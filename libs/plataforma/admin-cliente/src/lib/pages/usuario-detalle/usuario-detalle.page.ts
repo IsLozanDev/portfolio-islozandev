@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent, ChipEstadoComponent, type TonoEstado } from '@vitrina/shared/ui';
+import { LONGITUD_MINIMA_MOTIVO_SEG } from '../../models/motivo-seg';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { EstadoReenvio } from '../../models/invitacion';
 import {
@@ -24,8 +25,6 @@ import { MembresiasCliente, type AccionMembresia } from '../../services/membresi
 import { MiembrosCliente } from '../../services/miembros.cliente';
 import { formatearFecha, formatearFechaHora } from '../../utils/formato';
 
-/** SEG valida el motivo de 4 a 300 caracteres: TR-CA-039 usa «Cese» (D1 del spec 16a). */
-export const LONGITUD_MINIMA_MOTIVO_SEG = 4;
 
 const PARAMETRO_MEMBRESIA = 'membresiaId';
 const COLUMNAS_ASIGNACIONES = ['rolOPerfil', 'alcance', 'vigencia', 'estado', 'acciones'];

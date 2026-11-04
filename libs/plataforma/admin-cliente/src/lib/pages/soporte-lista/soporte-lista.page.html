@@ -1,0 +1,50 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+  </header>
+
+  <nav mat-tab-nav-bar [tabPanel]="panelSoporte" [attr.aria-label]="mensajes.pestanas">
+    @for (opcion of vistas; track opcion) {
+      <a mat-tab-link [routerLink]="[]" [queryParams]="parametrosDeVista(opcion)" [active]="vista() === opcion" [attr.data-vista]="opcion">
+        {{ etiquetasVista[opcion] }}
+        @if (opcion === 'pendientes' && pendientes() > 0) {
+          <span class="ms-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-chip-advertencia px-1.5 text-xs font-bold text-sobre-chip-advertencia" data-cuenta-pendientes>
+            {{ pendientes() }}
+          </span>
+        }
+      </a>
+    }
+  </nav>
+
+  <mat-tab-nav-panel #panelSoporte class="flex flex-col gap-4">
+    @if (error(); as mensajeError) {
+      <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+    }
+
+    <vit-tabla
+      [columnas]="columnas()"
+      [filas]="listado().items"
+      [total]="listado().total"
+      [cargando]="cargando()"
+      [indicePagina]="pagina() - 1"
+      [tamanoPagina]="tamano()"
+      [textoVacio]="textoVacio()"
+      (pagina)="paginar($event)"
+    >
+      <ng-template vitAccionesFila let-solicitud>
+        @if (vista() === 'pendientes') {
+          <a mat-button [routerLink]="[solicitud.id, 'aprobar']" data-accion="aprobar" [attr.aria-label]="mensajes.aprobar + ': ' + solicitud.ticket">
+            {{ mensajes.aprobar }}
+          </a>
+          <button mat-button type="button" class="vit-destructivo" data-accion="rechazar" [disabled]="ocupado()" (click)="rechazar(solicitud)">
+            {{ mensajes.rechazar }}
+          </button>
+        } @else if (vista() === 'vigentes') {
+          <button mat-button type="button" class="vit-destructivo" data-accion="revocar" [disabled]="ocupado()" (click)="revocar(solicitud)">
+            {{ mensajes.revocar }}
+          </button>
+        }
+      </ng-template>
+    </vit-tabla>
+  </mat-tab-nav-panel>
+</section>

@@ -1,8 +1,8 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
-import { INSIGNIAS_MENU, type InsigniasMenu } from '../../config/insignias-menu';
 import type { NodoMenu } from '../../models/nodo-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { MenuLateralComponent } from './menu-lateral.component';
 
 @Component({ selector: 'vit-pagina-menu', template: '' })
@@ -117,12 +117,9 @@ describe('MenuLateralComponent', () => {
 });
 
 describe('MenuLateralComponent: insignias (spec 18)', () => {
-  const insignias = signal<InsigniasMenu>({ usuarios: 3 });
-
-  async function abrir(): Promise<HTMLElement> {
-    TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: '**', component: Pagina }]), { provide: INSIGNIAS_MENU, useValue: insignias.asReadonly() }],
-    });
+  async function abrir(usuarios: number): Promise<HTMLElement> {
+    TestBed.configureTestingModule({ providers: [provideRouter([{ path: '**', component: Pagina }])] });
+    TestBed.inject(InsigniasMenuService).fijar('usuarios', usuarios);
     const fixture = TestBed.createComponent(MenuLateralComponent);
     fixture.componentRef.setInput('nodos', MENU);
     fixture.componentRef.setInput('nombreApp', 'Administración');
@@ -133,8 +130,7 @@ describe('MenuLateralComponent: insignias (spec 18)', () => {
   const textoDe = (elemento: Element | null | undefined) => elemento?.textContent?.replace(/\s+/g, ' ').trim();
 
   it('con el grupo cerrado la suma va en el grupo, con texto para el lector de pantalla', async () => {
-    insignias.set({ usuarios: 3 });
-    const elemento = await abrir();
+    const elemento = await abrir(3);
 
     const grupo = [...elemento.querySelectorAll('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
     expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBe('3');
@@ -142,8 +138,7 @@ describe('MenuLateralComponent: insignias (spec 18)', () => {
   });
 
   it('con el grupo abierto la insignia pasa a la opción y se actualiza con la señal', async () => {
-    insignias.set({ usuarios: 3 });
-    const elemento = await abrir();
+    const elemento = await abrir(3);
     const grupo = [...elemento.querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].find((boton) => boton.textContent?.includes('Administración'));
     grupo?.click();
     TestBed.tick();
@@ -152,14 +147,13 @@ describe('MenuLateralComponent: insignias (spec 18)', () => {
     expect(textoDe(grupo?.querySelector('.vit-insignia-menu'))).toBeUndefined();
     expect(textoDe(usuarios?.querySelector('.vit-insignia-menu'))).toBe('3');
 
-    insignias.set({ usuarios: 1 });
+    TestBed.inject(InsigniasMenuService).fijar('usuarios', 1);
     TestBed.tick();
     expect(textoDe(usuarios?.querySelector('.sr-only'))).toBe('1 pendiente');
   });
 
   it('en 0 no muestra nada', async () => {
-    insignias.set({ usuarios: 0 });
-    const elemento = await abrir();
+    const elemento = await abrir(0);
     expect(elemento.querySelector('.vit-insignia-menu')).toBeNull();
   });
 });

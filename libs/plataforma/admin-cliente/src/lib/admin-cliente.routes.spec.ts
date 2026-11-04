@@ -67,6 +67,11 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     expect((await navegar('/admin/bitacora')).url).toBe(RUTA_PROHIBIDO);
   });
 
+  it('/admin/soporte sin plat.soporte.autorizar va a /403 (spec 18)', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.seguridadBitacora);
+    expect((await navegar('/admin/soporte')).url).toBe(RUTA_PROHIBIDO);
+  });
+
   it('/admin/usuarios sin el permiso va a /403', async () => {
     expect((await navegar('/admin/usuarios')).url).toBe(RUTA_PROHIBIDO);
   });

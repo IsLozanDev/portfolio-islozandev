@@ -4,10 +4,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { EstadoVacioComponent } from '@vitrina/shared/ui';
-import { INSIGNIAS_MENU } from '../../config/insignias-menu';
 import { MENSAJES_SHELL, mensajeInsigniaMenu } from '../../models/mensajes-shell';
 import type { NodoMenu } from '../../models/nodo-menu';
 import type { ResultadoBusquedaMenu } from '../../models/resultado-busqueda-menu';
+import { InsigniasMenuService } from '../../services/insignias-menu.service';
 import { RutaActualService } from '../../services/ruta-actual.service';
 import { esRutaExacta, gruposDeRuta } from '../../utils/buscar-en-menu';
 import { insigniaDe } from '../../utils/insignias-menu';
@@ -35,7 +35,7 @@ export class MenuLateralComponent {
   private readonly expandidos = signal<ReadonlySet<string>>(new Set());
   private readonly urlActual = inject(RutaActualService).url;
   private readonly buscador = viewChild(BuscadorMenuComponent);
-  private readonly insignias = inject(INSIGNIAS_MENU);
+  private readonly insignias = inject(InsigniasMenuService).insignias;
   protected readonly mensajeInsignia = mensajeInsigniaMenu;
 
   constructor() {

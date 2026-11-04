@@ -1,4 +1,4 @@
-import type { InsigniasMenu } from '../config/insignias-menu';
+import type { InsigniasMenu } from '../services/insignias-menu.service';
 import type { NodoMenu } from '../models/nodo-menu';
 
 /** Una hoja muestra la suya; un grupo, la suma de su subárbol (para verla con el grupo cerrado o en el riel). */
