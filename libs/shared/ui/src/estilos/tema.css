@@ -1,4 +1,5 @@
-/* Tokens de Tailwind sobre las variables del tema Material: un solo origen de color. */
+/* Tokens de Tailwind sobre las variables del tema Material: un solo origen de color.
+   Los valores fijos usan `light-dark()`: cambian con el `color-scheme` que fija `data-tema` (15c). */
 @theme {
   --font-sans: Roboto, "Helvetica Neue", sans-serif;
   --color-primario: var(--mat-sys-primary);
@@ -18,12 +19,21 @@
   --color-sobre-noche: #C9DCD6;
   --color-menta: #5EE2C0;
   --color-menta-suave: #A8E9D7;
-  --color-chip-exito: #D8F3EA;
-  --color-sobre-chip-exito: #0B4D40;
-  --color-chip-advertencia: #FCEFD2;
-  --color-sobre-chip-advertencia: #5E4100;
-  --color-chip-info: #DDEBF7;
-  --color-sobre-chip-info: #173F5F;
-  --color-chip-neutro: #E6EAE8;
-  --color-sobre-chip-neutro: #37423F;
+  --color-chip-exito: light-dark(#D8F3EA, #1E3A32);
+  --color-sobre-chip-exito: light-dark(#0B4D40, #9EE6CC);
+  --color-chip-advertencia: light-dark(#FCEFD2, #3A2E12);
+  --color-sobre-chip-advertencia: light-dark(#5E4100, #F2D08A);
+  --color-chip-info: light-dark(#DDEBF7, #1D2E3D);
+  --color-sobre-chip-info: light-dark(#173F5F, #A9CBEA);
+  --color-chip-neutro: light-dark(#E6EAE8, #262E2C);
+  --color-sobre-chip-neutro: light-dark(#37423F, #C2CCC8);
 }
+
+/* `static`: Tailwind solo escribe las variables que usan sus clases; esta la usa `material.scss`. */
+@theme static {
+  /* Separa el menú lateral (siempre noche) del contenido cuando el fondo también es oscuro. */
+  --color-borde-lateral: light-dark(transparent, #1E2926);
+}
+
+/* `dark:` sigue al tema efectivo de `data-tema`, no a `prefers-color-scheme`: respeta la elección manual. */
+@custom-variant dark (&:where([data-tema=oscuro], [data-tema=oscuro] *));

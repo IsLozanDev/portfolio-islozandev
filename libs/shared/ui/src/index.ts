@@ -14,9 +14,12 @@ export type {
 export type { CambioOrden, CambioPagina, ColumnaTabla, RolMovil } from './lib/models/columna-tabla';
 export type { DefinicionFiltro, OpcionFiltro, ValorFiltros } from './lib/models/filtro';
 export type { TonoEstado } from './lib/models/tono-estado';
+export type { PreferenciaTema, TemaEfectivo } from './lib/models/tema';
+export { ATRIBUTO_TEMA, CLAVE_TEMA, CONSULTA_OSCURO, PREFERENCIAS_TEMA } from './lib/models/tema';
 export { MENSAJES_UI } from './lib/models/mensajes-ui';
 export { MensajeValidacionPipe } from './lib/pipes/mensaje-validacion.pipe';
 export { AvisosService } from './lib/services/avisos.service';
+export { TemaService } from './lib/services/tema.service';
 export { filasDePagina } from './lib/utils/filas-de-pagina';
 export { mensajeDeValidacion } from './lib/utils/mensaje-de-validacion';
 export { TAMANO_PAGINA_POR_DEFECTO, TAMANOS_PAGINA, tamanoPaginaDesdeTexto, tamanoPaginaParaUrl } from './lib/utils/tamano-pagina';

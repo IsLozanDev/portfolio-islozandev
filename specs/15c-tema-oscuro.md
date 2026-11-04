@@ -1,6 +1,6 @@
 # SPEC 15c — Tema oscuro con selector Sistema, Claro y Oscuro
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 15b, SPEC 15d
 > **Date:** 2026-11-01
 > **Objective:** Agregar a `shared/ui` y `shared/shell` un tema oscuro pensado para reducir la fatiga visual, con un selector Sistema / Claro / Oscuro en el menú de usuario que se recuerda por dispositivo y se aplica sin parpadeo en las dos apps.
@@ -49,7 +49,7 @@ Historias del backlog: ninguna. Estimado: 6 h.
   - Los tokens fijos del 15b pasan a `light-dark(claro, oscuro)`.
   - Se suma `--color-borde-lateral` (transparente en claro y `#1E2926` en oscuro).
   - `@custom-variant dark` sobre `data-tema`.
-- **Selector en el menú de usuario** (`vit-menu-usuario`): bajo el correo, «Tema» con un grupo de tres botones (`mat-button-toggle-group`): Sistema, Claro y Oscuro, con iconos `contrast`, `light_mode` y `dark_mode`. Marca la preferencia, no el tema efectivo.
+- **Selector en el menú de usuario** (`vit-menu-usuario`): bajo el correo, «Tema» con tres opciones del menú (`mat-menu-item` con `role="menuitemradio"` y `aria-checked`): Sistema, Claro y Oscuro, con iconos `contrast`, `light_mode` y `dark_mode`, y una marca en la elegida. Marca la preferencia, no el tema efectivo.
 - **Componentes del shell, del 15b y del 15d en oscuro**:
   - Menú lateral y franja de iconos sin cambio de color, más el borde lateral en oscuro.
   - Barra superior, tablas, chips, marco de auth, buscador del menú y avisos de SweetAlert: con los tokens.
@@ -125,6 +125,7 @@ La sintaxis exacta de `theme-type`, `theme-overrides` y `@custom-variant` se con
 | `on-surface-variant` | `#4A5853` | `#A3B3AD` |
 | `outline-variant` (bordes) | `#DCE3E0` | `#2A3532` |
 | `outline` (campos) | `#73807B` | `#6F7D78` |
+| Líneas de tabla (encabezado y celdas) | `outline-variant` | `outline-variant` |
 | `--color-fila-resaltada` | `#EEF6F3` | `#1E2A27` |
 | `--color-chip-exito` / sobre | `#D8F3EA` / `#0B4D40` | `#1E3A32` / `#9EE6CC` |
 | `--color-chip-advertencia` / sobre | `#FCEFD2` / `#5E4100` | `#3A2E12` / `#F2D08A` |
@@ -153,7 +154,7 @@ La sintaxis exacta de `theme-type`, `theme-overrides` y `@custom-variant` se con
 2. **Script anti-parpadeo.** En `index.html` de las dos apps, con su prueba de sincronía. Verificar: con `vitrina.tema = oscuro`, recargar no muestra un cuadro claro (Playwright con red lenta).
 3. **Material.** `theme-type: color-scheme`, `color-scheme` por `data-tema` y `theme-overrides` con los valores de la tabla. Verificar en `/dev/componentes` con `data-tema` cambiado a mano.
 4. **Tokens.** Valores fijos a `light-dark()`, `--color-borde-lateral` y `@custom-variant dark`. Verificar `nx build` de las dos apps.
-5. **Selector.** `mat-button-toggle-group` en `vit-menu-usuario` y textos. Pruebas: marca la preferencia y llama a `elegir`.
+5. **Selector.** Opciones `menuitemradio` en `vit-menu-usuario` y textos. Pruebas: marca la preferencia y llama a `elegir`.
 6. **Repaso de colores escritos a mano.** Buscar hex y `bg-white`/`text-black` en `shared/ui`, `shared/shell`, `auth-ui`, `admin-cliente` y `consola-tenants`. Reemplazar los de este alcance por tokens y listar en el cierre los que queden para su spec.
 7. **Verificación en navegador.**
    - Playwright en las dos apps, con `emulate_media` claro y oscuro, a 360, 768 y 1280 px.
@@ -196,6 +197,7 @@ La sintaxis exacta de `theme-type`, `theme-overrides` y `@custom-variant` se con
 - **Sí:** fijar con `theme-overrides` las superficies, textos y bordes del canvas, y dejar `primary` y `error` como los genera M3. Las superficies son las que más pesan en la fatiga visual. Los colores de acción ya salen bien de la paleta.
 - **Sí:** fondos en `#0F1513` y texto en `#DCE5E1`, sin negro ni blanco puros, con un contraste de unos 13:1. Leen cómodo y cumplen 4.5:1 sin encandilar.
 - **Sí:** script en línea en `index.html` para evitar el parpadeo. No hay CSP que lo impida. Si se agrega una, este script necesita su hash.
+- **Sí:** el selector usa `mat-menu-item` con `role="menuitemradio"`, no `mat-button-toggle-group` (cambio durante la implementación). Dentro de `mat-menu`, las flechas solo recorren los `mat-menu-item` y `Tab` cierra el menú: el grupo de botones no se alcanzaba con teclado (WCAG 2.1.1).
 - **Sí:** menú lateral y vitrina sin cambios en oscuro. Ya son oscuros; solo se agrega un borde para separarlos del contenido.
 
 ## Riesgos
