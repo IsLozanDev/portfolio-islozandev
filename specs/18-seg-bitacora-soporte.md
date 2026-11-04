@@ -239,6 +239,11 @@ Errores de dominio nuevos:
 
 Se declaran en `infrastructure/event-schemas.ts`. Sin motivo ni datos personales en el payload. Sin consumidores en este spec.
 
+Además (decidido al implementar el paso 6):
+
+- `membresia.soporte_abierta` (`aggregate_type` `membresia`): `usuario_id`, `hasta`. Lo emiten `Membresia.abrirSoporte` y `reabrirSoporte`. Sin evento la versión no sube y el repositorio del spec 08 no guarda la reapertura.
+- `membresia.finalizada` y `asignacion.revocada` admiten `por: null` cuando cierra el sistema (vencimiento o ticket cerrado). `Membresia.finalizar` y `Asignacion.revocar` aceptan `por: string | null`.
+
 ### Bitácora (`seg.evento_seguridad`, siempre en el tenant del cliente)
 
 Todo el ciclo usa `tipo = 'ACCESO_SOPORTE'` con `detalle.accion`:
@@ -567,6 +572,9 @@ Reglas que aplican a todas:
 - **Sí:** la página del agente en una lib nueva `consola-soporte`. `consola-tenants` tiene otro motivo de cambio.
 - **Sí:** la consola del agente en dos rutas (lista y formulario) en vez de una pantalla mixta. Así cada una calza con una pantalla tipo y no hay que diseñar una nueva.
 - **Sí:** el banner de soporte y la insignia del menú, que no tenían pantalla tipo, se diseñaron en la página «18 · Soporte» del canvas, en claro, oscuro y 360 px, como pide «Diseño UI».
+- **Sí (paso 6, decisión del usuario):** evento nuevo `membresia.soporte_abierta` para abrir y reabrir la membresía del agente. **No:** reusar `membresia.reactivada` (otro significado y exige motivo) ni forzar el `UPDATE` sin versión (rompe el bloqueo optimista).
+- **Sí (paso 6, decisión del usuario):** `por` NULL en finalizar membresía y revocar asignación cuando cierra el sistema. **No:** atribuir el cierre al aprobador; la auditoría mentiría.
+- **Sí (paso 5):** seguridad sabe cuál es el operador por la opción `tenantOperador` (por defecto `plataforma`, como `ORG_TENANT_OPERADOR`) y lee el código de su tenant con la RLS. **No:** importar `ExigirOperador` de `apps/api`.
 - **Sí:** el banner va a todo el ancho y por encima del menú lateral. **No:** dentro del área de contenido; con el menú oculto o en celular se perdería de vista.
 - **Sí:** con soporte vigente, `mi-contexto` quita de `permisos` y de `menu` lo que está en `PERMISOS_VETADOS_SOPORTE`. Así el agente no ve opciones que el interceptor le negaría (salió al diseñar el menú del agente).
 - **No:** productor de `LOGIN` en este spec. El tipo queda en el CHECK y el filtro para cuando exista.

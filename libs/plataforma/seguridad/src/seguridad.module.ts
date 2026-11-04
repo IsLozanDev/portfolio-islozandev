@@ -42,6 +42,9 @@ import { ConsultarBitacora, ConsultarEventoSeguridad } from './application/lectu
 import { LecturaBitacoraTypeOrm } from './infrastructure/typeorm/lectura-bitacora.typeorm.js';
 import { BitacoraController } from './interface/bitacora.controller.js';
 import { ListarMisAccesosSoporte, SolicitarAccesoSoporte } from './application/solicitar-acceso-soporte.js';
+import { AprobarAccesoSoporte } from './application/aprobar-acceso-soporte.js';
+import { RechazarAccesoSoporte, RevocarAccesoSoporte, RevocarAccesosPorTicket, type DependenciasCierreSoporte } from './application/cerrar-acceso-soporte.js';
+import { ContarSolicitudesPendientes, ListarSolicitudesSoporte } from './application/lecturas-soporte.js';
 import { VERIFICADOR_TICKET, type VerificadorTicket } from './application/ports/verificador-ticket.port.js';
 import { AccesoSoporteRepositorioTypeOrm } from './infrastructure/typeorm/acceso-soporte.repositorio.js';
 import { LecturaSoporteTypeOrm } from './infrastructure/typeorm/lectura-soporte.typeorm.js';
@@ -121,6 +124,15 @@ function reposMembresias(uow: TypeOrmUnitOfWork, ctx: TenantContext, dataSource:
 
 const REPOS_MEMBRESIAS = Symbol('REPOS_MEMBRESIAS');
 const TENANT_OPERADOR_DEFECTO = 'plataforma';
+const DEPENDENCIAS_CIERRE_SOPORTE = Symbol('DEPENDENCIAS_CIERRE_SOPORTE');
+type CasoDeCierreDeSoporte<T> = new (dependencias: DependenciasCierreSoporte) => T;
+
+/** Rechazar, revocar y cerrar por ticket reciben las mismas dependencias (spec 18). */
+const cierreDeSoporte = <T>(Clase: CasoDeCierreDeSoporte<T>) => ({
+  provide: Clase,
+  useFactory: (dependencias: DependenciasCierreSoporte) => new Clase(dependencias),
+  inject: [DEPENDENCIAS_CIERRE_SOPORTE],
+});
 type ReposMembresias = ReturnType<typeof reposMembresias>;
 const DEPENDENCIAS_LECTURA_ROLES = Symbol('DEPENDENCIAS_LECTURA_ROLES');
 const DEPENDENCIAS_LECTURA_PERFILES = Symbol('DEPENDENCIAS_LECTURA_PERFILES');
@@ -238,6 +250,53 @@ export class SeguridadModule {
               tenantOperador: op.tenantOperador ?? TENANT_OPERADOR_DEFECTO,
             }),
           inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS, VERIFICADOR_TICKET],
+        },
+        {
+          provide: DEPENDENCIAS_CIERRE_SOPORTE,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, reloj: Clock, eventos: EventPublisher, repositorios: ReposMembresias): DependenciasCierreSoporte => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            eventos,
+            accesos: repositorios.accesosSoporte,
+            membresias: repositorios.ciclo,
+            asignaciones: repositorios.asignaciones,
+            bitacora: repositorios.bitacora,
+          }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        cierreDeSoporte(RechazarAccesoSoporte),
+        cierreDeSoporte(RevocarAccesoSoporte),
+        cierreDeSoporte(RevocarAccesosPorTicket),
+        {
+          provide: AprobarAccesoSoporte,
+          useFactory: (unidadDeTrabajo: UnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher, repositorios: ReposMembresias) =>
+            new AprobarAccesoSoporte({
+              unidadDeTrabajo,
+              contexto,
+              ids,
+              reloj,
+              eventos,
+              accesos: repositorios.accesosSoporte,
+              membresias: repositorios.ciclo,
+              asignaciones: repositorios.asignaciones,
+              roles: repositorios.roles,
+              perfiles: repositorios.perfiles,
+              catalogo: repositorios.catalogo,
+              bitacora: repositorios.bitacora,
+            }),
+          inject: [UNIT_OF_WORK, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ListarSolicitudesSoporte,
+          useFactory: (unidadDeTrabajo: UnitOfWork, repositorios: ReposMembresias) => new ListarSolicitudesSoporte({ unidadDeTrabajo, lectura: repositorios.lecturaSoporte }),
+          inject: [UNIT_OF_WORK, REPOS_MEMBRESIAS],
+        },
+        {
+          provide: ContarSolicitudesPendientes,
+          useFactory: (unidadDeTrabajo: UnitOfWork, reloj: Clock, repositorios: ReposMembresias) =>
+            new ContarSolicitudesPendientes({ unidadDeTrabajo, lectura: repositorios.lecturaSoporte, reloj }),
+          inject: [UNIT_OF_WORK, CLOCK, REPOS_MEMBRESIAS],
         },
         {
           provide: ListarMisAccesosSoporte,
@@ -385,7 +444,7 @@ export class SeguridadModule {
         },
         { provide: APP_INTERCEPTOR, useFactory: (ctx: TenantContext) => new ContextoTenantInterceptor(ctx), inject: [TENANT_CONTEXT] },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket],
     };
   }
 }

@@ -273,19 +273,37 @@ describe('AccesoSoporte (TR-RF-020, TR-RN-011)', () => {
 });
 
 describe('Membresía de soporte', () => {
-  it('abrirSoporte crea ACTIVO con hasta, sin propietario ni invitación ni eventos', () => {
+  it('abrirSoporte crea ACTIVO con hasta, sin propietario ni invitación, y publica membresia.soporte_abierta', () => {
     const membresia = Membresia.abrirSoporte(MEMBRESIA, { usuarioId: JAVIER, tenantId: TENANT, hasta: horasDespues(2) }, AHORA);
 
     expect(membresia).toMatchObject({ estado: 'ACTIVO', esPropietario: false, invitadoPor: null, desde: AHORA, hasta: horasDespues(2) });
-    expect(membresia.pullEvents()).toEqual([]);
+    const [evento] = membresia.pullEvents();
+    expect(evento).toMatchObject({
+      eventType: EVENTOS_SEG.membresiaSoporteAbierta,
+      payload: { usuario_id: JAVIER, hasta: horasDespues(2).toISOString() },
+    });
   });
 
   it('reabrirSoporte vuelve a ACTIVO una membresía FINALIZADO', () => {
     const membresia = Membresia.abrirSoporte(MEMBRESIA, { usuarioId: JAVIER, tenantId: TENANT, hasta: horasDespues(2) }, AHORA);
     membresia.finalizar('Vencido', ADMIN, horasDespues(2), []);
 
+    membresia.pullEvents();
+    const versionFinalizada = membresia.version;
+
     membresia.reabrirSoporte(horasDespues(30), horasDespues(27));
     expect(membresia).toMatchObject({ estado: 'ACTIVO', desde: horasDespues(27), hasta: horasDespues(30) });
+    // Sin evento la versión no subiría y el repositorio no guardaría la reapertura.
+    expect(membresia.version).toBe(versionFinalizada + 1);
+    expect(membresia.pullEvents().map((evento) => evento.eventType)).toEqual([EVENTOS_SEG.membresiaSoporteAbierta]);
+  });
+
+  it('finalizar sin actor deja cambiadoPor en null y el evento con por null', () => {
+    const membresia = Membresia.abrirSoporte(MEMBRESIA, { usuarioId: JAVIER, tenantId: TENANT, hasta: horasDespues(2) }, AHORA);
+    membresia.pullEvents();
+    membresia.finalizar('Acceso de soporte vencido', null, horasDespues(2), []);
+    expect(membresia.cambiadoPor).toBeNull();
+    expect(membresia.pullEvents()[0].payload).toMatchObject({ por: null });
   });
 
   it('reabrirSoporte no toca una membresía que no está FINALIZADO', () => {

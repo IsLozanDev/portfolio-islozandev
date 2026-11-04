@@ -215,7 +215,8 @@ export class AccesoSoporte extends AggregateRoot {
     return this.props.estado === 'PENDIENTE' && this.props.caducaEn <= ahora;
   }
 
-  aprobar(datos: DatosAprobacionSoporte, ahora: Date): void {
+  /** Devuelve la vigencia aprobada: la membresía y la asignación del agente la copian. */
+  aprobar(datos: DatosAprobacionSoporte, ahora: Date): { desde: Date; hasta: Date } {
     const horas = vigenciaSoporte(datos.horas);
     this.exigir(['PENDIENTE'], 'aprobar');
     if (this.caducada(ahora)) throw new TransicionSoporteError('EXPIRADO', 'aprobar');
@@ -240,6 +241,7 @@ export class AccesoSoporte extends AggregateRoot {
       modo: this.props.modo,
     };
     this.publicar(EVENTOS_SEG.soporteAprobado, payload);
+    return { desde: ahora, hasta };
   }
 
   rechazar(motivo: string, por: string, ahora: Date): void {

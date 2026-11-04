@@ -47,7 +47,16 @@ function eventosDelDominio(): DomainEvent[] {
   const vencido = AccesoSoporte.solicitar(ID, solicitud, ahora);
   vencido.aprobar(aprobacion, ahora);
   vencido.expirar(new Date('2026-10-22T17:00:00Z'));
-  return [rol, copia, perfil, asignacion, membresia, revocado, rechazado, vencido].flatMap((a) => a.pullEvents());
+  const deSoporte = Membresia.abrirSoporte(ID, { usuarioId: OTRO, tenantId: ID, hasta: new Date('2026-10-22T17:00:00Z') }, ahora);
+  deSoporte.finalizar('Acceso de soporte vencido', null, new Date('2026-10-22T17:00:00Z'), [ID]);
+  const asignacionDeSoporte = Asignacion.otorgar(
+    OTRO,
+    ID,
+    { membresiaId: ID, rolId: ID, perfilId: null, alcance: 'TENANT', empresaId: null, sucursalId: null, unidadId: null, vigenteHasta: null },
+    { hoy: '2026-10-22', otorgadoPor: ID, permisos: [] },
+  );
+  asignacionDeSoporte.revocar('Ticket cerrado', null, ahora);
+  return [rol, copia, perfil, asignacion, membresia, revocado, rechazado, vencido, deSoporte, asignacionDeSoporte].flatMap((a) => a.pullEvents());
 }
 
 describe('Esquemas de eventos de seg', () => {
