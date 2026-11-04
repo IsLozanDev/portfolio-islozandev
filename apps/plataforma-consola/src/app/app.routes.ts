@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { aal2Guard } from '@vitrina/shared/auth';
 import { rutasDelShell } from '@vitrina/shared/shell';
+import { environment } from '../environments/environment';
 
 export const NOMBRE_APP = 'Consola de plataforma';
 /** El menú de `mi-contexto` trae también las opciones de admin; aquí solo van las de la consola. */
@@ -12,6 +13,12 @@ export const appRoutes: Route[] = [
   ...rutasDelShell(
     [
       { path: '', pathMatch: 'full', redirectTo: 'consola/tenants' },
+      {
+        path: 'consola/soporte',
+        canActivate: [aal2Guard],
+        data: { urlAdministracion: environment.urlAdministracion },
+        loadChildren: () => import('@vitrina/plataforma/consola-soporte').then((modulo) => modulo.CONSOLA_SOPORTE_ROUTES),
+      },
       {
         path: 'consola',
         canActivate: [aal2Guard],

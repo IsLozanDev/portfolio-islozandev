@@ -10,5 +10,7 @@ export const environment = {
     apiUrl: '/v1',
   } satisfies ConfigAuth,
   /** Apps a las que vuelve «Volver a …» tras una entrada con `?volverA=` (U-06). */
+  /** Destino de «Entrar» del agente de soporte (spec 18). */
+  urlAdministracion: 'http://127.0.0.1:4200',
   origenesVolverA: { 'http://127.0.0.1:4200': 'Administración' } satisfies OrigenesVolverA,
 };

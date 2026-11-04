@@ -1,0 +1,69 @@
+<section class="flex max-w-2xl flex-col gap-4">
+  <a mat-button class="self-start" routerLink="..">{{ mensajes.volver }}</a>
+  <h1 class="text-2xl font-medium">{{ mensajes.tituloSolicitar }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <form class="flex flex-col" [formGroup]="grupo" (ngSubmit)="enviar()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.tenant }}</mat-label>
+      <input
+        matInput
+        formControlName="tenant"
+        data-campo="tenant"
+        [placeholder]="mensajes.buscarTenant"
+        [matAutocomplete]="autocompletarTenant"
+        (input)="escribirTenant($any($event.target).value)"
+      />
+      <mat-autocomplete #autocompletarTenant="matAutocomplete" [displayWith]="nombreDeTenant">
+        @for (tenant of opcionesTenant(); track tenant.id) {
+          <mat-option [value]="tenant">{{ tenant.nombre }} · {{ tenant.codigo }}</mat-option>
+        }
+        @if (sinResultados()) {
+          <mat-option disabled>{{ mensajes.sinTenants }}</mat-option>
+        }
+      </mat-autocomplete>
+      @if (grupo.controls.tenant.hasError(errorTenant)) {
+        <mat-error>{{ mensajes.tenantRequerido }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.ticket }}</mat-label>
+      <input matInput formControlName="ticket" data-campo="ticket" autocomplete="off" />
+      <mat-hint>{{ mensajes.ayudaTicket }}</mat-hint>
+      <mat-error>{{ grupo.controls.ticket.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.motivo }}</mat-label>
+      <textarea matInput formControlName="motivo" data-campo="motivo" rows="3" [maxlength]="motivoMaximo"></textarea>
+      <mat-hint>{{ mensajes.ayudaMotivo }}</mat-hint>
+      <mat-error>{{ grupo.controls.motivo.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.modo }}</mat-label>
+        <mat-select formControlName="modo" data-campo="modo">
+          @for (modo of modos; track modo) {
+            <mat-option [value]="modo">{{ etiquetasModo[modo] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.horas }}</mat-label>
+        <mat-select formControlName="horas" data-campo="horas">
+          @for (horas of horasPosibles; track horas) {
+            <mat-option [value]="horas">{{ etiquetaHoras(horas) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="mensajes.enviar" (cancelar)="cancelar()" />
+  </form>
+</section>

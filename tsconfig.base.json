@@ -68,6 +68,9 @@
       ],
       "@vitrina/plataforma/consola-tenants": [
         "./libs/plataforma/consola-tenants/src/index.ts"
+      ],
+      "@vitrina/plataforma/consola-soporte": [
+        "./libs/plataforma/consola-soporte/src/index.ts"
       ]
     }
   }
