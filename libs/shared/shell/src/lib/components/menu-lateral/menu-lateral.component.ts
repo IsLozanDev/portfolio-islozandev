@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, signal, viewChild } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
@@ -32,9 +32,15 @@ export class MenuLateralComponent {
   private readonly router = inject(Router);
   private readonly expandidos = signal<ReadonlySet<string>>(new Set());
   private readonly urlActual = inject(RutaActualService).url;
+  private readonly buscador = viewChild(BuscadorMenuComponent);
 
   constructor() {
     effect(() => this.expandir(gruposDeRuta(this.nodos(), this.urlActual())));
+  }
+
+  /** Sin opciones de menú no hay buscador. */
+  enfocarBusqueda(): void {
+    this.buscador()?.enfocar();
   }
 
   protected estaExpandido(codigo: string): boolean {
@@ -55,13 +61,13 @@ export class MenuLateralComponent {
     });
   }
 
+  protected sangria(nivel: number): number {
+    return SANGRIA_BASE_REM + nivel * SANGRIA_POR_NIVEL_REM;
+  }
+
   /** Suma los grupos de la página actual sin cerrar los que abrió el usuario. */
   private expandir(codigos: ReadonlySet<string>): void {
     if (codigos.size === 0) return;
     this.expandidos.update((actuales) => new Set([...actuales, ...codigos]));
-  }
-
-  protected sangria(nivel: number): number {
-    return SANGRIA_BASE_REM + nivel * SANGRIA_POR_NIVEL_REM;
   }
 }

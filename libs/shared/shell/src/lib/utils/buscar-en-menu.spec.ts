@@ -1,5 +1,5 @@
 import type { NodoMenu } from '../models/nodo-menu';
-import { buscarEnMenu, gruposDeRuta, normalizarTexto } from './buscar-en-menu';
+import { buscarCoincidencia, buscarEnMenu, gruposDeRuta, normalizarTexto } from './buscar-en-menu';
 
 function hoja(codigo: string, nombre: string, ruta: string, icono = 'circle'): NodoMenu {
   return { codigo, nombre, ruta, icono, hijos: [] };
@@ -88,6 +88,17 @@ describe('buscarEnMenu', () => {
 
   it('sin coincidencias devuelve vacío', () => {
     expect(buscarEnMenu(arbol, 'zzz')).toEqual([]);
+  });
+});
+
+describe('buscarCoincidencia', () => {
+  it('ubica la consulta sin tildes ni mayúsculas', () => {
+    expect(buscarCoincidencia('Ventas › Salón', ' SALON ')).toEqual({ inicio: 9, fin: 14 });
+  });
+
+  it('sin consulta o sin coincidencia devuelve null', () => {
+    expect(buscarCoincidencia('Salón', '  ')).toBeNull();
+    expect(buscarCoincidencia('Salón', 'caja')).toBeNull();
   });
 });
 

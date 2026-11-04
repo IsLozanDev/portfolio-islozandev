@@ -70,7 +70,7 @@ describe('BuscadorMenuComponent', () => {
     expect(elemento.querySelector('#arbol')).toBeNull();
     expect(opciones().map((opcion) => opcion.textContent)).toEqual([expect.stringContaining('Mesas'), expect.stringContaining('Reservas')]);
     expect(opciones()[0].textContent).toContain('Salón');
-    expect(opciones()[0].querySelector('mark')).toBeNull();
+    expect([...opciones()[0].querySelectorAll('mark')].map((marca) => marca.textContent)).toEqual(['Salón']);
     expect(caja().getAttribute('aria-expanded')).toBe('true');
     expect(elemento.querySelector('kbd')).toBeNull();
     expect(elemento.querySelector('[aria-label="Borrar búsqueda"]')).not.toBeNull();
@@ -79,7 +79,7 @@ describe('BuscadorMenuComponent', () => {
   it('marca el tramo del nombre que coincide', async () => {
     await escribir('serv');
 
-    expect(opciones()[0].querySelector('mark')?.textContent).toBe('serv');
+    expect([...opciones()[0].querySelectorAll('mark')].map((marca) => marca.textContent)).toEqual(['serv']);
   });
 
   it('anuncia el número de resultados en la región aria-live', async () => {

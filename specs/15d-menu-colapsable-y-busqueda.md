@@ -51,7 +51,7 @@ Historias del backlog: ninguna. Estimado: 6 h.
 - **Grupo de la página actual**: al cargar y en cada `NavigationEnd`, se expanden los grupos que contienen la ruta activa. Los grupos que el usuario abrió siguen abiertos.
 - **Búsqueda en el menú** (`vit-buscador-menu`, arriba del árbol, en escritorio y en celular):
   - Busca nodos con ruta cuyo nombre, o el de cualquier grupo que los contiene, incluya el texto. No distingue tildes ni mayúsculas.
-  - Cada resultado muestra el icono de su nodo de primer nivel, el nombre con la coincidencia marcada y debajo la ruta de grupos («Caja», «Ventas › Comprobantes»).
+  - Cada resultado muestra el icono de su nodo de primer nivel, el nombre con la coincidencia marcada y debajo la ruta de grupos («Caja», «Ventas › Comprobantes»). Si coincidió por un grupo, la marca va en la ruta de grupos (decisión del usuario en la implementación, 2026-11-04).
   - Sin texto, se ve el árbol. Con texto, se ven solo los resultados.
   - Sin resultados: «Ninguna opción coincide con «…»» y una ayuda.
   - Un botón «Borrar búsqueda» aparece con texto. Sin texto se ve la pista «Ctrl K».
@@ -113,6 +113,7 @@ export interface ResultadoBusquedaMenu {
 }
 
 export function normalizarTexto(texto: string): string;   // NFD, sin diacríticos, minúsculas
+export function buscarCoincidencia(texto: string, consulta: string): { inicio: number; fin: number } | null;   // marca en la ruta de grupos
 export function buscarEnMenu(arbol: readonly NodoMenu[], consulta: string): ResultadoBusquedaMenu[];
 export function gruposDeRuta(arbol: readonly NodoMenu[], url: string): ReadonlySet<string>;   // códigos de los ancestros del nodo activo
 ```
@@ -143,7 +144,7 @@ export function gruposDeRuta(arbol: readonly NodoMenu[], url: string): ReadonlyS
 
 ### Medidas
 
-`ANCHO_MENU_VISIBLE_PX = 272`, `ANCHO_MENU_OCULTO_PX = 72` y `DURACION_ANIMACION_MENU_MS = 200`, en `models/medidas-shell.ts`. El ancho se aplica con `--mat-sidenav-container-width` y `mat-sidenav-container` en `autosize` para que el contenido se reacomode.
+`ANCHO_MENU_VISIBLE_PX = 272`, `ANCHO_MENU_OCULTO_PX = 72` y `DURACION_ANIMACION_MENU_MS = 200`, en `models/medidas-shell.ts`. El ancho se aplica con `--mat-sidenav-container-width`; el margen del contenido en escritorio sale de la misma variable por CSS (ver Decisiones).
 
 ## Plan de implementación
 
@@ -215,7 +216,7 @@ export function gruposDeRuta(arbol: readonly NodoMenu[], url: string): ReadonlyS
 - **Sí:** expandir solos los grupos de la página actual (decisión del usuario).
 - **Sí:** en celular solo se suma la búsqueda (decisión del usuario). La franja de iconos no tiene sentido en un menú que se abre encima.
 - **Sí:** búsqueda en el cliente sobre el árbol ya cargado. El menú no supera unas decenas de opciones y no hace falta la API.
-- **Sí:** `autosize` en `mat-sidenav-container` para que el contenido acompañe el ancho del menú.
+- ~~**Sí:** `autosize` en `mat-sidenav-container` para que el contenido acompañe el ancho del menú.~~ Cambiado en la implementación (decisión del usuario, 2026-11-03): `autosize` mide el ancho una sola vez, a los 10 ms de empezar la animación, y el contenido se acomoda con un salto al final. Se aplica la mitigación de Riesgos: `autosize` apagado y el margen del contenido por CSS desde el mismo ancho, con la misma transición.
 
 ## Riesgos
 

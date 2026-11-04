@@ -3,6 +3,7 @@ import type { ResultadoBusquedaMenu, TramoCoincidencia } from '../models/resulta
 
 const MARCAS_COMBINANTES = /\p{M}/gu;
 const INICIO_CONSULTA_O_FRAGMENTO = /[?#]/;
+const RUTA_RAIZ = '/';
 
 interface Ancestros {
   icono: string;
@@ -42,13 +43,17 @@ function buscarEnNodo(nodo: NodoMenu, consulta: string, ancestros: Ancestros): R
   return nodo.hijos.flatMap((hijo) => buscarEnNodo(hijo, consulta, ancestrosDeHijos));
 }
 
+/** Tramo de `texto` que coincide con la consulta, con la misma regla que `buscarEnMenu`. */
+export function buscarCoincidencia(texto: string, consulta: string): TramoCoincidencia | null {
+  const consultaNormalizada = normalizarTexto(consulta.trim());
+  return consultaNormalizada ? buscarTramo(texto, consultaNormalizada) : null;
+}
+
 function buscarTramo(nombre: string, consulta: string): TramoCoincidencia | null {
   const inicio = normalizarTexto(nombre).indexOf(consulta);
   if (inicio < 0) return null;
   return { inicio, fin: inicio + consulta.length };
 }
-
-const RUTA_RAIZ = '/';
 
 /** La raíz solo está activa en sí misma; el resto también en sus subrutas. */
 export function esRutaExacta(ruta: string | null): boolean {

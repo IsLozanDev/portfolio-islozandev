@@ -2,13 +2,13 @@ import { Component, computed, type ElementRef, input, output, signal, viewChild 
 import { MatIconModule } from '@angular/material/icon';
 import { MENSAJES_SHELL, mensajeResultadosMenu, mensajeSinResultadosMenu } from '../../models/mensajes-shell';
 import type { NodoMenu } from '../../models/nodo-menu';
-import type { ResultadoBusquedaMenu } from '../../models/resultado-busqueda-menu';
-import { buscarEnMenu } from '../../utils/buscar-en-menu';
+import type { ResultadoBusquedaMenu, TramoCoincidencia } from '../../models/resultado-busqueda-menu';
+import { buscarCoincidencia, buscarEnMenu } from '../../utils/buscar-en-menu';
 
 const SIN_RESULTADO_ACTIVO = -1;
 const SEPARADOR_GRUPOS = ' › ';
 
-interface PartesNombre {
+interface PartesTexto {
   antes: string;
   coincide: string;
   despues: string;
@@ -86,18 +86,15 @@ export class BuscadorMenuComponent {
     return `${this.idLista}-opcion-${indice}`;
   }
 
-  protected rutaDeGrupos(resultado: ResultadoBusquedaMenu): string {
-    return resultado.grupos.join(SEPARADOR_GRUPOS);
+  protected partesNombre(resultado: ResultadoBusquedaMenu): PartesTexto {
+    return partirPorTramo(resultado.nombre, resultado.coincidencia);
   }
 
-  protected partesNombre(resultado: ResultadoBusquedaMenu): PartesNombre {
-    const { nombre, coincidencia } = resultado;
-    if (!coincidencia) return { antes: nombre, coincide: '', despues: '' };
-    return {
-      antes: nombre.slice(0, coincidencia.inicio),
-      coincide: nombre.slice(coincidencia.inicio, coincidencia.fin),
-      despues: nombre.slice(coincidencia.fin),
-    };
+  /** Si coincidió por un grupo, la marca va en la ruta de grupos. */
+  protected partesGrupos(resultado: ResultadoBusquedaMenu): PartesTexto {
+    const rutaDeGrupos = resultado.grupos.join(SEPARADOR_GRUPOS);
+    const tramo = resultado.coincidencia ? null : buscarCoincidencia(rutaDeGrupos, this.consulta());
+    return partirPorTramo(rutaDeGrupos, tramo);
   }
 
   private moverActivo(evento: KeyboardEvent, paso: number): void {
@@ -123,4 +120,13 @@ export class BuscadorMenuComponent {
     evento.stopPropagation();
     this.alEscribir('');
   }
+}
+
+function partirPorTramo(texto: string, tramo: TramoCoincidencia | null): PartesTexto {
+  if (!tramo) return { antes: texto, coincide: '', despues: '' };
+  return {
+    antes: texto.slice(0, tramo.inicio),
+    coincide: texto.slice(tramo.inicio, tramo.fin),
+    despues: texto.slice(tramo.fin),
+  };
 }

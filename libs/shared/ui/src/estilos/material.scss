@@ -59,6 +59,11 @@ $tabla-ancho-maximo-celda: 12rem;
       list-item-hover-state-layer-color: $menta,
       list-item-focus-state-layer-color: $menta,
     ));
+
+    /* Mientras el ancho anima (15d), el contenido no saca barra horizontal. */
+    .mat-drawer-inner-container {
+      overflow-x: hidden;
+    }
   }
 
   /* Submenú de la franja de iconos (15d): vive en el overlay del CDK, fuera del componente. */

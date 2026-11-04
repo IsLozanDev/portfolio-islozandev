@@ -47,7 +47,8 @@
         <span class="flex min-w-0 flex-col gap-0.5">
           <span class="truncate text-sm text-white">{{ partes.antes }}@if (partes.coincide) {<mark>{{ partes.coincide }}</mark>}{{ partes.despues }}</span>
           @if (resultado.grupos.length > 0) {
-            <span class="vit-texto-tenue truncate text-xs">{{ rutaDeGrupos(resultado) }}</span>
+            @let grupos = partesGrupos(resultado);
+            <span class="vit-texto-tenue truncate text-xs">{{ grupos.antes }}@if (grupos.coincide) {<mark>{{ grupos.coincide }}</mark>}{{ grupos.despues }}</span>
           }
         </span>
       </li>
