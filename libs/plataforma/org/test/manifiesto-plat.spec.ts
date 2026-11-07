@@ -16,7 +16,7 @@ interface Manifiesto {
   parametros: { codigo: string; tipo: string; valor_defecto: unknown; alcance_maximo: string }[];
 }
 
-describe('Manifiesto PLAT 1.8.0: parte de org (specs 12 y 17a)', () => {
+describe('Manifiesto PLAT 1.9.0: parte de org (specs 12 y 17a)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (codigo: string) => manifiesto.roles_predefinidos.find((rol) => rol.codigo === codigo)?.permisos ?? [];
   const permiso = (codigo: string) => manifiesto.permisos.find((declarado) => declarado.codigo === codigo);
@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.8.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.8.0');
+    expect(manifiesto.version).toBe('1.9.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -48,8 +48,10 @@ describe('Manifiesto PLAT 1.8.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('PLAT_PROPIETARIO junta los tres administradores, los permisos de organización y autorizar soporte, sin ninguno de tenants', () => {
-    // plat.soporte.autorizar es del cliente (spec 18): solo lo tiene el propietario.
-    const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...PERMISOS_ORGANIZACION, 'plat.soporte.autorizar']);
+    // plat.soporte.autorizar es del cliente (spec 18): solo lo tiene el propietario. Los dos sensibles de
+    // catálogos también (spec 19a); solo sirven en el tenant operador.
+    const soloPropietario = ['plat.soporte.autorizar', 'plat.catalogo.gestionar', 'plat.catalogo.item_gestionar'];
+    const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...PERMISOS_ORGANIZACION, ...soloPropietario]);
     expect(new Set(permisosDe('PLAT_PROPIETARIO'))).toEqual(esperados);
     expect(permisosDe('PLAT_PROPIETARIO').filter((codigo) => codigo.startsWith('plat.tenant.') || codigo.startsWith('plat.suscripcion.'))).toEqual([]);
   });

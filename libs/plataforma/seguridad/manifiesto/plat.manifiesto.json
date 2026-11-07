@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -53,7 +53,12 @@
     { "codigo": "plat.seguridad.bitacora", "descripcion": "Consultar la bitácora de seguridad del tenant", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.seguridad.bitacora_exportar", "descripcion": "Exportar la bitácora de seguridad a Excel", "alcance_minimo": "TENANT", "sensible": true },
     { "codigo": "plat.soporte.autorizar", "descripcion": "Aprobar, rechazar y revocar accesos temporales de soporte", "alcance_minimo": "TENANT", "sensible": true },
-    { "codigo": "plat.soporte.solicitar", "descripcion": "Solicitar y usar accesos temporales de soporte (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": false }
+    { "codigo": "plat.soporte.solicitar", "descripcion": "Solicitar y usar accesos temporales de soporte (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.catalogo.gestionar", "descripcion": "Crear y actualizar catálogos (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.catalogo.item_gestionar", "descripcion": "Administrar ítems globales de los catálogos (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.catalogo.leer", "descripcion": "Listar catálogos y leer sus ítems", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.catalogo.personalizar", "descripcion": "Ocultar, reordenar y renombrar ítems globales de catálogos mixtos", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.catalogo.item_propio", "descripcion": "Administrar ítems propios en catálogos mixtos y del tenant", "alcance_minimo": "TENANT", "sensible": false }
   ],
   "roles_predefinidos": [
     {
@@ -64,7 +69,10 @@
     {
       "codigo": "PLAT_ADMIN_CONFIGURACION",
       "nombre": "Administrador de configuración",
-      "permisos": ["plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto", "plat.serie.gestionar"]
+      "permisos": [
+        "plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto", "plat.serie.gestionar", "plat.catalogo.leer",
+        "plat.catalogo.personalizar", "plat.catalogo.item_propio"
+      ]
     },
     {
       "codigo": "PLAT_ADMIN_EVENTOS",
@@ -88,7 +96,9 @@
         "plat.rol.gestionar", "plat.perfil.gestionar", "plat.asignacion.otorgar", "plat.permiso.consultar", "plat.sesion.contexto",
         "plat.usuario.invitar", "plat.asignacion.revocar", "plat.parametro.leer", "plat.parametro.editar", "plat.serie.gestionar",
         "plat.evento.consultar", "plat.evento.reprocesar", "plat.organizacion.consultar", "plat.empresa.crear", "plat.sucursal.gestionar",
-        "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar"
+        "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar",
+        "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
+        "plat.catalogo.item_propio"
       ]
     }
   ],
