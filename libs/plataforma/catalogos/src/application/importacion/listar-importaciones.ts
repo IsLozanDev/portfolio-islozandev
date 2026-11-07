@@ -1,6 +1,8 @@
 import { buscarCatalogo, exigirOperador } from '../dependencias-catalogos.js';
 import type { ImportacionListada, Listado, Pagina } from '../ports/importacion.js';
+import { seguimientoDe } from './avance.js';
 import type { DependenciasImportacion } from './dependencias-importacion.js';
+import type { ImportacionActiva } from './resultados-importacion.js';
 
 export const TAMANO_PAGINA_MAXIMO = 50;
 
@@ -17,12 +19,13 @@ export class ListarImportaciones {
     });
   }
 
-  /** Las EN_COLA que lanzó el usuario: las que el front sigue por SSE. */
-  activas(comando: { actorId: string }): Promise<ImportacionListada[]> {
-    const { unidadDeTrabajo, importaciones } = this.dependencias;
-    return unidadDeTrabajo.run(async () => {
+  /** Las EN_COLA que lanzó el usuario, con el avance de Redis: las que el front sigue por SSE. */
+  async activas(comando: { actorId: string }): Promise<ImportacionActiva[]> {
+    const { unidadDeTrabajo, importaciones, canal } = this.dependencias;
+    const enCola = await unidadDeTrabajo.run(async () => {
       await exigirOperador(this.dependencias);
       return importaciones.activasDe(comando.actorId);
     });
+    return Promise.all(enCola.map(async (listada) => ({ ...listada, ...(await seguimientoDe(canal, listada.id, listada.estado)) })));
   }
 }

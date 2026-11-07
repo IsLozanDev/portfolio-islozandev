@@ -178,7 +178,7 @@ describe('AplicarImportacion y ProcesarImportacion (TR-RF-028)', () => {
           throw new Error('Connection is closed.');
         },
         ultimo: async () => null,
-        suscribir: () => actual.canal.suscribir(id),
+        suscribir: (importacionId, senal) => actual.canal.suscribir(importacionId, senal),
       };
       await procesar(trabajo);
       expect(await estadoDe(id)).toBe('APLICADA');

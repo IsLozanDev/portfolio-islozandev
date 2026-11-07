@@ -2,6 +2,11 @@ import { fechaDeCierre, type CambioItem, type Diferencias } from '../../domain/i
 import type { FilaImportada } from '../../domain/importacion/fila-importada.js';
 import type { Importacion, ResumenImportacion } from '../../domain/importacion/importacion.js';
 import type { EstadoImportacion } from '../../domain/importacion/tipos.js';
+import type { ImportacionListada } from '../ports/importacion.js';
+import type { Seguimiento } from './avance.js';
+
+/** Fila de `?activas=true`: con el estado y el avance que da Redis. */
+export type ImportacionActiva = Omit<ImportacionListada, 'estado'> & Seguimiento;
 
 const MUESTRA_POR_TIPO = 20;
 
@@ -24,10 +29,9 @@ export interface Previsualizacion {
   venceEn: Date;
 }
 
-export interface DetalleImportacion {
+export interface DetalleImportacion extends Seguimiento {
   id: string;
   codigo: string;
-  estado: EstadoImportacion;
   versionOficial: string;
   fechaVigencia: string;
   archivoNombre: string;
@@ -65,11 +69,11 @@ export function previsualizacionDe(importacion: Importacion, diferencias: Difere
   };
 }
 
-export function detalleDe(importacion: Importacion, codigo: string): DetalleImportacion {
+export function detalleDe(importacion: Importacion, codigo: string, seguimiento: Seguimiento): DetalleImportacion {
   return {
     id: importacion.id,
     codigo,
-    estado: importacion.estado,
+    ...seguimiento,
     versionOficial: importacion.versionOficial,
     fechaVigencia: importacion.fechaVigencia,
     archivoNombre: importacion.archivoNombre,

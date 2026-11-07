@@ -1,4 +1,5 @@
 import type { AvisoImportacion, CanalAvance } from '../application/ports/importacion.js';
+import { AvisosEnEspera } from './avisos-en-espera.js';
 
 /** El mismo contrato que CanalAvanceRedis, en un proceso: para pruebas sin Redis. */
 export class CanalAvanceMemoria implements CanalAvance {
@@ -14,21 +15,18 @@ export class CanalAvanceMemoria implements CanalAvance {
     return this.publicados.get(importacionId)?.at(-1) ?? null;
   }
 
-  async *suscribir(importacionId: string): AsyncGenerator<AvisoImportacion> {
-    const pendientes: AvisoImportacion[] = [];
-    let despertar: (() => void) | null = null;
-    const oyente = (aviso: AvisoImportacion) => {
-      pendientes.push(aviso);
-      despertar?.();
-    };
+  /** Cuántas suscripciones siguen abiertas: para comprobar que se sueltan. */
+  suscritos(importacionId: string): number {
+    return this.oyentes.get(importacionId)?.size ?? 0;
+  }
+
+  async *suscribir(importacionId: string, senal: AbortSignal): AsyncGenerator<AvisoImportacion> {
+    const espera = new AvisosEnEspera(senal);
+    const oyente = (aviso: AvisoImportacion) => espera.recibir(aviso);
     const oyentes = this.oyentes.get(importacionId) ?? new Set();
     this.oyentes.set(importacionId, oyentes.add(oyente));
     try {
-      for (;;) {
-        const aviso = pendientes.shift();
-        if (aviso) yield aviso;
-        else await new Promise<void>((resolver) => (despertar = resolver));
-      }
+      yield* espera.avisos();
     } finally {
       oyentes.delete(oyente);
     }

@@ -119,6 +119,6 @@ export interface CanalAvance {
   /** Guarda el último aviso (con TTL) y lo publica. */
   publicar(importacionId: string, aviso: AvisoImportacion): Promise<void>;
   ultimo(importacionId: string): Promise<AvisoImportacion | null>;
-  /** Cada aviso publicado desde que se suscribe. Se cierra al cortar la iteración. */
-  suscribir(importacionId: string): AsyncIterable<AvisoImportacion>;
+  /** Cada aviso publicado desde que se suscribe, hasta que `senal` se aborta: entonces suelta la suscripción. */
+  suscribir(importacionId: string, senal: AbortSignal): AsyncIterable<AvisoImportacion>;
 }

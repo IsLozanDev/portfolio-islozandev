@@ -1,4 +1,5 @@
 import type { ResumenImportacion } from '../../domain/importacion/importacion.js';
+import type { EstadoImportacion, EstadoSeguimiento } from '../../domain/importacion/tipos.js';
 import type { AvisoImportacion, CanalAvance, ResumenAviso } from '../ports/importacion.js';
 
 export const EVENTO_ERROR_AVANCE = 'cat.importacion.avance_error';
@@ -14,6 +15,24 @@ export function porcentajeDeAvance(hechas: number, total: number): number {
 
 export function resumenDeAviso(resumen: ResumenImportacion): ResumenAviso {
   return { altas: resumen.altas, cambios: resumen.cambios, bajas: resumen.bajas, sin_cambios: resumen.sinCambios };
+}
+
+export interface Seguimiento {
+  estado: EstadoSeguimiento;
+  /** Solo mientras está EN_COLA: 0-99 desde Redis; null en los demás estados o si Redis no responde. */
+  avance: number | null;
+}
+
+/** La base sigue en EN_COLA mientras el worker aplica: Redis dice si ya está EN_PROCESO y cuánto lleva. */
+export async function seguimientoDe(canal: CanalAvance, importacionId: string, estadoBase: EstadoImportacion): Promise<Seguimiento> {
+  if (estadoBase !== 'EN_COLA') return { estado: estadoBase, avance: null };
+  try {
+    const aviso = await canal.ultimo(importacionId);
+    if (aviso?.tipo !== 'avance') return { estado: estadoBase, avance: null };
+    return { estado: aviso.estado, avance: aviso.avance };
+  } catch {
+    return { estado: estadoBase, avance: null };
+  }
 }
 
 /** El avance es informativo: si Redis falla se registra y el trabajo sigue. Solo el nombre del error (TR-RNF-026). */
