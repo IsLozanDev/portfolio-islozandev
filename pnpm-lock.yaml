@@ -211,6 +211,9 @@ importers:
       bullmq:
         specifier: 6.3.11
         version: 6.3.11(ioredis@6.0.0(supports-color@7.2.0))(pg@8.23.1)
+      csv-parse:
+        specifier: 7.0.3
+        version: 7.0.3
       exceljs:
         specifier: 4.4.0
         version: 4.4.0
@@ -4170,6 +4173,9 @@ packages:
   cssstyle@5.3.7:
     resolution: {integrity: sha512-7D2EPVltRrsTkhpQmksIu+LxeWAIEk6wRDMJ1qljlv+CKHJM+cJLlfhWIzNA44eAsHXSNe3+vO6DW1yCYx8SuQ==}
     engines: {node: '>=20'}
+
+  csv-parse@7.0.3:
+    resolution: {integrity: sha512-YFd3QM/yo17vH91L1IOZuvl09zM0zEEtdfTcOCKWcMdM++MNaQSyp09slXyFCLaPXvHstQFx/xC8myiFHSMUvw==}
 
   data-urls@6.0.1:
     resolution: {integrity: sha512-euIQENZg6x8mj3fO6o9+fOW8MimUI4PpD/fZBhJfeioZVy9TUpM4UY7KjQNVZFlqwJ0UdzRDzkycB997HEq1BQ==}
@@ -11117,6 +11123,8 @@ snapshots:
       '@csstools/css-syntax-patches-for-csstree': 1.1.15(css-tree@3.2.1)
       css-tree: 3.2.1
       lru-cache: 11.5.3
+
+  csv-parse@7.0.3: {}
 
   data-urls@6.0.1:
     dependencies:

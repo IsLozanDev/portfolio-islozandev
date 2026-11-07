@@ -28,11 +28,11 @@ export interface DependenciasCatalogos {
 }
 
 /** Antes de cualquier lectura: fuera del operador, 403 sin tocar nada (TR-RN-009). */
-export function exigirOperador(dependencias: DependenciasCatalogos): Promise<void> {
+export function exigirOperador(dependencias: Pick<DependenciasCatalogos, 'verificadorOperador' | 'contexto'>): Promise<void> {
   return dependencias.verificadorOperador.exigir(dependencias.contexto.current().tenantId);
 }
 
-export async function buscarCatalogo(catalogos: RepositorioCatalogos, codigo: string): Promise<Catalogo> {
+export async function buscarCatalogo(catalogos: Pick<RepositorioCatalogos, 'buscarPorCodigo'>, codigo: string): Promise<Catalogo> {
   const catalogo = await catalogos.buscarPorCodigo(codigo);
   if (!catalogo) throw new CatalogoNoExisteError();
   return catalogo;

@@ -75,7 +75,7 @@ describe('cabecera', () => {
   it.each([
     ['UBIGEO', ['codigo', 'descripcion', 'departamento', 'provincia'], ['orden']],
     ['CIE10', ['codigo', 'descripcion'], ['orden']],
-    ['TIPO_COMPROBANTE', ['codigo', 'descripcion'], ['abreviatura', 'orden']],
+    ['TIPO_COMPROBANTE', ['codigo', 'descripcion'], ['codigo_externo', 'abreviatura', 'orden']],
     ['UNIDAD_MEDIDA', ['codigo', 'descripcion'], ['abreviatura', 'orden']],
     ['TIPO_DOC_IDENTIDAD', ['codigo', 'codigo_externo', 'descripcion'], ['abreviatura', 'orden']],
     ['AFECTACION_IGV', ['codigo', 'descripcion'], ['orden']],

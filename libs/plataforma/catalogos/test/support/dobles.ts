@@ -35,6 +35,10 @@ export class CatalogosEnMemoria implements RepositorioCatalogos {
     return [...this.filas.values()].find((catalogo) => catalogo.codigo === codigo) ?? null;
   }
 
+  async buscarPorId(id: string) {
+    return this.filas.get(id) ?? null;
+  }
+
   async listar() {
     return [...this.filas.values()].sort((uno, otro) => uno.codigo.localeCompare(otro.codigo));
   }

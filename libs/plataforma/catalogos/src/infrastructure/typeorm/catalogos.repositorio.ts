@@ -20,6 +20,11 @@ export class CatalogosRepositorioTypeOrm implements RepositorioCatalogos {
     return fila ? catalogoDesdeFila(fila) : null;
   }
 
+  async buscarPorId(id: string): Promise<Catalogo | null> {
+    const fila = await this.catalogos().findOneBy({ id });
+    return fila ? catalogoDesdeFila(fila) : null;
+  }
+
   async listar(): Promise<Catalogo[]> {
     return (await this.catalogos().find({ order: { codigo: 'ASC' } })).map(catalogoDesdeFila);
   }

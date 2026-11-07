@@ -1,10 +1,12 @@
 import { Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
+import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import type { Config } from './config/env.js';
+import { ImportacionesModule } from './importaciones/importaciones.module.js';
 import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
 
@@ -25,6 +27,7 @@ export class WorkerModule {
     const validator = new InMemoryEventSchemaValidator();
     registrarEsquemasOrg(validator);
     registrarEsquemasSeg(validator);
+    registrarEsquemasCat(validator);
     return {
       module: WorkerModule,
       imports: [
@@ -44,6 +47,7 @@ export class WorkerModule {
         }),
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
+        ImportacionesModule.register({ redisUrl: config.REDIS_URL }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };

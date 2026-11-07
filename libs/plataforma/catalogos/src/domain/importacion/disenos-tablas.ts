@@ -26,7 +26,7 @@ export const DISENOS_TABLAS: Readonly<Record<TablaImportable, DisenoTabla>> = {
   },
   TIPO_COMPROBANTE: {
     obligatorias: BASE,
-    opcionales: ['abreviatura', 'orden'],
+    opcionales: ['codigo_externo', 'abreviatura', 'orden'],
     formatoCodigo: /^[0-9]{2}$/,
     atributos: [],
   },

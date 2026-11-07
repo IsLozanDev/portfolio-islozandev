@@ -204,7 +204,7 @@ Constante `DISENOS_TABLAS`, una entrada por tabla. La cabecera del archivo debe 
 | --- | --- | --- | --- | --- |
 | `UBIGEO` | `codigo`, `descripcion`, `departamento`, `provincia` | `orden` | `^[0-9]{6}$` | `departamento`, `provincia` |
 | `CIE10` | `codigo`, `descripcion` | `orden` | `^[A-Z][0-9][0-9A-Z](\.?[0-9A-Z]{1,2})?$` | — |
-| `TIPO_COMPROBANTE` | `codigo`, `descripcion` | `abreviatura`, `orden` | `^[0-9]{2}$` | — |
+| `TIPO_COMPROBANTE` | `codigo`, `descripcion` | `codigo_externo`, `abreviatura`, `orden` | `^[0-9]{2}$` | — |
 | `UNIDAD_MEDIDA` | `codigo`, `descripcion` | `abreviatura`, `orden` | `^[A-Z0-9]{1,3}$` | — |
 | `TIPO_DOC_IDENTIDAD` | `codigo`, `codigo_externo`, `descripcion` | `abreviatura`, `orden` | `^[A-Z0-9_]{1,40}$` | — |
 | `AFECTACION_IGV` | `codigo`, `descripcion` | `orden` | `^[0-9]{2}$` | — |
@@ -212,6 +212,7 @@ Constante `DISENOS_TABLAS`, una entrada por tabla. La cabecera del archivo debe 
 
 - `descripcion` va a `nombre` (1-200 caracteres). Sin `orden`, el orden es el número de fila.
 - En `TIPO_DOC_IDENTIDAD` la clave es `codigo`. El archivo convertido conserva los códigos de la semilla del 19a (`DNI`, `RUC`, `CE`, `PASAPORTE`) y para los demás usa `DOC_` más el código SUNAT. `codigo_externo` lleva el código SUNAT.
+- En `TIPO_COMPROBANTE`, `codigo_externo` lleva el código SUNAT, como la semilla del 19a. Sin la columna, una importación dejaría `codigo_externo` en NULL.
 - Un código repetido dentro del archivo es un error de fila.
 
 ### Archivo
