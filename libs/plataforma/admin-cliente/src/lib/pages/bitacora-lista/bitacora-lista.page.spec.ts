@@ -202,6 +202,21 @@ describe('BitacoraListaPage', () => {
       await vi.waitFor(() => expect(avisos.error).toHaveBeenCalledWith(MENSAJES_BITACORA.tituloErrorExportar, mensaje));
     });
 
+    it('con el aviso de error todavía abierto, el botón ya no dice «Exportando…»', async () => {
+      await responder(await abrir(SEMANA, { permisos: PERMISOS_EXPORTAR, mfaVigente: true }), { items: [], total: 0 });
+      avisos.error.mockReturnValue(new Promise(() => undefined));
+
+      await clicExportar();
+      http
+        .expectOne((solicitud) => solicitud.url === URL_EXPORTAR)
+        .flush(new Blob([JSON.stringify({ codigo: 'AUDITORIA_NO_DISPONIBLE', mensaje: 'x' })]), { status: 503, statusText: 'Service Unavailable' });
+      await vi.waitFor(() => expect(avisos.error).toHaveBeenCalled());
+      await estable();
+
+      expect(botonExportar()?.disabled).toBe(false);
+      expect(elemento().textContent).not.toContain(MENSAJES_BITACORA.exportando);
+    });
+
     it('el resumen del ingreso fallido se lee con la etiqueta del motivo y el tipo va en advertencia', async () => {
       await responder(await abrir(SEMANA), { items: [BLOQUEO], total: 1 });
 

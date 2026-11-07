@@ -1,8 +1,8 @@
 import { Logger, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import type { Reflector } from '@nestjs/core';
 import type { RegistroAcceso } from '../application/ports/registro-acceso.port.js';
-import type { RegistrarInicioSesion } from '../application/registrar-inicio-sesion.js';
 import type { VerificadorToken } from '../application/ports/verificador-token.port.js';
+import type { RegistrarInicioSesion } from '../application/registrar-inicio-sesion.js';
 import { AutenticacionNoDisponibleError, TokenInvalidoError } from '../domain/errores.js';
 import { PUBLICO, type SolicitudAutenticada } from './decoradores.js';
 import { cabecera, rechazar, TOKEN_INVALIDO, tokenBearer } from './respuestas.js';

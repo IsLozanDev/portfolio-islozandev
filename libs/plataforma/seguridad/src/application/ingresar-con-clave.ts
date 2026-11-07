@@ -9,7 +9,7 @@ import {
 } from '../domain/intentos-ingreso.js';
 import { agenteRecortado, exigirSinBloqueo, registrarSinBloquear, type Avisar } from './fallos-ingreso.js';
 import type { BitacoraIngreso, UsuarioDeIngreso } from './ports/bitacora-ingreso.port.js';
-import type { ClaveBloqueo, ContadorIntentos } from './ports/contador-intentos.port.js';
+import type { AlcanceBloqueo, ClaveBloqueo, ContadorIntentos } from './ports/contador-intentos.port.js';
 import { LIMITE_PROVEEDOR, type ProveedorIngreso, type SesionEmitida } from './ports/proveedor-ingreso.port.js';
 
 export interface IngresoConClave {
@@ -31,6 +31,11 @@ interface ContextoDelFallo {
   correo: string;
   ip: string;
   agente: string | null;
+}
+
+interface BloqueoAplicado {
+  alcance: AlcanceBloqueo;
+  hasta: Date;
 }
 
 /**
@@ -76,8 +81,8 @@ export class IngresarConClave {
     throw new IngresoBloqueadoError(DURACION_BLOQUEO_SEG);
   }
 
-  private async contarFallos(claves: readonly ClaveBloqueo[]): Promise<{ alcance: ClaveBloqueo['alcance']; hasta: Date }[]> {
-    const bloqueos: { alcance: ClaveBloqueo['alcance']; hasta: Date }[] = [];
+  private async contarFallos(claves: readonly ClaveBloqueo[]): Promise<BloqueoAplicado[]> {
+    const bloqueos: BloqueoAplicado[] = [];
     for (const clave of claves) {
       const umbral = clave.alcance === 'IP' ? UMBRAL_FALLOS_IP : UMBRAL_FALLOS_CORREO_IP;
       const { bloqueadoHasta } = await this.dependencias.contador.registrarFallo(clave, umbral);

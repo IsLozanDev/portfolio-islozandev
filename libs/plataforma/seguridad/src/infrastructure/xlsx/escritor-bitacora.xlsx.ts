@@ -21,7 +21,8 @@ const PARTES_FECHA = new Intl.DateTimeFormat('es-PE', {
 
 /** «04/11/2026 10:00:00» en America/Lima; como texto, así Excel no lo corre a la zona del equipo. */
 export function fechaLima(instante: Date): string {
-  const parte = (tipo: Intl.DateTimeFormatPartTypes) => PARTES_FECHA.formatToParts(instante).find((p) => p.type === tipo)?.value ?? '';
+  const partes = PARTES_FECHA.formatToParts(instante);
+  const parte = (tipo: Intl.DateTimeFormatPartTypes) => partes.find((candidata) => candidata.type === tipo)?.value ?? '';
   return `${parte('day')}/${parte('month')}/${parte('year')} ${parte('hour')}:${parte('minute')}:${parte('second')}`;
 }
 

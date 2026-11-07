@@ -153,7 +153,7 @@ describe('Exportación XLSX de la bitácora (HTTP sin base, exceljs real, spec 1
     const respuesta = await exportar().query(SEMANA);
 
     expect(respuesta.status).toBe(503);
-    expect(respuesta.body.codigo).toBe('AUDITORIA_NO_DISPONIBLE');
+    expect(respuesta.body).toEqual({ codigo: 'AUDITORIA_NO_DISPONIBLE', mensaje: 'No se pudo registrar la exportación; intente de nuevo' });
     expect(respuesta.headers['content-type']).toContain('application/json');
   });
 

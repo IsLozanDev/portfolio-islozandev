@@ -1,5 +1,5 @@
 import type { UnitOfWork } from '@vitrina/plataforma/kernel';
-import { AuditoriaNoDisponibleError, ExportacionDemasiadoGrandeError } from '../domain/errores.js';
+import { ACCION_AUDITADA_EXPORTACION, AuditoriaNoDisponibleError, ExportacionDemasiadoGrandeError } from '../domain/errores.js';
 import { rangoValido } from './lecturas-bitacora.js';
 import type { EscritorBitacora } from './ports/escritor-bitacora.port.js';
 import type { FiltroExportacion, LecturaBitacora } from './ports/lectura-bitacora.js';
@@ -52,7 +52,7 @@ export class ExportarBitacora {
       await unidadDeTrabajo.run(() => bitacora.registrar('EXPORTACION', solicitud.usuarioId, { recurso: RECURSO_EXPORTADO, filtros, filas }, solicitud.ip));
     } catch (error) {
       avisar('seg.exportacion.auditoria_error', { error: error instanceof Error ? error.name : typeof error });
-      throw new AuditoriaNoDisponibleError();
+      throw new AuditoriaNoDisponibleError(ACCION_AUDITADA_EXPORTACION);
     }
   }
 }

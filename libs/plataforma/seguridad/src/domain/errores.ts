@@ -390,12 +390,15 @@ export class RangoBitacoraInvalidoError extends ValidationError {
   }
 }
 
-/** HTTP 503. La petición del agente no se ejecuta si no quedó auditada (TR-RNF-110). */
+export const ACCION_AUDITADA_SOPORTE = 'la acción de soporte';
+export const ACCION_AUDITADA_EXPORTACION = 'la exportación';
+
+/** HTTP 503. Lo auditado no se ejecuta si no quedó registrado: la petición del agente (TR-RNF-110) o la exportación (spec 18b). */
 export class AuditoriaNoDisponibleError extends DomainError {
   readonly code = 'AUDITORIA_NO_DISPONIBLE';
 
-  constructor() {
-    super('No se pudo registrar la acción de soporte; intente de nuevo');
+  constructor(accion: string = ACCION_AUDITADA_SOPORTE) {
+    super(`No se pudo registrar ${accion}; intente de nuevo`);
   }
 }
 

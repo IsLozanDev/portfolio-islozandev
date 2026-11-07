@@ -150,14 +150,17 @@ export class BitacoraListaPage {
     }
     const { desde, hasta, tipo, usuario } = this.filtro();
     this.exportando.set(true);
+    let fallo: ErrorAdmin | null = null;
     try {
       const { archivo, nombre } = await this.bitacora.exportar({ desde, hasta, tipo, usuario });
       descargarArchivo(this.documento, archivo, nombre);
     } catch (error) {
-      await this.avisarErrorDeExportacion(aErrorAdmin(error));
+      fallo = aErrorAdmin(error);
     } finally {
       this.exportando.set(false);
     }
+    // Después de quitar «Exportando…»: el aviso queda abierto hasta que lo cierran.
+    if (fallo) await this.avisarErrorDeExportacion(fallo);
   }
 
   /** El MFA pudo vencer entre la carga del contexto y el clic: el mismo camino que sin MFA. */
