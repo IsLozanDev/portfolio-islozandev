@@ -1,6 +1,8 @@
 import { ItemInvalidoError } from './errores.js';
 
 const ALIAS_MAXIMO = 200;
+/** Igual que el DEFAULT de `cat.catalogo_item_tenant.version`. */
+export const VERSION_INICIAL_AJUSTE = 0;
 
 export interface DatosAjuste {
   visible: boolean;

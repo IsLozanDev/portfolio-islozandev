@@ -1,7 +1,6 @@
 import { Catalogo } from '../domain/catalogo.js';
-import { eventoCatalogoActualizado } from '../domain/eventos.js';
 import type { AlcanceCatalogo } from '../domain/tipos.js';
-import { exigirOperador, type DependenciasCatalogos } from './dependencias-catalogos.js';
+import { exigirOperador, publicarCambioGlobal, type DependenciasCatalogos } from './dependencias-catalogos.js';
 import { definicionDe, type DefinicionCatalogo } from './resultados.js';
 
 export interface CrearCatalogoComando {
@@ -19,7 +18,7 @@ export class CrearCatalogo {
   constructor(private readonly dependencias: DependenciasCatalogos) {}
 
   ejecutar(comando: CrearCatalogoComando): Promise<DefinicionCatalogo> {
-    const { unidadDeTrabajo, ids, reloj, catalogos, eventos } = this.dependencias;
+    const { unidadDeTrabajo, ids, reloj, catalogos } = this.dependencias;
 
     return unidadDeTrabajo.run(async () => {
       await exigirOperador(this.dependencias);
@@ -35,19 +34,14 @@ export class CrearCatalogo {
         ahora,
       });
       await catalogos.crear(catalogo);
-      await eventos.publish(
-        eventoCatalogoActualizado({
-          catalogoId: catalogo.id,
-          codigo: catalogo.codigo,
-          versionGlobal: catalogo.version,
-          versionTenant: 0,
-          tenantId: null,
-          cambio: 'CATALOGO',
-          itemId: null,
-          por: comando.actorId,
-          ahora,
-        }),
-      );
+      await publicarCambioGlobal(this.dependencias, {
+        catalogo,
+        versionGlobal: catalogo.version,
+        cambio: 'CATALOGO',
+        itemId: null,
+        actorId: comando.actorId,
+        ahora,
+      });
       return definicionDe(catalogo, catalogo.version);
     });
   }

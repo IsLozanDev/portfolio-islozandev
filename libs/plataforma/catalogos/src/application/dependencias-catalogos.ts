@@ -7,6 +7,11 @@ import type { LecturaItems, RepositorioAjustes, RepositorioCatalogos, Repositori
 import type { VerificadorOperador } from './ports/verificador-operador.js';
 import type { VerificadorReferencias } from './ports/verificador-referencias.js';
 
+/** Un cambio global no toca la versión de ningún tenant. */
+const SIN_VERSION_TENANT = 0;
+
+type CambioGlobal = Exclude<CambioCatalogo, 'AJUSTE'>;
+
 /** Lo que comparten los casos de uso de escritura de catálogos e ítems. */
 export interface DependenciasCatalogos {
   unidadDeTrabajo: UnitOfWork;
@@ -41,9 +46,28 @@ export async function buscarItemDe(
   dueno: 'GLOBAL' | 'PROPIO',
 ): Promise<ItemCatalogo> {
   const item = await items.buscar(itemId);
-  const esDelDueno = item !== null && item.esGlobal === (dueno === 'GLOBAL');
-  if (!item || !esDelDueno || item.catalogoId !== catalogo.id) throw new ItemNoEncontradoError();
+  if (!item || item.esGlobal !== (dueno === 'GLOBAL') || item.catalogoId !== catalogo.id) throw new ItemNoEncontradoError();
   return item;
+}
+
+/** `catalogo.actualizado` de un cambio global, con la versión global que quedó tras escribir. */
+export function publicarCambioGlobal(
+  dependencias: DependenciasCatalogos,
+  cambio: { catalogo: Catalogo; versionGlobal: number; cambio: CambioGlobal; itemId: string | null; actorId: string; ahora: Date },
+): Promise<void> {
+  return dependencias.eventos.publish(
+    eventoCatalogoActualizado({
+      catalogoId: cambio.catalogo.id,
+      codigo: cambio.catalogo.codigo,
+      versionGlobal: cambio.versionGlobal,
+      versionTenant: SIN_VERSION_TENANT,
+      tenantId: null,
+      cambio: cambio.cambio,
+      itemId: cambio.itemId,
+      por: cambio.actorId,
+      ahora: cambio.ahora,
+    }),
+  );
 }
 
 /**
@@ -55,19 +79,14 @@ export async function publicarCambioDeItemGlobal(
   cambio: { codigoCatalogo: string; itemId: string; actorId: string; ahora: Date },
 ): Promise<void> {
   const catalogo = await buscarCatalogo(dependencias.catalogos, cambio.codigoCatalogo);
-  await dependencias.eventos.publish(
-    eventoCatalogoActualizado({
-      catalogoId: catalogo.id,
-      codigo: catalogo.codigo,
-      versionGlobal: catalogo.version,
-      versionTenant: 0,
-      tenantId: null,
-      cambio: 'ITEM',
-      itemId: cambio.itemId,
-      por: cambio.actorId,
-      ahora: cambio.ahora,
-    }),
-  );
+  await publicarCambioGlobal(dependencias, {
+    catalogo,
+    versionGlobal: catalogo.version,
+    cambio: 'ITEM',
+    itemId: cambio.itemId,
+    actorId: cambio.actorId,
+    ahora: cambio.ahora,
+  });
 }
 
 /**

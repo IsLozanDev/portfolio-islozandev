@@ -2,12 +2,10 @@ import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { Repository } from 'typeorm';
 import type { AjusteGuardado, RepositorioAjustes } from '../../application/ports/repositorios.js';
-import type { AjusteItem } from '../../domain/ajuste-item.js';
+import { VERSION_INICIAL_AJUSTE, type AjusteItem } from '../../domain/ajuste-item.js';
 import { AjusteEntidad, type FilaAjuste } from './entidades.js';
 import { esViolacionDeUnicidad } from './errores-sql.js';
 import { ajusteDesdeFila } from './mapeo.js';
-
-const VERSION_INICIAL_AJUSTE = 0;
 
 /** Ajustes del tenant del contexto. Filtra por tenant además de la RLS (regla 3). */
 export class AjustesRepositorioTypeOrm implements RepositorioAjustes {

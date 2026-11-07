@@ -1,6 +1,6 @@
 # SPEC 19a — Catálogos: núcleo con globales, mixtos y del tenant, vigencia, caché con ETag y `CatalogoPort`
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 03, SPEC 06, SPEC 12, SPEC 17a, SPEC 18b
 > **Date:** 2026-11-07
 > **Objective:** Crear `libs/plataforma/catalogos` (TR-CAT) con el esquema `cat`, la administración de catálogos e ítems globales (solo operador) y propios o personalizados (tenant) bajo `/v1/catalogos`, la lectura de ítems vigentes con caché Redis y ETag/304, y `CatalogoPort.validarItem` para los productos.
