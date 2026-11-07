@@ -1,6 +1,8 @@
 import type { AjusteItem } from '../../domain/ajuste-item.js';
+import type { AtributosItem } from '../../domain/atributos-item.js';
 import type { Catalogo } from '../../domain/catalogo.js';
 import type { ItemCatalogo } from '../../domain/item-catalogo.js';
+import type { EstadoItem, MotivoInvalido } from '../../domain/tipos.js';
 
 /** Catálogos, dentro de la transacción activa. Las escrituras van por funciones SECURITY DEFINER. */
 export interface RepositorioCatalogos {
@@ -55,8 +57,44 @@ export interface Versiones {
   versionTenant: number;
 }
 
-/** Lectura con `cat.versiones`, con la RLS del tenant. */
+/** Fila de `cat.items`: nombre con alias y orden con el ajuste ya aplicados. */
+export interface FilaItemLeido {
+  itemId: string;
+  codigo: string;
+  codigoExterno: string | null;
+  nombre: string;
+  atributos: AtributosItem;
+  orden: number;
+  propio: boolean;
+  estado: EstadoItem;
+}
+
+/** Lectura con `cat.versiones` y `cat.items`, con la RLS del tenant. */
 export interface LecturaItems {
   /** null si el catálogo no existe o el tenant no es el del contexto. */
   versiones(codigo: string, tenantId: string): Promise<Versiones | null>;
+  /** Todos los ítems que el tenant puede ver, con su estado en `fecha` (YYYY-MM-DD), por orden y nombre. */
+  items(codigo: string, tenantId: string, fecha: string): Promise<FilaItemLeido[]>;
+}
+
+export interface ItemVisible {
+  itemId: string;
+  codigo: string;
+  codigoExterno: string | null;
+  nombre: string;
+  atributos: AtributosItem;
+  orden: number;
+}
+
+/** Lo que guarda la caché por catálogo, tenant, versiones y fecha. */
+export interface ItemsEnCache {
+  /** Ordenados por orden y luego nombre. */
+  visibles: ItemVisible[];
+  /** Por código. */
+  noVisibles: Record<string, { motivo: MotivoInvalido; atributos: AtributosItem }>;
+}
+
+export interface CacheItems {
+  leer(clave: string): Promise<ItemsEnCache | null>;
+  guardar(clave: string, valor: ItemsEnCache, ttlSegundos: number): Promise<void>;
 }

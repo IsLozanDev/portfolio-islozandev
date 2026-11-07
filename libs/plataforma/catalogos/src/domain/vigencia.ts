@@ -1,4 +1,5 @@
 import { ItemInvalidoError } from './errores.js';
+import { ZONA_CATALOGOS } from './tipos.js';
 
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,4 +34,12 @@ function esFecha(valor: string): boolean {
   if (!FORMATO_FECHA.test(valor)) return false;
   const fecha = new Date(`${valor}T00:00:00Z`);
   return !Number.isNaN(fecha.getTime()) && fecha.toISOString().startsWith(valor);
+}
+
+// en-CA formatea como YYYY-MM-DD.
+const FORMATO_DIA = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_CATALOGOS, year: 'numeric', month: '2-digit', day: '2-digit' });
+
+/** Día de vigencia de un instante: el mismo para todos los tenants, en America/Lima. */
+export function fechaDeVigencia(instante: Date): string {
+  return FORMATO_DIA.format(instante);
 }

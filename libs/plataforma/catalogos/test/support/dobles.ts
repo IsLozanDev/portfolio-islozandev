@@ -2,6 +2,7 @@ import { ForbiddenError, type DomainEvent, type TenantScope } from '@vitrina/pla
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
 import type {
   AjusteGuardado,
+  FilaItemLeido,
   LecturaItems,
   RepositorioAjustes,
   RepositorioCatalogos,
@@ -12,7 +13,7 @@ import type { AjusteItem } from '../../src/domain/ajuste-item.js';
 import { Catalogo } from '../../src/domain/catalogo.js';
 import { CatalogoDuplicadoError } from '../../src/domain/errores.js';
 import { ItemCatalogo } from '../../src/domain/item-catalogo.js';
-import type { AlcanceCatalogo } from '../../src/domain/tipos.js';
+import type { AlcanceCatalogo, EstadoItem } from '../../src/domain/tipos.js';
 import { Vigencia } from '../../src/domain/vigencia.js';
 
 export const OPERADOR = '0193f3a0-0000-7000-8000-000000000001';
@@ -164,6 +165,10 @@ export class AjustesEnMemoria implements RepositorioAjustes {
     return this.filas.get(this.clave(itemId)) ?? null;
   }
 
+  de(itemId: string, tenantId: string): AjusteGuardado | null {
+    return this.filas.get(`${itemId}|${tenantId}`) ?? null;
+  }
+
   async guardar(itemId: string, ajuste: AjusteItem, versionAnterior: number | null, autoria: { por: string; ahora: Date }) {
     const guardado = this.filas.get(this.clave(itemId));
     if ((guardado?.version ?? null) !== versionAnterior) return false;
@@ -191,9 +196,13 @@ export class AjustesEnMemoria implements RepositorioAjustes {
 
 /** Como cat.versiones: null si el catálogo no existe. */
 export class LecturaEnMemoria implements LecturaItems {
+  lecturasDeItems = 0;
+
   constructor(
     private readonly catalogos: CatalogosEnMemoria,
     private readonly versionesTenant: VersionesTenant,
+    private readonly guardados: ItemsEnMemoria,
+    private readonly ajustes: AjustesEnMemoria,
   ) {}
 
   async versiones(codigo: string, tenantId: string) {
@@ -201,6 +210,37 @@ export class LecturaEnMemoria implements LecturaItems {
     if (!catalogo) return null;
     return { catalogoId: catalogo.id, versionGlobal: catalogo.version, versionTenant: this.versionesTenant.de(catalogo.id, tenantId) };
   }
+
+  /** Como cat.items: estado en orden INACTIVO, FUERA_DE_VIGENCIA, OCULTO, VISIBLE; alias y orden del ajuste. */
+  async items(codigo: string, tenantId: string, fecha: string): Promise<FilaItemLeido[]> {
+    this.lecturasDeItems += 1;
+    const catalogo = await this.catalogos.buscarPorCodigo(codigo);
+    if (!catalogo) return [];
+    return [...this.guardados.filas.values()]
+      .filter((item) => item.catalogoId === catalogo.id && (item.tenantId === null || item.tenantId === tenantId))
+      .map((item) => filaLeida(item, this.ajustes.de(item.id, tenantId)?.ajuste ?? null, fecha))
+      .sort((uno, otro) => uno.orden - otro.orden || uno.nombre.localeCompare(otro.nombre) || uno.codigo.localeCompare(otro.codigo));
+  }
+}
+
+function filaLeida(item: ItemCatalogo, ajuste: AjusteItem | null, fecha: string): FilaItemLeido {
+  return {
+    itemId: item.id,
+    codigo: item.codigo,
+    codigoExterno: item.codigoExterno,
+    nombre: ajuste?.alias ?? item.nombre,
+    atributos: item.atributos,
+    orden: ajuste?.orden ?? item.orden,
+    propio: item.tenantId !== null,
+    estado: estadoDe(item, ajuste, fecha),
+  };
+}
+
+function estadoDe(item: ItemCatalogo, ajuste: AjusteItem | null, fecha: string): EstadoItem {
+  if (!item.activo) return 'INACTIVO';
+  if (!item.vigencia.incluye(fecha)) return 'FUERA_DE_VIGENCIA';
+  if (ajuste && !ajuste.visible) return 'OCULTO';
+  return 'VISIBLE';
 }
 
 function reconstituirCon(item: ItemCatalogo, version: number): ItemCatalogo {
@@ -234,6 +274,9 @@ export interface Escenario {
   consultasReferencias: ItemReferenciable[];
   /** Cambia el tenant del contexto (el operador por defecto). */
   comoTenant(tenantId: string): void;
+  /** Cambia el instante del reloj (AHORA por defecto). */
+  fijarAhora(instante: Date): void;
+  lectura: LecturaEnMemoria;
   catalogo(codigo: string, alcance: AlcanceCatalogo): Promise<Catalogo>;
   itemGlobal(catalogo: Catalogo, codigo: string): Promise<ItemCatalogo>;
 }
@@ -245,6 +288,8 @@ export function escenario(): Escenario {
   const versionesTenant = new VersionesTenant();
   const items = new ItemsEnMemoria(catalogos, versionesTenant, tenantActual);
   const ajustes = new AjustesEnMemoria(items, versionesTenant, tenantActual);
+  const lectura = new LecturaEnMemoria(catalogos, versionesTenant, items, ajustes);
+  let ahora = AHORA;
   const publicados: DomainEvent[] = [];
   const referenciados = new Set<string>();
   const consultasReferencias: ItemReferenciable[] = [];
@@ -264,7 +309,7 @@ export function escenario(): Escenario {
     },
     contexto: { current: () => alcance, run: (_alcance, trabajo) => trabajo() },
     ids: { next: () => `0193f3a0-0000-7000-8000-00000000e${String(++siguienteId).padStart(3, '0')}` },
-    reloj: { now: () => AHORA },
+    reloj: { now: () => ahora },
     eventos: {
       publish: async (evento) => {
         if (!enTransaccion.activa) throw new Error('el evento debía publicarse dentro de la transacción');
@@ -274,7 +319,7 @@ export function escenario(): Escenario {
     catalogos,
     items,
     ajustes,
-    lectura: new LecturaEnMemoria(catalogos, versionesTenant),
+    lectura,
     verificadorOperador: {
       exigir: async (tenantId) => {
         if (tenantId !== OPERADOR) throw new OperadorRequeridoDoble('Solo el tenant operador puede administrar catálogos globales');
@@ -299,6 +344,10 @@ export function escenario(): Escenario {
     publicados,
     referenciados,
     consultasReferencias,
+    lectura,
+    fijarAhora: (instante) => {
+      ahora = instante;
+    },
     comoTenant: (tenantId) => {
       alcance = { tenantId };
     },
