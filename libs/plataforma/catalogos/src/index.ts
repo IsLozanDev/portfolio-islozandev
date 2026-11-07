@@ -22,3 +22,4 @@ export {
 } from './application/ports/verificador-referencias.js';
 export { ENTIDADES_CAT } from './infrastructure/typeorm/entidades.js';
 export { ESQUEMAS_CAT, registrarEsquemasCat } from './infrastructure/event-schemas.js';
+export { CatalogosModule, type CatalogosOpciones, type FabricaDe } from './catalogos.module.js';

@@ -39,6 +39,10 @@ describe('Manifiesto PLAT: parte de cfg (spec 09)', () => {
       'plat.sesion.contexto',
       // Spec 10: el mismo rol configura las series.
       'plat.serie.gestionar',
+      // Spec 19a: y lee, personaliza y completa los catálogos del tenant.
+      'plat.catalogo.leer',
+      'plat.catalogo.personalizar',
+      'plat.catalogo.item_propio',
     ]);
   });
 

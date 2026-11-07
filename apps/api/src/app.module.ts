@@ -1,4 +1,5 @@
 import { Module, type DynamicModule } from '@nestjs/common';
+import { CatalogosModule } from '@vitrina/plataforma/catalogos';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
@@ -6,6 +7,7 @@ import { CLOCK, ID_GENERATOR, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWo
 import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
+import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
@@ -38,6 +40,16 @@ export class AppModule {
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         ParametrosModule.register({ redisUrl: seguridad.redisUrl }),
         CorrelativosModule.register(),
+        CatalogosModule.register({
+          redisUrl: seguridad.redisUrl,
+          verificadorOperador: {
+            useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+              new VerificadorOperadorOrg(
+                new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
+              ),
+            inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+          },
+        }),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar

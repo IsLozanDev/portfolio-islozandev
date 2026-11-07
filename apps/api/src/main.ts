@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
+import { ENTIDADES_CAT, registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
@@ -18,7 +19,7 @@ const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE],
 });
 await dataSource.initialize();
 
@@ -27,6 +28,7 @@ registrarEsquemasOrg(validator);
 registrarEsquemasSeg(validator);
 registrarEsquemasCfg(validator);
 registrarEsquemasSeq(validator);
+registrarEsquemasCat(validator);
 
 const app = await NestFactory.create(
   AppModule.register({
