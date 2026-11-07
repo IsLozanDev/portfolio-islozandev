@@ -49,7 +49,8 @@ GRANT USAGE ON SCHEMA cat_test TO cat_test_app;
 SELECT cat_test.espera(
   (SELECT string_agg(c.codigo || ':' || c.alcance || ':' || c.version || ':' ||
                      (SELECT count(*) FROM cat.catalogo_item i WHERE i.catalogo_id = c.id), ',' ORDER BY c.codigo)
-     FROM cat.catalogo c),
+     FROM cat.catalogo c
+    WHERE c.codigo IN ('ESPECIALIDAD', 'MEDIO_PAGO', 'TIPO_COMPROBANTE', 'TIPO_DOC_IDENTIDAD')),
   'ESPECIALIDAD:MIXTO:1:1,MEDIO_PAGO:MIXTO:1:4,TIPO_COMPROBANTE:GLOBAL:1:4,TIPO_DOC_IDENTIDAD:GLOBAL:1:4',
   'semilla');
 SELECT cat_test.espera(

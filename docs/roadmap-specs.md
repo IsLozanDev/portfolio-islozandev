@@ -6,7 +6,7 @@ Estado: todos pendientes. Actualizar la columna Estado cuando un spec pase a Apr
 
 Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`). Los specs 03, 04, 06 y 07 originales superaban el tope de 10 h y el alta de tenant dependía de componentes que se construyen después.
 
-## R0 y R1 (sprints 0 a 12): 27 specs
+## R0 y R1 (sprints 0 a 12): 29 specs
 
 | NN | Slug | Cubre | h est. | Depende de | Contexto (`spec-context/NN-*.md`) |
 |---|---|---|---|---|---|
@@ -36,19 +36,23 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 15c | tema-oscuro | Revisión de diseño (sin historia en el plan): tema oscuro con selector Sistema / Claro / Oscuro en el menú de usuario, `light-dark()` en tokens, `data-tema` y script anti-parpadeo. Canvas «Tema oscuro» | 6 | 15b, 15d | — |
 | 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
 | 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
-| 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |
+| 19b | cat-importador-oficiales | D-04, parte de RF 028: importador CSV/XLSX de las 7 tablas oficiales, previsualización que valida todo, aplicación todo o nada en el worker (BullMQ), avance por SSE, reporte de errores en CSV y datos oficiales en `docs/datos-oficiales/` | 10 | 19a, 11, 12 | 19 |
+| 19c | cat-feriados-calendario | D-04, parte de RF 029: `cat.feriado` (GLOBAL/TENANT/SUCURSAL), `CalendarioPort.sumarDiasHabiles`, parámetro `plat.calendario.sabado_habil` y lista paginada de administración de ítems (pendiente del 19a) | 4-5 | 19a, 09 | 19 |
+| 19d | cat-consola-admin-ui | D-06 y UI de RF 025/026 (parte de D-05 sin dueño): consola de catálogos, ítems e importación (seguimiento global con avance y toast) y admin cliente de propios, ajustes y feriados | 8-10 | 19b, 19c, 15, 17b, 17c | 19 |
 | 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 |
 | 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 |
 | 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — |
 | 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — |
 | 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — |
-| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19, 20 | — |
+| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19a, 19b, 20 | — |
 | 26 | sazonpos-shell | C-07: CC-08 | 7 | 15, 24 | — |
 | 27 | e2e-uat-produccion-r1 | Q-01, Q-03, P-01, Q-04, P-02, P-04 | 29 | todos | — |
 
-Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/NN-slug.md`. Pendientes de decidir al redactar: la UI de 09 y 10 depende de 13 y 15 (hoy declaran solo 07); RF-094 (registro de esquemas) sin spec; el spec 25 depende de 19a y 19b; formato de número de SEQ (8 dígitos vs "A-001").
+Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/NN-slug.md`. Pendientes de decidir al redactar: la UI de 09 y 10 depende de 13 y 15 (hoy declaran solo 07); RF-094 (registro de esquemas) sin spec; formato de número de SEQ (8 dígitos vs "A-001").
 
 Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09 conservan SQL embebido en sus repositorios; migrarlos a TypeORM es un spec de refactor aparte (~6-8 h, sin número ni fecha). Los specs 10 SEQ (`FOR UPDATE`) y 20 AUD (hash encadenado) pueden justificar SQL puntual.
+
+19 se partió en 19a (núcleo), 19b (importador), 19c (feriados y calendario) y 19d (UI): el 19b original tenía 4 áreas y unas 14 h, y el importador creció con el worker, el SSE y el reporte de errores. 19b y 19c se pueden implementar en paralelo; 19d va al final porque consume las rutas de los dos.
 
 16 y 17 se partieron en 16a/16b/16c y 17a/17b/17c: el plan contaba solo las horas de front y la capa HTTP del back no existía. Longitud del motivo: se respeta lo implementado (SEG 4-300, ORG 10-500); la UI la recibe por opción en vez de fijarla. Los specs 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
@@ -66,7 +70,7 @@ Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09
 R2: personas-identidad, archivos, fe-emisor-boleta-factura, fe-notas-contingencia, notificaciones-correo, recordatorios-preferencias, sazonpos-personas-fe, arco-incidentes.
 R3: pagos, reportes, cms, portal-cliente, soporte, obs-negocio-whatsapp.
 
-Total estimado: unos 41 specs (27 en R0 y R1).
+Total estimado: unos 43 specs (29 en R0 y R1).
 
 ## Olas de implementación en paralelo (worktrees)
 
@@ -75,7 +79,7 @@ Total estimado: unos 41 specs (27 en R0 y R1).
 - Ola 3: 04, luego 05 y 06 en paralelo.
 - Ola 4: 07, luego 08 y 13.
 - Ola 5: 09, 10, 14, 20.
-- Ola 6: 12, 15, 18, 19, 21; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
+- Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
 - SazónPOS (22 a 26) y 27 al final.
 
 Máximo 2 o 3 frentes a la vez: la revisión de diffs es el cuello de botella.
