@@ -1,3 +1,4 @@
+import type { AjusteItem } from '../../domain/ajuste-item.js';
 import type { Catalogo } from '../../domain/catalogo.js';
 import type { ItemCatalogo } from '../../domain/item-catalogo.js';
 
@@ -24,4 +25,38 @@ export interface RepositorioItems {
   guardarGlobal(item: ItemCatalogo, versionAnterior: number | null): Promise<boolean>;
   /** Borra antes sus ajustes. false si no existe o la versión no coincide. */
   eliminarGlobal(id: string, version: number): Promise<boolean>;
+  /**
+   * Ítem del tenant del contexto. `versionAnterior` null crea. false si la versión no coincide.
+   * CodigoItemDuplicadoError si otra transacción ganó la carrera por el código (`ux_cat_item`).
+   */
+  guardarPropio(item: ItemCatalogo, versionAnterior: number | null): Promise<boolean>;
+  /** false si no existe en el tenant del contexto o la versión no coincide. */
+  eliminarPropio(id: string, version: number): Promise<boolean>;
+}
+
+export interface AjusteGuardado {
+  ajuste: AjusteItem;
+  version: number;
+}
+
+/** Ajustes del tenant del contexto sobre ítems globales de catálogos MIXTO, en la transacción activa. */
+export interface RepositorioAjustes {
+  buscar(itemId: string): Promise<AjusteGuardado | null>;
+  /** `versionAnterior` null crea. false si la versión no coincide o otro creó el ajuste antes. */
+  guardar(itemId: string, ajuste: AjusteItem, versionAnterior: number | null, autoria: { por: string; ahora: Date }): Promise<boolean>;
+  /** Un ajuste neutro equivale a no tenerlo: se borra la fila. */
+  borrar(itemId: string): Promise<void>;
+}
+
+export interface Versiones {
+  catalogoId: string;
+  versionGlobal: number;
+  /** 0 si el tenant no tiene propios ni ajustes en el catálogo. */
+  versionTenant: number;
+}
+
+/** Lectura con `cat.versiones`, con la RLS del tenant. */
+export interface LecturaItems {
+  /** null si el catálogo no existe o el tenant no es el del contexto. */
+  versiones(codigo: string, tenantId: string): Promise<Versiones | null>;
 }

@@ -28,7 +28,8 @@ export interface FilaItem {
   nombre: string;
   abreviatura: string | null;
   orden: number;
-  atributos: Record<string, unknown>;
+  /** Objeto JSON: lo exige el CHECK de la tabla. */
+  atributos: object;
   /** date: TypeORM lo hidrata como YYYY-MM-DD. */
   vigenteDesde: string;
   vigenteHasta: string | null;
@@ -87,5 +88,33 @@ export const ItemEntidad = new EntitySchema<FilaItem>({
   },
 });
 
+export interface FilaAjuste {
+  itemId: string;
+  tenantId: string;
+  visible: boolean;
+  orden: number | null;
+  alias: string | null;
+  /** bigint: node-pg lo devuelve como string. */
+  version: string;
+  modificadoPor: string;
+  modificadoEn: Date;
+}
+
+export const AjusteEntidad = new EntitySchema<FilaAjuste>({
+  name: 'AjusteItem',
+  schema: 'cat',
+  tableName: 'catalogo_item_tenant',
+  columns: {
+    itemId: { name: 'item_id', type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid', primary: true },
+    visible: { type: 'boolean' },
+    orden: { type: 'integer', nullable: true },
+    alias: { type: 'varchar', length: 200, nullable: true },
+    version: { type: 'bigint' },
+    modificadoPor: { name: 'modificado_por', type: 'uuid' },
+    modificadoEn: { name: 'modificado_en', type: 'timestamptz' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (apps/api). */
-export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad];
+export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad, AjusteEntidad];

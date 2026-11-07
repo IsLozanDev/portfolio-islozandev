@@ -1,9 +1,9 @@
 import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { Catalogo } from '../domain/catalogo.js';
 import { CatalogoNoExisteError, ItemNoEncontradoError, ItemReferenciadoError } from '../domain/errores.js';
-import { eventoCatalogoActualizado } from '../domain/eventos.js';
+import { eventoCatalogoActualizado, type CambioCatalogo } from '../domain/eventos.js';
 import type { ItemCatalogo } from '../domain/item-catalogo.js';
-import type { RepositorioCatalogos, RepositorioItems } from './ports/repositorios.js';
+import type { LecturaItems, RepositorioAjustes, RepositorioCatalogos, RepositorioItems } from './ports/repositorios.js';
 import type { VerificadorOperador } from './ports/verificador-operador.js';
 import type { VerificadorReferencias } from './ports/verificador-referencias.js';
 
@@ -16,6 +16,8 @@ export interface DependenciasCatalogos {
   eventos: EventPublisher;
   catalogos: RepositorioCatalogos;
   items: RepositorioItems;
+  ajustes: RepositorioAjustes;
+  lectura: LecturaItems;
   verificadorOperador: VerificadorOperador;
   verificadoresReferencias: readonly VerificadorReferencias[];
 }
@@ -61,6 +63,32 @@ export async function publicarCambioDeItemGlobal(
       versionTenant: 0,
       tenantId: null,
       cambio: 'ITEM',
+      itemId: cambio.itemId,
+      por: cambio.actorId,
+      ahora: cambio.ahora,
+    }),
+  );
+}
+
+/**
+ * `catalogo.actualizado` tras escribir un ítem propio o un ajuste, con el tenant del contexto. Las versiones
+ * las subieron los triggers: se releen con `cat.versiones` dentro de la misma transacción.
+ */
+export async function publicarCambioDelTenant(
+  dependencias: DependenciasCatalogos,
+  cambio: { codigoCatalogo: string; cambio: Exclude<CambioCatalogo, 'CATALOGO'>; itemId: string; actorId: string; ahora: Date },
+): Promise<void> {
+  const tenantId = dependencias.contexto.current().tenantId;
+  const versiones = await dependencias.lectura.versiones(cambio.codigoCatalogo, tenantId);
+  if (!versiones) throw new CatalogoNoExisteError();
+  await dependencias.eventos.publish(
+    eventoCatalogoActualizado({
+      catalogoId: versiones.catalogoId,
+      codigo: cambio.codigoCatalogo,
+      versionGlobal: versiones.versionGlobal,
+      versionTenant: versiones.versionTenant,
+      tenantId,
+      cambio: cambio.cambio,
       itemId: cambio.itemId,
       por: cambio.actorId,
       ahora: cambio.ahora,

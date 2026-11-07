@@ -4,9 +4,11 @@ import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, System
 import { DataSource } from 'typeorm';
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
 import { registrarEsquemasCat } from '../../src/infrastructure/event-schemas.js';
+import { AjustesRepositorioTypeOrm } from '../../src/infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/catalogos.repositorio.js';
 import { ENTIDADES_CAT } from '../../src/infrastructure/typeorm/entidades.js';
 import { ItemsRepositorioTypeOrm } from '../../src/infrastructure/typeorm/items.repositorio.js';
+import { LecturaItemsTypeOrm } from '../../src/infrastructure/typeorm/lectura-items.typeorm.js';
 import { createTempDb, type TempDb } from './temp-db.js';
 
 export class OperadorRequeridoDoble extends ForbiddenError {
@@ -49,7 +51,9 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
     reloj: new SystemClock(),
     eventos: new OutboxPublisher(unidadDeTrabajo, contexto, validador, { next: uuidV7 }),
     catalogos: new CatalogosRepositorioTypeOrm(unidadDeTrabajo),
-    items: new ItemsRepositorioTypeOrm(unidadDeTrabajo),
+    items: new ItemsRepositorioTypeOrm(unidadDeTrabajo, contexto),
+    ajustes: new AjustesRepositorioTypeOrm(unidadDeTrabajo, contexto),
+    lectura: new LecturaItemsTypeOrm(unidadDeTrabajo),
     verificadorOperador: {
       exigir: async (tenantId) => {
         if (tenantId !== tenants.operador) throw new OperadorRequeridoDoble('Solo el tenant operador puede administrar catálogos globales');

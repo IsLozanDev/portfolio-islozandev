@@ -1,7 +1,14 @@
 import { ForbiddenError, type DomainEvent, type TenantScope } from '@vitrina/plataforma/kernel';
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
-import type { RepositorioCatalogos, RepositorioItems } from '../../src/application/ports/repositorios.js';
+import type {
+  AjusteGuardado,
+  LecturaItems,
+  RepositorioAjustes,
+  RepositorioCatalogos,
+  RepositorioItems,
+} from '../../src/application/ports/repositorios.js';
 import type { ItemReferenciable } from '../../src/application/ports/verificador-referencias.js';
+import type { AjusteItem } from '../../src/domain/ajuste-item.js';
 import { Catalogo } from '../../src/domain/catalogo.js';
 import { CatalogoDuplicadoError } from '../../src/domain/errores.js';
 import { ItemCatalogo } from '../../src/domain/item-catalogo.js';
@@ -68,15 +75,34 @@ export class CatalogosEnMemoria implements RepositorioCatalogos {
   }
 }
 
+/** Como cat.version_tenant: la suben los propios y los ajustes de cada tenant. */
+export class VersionesTenant {
+  private readonly versiones = new Map<string, number>();
+
+  de(catalogoId: string, tenantId: string): number {
+    return this.versiones.get(`${catalogoId}|${tenantId}`) ?? 0;
+  }
+
+  subir(catalogoId: string, tenantId: string): void {
+    this.versiones.set(`${catalogoId}|${tenantId}`, this.de(catalogoId, tenantId) + 1);
+  }
+}
+
 export class ItemsEnMemoria implements RepositorioItems {
   readonly filas = new Map<string, ItemCatalogo>();
   readonly ajustesBorrados: string[] = [];
   escrituras = 0;
 
-  constructor(private readonly catalogos: CatalogosEnMemoria) {}
+  constructor(
+    private readonly catalogos: CatalogosEnMemoria,
+    private readonly versionesTenant: VersionesTenant,
+    private readonly tenantActual: () => string,
+  ) {}
 
+  /** Como la RLS: globales y propios del tenant actual. */
   async buscar(id: string) {
-    return this.filas.get(id) ?? null;
+    const item = this.filas.get(id);
+    return item && (item.tenantId === null || item.tenantId === this.tenantActual()) ? item : null;
   }
 
   async existeCodigo(catalogoId: string, tenantId: string | null, codigo: string) {
@@ -103,6 +129,78 @@ export class ItemsEnMemoria implements RepositorioItems {
     this.catalogos.subirVersion(guardado.catalogoId);
     return true;
   }
+
+  async guardarPropio(item: ItemCatalogo, versionAnterior: number | null) {
+    const guardado = this.filas.get(item.id);
+    if (versionAnterior !== null && (guardado?.version !== versionAnterior || guardado.tenantId !== this.tenantActual())) return false;
+    this.escrituras += 1;
+    this.filas.set(item.id, reconstituirCon(item, versionAnterior === null ? 0 : versionAnterior + 1));
+    this.versionesTenant.subir(item.catalogoId, this.tenantActual());
+    return true;
+  }
+
+  async eliminarPropio(id: string, version: number) {
+    const guardado = this.filas.get(id);
+    if (!guardado || guardado.version !== version || guardado.tenantId !== this.tenantActual()) return false;
+    this.escrituras += 1;
+    this.filas.delete(id);
+    this.versionesTenant.subir(guardado.catalogoId, this.tenantActual());
+    return true;
+  }
+}
+
+/** Ajustes por ítem y tenant. */
+export class AjustesEnMemoria implements RepositorioAjustes {
+  readonly filas = new Map<string, AjusteGuardado & { por: string }>();
+  escrituras = 0;
+
+  constructor(
+    private readonly items: ItemsEnMemoria,
+    private readonly versionesTenant: VersionesTenant,
+    private readonly tenantActual: () => string,
+  ) {}
+
+  async buscar(itemId: string) {
+    return this.filas.get(this.clave(itemId)) ?? null;
+  }
+
+  async guardar(itemId: string, ajuste: AjusteItem, versionAnterior: number | null, autoria: { por: string; ahora: Date }) {
+    const guardado = this.filas.get(this.clave(itemId));
+    if ((guardado?.version ?? null) !== versionAnterior) return false;
+    this.escrituras += 1;
+    this.filas.set(this.clave(itemId), { ajuste, version: versionAnterior === null ? 0 : versionAnterior + 1, por: autoria.por });
+    this.subirVersion(itemId);
+    return true;
+  }
+
+  async borrar(itemId: string) {
+    this.escrituras += 1;
+    this.filas.delete(this.clave(itemId));
+    this.subirVersion(itemId);
+  }
+
+  private subirVersion(itemId: string): void {
+    const item = this.items.filas.get(itemId);
+    if (item) this.versionesTenant.subir(item.catalogoId, this.tenantActual());
+  }
+
+  private clave(itemId: string): string {
+    return `${itemId}|${this.tenantActual()}`;
+  }
+}
+
+/** Como cat.versiones: null si el catálogo no existe. */
+export class LecturaEnMemoria implements LecturaItems {
+  constructor(
+    private readonly catalogos: CatalogosEnMemoria,
+    private readonly versionesTenant: VersionesTenant,
+  ) {}
+
+  async versiones(codigo: string, tenantId: string) {
+    const catalogo = await this.catalogos.buscarPorCodigo(codigo);
+    if (!catalogo) return null;
+    return { catalogoId: catalogo.id, versionGlobal: catalogo.version, versionTenant: this.versionesTenant.de(catalogo.id, tenantId) };
+  }
 }
 
 function reconstituirCon(item: ItemCatalogo, version: number): ItemCatalogo {
@@ -128,6 +226,8 @@ export interface Escenario {
   dependencias: DependenciasCatalogos;
   catalogos: CatalogosEnMemoria;
   items: ItemsEnMemoria;
+  ajustes: AjustesEnMemoria;
+  versionesTenant: VersionesTenant;
   publicados: DomainEvent[];
   /** Ítems que el verificador doble da por referenciados. */
   referenciados: Set<string>;
@@ -139,13 +239,16 @@ export interface Escenario {
 }
 
 export function escenario(): Escenario {
+  let alcance: TenantScope = { tenantId: OPERADOR };
+  const tenantActual = () => alcance.tenantId;
   const catalogos = new CatalogosEnMemoria();
-  const items = new ItemsEnMemoria(catalogos);
+  const versionesTenant = new VersionesTenant();
+  const items = new ItemsEnMemoria(catalogos, versionesTenant, tenantActual);
+  const ajustes = new AjustesEnMemoria(items, versionesTenant, tenantActual);
   const publicados: DomainEvent[] = [];
   const referenciados = new Set<string>();
   const consultasReferencias: ItemReferenciable[] = [];
   const enTransaccion = { activa: false };
-  let alcance: TenantScope = { tenantId: OPERADOR };
   let siguienteId = 0;
 
   const dependencias: DependenciasCatalogos = {
@@ -170,6 +273,8 @@ export function escenario(): Escenario {
     },
     catalogos,
     items,
+    ajustes,
+    lectura: new LecturaEnMemoria(catalogos, versionesTenant),
     verificadorOperador: {
       exigir: async (tenantId) => {
         if (tenantId !== OPERADOR) throw new OperadorRequeridoDoble('Solo el tenant operador puede administrar catálogos globales');
@@ -189,6 +294,8 @@ export function escenario(): Escenario {
     dependencias,
     catalogos,
     items,
+    ajustes,
+    versionesTenant,
     publicados,
     referenciados,
     consultasReferencias,
