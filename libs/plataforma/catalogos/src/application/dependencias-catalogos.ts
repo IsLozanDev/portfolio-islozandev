@@ -1,0 +1,81 @@
+import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
+import type { Catalogo } from '../domain/catalogo.js';
+import { CatalogoNoExisteError, ItemNoEncontradoError, ItemReferenciadoError } from '../domain/errores.js';
+import { eventoCatalogoActualizado } from '../domain/eventos.js';
+import type { ItemCatalogo } from '../domain/item-catalogo.js';
+import type { RepositorioCatalogos, RepositorioItems } from './ports/repositorios.js';
+import type { VerificadorOperador } from './ports/verificador-operador.js';
+import type { VerificadorReferencias } from './ports/verificador-referencias.js';
+
+/** Lo que comparten los casos de uso de escritura de catálogos e ítems. */
+export interface DependenciasCatalogos {
+  unidadDeTrabajo: UnitOfWork;
+  contexto: TenantContext;
+  ids: IdGenerator;
+  reloj: Clock;
+  eventos: EventPublisher;
+  catalogos: RepositorioCatalogos;
+  items: RepositorioItems;
+  verificadorOperador: VerificadorOperador;
+  verificadoresReferencias: readonly VerificadorReferencias[];
+}
+
+/** Antes de cualquier lectura: fuera del operador, 403 sin tocar nada (TR-RN-009). */
+export function exigirOperador(dependencias: DependenciasCatalogos): Promise<void> {
+  return dependencias.verificadorOperador.exigir(dependencias.contexto.current().tenantId);
+}
+
+export async function buscarCatalogo(catalogos: RepositorioCatalogos, codigo: string): Promise<Catalogo> {
+  const catalogo = await catalogos.buscarPorCodigo(codigo);
+  if (!catalogo) throw new CatalogoNoExisteError();
+  return catalogo;
+}
+
+/** Un id de otro catálogo, global en vez de propio o al revés, o de otro tenant: 404. */
+export async function buscarItemDe(
+  items: RepositorioItems,
+  catalogo: Catalogo,
+  itemId: string,
+  dueno: 'GLOBAL' | 'PROPIO',
+): Promise<ItemCatalogo> {
+  const item = await items.buscar(itemId);
+  const esDelDueno = item !== null && item.esGlobal === (dueno === 'GLOBAL');
+  if (!item || !esDelDueno || item.catalogoId !== catalogo.id) throw new ItemNoEncontradoError();
+  return item;
+}
+
+/**
+ * `catalogo.actualizado` tras escribir un ítem global. La versión global la subió el trigger: se relee
+ * dentro de la misma transacción.
+ */
+export async function publicarCambioDeItemGlobal(
+  dependencias: DependenciasCatalogos,
+  cambio: { codigoCatalogo: string; itemId: string; actorId: string; ahora: Date },
+): Promise<void> {
+  const catalogo = await buscarCatalogo(dependencias.catalogos, cambio.codigoCatalogo);
+  await dependencias.eventos.publish(
+    eventoCatalogoActualizado({
+      catalogoId: catalogo.id,
+      codigo: catalogo.codigo,
+      versionGlobal: catalogo.version,
+      versionTenant: 0,
+      tenantId: null,
+      cambio: 'ITEM',
+      itemId: cambio.itemId,
+      por: cambio.actorId,
+      ahora: cambio.ahora,
+    }),
+  );
+}
+
+/** TR-CA-061: si algún producto lo referencia, no se borra; la alternativa es cerrar su vigencia. */
+export async function exigirSinReferencias(
+  verificadores: readonly VerificadorReferencias[],
+  catalogo: Catalogo,
+  item: ItemCatalogo,
+): Promise<void> {
+  const referencia = { itemId: item.id, catalogo: catalogo.codigo, codigo: item.codigo };
+  for (const verificador of verificadores) {
+    if (await verificador.estaReferenciado(referencia)) throw new ItemReferenciadoError();
+  }
+}

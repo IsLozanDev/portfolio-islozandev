@@ -2,11 +2,13 @@ import { ForbiddenError, type TenantContext, type UnitOfWork } from '@vitrina/pl
 import type { RepositorioTenants } from '@vitrina/plataforma/org';
 import type { Principal } from '@vitrina/plataforma/seguridad';
 
+const MENSAJE_TENANTS = 'Solo el tenant operador puede administrar tenants';
+
 export class OperadorRequeridoError extends ForbiddenError {
   override readonly code = 'OPERADOR_REQUERIDO';
 
-  constructor() {
-    super('Solo el tenant operador puede administrar tenants');
+  constructor(mensaje = MENSAJE_TENANTS) {
+    super(mensaje);
   }
 }
 
@@ -34,9 +36,10 @@ export interface DependenciasOperador {
 export class ExigirOperador {
   constructor(private readonly dependencias: DependenciasOperador) {}
 
-  async ejecutar(actor: Pick<Actor, 'tenantId'>): Promise<void> {
+  /** `mensaje`: el del 403; por defecto, el de administrar tenants. */
+  async ejecutar(actor: Pick<Actor, 'tenantId'>, mensaje?: string): Promise<void> {
     const { contexto, unidadDeTrabajo, tenants, tenantOperador } = this.dependencias;
     const tenantDelActor = await contexto.run({ tenantId: actor.tenantId }, () => unidadDeTrabajo.run(() => tenants.buscar(actor.tenantId)));
-    if (tenantDelActor?.codigo !== tenantOperador) throw new OperadorRequeridoError();
+    if (tenantDelActor?.codigo !== tenantOperador) throw new OperadorRequeridoError(mensaje);
   }
 }
