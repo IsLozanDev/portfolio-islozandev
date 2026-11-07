@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -78,6 +78,7 @@ const CASOS = [
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
   { migracion: '01e_sync_relay.sql', esquema: 'sync', prueba: 'tests/01e_sync_relay.test.sql' },
+  { migracion: '01f_cat.sql', esquema: 'cat', prueba: 'tests/01f_cat.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -231,6 +232,12 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01f_cat borra cat (con datos) y se puede reaplicar. Va primero: cat depende de org y seg.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat.sql'), 'utf8'));
+    expect(await existeEsquema('cat')).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01f_cat.sql'), 'utf8'));
+    expect(await existeEsquema('cat')).toBe(true);
 
     // El inverso de 01e_sync_relay deja sync como lo dejó 01e_sync_outbox (con datos) y se puede reaplicar.
     // Va primero: evento_fallido referencia seg.usuario.

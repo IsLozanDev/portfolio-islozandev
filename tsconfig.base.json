@@ -36,6 +36,9 @@
       "@vitrina/plataforma/correlativos": [
         "./libs/plataforma/correlativos/src/index.ts"
       ],
+      "@vitrina/plataforma/catalogos": [
+        "./libs/plataforma/catalogos/src/index.ts"
+      ],
       "@vitrina/plataforma/eventos": [
         "./libs/plataforma/eventos/src/index.ts"
       ],

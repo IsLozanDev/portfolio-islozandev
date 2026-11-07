@@ -1,6 +1,6 @@
 # SPEC 18b — Seguridad: bitácora de ingresos (LOGIN y LOGIN_FALLIDO con bloqueo en Redis) y exportación XLSX auditada
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 05, SPEC 06, SPEC 13, SPEC 14, SPEC 18
 > **Date:** 2026-11-04
 > **Objective:** Llevar a la bitácora de seguridad el `LOGIN` de cada sesión y cada intento fallido de contraseña o MFA (con motivo y bloqueo de fuerza bruta en Redis), pasando el ingreso por la API, y permitir exportarla a XLSX al vuelo con un permiso propio y auditado.
