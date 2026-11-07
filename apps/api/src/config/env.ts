@@ -7,6 +7,8 @@ const esquema = z.object({
   // Caché de permisos efectivos (TR-RNF-101).
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
   SUPABASE_URL: z.url({ protocol: /^https?$/ }),
+  // Ingreso con contraseña y MFA por la API (spec 18b). Es pública: la misma que usa el navegador.
+  SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   // TR-RN-009: antigüedad máxima del MFA para @RequiereMfa.
   SEG_MFA_MAX_EDAD_SEG: z.coerce.number().int().positive().default(900),
   // Admin API de Supabase (invitaciones, TR-RF-009). Solo apps/api (regla 9).

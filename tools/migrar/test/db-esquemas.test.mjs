@@ -73,6 +73,7 @@ const CASOS = [
   { migracion: '01b_seg_autorizacion.sql', esquema: 'seg', prueba: 'tests/01b_seg_autorizacion.test.sql' },
   { migracion: '01b_seg_membresias.sql', esquema: 'seg', prueba: 'tests/01b_seg_membresias.test.sql' },
   { migracion: '01b_seg_soporte.sql', esquema: 'seg', prueba: 'tests/01b_seg_soporte.test.sql' },
+  { migracion: '01b_seg_tipos_ingreso.sql', esquema: 'seg', prueba: 'tests/01b_seg_tipos_ingreso.test.sql' },
   { migracion: '01c_cfg.sql', esquema: 'cfg', prueba: 'tests/01c_cfg.test.sql' },
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
@@ -139,6 +140,39 @@ const objetosSoporte = async () =>
        ORDER BY 1`,
     )
   ).rows.map((r) => r.o);
+
+// Funciones y políticas que agrega 01b_seg_tipos_ingreso, y si el CHECK ya admite LOGIN_FALLIDO (5 en total).
+const objetosTiposIngreso = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'seg.usuario_para_ingreso' AS o WHERE to_regprocedure('seg.usuario_para_ingreso(text)') IS NOT NULL
+       UNION ALL SELECT 'seg.registrar_evento_ingreso'
+        WHERE to_regprocedure('seg.registrar_evento_ingreso(varchar, uuid, uuid, jsonb, inet)') IS NOT NULL
+       UNION ALL SELECT policyname FROM pg_policies
+        WHERE schemaname = 'seg' AND policyname IN ('membresia_ingreso', 'evento_seguridad_ingreso')
+       UNION ALL SELECT 'ck_tipo_login_fallido' FROM pg_constraint
+        WHERE conname = 'ck_evento_seguridad_tipo' AND pg_get_constraintdef(oid) LIKE '%LOGIN_FALLIDO%'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con una fila LOGIN_FALLIDO el inverso corta antes de tocar nada; la transacción se revierte.
+async function inversoTiposIngresoConFilas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(`INSERT INTO seg.evento_seguridad (tipo) VALUES ('LOGIN_FALLIDO')`);
+    return await c.query(await readFile(rutaDb('rollback/01b_seg_tipos_ingreso.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 const estadoMembresia = async (id) =>
   (await ejecutar(urlDb, `SELECT estado FROM seg.membresia WHERE id = '${id}'`)).rows[0]?.estado;
@@ -216,6 +250,15 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('cfg')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01c_cfg.sql'), 'utf8'));
     expect(await existeEsquema('cfg')).toBe(true);
+
+    // El inverso de 01b_seg_tipos_ingreso deja seg como lo dejó 01b_seg_soporte y se puede reaplicar.
+    // Va antes que el de 01b_seg_soporte: reemplaza su CHECK. Con filas de los tipos nuevos se niega.
+    expect(await inversoTiposIngresoConFilas()).toBe('55006');
+    expect(await objetosTiposIngreso()).toHaveLength(5);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01b_seg_tipos_ingreso.sql'), 'utf8'));
+    expect(await objetosTiposIngreso()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01b_seg_tipos_ingreso.sql'), 'utf8'));
+    expect(await objetosTiposIngreso()).toHaveLength(5);
 
     // El inverso de 01b_seg_soporte deja seg como lo dejó 01b_seg_membresias (con datos) y se puede
     // reaplicar. Va antes que el de 01b_seg_membresias: acceso_soporte referencia la membresía.

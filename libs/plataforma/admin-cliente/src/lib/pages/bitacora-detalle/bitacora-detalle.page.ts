@@ -6,6 +6,7 @@ import { aErrorAdmin } from '../../models/error-admin';
 import type { EventoSeguridadDetalle } from '../../models/evento-seguridad';
 import { ETIQUETAS_TIPO_ASIGNADO, ETIQUETAS_TIPO_EVENTO, MENSAJES_BITACORA, TONOS_TIPO_EVENTO } from '../../models/mensajes-bitacora';
 import { BitacoraCliente } from '../../services/bitacora.cliente';
+import { datosLegibles, tituloDatosLegibles } from '../../utils/datos-ingreso-bitacora';
 import { formatearFechaHora } from '../../utils/formato';
 
 const PARAMETRO_EVENTO = 'eventoId';
@@ -16,7 +17,7 @@ export interface DatoDelEvento {
   valor: string;
 }
 
-/** Detalle de un evento con su IP y sus datos (spec 18, TR-RF-019; pantalla tipo «Detalle», solo lectura). */
+/** Detalle de un evento con su IP y sus datos (specs 18 y 18b, TR-RF-019; pantalla tipo «Detalle», solo lectura). */
 @Component({
   selector: 'vit-bitacora-detalle',
   imports: [MatButtonModule, RouterLink, CargandoComponent, ChipEstadoComponent],
@@ -36,6 +37,15 @@ export class BitacoraDetallePage implements OnInit {
     return evento ? formatearFechaHora(evento.ocurridoEn) : '';
   });
   protected readonly datos = computed(() => datosDe(this.evento()?.detalle ?? {}));
+  /** Spec 18b: ingreso, ingreso fallido (con el motivo siempre visible) y exportación con etiquetas. */
+  protected readonly legibles = computed(() => {
+    const evento = this.evento();
+    return evento ? datosLegibles(evento) : [];
+  });
+  protected readonly tituloLegibles = computed(() => {
+    const evento = this.evento();
+    return evento ? tituloDatosLegibles(evento.tipo) : null;
+  });
 
   ngOnInit(): void {
     void this.cargar();

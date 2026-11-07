@@ -42,8 +42,18 @@ export interface EventoBitacoraDetalle extends EventoBitacora {
   detalle: Record<string, unknown>;
 }
 
+/** Los filtros de la lista sin la página: la exportación lleva todo lo filtrado (spec 18b). */
+export type FiltroExportacion = Omit<FiltroBitacora, 'pagina' | 'tamano'>;
+
+export interface EventoBitacoraExportado extends EventoBitacora {
+  ip: string | null;
+}
+
 /** Eventos del tenant del contexto, del más reciente al más antiguo (TR-RF-019). */
 export interface LecturaBitacora {
   listar(filtro: FiltroBitacora): Promise<Listado<EventoBitacora>>;
   detalle(id: string): Promise<EventoBitacoraDetalle | null>;
+  contar(filtro: FiltroExportacion): Promise<number>;
+  /** Todo lo filtrado en el orden de la lista, por lotes, sin offset (keyset por fecha e id). */
+  recorrer(filtro: FiltroExportacion, alLote: (eventos: EventoBitacoraExportado[]) => Promise<void>): Promise<void>;
 }

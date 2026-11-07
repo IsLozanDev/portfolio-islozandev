@@ -59,3 +59,9 @@ export function cabecera(req: { headers: Record<string, string | string[] | unde
   const valor = req.headers[nombre];
   return Array.isArray(valor) ? '' : valor;
 }
+
+/** El token de `Authorization: Bearer <token>`, o undefined si la cabecera falta o no tiene esa forma. */
+export function tokenBearer(req: { headers: Record<string, string | string[] | undefined> }): string | undefined {
+  const valor = req.headers['authorization'];
+  return typeof valor === 'string' ? /^Bearer\s+(\S+)$/i.exec(valor)?.[1] : undefined;
+}

@@ -47,7 +47,7 @@ export class ConsultarEventoSeguridad {
   }
 }
 
-function rangoValido(desde: string | undefined, hasta: string | undefined): { desde: Fecha; hasta: Fecha } {
+export function rangoValido(desde: string | undefined, hasta: string | undefined): { desde: Fecha; hasta: Fecha } {
   if (!desde || !hasta) throw new RangoBitacoraInvalidoError();
   const inicio = diaCalendario(desde);
   const fin = diaCalendario(hasta);

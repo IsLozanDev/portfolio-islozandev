@@ -3,6 +3,7 @@ import { isAuthError, isAuthRetryableFetchError, isAuthWeakPasswordError } from 
 export type CodigoErrorAuth =
   | 'CREDENCIALES_INVALIDAS'
   | 'DEMASIADOS_INTENTOS'
+  | 'INGRESO_BLOQUEADO'
   | 'CODIGO_MFA_INVALIDO'
   | 'CLAVE_DEBIL'
   | 'SEGUNDO_FACTOR_REQUERIDO'
@@ -14,6 +15,7 @@ export type CodigoErrorAuth =
 export const MENSAJES_AUTH: Readonly<Record<CodigoErrorAuth, string>> = {
   CREDENCIALES_INVALIDAS: 'Correo o contraseña incorrectos.',
   DEMASIADOS_INTENTOS: 'Demasiados intentos. Espere unos minutos e inténtelo de nuevo.',
+  INGRESO_BLOQUEADO: 'Demasiados intentos. Vuelva a intentarlo en unos minutos.',
   CODIGO_MFA_INVALIDO: 'El código no es válido o ya expiró.',
   CLAVE_DEBIL: 'La contraseña no cumple los requisitos de seguridad.',
   SEGUNDO_FACTOR_REQUERIDO: 'Confirme primero su código de verificación en dos pasos.',
@@ -22,14 +24,32 @@ export const MENSAJES_AUTH: Readonly<Record<CodigoErrorAuth, string>> = {
   DESCONOCIDO: 'Ocurrió un error. Inténtelo de nuevo.',
 };
 
+const SEGUNDOS_POR_MINUTO = 60;
+
+export interface OpcionesErrorAuth {
+  cause?: unknown;
+  /** Spec 18b: segundos que faltan del bloqueo; el mensaje dice los minutos redondeados hacia arriba. */
+  reintentarEnSeg?: number;
+}
+
 export class ErrorAuth extends Error {
+  readonly reintentarEnSeg: number | undefined;
+
   constructor(
     readonly codigo: CodigoErrorAuth,
-    options?: { cause?: unknown },
+    opciones: OpcionesErrorAuth = {},
   ) {
-    super(MENSAJES_AUTH[codigo], options);
+    super(mensajeDe(codigo, opciones.reintentarEnSeg), { cause: opciones.cause });
     this.name = 'ErrorAuth';
+    this.reintentarEnSeg = opciones.reintentarEnSeg;
   }
+}
+
+/** «Demasiados intentos. Vuelva a intentarlo en 15 minutos.»; sin segundos, el texto genérico. */
+function mensajeDe(codigo: CodigoErrorAuth, reintentarEnSeg: number | undefined): string {
+  if (codigo !== 'INGRESO_BLOQUEADO' || !reintentarEnSeg || reintentarEnSeg <= 0) return MENSAJES_AUTH[codigo];
+  const minutos = Math.ceil(reintentarEnSeg / SEGUNDOS_POR_MINUTO);
+  return `Demasiados intentos. Vuelva a intentarlo en ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}.`;
 }
 
 const HTTP_DEMASIADAS_PETICIONES = 429;

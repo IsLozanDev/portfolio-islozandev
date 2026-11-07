@@ -95,7 +95,7 @@ describe('SesionService (contexto y sucursal, TR-RF-016)', () => {
     expect(servicio.tiene('rest.reportes.ver')).toBe(true);
     expect(servicio.tiene('rest.caja.abrir')).toBe(false);
     expect(servicio.contexto()?.menu).toEqual(menuSurco);
-    expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(supabase.auth.setSession).not.toHaveBeenCalled();
     expect(supabase.auth.signInWithOAuth).not.toHaveBeenCalled();
   });
 

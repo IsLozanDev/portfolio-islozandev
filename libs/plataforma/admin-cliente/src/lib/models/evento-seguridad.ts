@@ -1,5 +1,13 @@
-/** Catálogo de `seg.evento_seguridad.tipo` (spec 18). */
-export const TIPOS_EVENTO = ['LOGIN', 'ACCESO_DENEGADO', 'ASIGNACION_OTORGADA', 'ASIGNACION_REVOCADA', 'ACCESO_SOPORTE'] as const;
+/** Catálogo de `seg.evento_seguridad.tipo` (specs 18 y 18b). */
+export const TIPOS_EVENTO = [
+  'LOGIN',
+  'LOGIN_FALLIDO',
+  'ACCESO_DENEGADO',
+  'ASIGNACION_OTORGADA',
+  'ASIGNACION_REVOCADA',
+  'ACCESO_SOPORTE',
+  'EXPORTACION',
+] as const;
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 
 /** Días calendario `YYYY-MM-DD` en hora de Lima, ambos incluidos. */
