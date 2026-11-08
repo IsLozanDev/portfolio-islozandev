@@ -159,6 +159,19 @@ describe('api', () => {
     }
   });
 
+  it('GET /v1/docs-json publica las 5 rutas del spec 19c con bearer auth', async () => {
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    for (const [ruta, metodo] of [
+      ['/v1/feriados', 'get'],
+      ['/v1/feriados', 'post'],
+      ['/v1/feriados/{id}', 'put'],
+      ['/v1/feriados/{id}', 'delete'],
+      ['/v1/catalogos/{codigo}/items/administracion', 'get'],
+    ]) {
+      expect(paths[ruta]?.[metodo]?.security).toEqual([{ bearer: [] }]);
+    }
+  });
+
   it('ParametrosModule queda cableado: ParametroPort se resuelve con el AlcanceActor global de seg', () => {
     expect(app.get(PARAMETRO_PORT)).toBeInstanceOf(Object);
     expect(typeof app.get(PARAMETRO_PORT).valor).toBe('function');

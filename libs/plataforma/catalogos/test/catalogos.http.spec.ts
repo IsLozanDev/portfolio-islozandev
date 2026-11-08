@@ -16,6 +16,7 @@ import { EliminarItemPropio } from '../src/application/eliminar-item-propio.js';
 import { GuardarItemGlobal } from '../src/application/guardar-item-global.js';
 import { GuardarItemPropio } from '../src/application/guardar-item-propio.js';
 import { ListarCatalogos } from '../src/application/listar-catalogos.js';
+import { ListarItemsAdministracion } from '../src/application/listar-items-administracion.js';
 import {
   AlcanceNoPermiteError,
   CatalogoInvalidoError,
@@ -36,6 +37,7 @@ const MFA_MAX_EDAD_SEG = 900;
 const STEP_UP = `Bearer error="insufficient_user_authentication", acr_values="aal2", max_age=${MFA_MAX_EDAD_SEG}`;
 const MILISEGUNDOS_POR_SEGUNDO = 1000;
 const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json', import.meta.url);
+const PLIN = '0193f3a0-0000-7000-8000-00000000d003';
 
 class OperadorRequeridoDoble extends ForbiddenError {
   override readonly code = 'OPERADOR_REQUERIDO';
@@ -54,6 +56,22 @@ const yape = {
   vigenteDesde: '2026-01-01',
   vigenteHasta: null,
   activo: true,
+  version: 0,
+};
+const plinAdministrado = {
+  itemId: PLIN,
+  codigo: 'PLIN',
+  codigoExterno: null,
+  nombre: 'Plin',
+  abreviatura: null,
+  orden: 3,
+  atributos: {},
+  vigenteDesde: '2026-01-01',
+  vigenteHasta: null,
+  activo: true,
+  propio: false,
+  estado: 'OCULTO',
+  ajuste: { visible: false, orden: 9, alias: 'Plin QR', version: 0 },
   version: 0,
 };
 const yapeRespuesta = {
@@ -125,6 +143,16 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
         { provide: GuardarItemPropio, useValue: { crear: doble('crearPropio', yape), actualizar: doble('actualizarPropio', { ...yape, version: 1, cambiado: false }) } },
         { provide: EliminarItemPropio, useValue: { ejecutar: doble('eliminarPropio', undefined) } },
         {
+          provide: ListarItemsAdministracion,
+          useValue: {
+            ejecutar: async (consulta: { catalogo: string; pagina: number; tamano: number }) => {
+              registrar('administracion', consulta);
+              if (consulta.catalogo !== 'MEDIO_PAGO') throw new CatalogoNoExisteError();
+              return { items: [plinAdministrado], total: 7, pagina: consulta.pagina, tamano: consulta.tamano };
+            },
+          },
+        },
+        {
           provide: AjustarItem,
           useValue: { ejecutar: doble('ajustar', { itemId: YAPE, visible: false, orden: null, alias: null, version: 0, cambiado: true }) },
         },
@@ -161,6 +189,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
     crearCatalogo: conSucursal(http().post('/v1/catalogos')).send({ codigo: 'MEDIO_PAGO', nombre: 'Medios de pago', alcance: 'MIXTO', editable_por_tenant: true }),
     actualizarCatalogo: conSucursal(http().put('/v1/catalogos/MEDIO_PAGO')).send({ nombre: 'Formas de pago', editable_por_tenant: true, version: 1 }),
     items: conSucursal(http().get('/v1/catalogos/MEDIO_PAGO/items')),
+    administracion: conSucursal(http().get('/v1/catalogos/MEDIO_PAGO/items/administracion')),
     crearGlobal: conSucursal(http().post('/v1/catalogos/MEDIO_PAGO/items-globales')).send(cuerpoItem),
     actualizarGlobal: conSucursal(http().put(`/v1/catalogos/MEDIO_PAGO/items-globales/${YAPE}`)).send({ ...cuerpoItem, codigo: undefined, version: 0 }),
     eliminarGlobal: conSucursal(http().delete(`/v1/catalogos/MEDIO_PAGO/items-globales/${YAPE}?version=0`)),
@@ -263,6 +292,61 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
     expect(comandos.ajustar).toEqual([{ catalogo: 'MEDIO_PAGO', itemId: YAPE, visible: false, orden: null, alias: null, version: null, actorId: ANA }]);
   });
 
+  it('GET items/administracion responde la página en snake_case con el ajuste como objeto y los valores por defecto', async () => {
+    const respuesta = await rutas().administracion;
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body).toEqual({
+      items: [
+        {
+          item_id: PLIN,
+          codigo: 'PLIN',
+          codigo_externo: null,
+          nombre: 'Plin',
+          abreviatura: null,
+          orden: 3,
+          atributos: {},
+          vigente_desde: '2026-01-01',
+          vigente_hasta: null,
+          activo: true,
+          propio: false,
+          estado: 'OCULTO',
+          ajuste: { visible: false, orden: 9, alias: 'Plin QR', version: 0 },
+          version: 0,
+        },
+      ],
+      total: 7,
+      pagina: 1,
+      tamano: 25,
+    });
+    expect(comandos.administracion).toEqual([{ catalogo: 'MEDIO_PAGO', texto: null, estado: null, origen: null, pagina: 1, tamano: 25 }]);
+  });
+
+  it('GET items/administracion pasa texto, estado, origen y la página', async () => {
+    const respuesta = await conSucursal(http().get('/v1/catalogos/MEDIO_PAGO/items/administracion?texto=pl&estado=OCULTO&origen=GLOBAL&pagina=2&tamano=10'));
+    expect(respuesta.status).toBe(200);
+    expect(comandos.administracion).toEqual([{ catalogo: 'MEDIO_PAGO', texto: 'pl', estado: 'OCULTO', origen: 'GLOBAL', pagina: 2, tamano: 10 }]);
+  });
+
+  it('GET items/administracion de un catálogo inexistente responde 404 CATALOGO_NO_EXISTE', async () => {
+    const respuesta = await conSucursal(http().get('/v1/catalogos/NO_EXISTE/items/administracion'));
+    expect(respuesta.status).toBe(404);
+    expect(respuesta.body).toEqual({ codigo: 'CATALOGO_NO_EXISTE', mensaje: 'El catálogo no existe' });
+  });
+
+  it.each([
+    ['tamano=101', ['tamano']],
+    ['tamano=0', ['tamano']],
+    ['pagina=0', ['pagina']],
+    ['estado=BORRADO', ['estado']],
+    ['origen=OTRO', ['origen']],
+    [`texto=${'x'.repeat(61)}`, ['texto']],
+  ])('GET items/administracion?%s da 400 SOLICITUD_INVALIDA', async (query, errores) => {
+    const respuesta = await conSucursal(http().get(`/v1/catalogos/MEDIO_PAGO/items/administracion?${query}`));
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body).toEqual({ codigo: 'SOLICITUD_INVALIDA', errores });
+    expect(Object.keys(comandos)).toEqual([]);
+  });
+
   it('un id que no es UUID da 404 ITEM_NO_ENCONTRADO sin llegar al caso de uso', async () => {
     const respuestas = await Promise.all([
       conSucursal(http().put('/v1/catalogos/MEDIO_PAGO/items-globales/no-es-uuid')).send({ ...cuerpoItem, version: 0 }),
@@ -301,10 +385,10 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
   });
 
   describe('con el PermisoGuard real', () => {
-    it('sin ningún permiso de catálogos las 11 rutas dan 403 SIN_PERMISO y no llegan al caso de uso', async () => {
+    it('sin ningún permiso de catálogos las 12 rutas dan 403 SIN_PERMISO y no llegan al caso de uso', async () => {
       permisosDelActor = ['plat.parametro.leer'];
       const respuestas = await Promise.all(Object.values(rutas()));
-      expect(respuestas.map((respuesta) => [respuesta.status, respuesta.body.codigo])).toEqual(Array(11).fill([403, 'SIN_PERMISO']));
+      expect(respuestas.map((respuesta) => [respuesta.status, respuesta.body.codigo])).toEqual(Array(12).fill([403, 'SIN_PERMISO']));
       expect(Object.keys(comandos)).toEqual([]);
     });
 
@@ -316,6 +400,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
         crearCatalogo: 401,
         actualizarCatalogo: 401,
         items: 200,
+        administracion: 200,
         crearGlobal: 401,
         actualizarGlobal: 401,
         eliminarGlobal: 401,
@@ -338,6 +423,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
       crear: permisoDe('crear'),
       actualizar: permisoDe('actualizar'),
       items: permisoDe('items'),
+      administracion: permisoDe('administracion'),
       crearItemGlobal: permisoDe('crearItemGlobal'),
       actualizarItemGlobal: permisoDe('actualizarItemGlobal'),
       eliminarGlobal: permisoDe('eliminarGlobal'),
@@ -350,6 +436,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
       crear: 'plat.catalogo.gestionar',
       actualizar: 'plat.catalogo.gestionar',
       items: 'plat.catalogo.leer',
+      administracion: 'plat.catalogo.leer',
       crearItemGlobal: 'plat.catalogo.item_gestionar',
       actualizarItemGlobal: 'plat.catalogo.item_gestionar',
       eliminarGlobal: 'plat.catalogo.item_gestionar',
@@ -360,7 +447,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
     });
   });
 
-  it('las 11 rutas están en OpenAPI con sus códigos de error', () => {
+  it('las 12 rutas están en OpenAPI con sus códigos de error', () => {
     const documento = SwaggerModule.createDocument(app, new DocumentBuilder().addBearerAuth().build());
     const rutasDoc = documento.paths;
     const codigos = (ruta: string, metodo: 'get' | 'post' | 'put' | 'delete') => Object.keys(rutasDoc[ruta]?.[metodo]?.responses ?? {}).sort();
@@ -370,6 +457,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
       '/v1/catalogos/{codigo}/items',
       '/v1/catalogos/{codigo}/items-globales',
       '/v1/catalogos/{codigo}/items-globales/{id}',
+      '/v1/catalogos/{codigo}/items/administracion',
       '/v1/catalogos/{codigo}/items/{id}',
       '/v1/catalogos/{codigo}/items/{id}/ajuste',
     ]);
@@ -378,6 +466,7 @@ describe('HTTP /v1/catalogos (TR-RF-022 a 027)', () => {
     expect(codigos('/v1/catalogos/{codigo}', 'put')).toEqual(['200', '400', '401', '403', '404', '409']);
     expect(codigos('/v1/catalogos/{codigo}/items', 'get')).toEqual(['200', '304', '401', '403', '404']);
     expect(codigos('/v1/catalogos/{codigo}/items', 'post')).toEqual(['201', '400', '401', '403', '404', '409']);
+    expect(codigos('/v1/catalogos/{codigo}/items/administracion', 'get')).toEqual(['200', '400', '401', '403', '404']);
     expect(codigos('/v1/catalogos/{codigo}/items-globales', 'post')).toEqual(['201', '400', '401', '403', '404', '409']);
     expect(codigos('/v1/catalogos/{codigo}/items-globales/{id}', 'put')).toEqual(['200', '400', '401', '403', '404', '409']);
     expect(codigos('/v1/catalogos/{codigo}/items-globales/{id}', 'delete')).toEqual(['204', '400', '401', '403', '404', '409']);

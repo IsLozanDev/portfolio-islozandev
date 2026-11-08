@@ -43,6 +43,8 @@ describe('Manifiesto PLAT: parte de cfg (spec 09)', () => {
       'plat.catalogo.leer',
       'plat.catalogo.personalizar',
       'plat.catalogo.item_propio',
+      // Spec 19c: y los feriados del tenant y sus sucursales.
+      'plat.feriado.gestionar',
     ]);
   });
 

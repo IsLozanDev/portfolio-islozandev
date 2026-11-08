@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ALCANCES_CATALOGO } from '../domain/tipos.js';
+import { ORIGENES_ITEM } from '../application/ports/items-administracion.js';
+import { ALCANCES_CATALOGO, ESTADOS_ITEM } from '../domain/tipos.js';
 
 // Cuerpos y respuestas de /v1/catalogos en snake_case, solo para OpenAPI. La validación va con zod.
 
@@ -191,3 +192,78 @@ export class AjusteAplicadoDto {
   @ApiProperty()
   cambiado!: boolean;
 }
+
+export class AjusteAdministradoDto {
+  @ApiProperty()
+  visible!: boolean;
+
+  @ApiProperty({ nullable: true, type: Number })
+  orden!: number | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  alias!: string | null;
+
+  @ApiProperty()
+  version!: number;
+}
+
+export class ItemAdministracionDto {
+  @ApiProperty({ format: 'uuid' })
+  item_id!: string;
+
+  @ApiProperty({ example: 'PLIN' })
+  codigo!: string;
+
+  @ApiProperty({ nullable: true, type: String })
+  codigo_externo!: string | null;
+
+  @ApiProperty({ description: 'El del ítem, sin el alias del tenant' })
+  nombre!: string;
+
+  @ApiProperty({ nullable: true, type: String })
+  abreviatura!: string | null;
+
+  @ApiProperty({ description: 'El del ítem, sin el orden del ajuste' })
+  orden!: number;
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  atributos!: Record<string, unknown>;
+
+  @ApiProperty({ format: 'date' })
+  vigente_desde!: string;
+
+  @ApiProperty({ format: 'date', nullable: true, type: String })
+  vigente_hasta!: string | null;
+
+  @ApiProperty()
+  activo!: boolean;
+
+  @ApiProperty({ description: 'true si es del tenant' })
+  propio!: boolean;
+
+  @ApiProperty({ enum: ESTADOS_ITEM, description: 'Hoy en America/Lima, con el ajuste del tenant' })
+  estado!: string;
+
+  @ApiProperty({ type: AjusteAdministradoDto, nullable: true, description: 'El ajuste del tenant sobre un ítem global, o null' })
+  ajuste!: AjusteAdministradoDto | null;
+
+  @ApiProperty()
+  version!: number;
+}
+
+export class PaginaItemsAdministracionDto {
+  @ApiProperty({ type: [ItemAdministracionDto] })
+  items!: ItemAdministracionDto[];
+
+  @ApiProperty({ description: 'Ítems que cumplen los filtros, sin paginar' })
+  total!: number;
+
+  @ApiProperty()
+  pagina!: number;
+
+  @ApiProperty()
+  tamano!: number;
+}
+
+/** Valores de los filtros, para la documentación de la query. */
+export const FILTROS_ADMINISTRACION = { estados: ESTADOS_ITEM, origenes: ORIGENES_ITEM } as const;

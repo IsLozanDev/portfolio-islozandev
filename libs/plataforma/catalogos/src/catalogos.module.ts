@@ -49,6 +49,7 @@ import { LecturaItemsAdministracionTypeOrm } from './infrastructure/typeorm/lect
 import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
 import { LecturaItemsTypeOrm } from './infrastructure/typeorm/lectura-items.typeorm.js';
 import { CatalogosController } from './interface/catalogos.controller.js';
+import { FeriadosController } from './interface/feriados.controller.js';
 import { ImportacionesController } from './interface/importaciones.controller.js';
 
 const CLIENTE_REDIS_CAT = Symbol('CLIENTE_REDIS_CAT');
@@ -128,7 +129,7 @@ export class CatalogosModule {
       module: CatalogosModule,
       imports: opciones.imports ?? [],
       // ImportacionesController primero: sus rutas `importaciones` no deben tomarse por un `{codigo}`.
-      controllers: [ImportacionesController, CatalogosController],
+      controllers: [ImportacionesController, CatalogosController, FeriadosController],
       providers: [
         {
           provide: COLA_ABIERTA,
