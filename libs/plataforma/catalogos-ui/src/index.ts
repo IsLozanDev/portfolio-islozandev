@@ -12,3 +12,4 @@ export {
 } from './lib/models/item';
 export { ETIQUETAS_ESTADO_ITEM, TONOS_ESTADO_ITEM } from './lib/models/tonos-estado-item';
 export { formatearFechaCalendario, hoyEnLima } from './lib/utils/fecha-lima';
+export { FormularioItemComponent, type CatalogoDelItem } from './lib/components/formulario-item/formulario-item.component';

@@ -120,3 +120,18 @@ export function mensajeBorrarItem(codigo: string): string {
 export function mensajeVigencia(desde: string, hasta: string | null): string {
   return `${desde} – ${hasta ?? MENSAJES_ITEMS.sinFin}`;
 }
+
+export const MENSAJES_FORMULARIO_ITEM_CONSOLA = {
+  tituloNuevo: 'Nuevo ítem',
+  tituloEdicion: 'Editar ítem',
+  creado: 'Ítem creado',
+  actualizado: 'Ítem actualizado',
+  noExiste: 'El ítem no existe',
+  volver: 'Volver al catálogo',
+  versionObsoleta: 'Otro usuario modificó el ítem. Recargue para ver sus cambios.',
+  recargar: 'Recargar',
+} as const;
+
+export function mensajeCatalogoDelItem(codigoCatalogo: string): string {
+  return `Catálogo ${codigoCatalogo}`;
+}

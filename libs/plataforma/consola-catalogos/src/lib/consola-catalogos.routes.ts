@@ -21,6 +21,16 @@ export const CONSOLA_CATALOGOS_ROUTES: Routes = [
     loadComponent: () => import('./pages/catalogo-formulario/catalogo-formulario.page').then((modulo) => modulo.CatalogoFormularioPage),
   },
   {
+    path: ':codigo/items/nuevo',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS.itemGestionar)],
+    loadComponent: () => import('./pages/item-formulario/item-formulario.page').then((modulo) => modulo.ItemFormularioPage),
+  },
+  {
+    path: ':codigo/items/:id/editar',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS.itemGestionar)],
+    loadComponent: () => import('./pages/item-formulario/item-formulario.page').then((modulo) => modulo.ItemFormularioPage),
+  },
+  {
     path: ':codigo',
     canMatch: [permisoGuard(PERMISOS_CATALOGOS.leer)],
     loadComponent: () => import('./pages/catalogo-detalle/catalogo-detalle.page').then((modulo) => modulo.CatalogoDetallePage),

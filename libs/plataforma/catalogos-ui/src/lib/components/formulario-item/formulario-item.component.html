@@ -1,0 +1,63 @@
+<form class="flex flex-col gap-4" [formGroup]="grupo" [attr.aria-label]="etiquetaFormulario()" (ngSubmit)="enviar()" novalidate>
+  <fieldset class="flex flex-col">
+    <legend class="mb-2 text-base font-medium text-sobre-superficie">{{ mensajes.datos }}</legend>
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.codigo }}</mat-label>
+        <input matInput formControlName="codigo" data-campo="codigo" maxlength="40" autocomplete="off" required />
+        <mat-hint>{{ mensajes.ayudaCodigo }}</mat-hint>
+        <mat-error>{{ mensajeDeError(grupo.controls.codigo.errors) }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.codigoExterno }}</mat-label>
+        <input matInput formControlName="codigoExterno" data-campo="codigoExterno" maxlength="40" autocomplete="off" />
+        <mat-error>{{ mensajeDeError(grupo.controls.codigoExterno.errors) }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="sm:col-span-2">
+        <mat-label>{{ mensajes.nombre }}</mat-label>
+        <input matInput formControlName="nombre" data-campo="nombre" maxlength="200" autocomplete="off" required />
+        <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.abreviatura }}</mat-label>
+        <input matInput formControlName="abreviatura" data-campo="abreviatura" maxlength="30" autocomplete="off" />
+        <mat-error>{{ mensajeDeError(grupo.controls.abreviatura.errors) }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.orden }}</mat-label>
+        <input matInput formControlName="orden" data-campo="orden" inputmode="numeric" autocomplete="off" />
+        <mat-error>{{ mensajeDeError(grupo.controls.orden.errors) }}</mat-error>
+      </mat-form-field>
+    </div>
+    <mat-checkbox formControlName="activo" data-campo="activo">{{ mensajes.activo }}</mat-checkbox>
+  </fieldset>
+
+  <fieldset class="flex flex-col">
+    <legend class="mb-2 text-base font-medium text-sobre-superficie">{{ mensajes.vigencia }}</legend>
+    <div class="grid gap-x-4 sm:grid-cols-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.vigenteDesde }}</mat-label>
+        <input matInput [matDatepicker]="calendarioDesde" formControlName="vigenteDesde" data-campo="vigenteDesde" required />
+        <mat-hint>{{ mensajes.ayudaFecha }}</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="calendarioDesde" />
+        <mat-datepicker #calendarioDesde />
+        <mat-error>{{ mensajeDeError(grupo.controls.vigenteDesde.errors) }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.vigenteHasta }}</mat-label>
+        <input matInput [matDatepicker]="calendarioHasta" formControlName="vigenteHasta" data-campo="vigenteHasta" />
+        <mat-hint>{{ mensajes.ayudaFecha }}</mat-hint>
+        <mat-datepicker-toggle matIconSuffix [for]="calendarioHasta" />
+        <mat-datepicker #calendarioHasta />
+        <mat-error>{{ mensajeDeError(grupo.controls.vigenteHasta.errors) }}</mat-error>
+      </mat-form-field>
+    </div>
+    @if (notaVigenciaFutura(); as nota) {
+      <p role="note" class="rounded-tarjeta bg-chip-advertencia p-3 text-sm text-sobre-chip-advertencia" data-nota="vigencia-futura">{{ nota }}</p>
+    }
+  </fieldset>
+
+  <vit-editor-atributos [grupo]="grupo.controls.atributos" />
+
+  <vit-acciones-formulario [guardando]="enviando()" [textoGuardar]="mensajes.guardar" (cancelar)="cancelar.emit()" />
+</form>

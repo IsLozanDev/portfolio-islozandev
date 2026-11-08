@@ -12,3 +12,16 @@ export function formatearFechaCalendario(fecha: string): string {
   const [anio, mes, dia] = fecha.split('-');
   return `${dia}/${mes}/${anio}`;
 }
+
+/** YYYY-MM-DD como `Date` local a medianoche, como la entrega el datepicker. */
+export function fechaDesdeIso(fecha: string): Date {
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  return new Date(anio, mes - 1, dia);
+}
+
+/** `Date` local del datepicker como YYYY-MM-DD. */
+export function isoDesdeFecha(fecha: Date): string {
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}

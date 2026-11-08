@@ -46,7 +46,7 @@ export interface ConsolaDePrueba {
 
 /**
  * Monta las rutas reales de la lib bajo `consola/catalogos`, con HTTP de prueba, el doble de sesión y el de
- * avisos. `extra` suma rutas hermanas, después de las de la lib.
+ * avisos. `extra` va antes que las de la lib: una ruta literal (p. ej. `DOC_PRUEBA`) reemplaza al detalle por un destino vacío.
  */
 export async function abrirConsola(ruta: string, sesion: DobleSesion, avisos: DobleAvisos, extra: Routes = []): Promise<ConsolaDePrueba> {
   TestBed.configureTestingModule({
@@ -54,7 +54,7 @@ export async function abrirConsola(ruta: string, sesion: DobleSesion, avisos: Do
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([
-        { path: 'consola/catalogos', children: [...CONSOLA_CATALOGOS_ROUTES, ...extra] },
+        { path: 'consola/catalogos', children: [...extra, ...CONSOLA_CATALOGOS_ROUTES] },
         { path: '403', component: Destino },
         { path: 'auth/mfa', component: Destino },
       ]),
