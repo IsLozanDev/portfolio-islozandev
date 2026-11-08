@@ -1,6 +1,6 @@
 import type { ImportacionListada } from '../../application/ports/importacion.js';
 import type { FilaImportada } from '../../domain/importacion/fila-importada.js';
-import { Importacion, type OperacionesImportacion } from '../../domain/importacion/importacion.js';
+import { Importacion, type OperacionesImportacion, type ResumenImportacion } from '../../domain/importacion/importacion.js';
 import type { FilaImportacion, FilaOperacionJson, OperacionesJson } from './entidades.js';
 
 // La importación guarda sus operaciones en el jsonb que leen las funciones de aplicación de la base.
@@ -15,7 +15,7 @@ export function importacionDesdeFila(fila: FilaImportacion): Importacion {
     archivoSha256: fila.archivoSha256,
     versionCatalogo: Number(fila.versionCatalogo),
     estado: fila.estado,
-    resumen: { altas: fila.altas, cambios: fila.cambios, bajas: fila.bajas, sinCambios: fila.sinCambios },
+    resumen: resumenDesdeFila(fila),
     operaciones: fila.operaciones ? operacionesDesdeJson(fila.operaciones) : null,
     totalErrores: fila.totalErrores,
     errores: fila.errores,
@@ -66,7 +66,7 @@ export function listadaDesdeFila(fila: Omit<FilaImportacion, 'operaciones' | 'er
     fechaVigencia: fila.fechaVigencia,
     archivoNombre: fila.archivoNombre,
     archivoSha256: fila.archivoSha256,
-    resumen: { altas: fila.altas, cambios: fila.cambios, bajas: fila.bajas, sinCambios: fila.sinCambios },
+    resumen: resumenDesdeFila(fila),
     totalErrores: fila.totalErrores,
     motivoFallo: fila.motivoFallo,
     lanzadoPor: fila.lanzadoPor,
@@ -74,6 +74,10 @@ export function listadaDesdeFila(fila: Omit<FilaImportacion, 'operaciones' | 'er
     aplicadoPor: fila.aplicadoPor,
     terminadoEn: fila.terminadoEn,
   };
+}
+
+function resumenDesdeFila(fila: Pick<FilaImportacion, 'altas' | 'cambios' | 'bajas' | 'sinCambios'>): ResumenImportacion {
+  return { altas: fila.altas, cambios: fila.cambios, bajas: fila.bajas, sinCambios: fila.sinCambios };
 }
 
 function operacionesAJson(operaciones: OperacionesImportacion): OperacionesJson {

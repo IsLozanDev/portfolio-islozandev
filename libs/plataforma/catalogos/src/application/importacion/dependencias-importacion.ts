@@ -5,9 +5,9 @@ import type { Importacion } from '../../domain/importacion/importacion.js';
 import { esTablaImportable, type TablaImportable } from '../../domain/importacion/tipos.js';
 import { buscarCatalogo } from '../dependencias-catalogos.js';
 import type { CanalAvance, ColaImportaciones, LectorTabla, LecturaItemsGlobales, RepositorioImportaciones } from '../ports/importacion.js';
-import type { Avisar } from './avance.js';
 import type { RepositorioCatalogos } from '../ports/repositorios.js';
 import type { VerificadorOperador } from '../ports/verificador-operador.js';
+import type { Avisar } from './avance.js';
 
 /** Lo que comparten los casos de uso de importación de tablas oficiales. */
 export interface DependenciasImportacion {

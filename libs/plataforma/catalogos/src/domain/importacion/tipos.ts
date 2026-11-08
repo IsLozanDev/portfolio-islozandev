@@ -10,7 +10,8 @@ export const TABLAS_IMPORTABLES = [
 ] as const;
 export type TablaImportable = (typeof TABLAS_IMPORTABLES)[number];
 
-export type EstadoImportacion = 'PREVISUALIZADA' | 'RECHAZADA' | 'EN_COLA' | 'APLICADA' | 'FALLIDA' | 'OBSOLETA' | 'VENCIDA';
+export const ESTADOS_IMPORTACION = ['PREVISUALIZADA', 'RECHAZADA', 'EN_COLA', 'APLICADA', 'FALLIDA', 'OBSOLETA', 'VENCIDA'] as const;
+export type EstadoImportacion = (typeof ESTADOS_IMPORTACION)[number];
 /** EN_PROCESO solo vive en Redis: la base sigue en EN_COLA hasta el commit del worker. */
 export type EstadoSeguimiento = EstadoImportacion | 'EN_PROCESO';
 

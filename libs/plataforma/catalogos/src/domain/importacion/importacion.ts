@@ -9,7 +9,7 @@ const MOTIVO_MAXIMO = 300;
 const MOTIVO_TRABAJO_PERDIDO = 'Trabajo perdido en la cola';
 const ESTADOS_FINALES: readonly EstadoImportacion[] = ['RECHAZADA', 'APLICADA', 'FALLIDA', 'OBSOLETA', 'VENCIDA'];
 /** Igual que el DEFAULT de `cat.importacion.version`. */
-export const VERSION_INICIAL_IMPORTACION = 0;
+const VERSION_INICIAL_IMPORTACION = 0;
 
 export interface ResumenImportacion {
   altas: number;

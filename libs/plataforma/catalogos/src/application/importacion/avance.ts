@@ -5,6 +5,8 @@ import type { AvisoImportacion, CanalAvance, ResumenAviso } from '../ports/impor
 export const EVENTO_ERROR_AVANCE = 'cat.importacion.avance_error';
 /** El 100 llega solo con el `fin`, después del commit. */
 const AVANCE_ANTES_DEL_COMMIT = 99;
+export const MOTIVO_OBSOLETA = 'El catálogo cambió desde la previsualización; vuelva a previsualizar';
+export const AVISO_EN_COLA: AvisoImportacion = { tipo: 'avance', estado: 'EN_COLA', avance: 0 };
 
 export type Avisar = (mensaje: string, datos: Record<string, unknown>) => void;
 

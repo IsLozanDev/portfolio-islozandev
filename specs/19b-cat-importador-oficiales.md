@@ -1,6 +1,6 @@
 # SPEC 19b — Catálogos: importador de tablas oficiales con previsualización, aplicación en el worker y avance por SSE
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 19a, SPEC 11, SPEC 12
 > **Date:** 2026-11-07
 > **Objective:** Importar las 7 tablas oficiales (UBIGEO, CIE10, TIPO_COMPROBANTE, UNIDAD_MEDIDA, TIPO_DOC_IDENTIDAD, AFECTACION_IGV, MONEDA) desde CSV o XLSX con una previsualización que valida el archivo completo, una aplicación todo o nada en el worker y el avance empujado al front por SSE.

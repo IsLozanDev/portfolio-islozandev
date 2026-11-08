@@ -29,19 +29,19 @@ export function validarFila(diseno: DisenoTabla, numero: number, celdasCrudas: R
   const codigo = celdas.get('codigo') ?? '';
   if (codigo && !diseno.formatoCodigo.test(codigo)) reportar('codigo', 'El código no tiene el formato de la tabla');
   const nombre = celdas.get('descripcion') ?? '';
-  if (nombre.length > NOMBRE_MAXIMO) reportar('descripcion', 'La descripción debe tener de 1 a 200 caracteres');
+  if (nombre.length > NOMBRE_MAXIMO) reportar('descripcion', `La descripción debe tener de 1 a ${NOMBRE_MAXIMO} caracteres`);
   const codigoExterno = opcional(celdas, 'codigo_externo');
   if (codigoExterno !== null && codigoExterno.length > CODIGO_EXTERNO_MAXIMO) {
-    reportar('codigo_externo', 'El código externo debe tener como máximo 40 caracteres');
+    reportar('codigo_externo', `El código externo debe tener como máximo ${CODIGO_EXTERNO_MAXIMO} caracteres`);
   }
   const abreviatura = opcional(celdas, 'abreviatura');
   if (abreviatura !== null && abreviatura.length > ABREVIATURA_MAXIMA) {
-    reportar('abreviatura', 'La abreviatura debe tener como máximo 30 caracteres');
+    reportar('abreviatura', `La abreviatura debe tener como máximo ${ABREVIATURA_MAXIMA} caracteres`);
   }
   const orden = leerOrden(opcional(celdas, 'orden'), numero);
   if (orden === null) reportar('orden', 'El orden debe ser un número entero');
   for (const atributo of diseno.atributos) {
-    if ((celdas.get(atributo) ?? '').length > ATRIBUTO_MAXIMO) reportar(atributo, 'El valor debe tener como máximo 200 caracteres');
+    if ((celdas.get(atributo) ?? '').length > ATRIBUTO_MAXIMO) reportar(atributo, `El valor debe tener como máximo ${ATRIBUTO_MAXIMO} caracteres`);
   }
 
   if (errores.length > 0 || orden === null) return { valida: false, errores };
@@ -72,5 +72,5 @@ function leerAtributos(diseno: DisenoTabla, celdas: Celdas): Record<string, stri
 }
 
 function recortar(valor: string): string {
-  return valor.length > VALOR_MAXIMO_EN_ERROR ? valor.slice(0, VALOR_MAXIMO_EN_ERROR) : valor;
+  return valor.slice(0, VALOR_MAXIMO_EN_ERROR);
 }

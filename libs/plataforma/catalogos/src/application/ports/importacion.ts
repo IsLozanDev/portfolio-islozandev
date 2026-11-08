@@ -87,8 +87,6 @@ export interface EscrituraImportacion {
   finalizar(importacionId: string, por: string): Promise<number>;
 }
 
-export const COLA_IMPORTACIONES = Symbol('ColaImportaciones');
-
 export interface TrabajoImportacion {
   importacionId: string;
   tenantId: string;

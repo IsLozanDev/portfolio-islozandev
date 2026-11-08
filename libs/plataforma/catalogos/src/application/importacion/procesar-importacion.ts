@@ -4,11 +4,11 @@ import type { Importacion } from '../../domain/importacion/importacion.js';
 import { TAMANO_LOTE } from '../../domain/importacion/tipos.js';
 import type { CanalAvance, EscrituraImportacion, RepositorioImportaciones, TipoLote, TrabajoImportacion } from '../ports/importacion.js';
 import type { RepositorioCatalogos } from '../ports/repositorios.js';
-import { porcentajeDeAvance, publicarAviso, resumenDeAviso, type Avisar } from './avance.js';
+import { MOTIVO_OBSOLETA, porcentajeDeAvance, publicarAviso, resumenDeAviso, type Avisar } from './avance.js';
 import { buscarImportacion, codigoDeCatalogo } from './dependencias-importacion.js';
 
 const SIN_VERSION_TENANT = 0;
-const MOTIVO_OBSOLETA = 'El catálogo cambió desde la previsualización; vuelva a previsualizar';
+const EVENTO_FALLIDA = 'cat.importacion.fallida';
 
 export interface DependenciasProcesarImportacion {
   unidadDeTrabajo: UnitOfWork;
@@ -126,18 +126,18 @@ export class ProcesarImportacion {
     if (resultado.tipo === 'APLICADA') {
       const resumen = resumenDeAviso(resultado.importacion.resumen);
       await publicarAviso(canal, avisar, importacionId, { tipo: 'fin', estado: 'APLICADA', resumen, motivo: null });
+      return;
     }
-    if (resultado.tipo === 'OBSOLETA') {
-      const terminada = await this.terminarEnOtraTransaccion(importacionId, (importacion, ahora) => importacion.marcarObsoleta(ahora));
-      if (terminada.estado !== 'OBSOLETA') return;
-      await publicarAviso(canal, avisar, importacionId, { tipo: 'fin', estado: 'OBSOLETA', resumen: null, motivo: MOTIVO_OBSOLETA });
-    }
+    if (resultado.tipo !== 'OBSOLETA') return;
+    const terminada = await this.terminarEnOtraTransaccion(importacionId, (importacion, ahora) => importacion.marcarObsoleta(ahora));
+    if (terminada.estado !== 'OBSOLETA') return;
+    await publicarAviso(canal, avisar, importacionId, { tipo: 'fin', estado: 'OBSOLETA', resumen: null, motivo: MOTIVO_OBSOLETA });
   }
 
   /** El rollback ya dejó el catálogo como estaba. Las tablas oficiales no traen datos personales. */
   private async terminarFallida(importacionId: string, error: Error): Promise<void> {
     const { canal, avisar } = this.dependencias;
-    avisar('Falló la aplicación de una importación', { evento: 'cat.importacion.fallida', importacionId, error: error.name });
+    avisar('Falló la aplicación de una importación', { evento: EVENTO_FALLIDA, importacionId, error: error.name });
     const terminada = await this.terminarEnOtraTransaccion(importacionId, (importacion, ahora) =>
       importacion.marcarFallida(`No se pudo aplicar la importación: ${error.message}`, ahora),
     );

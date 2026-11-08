@@ -2,11 +2,8 @@ import { ImportacionNoAplicableError, ImportacionNoEncontradaError } from '../..
 import type { Importacion } from '../../domain/importacion/importacion.js';
 import { exigirOperador } from '../dependencias-catalogos.js';
 import type { AvisoImportacion } from '../ports/importacion.js';
-import { resumenDeAviso } from './avance.js';
+import { AVISO_EN_COLA, MOTIVO_OBSOLETA, resumenDeAviso } from './avance.js';
 import { buscarImportacion, type DependenciasImportacion } from './dependencias-importacion.js';
-
-const MOTIVO_OBSOLETA = 'El catálogo cambió desde la previsualización; vuelva a previsualizar';
-const AVISO_EN_COLA: AvisoImportacion = { tipo: 'avance', estado: 'EN_COLA', avance: 0 };
 
 export interface SeguirImportacionComando {
   id: string;

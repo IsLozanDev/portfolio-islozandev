@@ -12,12 +12,6 @@ import { EliminarItemGlobal } from './application/eliminar-item-global.js';
 import { EliminarItemPropio } from './application/eliminar-item-propio.js';
 import { GuardarItemGlobal } from './application/guardar-item-global.js';
 import { GuardarItemPropio } from './application/guardar-item-propio.js';
-import { EVENTO_ERROR_CACHE, LectorItems } from './application/lector-items.js';
-import { ListarCatalogos } from './application/listar-catalogos.js';
-import { CATALOGO_PORT, type CatalogoPort } from './application/ports/catalogo.port.js';
-import { VERIFICADOR_OPERADOR, type VerificadorOperador } from './application/ports/verificador-operador.js';
-import { VERIFICADORES_REFERENCIAS, type VerificadorReferencias } from './application/ports/verificador-referencias.js';
-import { ValidarItem } from './application/validar-item.js';
 import { AplicarImportacion } from './application/importacion/aplicar-importacion.js';
 import { ConsultarImportacion } from './application/importacion/consultar-importacion.js';
 import type { DependenciasImportacion } from './application/importacion/dependencias-importacion.js';
@@ -25,18 +19,24 @@ import { DescargarErrores } from './application/importacion/descargar-errores.js
 import { ListarImportaciones } from './application/importacion/listar-importaciones.js';
 import { PrevisualizarImportacion } from './application/importacion/previsualizar-importacion.js';
 import { SeguirImportacion } from './application/importacion/seguir-importacion.js';
-import { abrirColaImportaciones, type ColaAbierta } from './infrastructure/bullmq/cola-importaciones.bullmq.js';
+import { EVENTO_ERROR_CACHE, LectorItems } from './application/lector-items.js';
+import { ListarCatalogos } from './application/listar-catalogos.js';
+import { CATALOGO_PORT, type CatalogoPort } from './application/ports/catalogo.port.js';
+import { VERIFICADOR_OPERADOR, type VerificadorOperador } from './application/ports/verificador-operador.js';
+import { VERIFICADORES_REFERENCIAS, type VerificadorReferencias } from './application/ports/verificador-referencias.js';
+import { ValidarItem } from './application/validar-item.js';
+import { abrirColaImportaciones, EVENTO_ERROR_COLA, type ColaAbierta } from './infrastructure/bullmq/cola-importaciones.bullmq.js';
 import { LectorTablaArchivos } from './infrastructure/lectores/lector-tabla.archivos.js';
-import { CanalAvanceRedis } from './infrastructure/redis/canal-avance.redis.js';
-import { ImportacionesRepositorioTypeOrm } from './infrastructure/typeorm/importaciones.repositorio.js';
-import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
-import { ImportacionesController } from './interface/importaciones.controller.js';
 import { CacheItemsRedis } from './infrastructure/redis/cache-items.redis.js';
+import { CanalAvanceRedis } from './infrastructure/redis/canal-avance.redis.js';
 import { AjustesRepositorioTypeOrm } from './infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from './infrastructure/typeorm/catalogos.repositorio.js';
+import { ImportacionesRepositorioTypeOrm } from './infrastructure/typeorm/importaciones.repositorio.js';
 import { ItemsRepositorioTypeOrm } from './infrastructure/typeorm/items.repositorio.js';
+import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
 import { LecturaItemsTypeOrm } from './infrastructure/typeorm/lectura-items.typeorm.js';
 import { CatalogosController } from './interface/catalogos.controller.js';
+import { ImportacionesController } from './interface/importaciones.controller.js';
 
 const CLIENTE_REDIS_CAT = Symbol('CLIENTE_REDIS_CAT');
 const DEPENDENCIAS_CATALOGOS = Symbol('DEPENDENCIAS_CATALOGOS');
@@ -108,7 +108,7 @@ export class CatalogosModule {
         {
           provide: COLA_ABIERTA,
           // Solo el nombre del error: el mensaje puede traer la URL con la clave (TR-RNF-026).
-          useFactory: (): ColaAbierta => abrirColaImportaciones(opciones.redisUrl, (error) => logger.warn({ evento: 'cat.importacion.cola_error', error: error.name })),
+          useFactory: (): ColaAbierta => abrirColaImportaciones(opciones.redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_COLA, error: error.name })),
         },
         { provide: CierreColaImportaciones, useFactory: (abierta: ColaAbierta) => new CierreColaImportaciones(abierta), inject: [COLA_ABIERTA] },
         {

@@ -3,7 +3,8 @@ import { Redis } from 'ioredis';
 import type { ColaImportaciones, TrabajoImportacion } from '../../application/ports/importacion.js';
 
 export const NOMBRE_COLA_IMPORTACIONES = 'cat-importaciones';
-export const NOMBRE_TRABAJO_IMPORTACION = 'aplicar';
+export const EVENTO_ERROR_COLA = 'cat.importacion.cola_error';
+const NOMBRE_TRABAJO_IMPORTACION = 'aplicar';
 /** El segundo intento solo cubre un worker que murió a mitad: un fallo de datos queda FALLIDA sin reintentar. */
 const INTENTOS = 2;
 const TRABAJOS_CONSERVADOS = 100;
@@ -11,7 +12,7 @@ const CONEXION_LISTA = 'ready';
 /** Lo que se espera una conexión que aún abre o reconecta antes de responder 503. */
 const ESPERA_CONEXION_MS = 1_000;
 
-export class ColaNoConectadaError extends Error {
+class ColaNoConectadaError extends Error {
   constructor() {
     super('Redis de la cola de importaciones no está conectado');
   }

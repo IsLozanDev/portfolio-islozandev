@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ESTADOS_IMPORTACION } from '../domain/importacion/tipos.js';
 
 // Cuerpos y respuestas de las importaciones (spec 19b) en snake_case, solo para OpenAPI. La validación va con zod.
 
-const ESTADOS = ['PREVISUALIZADA', 'RECHAZADA', 'EN_COLA', 'APLICADA', 'FALLIDA', 'OBSOLETA', 'VENCIDA'];
-const ESTADOS_SEGUIMIENTO = [...ESTADOS, 'EN_PROCESO'];
+const ESTADOS_SEGUIMIENTO = [...ESTADOS_IMPORTACION, 'EN_PROCESO'];
 
 export class PrevisualizarImportacionDto {
   @ApiProperty({ type: 'string', format: 'binary', description: 'CSV (UTF-8, `,` o `;`) o XLSX; hasta 20 MB y 50 000 filas' })
@@ -70,7 +70,7 @@ export class MuestraDto {
 
 export class PrevisualizacionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ enum: ESTADOS }) estado!: string;
+  @ApiProperty({ enum: ESTADOS_IMPORTACION }) estado!: string;
   @ApiProperty() version_oficial!: string;
   @ApiProperty() fecha_vigencia!: string;
   @ApiProperty() archivo_sha256!: string;
@@ -96,7 +96,7 @@ export class FilasInvalidasDto {
 
 export class ImportacionListadaDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ enum: ESTADOS }) estado!: string;
+  @ApiProperty({ enum: ESTADOS_IMPORTACION }) estado!: string;
   @ApiProperty() version_oficial!: string;
   @ApiProperty() fecha_vigencia!: string;
   @ApiProperty() archivo_nombre!: string;

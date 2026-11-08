@@ -2,7 +2,7 @@ import { VersionObsoletaError } from '../../domain/errores.js';
 import { ColaNoDisponibleError, ImportacionNoAplicableError } from '../../domain/importacion/errores.js';
 import type { Importacion } from '../../domain/importacion/importacion.js';
 import { exigirOperador } from '../dependencias-catalogos.js';
-import { publicarAviso } from './avance.js';
+import { AVISO_EN_COLA, publicarAviso } from './avance.js';
 import { buscarImportacion, type DependenciasImportacion } from './dependencias-importacion.js';
 
 export interface AplicarImportacionComando {
@@ -33,7 +33,7 @@ export class AplicarImportacion {
       await this.devolverAPrevisualizada(importacion.id);
       throw new ColaNoDisponibleError();
     }
-    await publicarAviso(canal, avisar, importacion.id, { tipo: 'avance', estado: 'EN_COLA', avance: 0 });
+    await publicarAviso(canal, avisar, importacion.id, AVISO_EN_COLA);
     return { id: importacion.id, estado: 'EN_COLA' };
   }
 
