@@ -20,6 +20,7 @@ export function previsualizacionDto(previsualizacion: Previsualizacion): Previsu
   const { resumen, muestra } = previsualizacion;
   return {
     id: previsualizacion.id,
+    version: previsualizacion.version,
     estado: previsualizacion.estado,
     version_oficial: previsualizacion.versionOficial,
     fecha_vigencia: previsualizacion.fechaVigencia,

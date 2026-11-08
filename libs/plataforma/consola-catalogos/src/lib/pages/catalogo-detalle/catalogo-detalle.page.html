@@ -49,6 +49,8 @@
     <mat-tab-nav-panel #panelCatalogo>
       @if (pestana() === 'items') {
         <vit-items-catalogo [catalogo]="detalle" />
+      } @else {
+        <vit-historial-importaciones [codigoCatalogo]="detalle.codigo" />
       }
     </mat-tab-nav-panel>
   }

@@ -49,6 +49,7 @@ type DependenciasGuard = ConstructorParameters<typeof PermisoGuard>;
 
 const previsualizacion: Previsualizacion = {
   id: IMPORTACION,
+  version: 0,
   estado: 'PREVISUALIZADA',
   versionOficial: '2026-06',
   fechaVigencia: '2026-06-01',
@@ -178,6 +179,7 @@ describe('HTTP /v1/catalogos/.../importaciones (TR-RF-028)', () => {
       expect(respuesta.status).toBe(201);
       expect(respuesta.body).toEqual({
         id: IMPORTACION,
+        version: 0,
         estado: 'PREVISUALIZADA',
         version_oficial: '2026-06',
         fecha_vigencia: '2026-06-01',

@@ -70,6 +70,7 @@ export class MuestraDto {
 
 export class PrevisualizacionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ description: 'La que se envía en `aplicar` (bloqueo optimista)', example: 0 }) version!: number;
   @ApiProperty({ enum: ESTADOS_IMPORTACION }) estado!: string;
   @ApiProperty() version_oficial!: string;
   @ApiProperty() fecha_vigencia!: string;

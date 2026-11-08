@@ -128,6 +128,17 @@ describe('CatalogoDetallePage', () => {
     expect(elemento().querySelector('[data-pestana="items"]')?.classList).toContain('mdc-tab--active');
   });
 
+  it('con ?pestana=importaciones en UBIGEO muestra el historial y no pide los ítems', async () => {
+    consola = await abrirConsola('/consola/catalogos/UBIGEO?pestana=importaciones', sesion, avisos);
+    consola.http.expectOne({ method: 'GET', url: URL_CATALOGOS }).flush(CATALOGOS);
+    await consola.estable();
+
+    consola.http.expectOne(`${URL_CATALOGOS}/UBIGEO/importaciones?pagina=1&tamano=20`).flush({ items: [], total: 0 });
+    await consola.estable();
+    consola.http.expectNone((solicitud) => solicitud.url.endsWith('/items/administracion'));
+    expect(elemento().querySelector('vit-historial-importaciones')).not.toBeNull();
+  });
+
   it('sin item_gestionar no hay acciones de ítems', async () => {
     sesion.contexto.set({ permisos: [PERMISOS_CATALOGOS.leer], mfaVigente: true });
     await abrir('/consola/catalogos/MEDIO_PAGO');

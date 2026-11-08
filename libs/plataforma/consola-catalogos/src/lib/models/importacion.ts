@@ -73,6 +73,8 @@ export interface BajaEnMuestra {
 
 export interface Previsualizacion {
   id: string;
+  /** La que se envía en `aplicar`. */
+  version: number;
   estado: EstadoImportacion;
   versionOficial: string;
   fechaVigencia: string;
@@ -84,6 +86,7 @@ export interface Previsualizacion {
 
 export interface PrevisualizacionRespuesta {
   id: string;
+  version: number;
   estado: EstadoImportacion;
   version_oficial: string;
   fecha_vigencia: string;
@@ -221,6 +224,7 @@ function aItemAntes(respuesta: ItemAntesRespuesta): ItemAntes {
 export function aPrevisualizacion(respuesta: PrevisualizacionRespuesta): Previsualizacion {
   return {
     id: respuesta.id,
+    version: respuesta.version,
     estado: respuesta.estado,
     versionOficial: respuesta.version_oficial,
     fechaVigencia: respuesta.fecha_vigencia,

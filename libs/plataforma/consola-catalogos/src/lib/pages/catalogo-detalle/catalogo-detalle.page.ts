@@ -7,6 +7,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { CargandoComponent, ChipEstadoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
 import { map } from 'rxjs';
+import { HistorialImportacionesComponent } from '../../components/historial-importaciones/historial-importaciones.component';
 import { ItemsCatalogoComponent } from '../../components/items-catalogo/items-catalogo.component';
 import type { Catalogo } from '../../models/catalogo';
 import { aErrorCatalogos } from '../../models/error-catalogos';
@@ -21,7 +22,7 @@ const PARAMETRO_CODIGO = 'codigo';
 /** Detalle de un catálogo con sus pestañas «Ítems» e «Importaciones» (esta, solo si es importable); la pestaña va en la URL. */
 @Component({
   selector: 'vit-catalogo-detalle',
-  imports: [MatButtonModule, MatIconModule, MatTabsModule, RouterLink, SiPermisoDirective, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent, ItemsCatalogoComponent],
+  imports: [MatButtonModule, MatIconModule, MatTabsModule, RouterLink, SiPermisoDirective, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent, HistorialImportacionesComponent, ItemsCatalogoComponent],
   templateUrl: './catalogo-detalle.page.html',
 })
 export class CatalogoDetallePage {

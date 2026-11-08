@@ -41,6 +41,7 @@ describe('ImportacionesCliente', () => {
     expect([cuerpo.get('version_oficial'), cuerpo.get('fecha_vigencia'), (cuerpo.get('archivo') as File).name]).toEqual(['2026-06', '2026-06-01', 'ubigeo.csv']);
     peticion.flush({
       id: ID,
+      version: 0,
       estado: 'PREVISUALIZADA',
       version_oficial: '2026-06',
       fecha_vigencia: '2026-06-01',
@@ -56,6 +57,7 @@ describe('ImportacionesCliente', () => {
 
     expect(await promesa).toEqual({
       id: ID,
+      version: 0,
       estado: 'PREVISUALIZADA',
       versionOficial: '2026-06',
       fechaVigencia: '2026-06-01',

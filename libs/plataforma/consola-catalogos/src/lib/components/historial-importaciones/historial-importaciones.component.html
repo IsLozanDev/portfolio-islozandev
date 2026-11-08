@@ -1,0 +1,25 @@
+<div class="flex flex-col gap-4">
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="historial">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filas()"
+    [total]="total()"
+    [cargando]="cargando()"
+    [indicePagina]="pagina().indice"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinImportaciones"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-importacion>
+      @if (importacion.conErrores) {
+        <button mat-button type="button" data-accion="descargar-errores" [disabled]="descargando()" (click)="descargarErrores(importacion)">
+          <mat-icon aria-hidden="true">download</mat-icon>
+          {{ mensajes.descargarErrores }}
+        </button>
+      }
+    </ng-template>
+  </vit-tabla>
+</div>

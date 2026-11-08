@@ -135,3 +135,127 @@ export const MENSAJES_FORMULARIO_ITEM_CONSOLA = {
 export function mensajeCatalogoDelItem(codigoCatalogo: string): string {
   return `Catálogo ${codigoCatalogo}`;
 }
+
+export const MENSAJES_IMPORTACION = {
+  migaImportar: 'Importar',
+  pasoArchivo: 'Archivo',
+  pasoPrevisualizacion: 'Previsualización',
+  asistente: 'Asistente de importación',
+  noImportable: 'Este catálogo no se importa',
+  volverAlCatalogo: 'Volver al catálogo',
+  elegirArchivo: 'Elegir archivo',
+  cambiarArchivo: 'Cambiar archivo',
+  sinArchivo: 'Ningún archivo elegido',
+  ayudaArchivo: 'CSV (UTF-8) o XLSX, hasta 20 MB',
+  archivoRequerido: 'Elija un archivo',
+  archivoGrande: 'El archivo supera 20 MB',
+  archivoTipo: 'Solo se aceptan archivos CSV o XLSX',
+  versionOficial: 'Versión oficial',
+  ayudaVersionOficial: 'Como la publica la fuente, de 1 a 40 caracteres',
+  fechaVigencia: 'Fecha de vigencia',
+  ayudaFechaVigencia: 'Desde cuándo rigen las altas y los cambios (dd/mm/aaaa)',
+  previsualizar: 'Previsualizar',
+  validando: 'Validando el archivo completo…',
+  cancelar: 'Cancelar',
+  aplicar: 'Aplicar',
+  tituloAplicar: '¿Aplicar la importación?',
+  enCola: 'Importación en cola. Puede seguir trabajando',
+  vencida: 'La previsualización venció; vuelva a cargar el archivo',
+  colaNoDisponible: 'No se pudo encolar; intente de nuevo',
+} as const;
+
+export const MENSAJES_RESUMEN = {
+  resumen: 'Resumen',
+  altas: 'Altas',
+  cambios: 'Cambios',
+  bajas: 'Bajas',
+  sinCambios: 'Sin cambios',
+  totalFilas: 'Filas del archivo',
+  muestra: 'Muestra por tipo',
+  codigo: 'Código',
+  nombre: 'Nombre',
+  campo: 'Campo',
+  antes: 'Antes',
+  despues: 'Después',
+  vigenteHasta: 'Vigente hasta',
+  sinMuestra: 'No hay filas de este tipo.',
+  sinValor: '—',
+} as const;
+
+export const CAMPOS_COMPARADOS = {
+  codigoExterno: 'Código externo',
+  nombre: 'Nombre',
+  abreviatura: 'Abreviatura',
+  orden: 'Orden',
+  atributos: 'Atributos',
+} as const;
+
+export const MENSAJES_ERRORES_IMPORTACION = {
+  titulo: 'Errores del archivo',
+  descargar: 'Descargar todos los errores (CSV)',
+  fila: 'Fila',
+  columna: 'Columna',
+  valor: 'Valor',
+  mensaje: 'Mensaje',
+  ningunCambio: 'Ningún ítem se modificó. Corrija el archivo y vuelva a previsualizarlo.',
+} as const;
+
+export const MENSAJES_HISTORIAL = {
+  fecha: 'Fecha',
+  versionOficial: 'Versión oficial',
+  fechaVigencia: 'Vigencia',
+  estado: 'Estado',
+  altas: 'Altas',
+  cambios: 'Cambios',
+  bajas: 'Bajas',
+  errores: 'Errores',
+  motivo: 'Motivo',
+  sinImportaciones: 'Este catálogo aún no tiene importaciones.',
+  descargarErrores: 'Descargar errores',
+  sinMotivo: '—',
+} as const;
+
+export const ETIQUETAS_ESTADO_IMPORTACION = {
+  PREVISUALIZADA: 'Previsualizada',
+  RECHAZADA: 'Rechazada',
+  EN_COLA: 'En cola',
+  EN_PROCESO: 'En proceso',
+  APLICADA: 'Aplicada',
+  FALLIDA: 'Fallida',
+  OBSOLETA: 'Obsoleta',
+  VENCIDA: 'Vencida',
+} as const;
+
+export function mensajeTituloImportar(codigo: string): string {
+  return `Importar ${codigo}`;
+}
+
+/** TR-CA-073: el total real y el tope que trae la respuesta. */
+export function mensajeTotalErrores(total: number, mostrados: number): string {
+  return total > mostrados ? `Se encontraron ${total} errores; se muestran los primeros ${mostrados}` : `Se encontraron ${total} errores`;
+}
+
+export function mensajeVenceEn(fechaHora: string): string {
+  return `Puede aplicarla hasta el ${fechaHora}`;
+}
+
+export function mensajeCierreVigencias(bajas: number): string {
+  return bajas === 1 ? 'Se cerrará la vigencia de 1 ítem' : `Se cerrará la vigencia de ${bajas} ítems`;
+}
+
+export function mensajeAplicarConBajas(bajas: number): string {
+  return bajas === 1 ? 'Aplicar y cerrar 1 vigencia' : `Aplicar y cerrar ${bajas} vigencias`;
+}
+
+/** Texto de la confirmación sin bajas: lo que va a pasar. */
+export function mensajeResumenAplicar(altas: number, cambios: number): string {
+  return `Se darán de alta ${altas} ${altas === 1 ? 'ítem' : 'ítems'} y se actualizarán ${cambios}.`;
+}
+
+export const MENSAJES_SEGUIMIENTO = {
+  enCola: 'En cola',
+} as const;
+
+export function mensajeTituloImportando(codigo: string): string {
+  return `Importando ${codigo}`;
+}

@@ -31,6 +31,11 @@ export const CONSOLA_CATALOGOS_ROUTES: Routes = [
     loadComponent: () => import('./pages/item-formulario/item-formulario.page').then((modulo) => modulo.ItemFormularioPage),
   },
   {
+    path: ':codigo/importar',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS.importar)],
+    loadComponent: () => import('./pages/importacion/importacion.page').then((modulo) => modulo.ImportacionPage),
+  },
+  {
     path: ':codigo',
     canMatch: [permisoGuard(PERMISOS_CATALOGOS.leer)],
     loadComponent: () => import('./pages/catalogo-detalle/catalogo-detalle.page').then((modulo) => modulo.CatalogoDetallePage),

@@ -1,0 +1,32 @@
+<div class="flex flex-col gap-4">
+  <ul class="grid grid-cols-2 gap-3 sm:grid-cols-5" [attr.aria-label]="mensajes.resumen">
+    @for (contador of contadores(); track contador.etiqueta) {
+      <li
+        class="flex flex-col gap-1 rounded-tarjeta border p-3"
+        [class]="contador.destacado ? 'border-chip-advertencia bg-chip-advertencia text-sobre-chip-advertencia' : 'border-borde'"
+        [attr.data-contador]="contador.etiqueta"
+      >
+        <span class="text-sm">{{ contador.etiqueta }}</span>
+        <b class="text-2xl font-medium tabular-nums">{{ contador.valor }}</b>
+      </li>
+    }
+  </ul>
+
+  <mat-tab-group [attr.aria-label]="mensajes.muestra" animationDuration="0ms">
+    <mat-tab [label]="mensajes.altas + ' (' + previsualizacion().resumen.altas + ')'">
+      <div class="pt-3" data-muestra="altas">
+        <vit-tabla [columnas]="columnasAltas" [filas]="altas()" [total]="altas().length" [tamanoPagina]="tamanoMuestra" [textoVacio]="mensajes.sinMuestra" />
+      </div>
+    </mat-tab>
+    <mat-tab [label]="mensajes.cambios + ' (' + previsualizacion().resumen.cambios + ')'">
+      <div class="pt-3" data-muestra="cambios">
+        <vit-tabla [columnas]="columnasCambios" [filas]="cambios()" [total]="cambios().length" [tamanoPagina]="tamanoMuestra" [textoVacio]="mensajes.sinMuestra" />
+      </div>
+    </mat-tab>
+    <mat-tab [label]="mensajes.bajas + ' (' + previsualizacion().resumen.bajas + ')'">
+      <div class="pt-3" data-muestra="bajas">
+        <vit-tabla [columnas]="columnasBajas" [filas]="bajas()" [total]="bajas().length" [tamanoPagina]="tamanoMuestra" [textoVacio]="mensajes.sinMuestra" />
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

@@ -1,0 +1,27 @@
+<div class="flex flex-col gap-3">
+  <div role="alert" class="flex items-start gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-total-errores>
+    <mat-icon aria-hidden="true">error</mat-icon>
+    <p><b>{{ total() }}.</b> {{ mensajes.ningunCambio }}</p>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <h2 class="flex-1 text-base font-medium">{{ mensajes.titulo }}</h2>
+    <button mat-stroked-button type="button" data-accion="descargar-errores" [disabled]="descargando()" (click)="descargar()">
+      <mat-icon aria-hidden="true">download</mat-icon>
+      {{ mensajes.descargar }}
+    </button>
+  </div>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="visibles()"
+    [total]="filas().errores.length"
+    [indicePagina]="pagina().indice"
+    [tamanoPagina]="pagina().tamano"
+    (pagina)="pagina.set($event)"
+  />
+</div>

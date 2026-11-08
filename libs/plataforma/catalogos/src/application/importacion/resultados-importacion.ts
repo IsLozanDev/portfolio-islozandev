@@ -19,6 +19,8 @@ export interface BajaEnMuestra {
 
 export interface Previsualizacion {
   id: string;
+  /** La que pide `aplicar` (bloqueo optimista). */
+  version: number;
   estado: EstadoImportacion;
   versionOficial: string;
   fechaVigencia: string;
@@ -50,6 +52,7 @@ export function previsualizacionDe(importacion: Importacion, diferencias: Difere
   const { fechaVigencia } = importacion;
   return {
     id: importacion.id,
+    version: importacion.version,
     estado: importacion.estado,
     versionOficial: importacion.versionOficial,
     fechaVigencia,

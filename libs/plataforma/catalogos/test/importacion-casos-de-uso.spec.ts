@@ -78,6 +78,7 @@ describe('PrevisualizarImportacion (TR-RF-028)', () => {
       comando(csv('codigo;descripcion;orden', '01;Factura;1', '03;Boleta de venta;2', '07;Nota de crédito;3')),
     );
     expect(resultado).toMatchObject<Partial<Previsualizacion>>({
+      version: 0,
       estado: 'PREVISUALIZADA',
       versionOficial: '2026-06',
       fechaVigencia: '2026-06-01',
