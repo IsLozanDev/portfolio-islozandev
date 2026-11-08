@@ -7,6 +7,7 @@ import { CLOCK, ID_GENERATOR, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWo
 import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
+import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
 import { AltaTenant } from './org/alta-tenant.js';
@@ -32,13 +33,15 @@ export type AppOpciones = KernelInfraOptions &
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
   static register({ dataSource, validator, reintentosEventos, tenantOperador, ...seguridad }: AppOpciones): DynamicModule {
+    // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
+    const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     return {
       module: AppModule,
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
         OrgModule,
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
-        ParametrosModule.register({ redisUrl: seguridad.redisUrl }),
+        parametros,
         CorrelativosModule.register(),
         CatalogosModule.register({
           redisUrl: seguridad.redisUrl,
@@ -48,6 +51,11 @@ export class AppModule {
                 new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
               ),
             inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+          },
+          imports: [parametros],
+          parametrosCalendario: {
+            useFactory: (parametroPort: ParametroPort) => new ParametrosCalendarioCfg(parametroPort),
+            inject: [PARAMETRO_PORT],
           },
         }),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),

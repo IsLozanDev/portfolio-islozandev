@@ -3,6 +3,7 @@ import { ForbiddenError } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, SystemClock, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
+import type { DependenciasCalendario } from '../../src/application/feriados/dependencias-calendario.js';
 import type { DependenciasFeriados } from '../../src/application/feriados/dependencias-feriados.js';
 import type { DependenciasImportacion } from '../../src/application/importacion/dependencias-importacion.js';
 import type { DependenciasProcesarImportacion } from '../../src/application/importacion/procesar-importacion.js';
@@ -17,6 +18,7 @@ import { AjustesRepositorioTypeOrm } from '../../src/infrastructure/typeorm/ajus
 import { CatalogosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/catalogos.repositorio.js';
 import { ENTIDADES_CAT } from '../../src/infrastructure/typeorm/entidades.js';
 import { FeriadosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/feriados.repositorio.js';
+import { LecturaCalendarioTypeOrm } from '../../src/infrastructure/typeorm/lectura-calendario.typeorm.js';
 import { ItemsRepositorioTypeOrm } from '../../src/infrastructure/typeorm/items.repositorio.js';
 import { LecturaItemsTypeOrm } from '../../src/infrastructure/typeorm/lectura-items.typeorm.js';
 import { createTempDb, type TempDb } from './temp-db.js';
@@ -36,6 +38,10 @@ export interface EntornoCatalogos {
   dataSource: DataSource;
   dependencias: DependenciasCatalogos;
   feriados: DependenciasFeriados;
+  /** `sabado_habil` es un doble: ParametroPort vive en parametros, que catalogos no importa. */
+  calendario: DependenciasCalendario;
+  /** `sabado_habil` fijado por sucursal; sin valor, el defecto true. */
+  sabadoHabilPorSucursal: Map<string, boolean>;
   importacion: DependenciasImportacion;
   procesar: DependenciasProcesarImportacion;
   canal: CanalAvanceMemoria;
@@ -87,6 +93,14 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
     verificadorOperador: dependencias.verificadorOperador,
   };
 
+  const sabadoHabilPorSucursal = new Map<string, boolean>();
+  const calendario: DependenciasCalendario = {
+    unidadDeTrabajo,
+    contexto,
+    lectura: new LecturaCalendarioTypeOrm(unidadDeTrabajo),
+    parametros: { sabadoHabil: async (sucursalId) => (sucursalId === null ? undefined : sabadoHabilPorSucursal.get(sucursalId)) ?? true },
+  };
+
   const importaciones = new ImportacionesRepositorioTypeOrm(unidadDeTrabajo);
   const canal = new CanalAvanceMemoria();
   const cola = { trabajos: [] as TrabajoImportacion[], encolar: async (trabajo: TrabajoImportacion) => void cola.trabajos.push(trabajo) };
@@ -121,6 +135,8 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
     dataSource,
     dependencias,
     feriados,
+    calendario,
+    sabadoHabilPorSucursal,
     importacion,
     procesar,
     canal,

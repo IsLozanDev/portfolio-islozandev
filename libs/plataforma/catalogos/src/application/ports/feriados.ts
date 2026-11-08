@@ -22,3 +22,9 @@ export interface RepositorioFeriados {
    */
   delAnio(anio: number, sucursalId: string | null): Promise<Feriado[]>;
 }
+
+/** `cat.fechas_feriado`, con la RLS del tenant del contexto. */
+export interface LecturaCalendario {
+  /** Fechas `YYYY-MM-DD` sin repetir entre `desde` y `hasta` (inclusive), con los recurrentes proyectados. */
+  fechasFeriado(desde: string, hasta: string, sucursalId: string | null): Promise<string[]>;
+}

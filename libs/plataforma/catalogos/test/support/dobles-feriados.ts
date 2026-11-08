@@ -1,7 +1,9 @@
 import type { DomainEvent, TenantScope } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import type { DependenciasFeriados } from '../../src/application/feriados/dependencias-feriados.js';
-import type { RepositorioFeriados } from '../../src/application/ports/feriados.js';
+import type { DependenciasCalendario } from '../../src/application/feriados/dependencias-calendario.js';
+import type { ParametrosCalendario } from '../../src/application/ports/calendario.port.js';
+import type { LecturaCalendario, RepositorioFeriados } from '../../src/application/ports/feriados.js';
 import { chocan } from '../../src/domain/feriados/duplicado.js';
 import { SucursalNoEncontradaError } from '../../src/domain/feriados/errores.js';
 import { Feriado } from '../../src/domain/feriados/feriado.js';
@@ -104,6 +106,46 @@ export class FeriadosEnMemoria implements RepositorioFeriados {
   }
 }
 
+/** Como cat.fechas_feriado: globales, del tenant actual y de la sucursal pedida, con los recurrentes proyectados. */
+export class LecturaCalendarioEnMemoria implements LecturaCalendario {
+  readonly lecturas: { desde: string; hasta: string; sucursalId: string | null }[] = [];
+
+  constructor(
+    private readonly feriados: FeriadosEnMemoria,
+    private readonly tenantActual: () => string,
+  ) {}
+
+  async fechasFeriado(desde: string, hasta: string, sucursalId: string | null) {
+    this.lecturas.push({ desde, hasta, sucursalId });
+    const anios = Array.from({ length: Number(hasta.slice(0, 4)) - Number(desde.slice(0, 4)) + 1 }, (_, indice) => Number(desde.slice(0, 4)) + indice);
+    const fechas = new Set<string>();
+    for (const feriado of this.feriados.filas.values()) {
+      if (!this.aplica(feriado, sucursalId)) continue;
+      for (const anio of anios) {
+        const fecha = feriado.fechaEnAnio(anio);
+        if (fecha !== null && fecha >= desde && fecha <= hasta) fechas.add(fecha);
+      }
+    }
+    return [...fechas].sort();
+  }
+
+  private aplica(feriado: Feriado, sucursalId: string | null): boolean {
+    if (feriado.esGlobal) return true;
+    return feriado.tenantId === this.tenantActual() && (feriado.sucursalId === null || feriado.sucursalId === sucursalId);
+  }
+}
+
+/** `sabado_habil` fijado por sucursal; sin valor fijado, el defecto true. */
+export class ParametrosCalendarioDoble implements ParametrosCalendario {
+  readonly porSucursal = new Map<string, boolean>();
+  readonly consultas: (string | null)[] = [];
+
+  async sabadoHabil(sucursalId: string | null) {
+    this.consultas.push(sucursalId);
+    return (sucursalId !== null ? this.porSucursal.get(sucursalId) : undefined) ?? true;
+  }
+}
+
 function reconstituirCon(feriado: Feriado, version: number): Feriado {
   return Feriado.reconstituir(feriado.id, version, {
     alcance: feriado.alcance,
@@ -121,6 +163,11 @@ function reconstituirCon(feriado: Feriado, version: number): Feriado {
 
 export interface EscenarioFeriados {
   dependencias: DependenciasFeriados;
+  calendario: DependenciasCalendario;
+  lectura: LecturaCalendarioEnMemoria;
+  parametros: ParametrosCalendarioDoble;
+  /** Sucursal del contexto (X-Sucursal-Id); ninguna por defecto. */
+  enSucursal(sucursalId: string | undefined): void;
   feriados: FeriadosEnMemoria;
   publicados: DomainEvent[];
   /** Cambia el tenant del contexto (el cliente por defecto). */
@@ -167,12 +214,22 @@ export function escenarioFeriados(): EscenarioFeriados {
     },
   };
 
+  const lectura = new LecturaCalendarioEnMemoria(feriados, () => alcance.tenantId);
+  const parametros = new ParametrosCalendarioDoble();
+  const calendario: DependenciasCalendario = { unidadDeTrabajo: dependencias.unidadDeTrabajo, contexto: dependencias.contexto, lectura, parametros };
+
   return {
     dependencias,
+    calendario,
+    lectura,
+    parametros,
     feriados,
     publicados,
     comoTenant: (tenantId) => {
-      alcance = { tenantId };
+      alcance = { tenantId, branchId: alcance.branchId };
+    },
+    enSucursal: (sucursalId) => {
+      alcance = { tenantId: alcance.tenantId, branchId: sucursalId };
     },
   };
 }

@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -106,7 +106,8 @@
   "parametros": [
     { "codigo": "plat.sesion.minutos_inactividad", "descripcion": "Minutos de inactividad antes de cerrar la sesión", "tipo": "NUMERO", "valor_defecto": 30, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_gracia", "descripcion": "Días tras el vencimiento antes de suspender el tenant", "tipo": "NUMERO", "valor_defecto": 5, "alcance_maximo": "TENANT" },
-    { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" }
+    { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" },
+    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" }
   ],
   "indicadores": [],
   "reportes": []
