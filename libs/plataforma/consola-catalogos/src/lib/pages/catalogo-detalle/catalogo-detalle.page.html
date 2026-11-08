@@ -1,0 +1,55 @@
+<section class="flex flex-col gap-4">
+  <nav class="flex items-center gap-1 text-sm text-sobre-superficie-variante" [attr.aria-label]="mensajes.migas">
+    <a class="underline" routerLink="." [relativeTo]="rutaMontaje">{{ mensajes.migaCatalogos }}</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">{{ codigo }}</span>
+  </nav>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (cargando()) {
+    <vit-cargando />
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="library_books" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" routerLink="." [relativeTo]="rutaMontaje" data-accion="volver">{{ mensajes.volver }}</a>
+  } @else if (catalogo(); as detalle) {
+    <header class="flex flex-wrap items-start gap-3">
+      <div class="flex min-w-0 flex-[1_1_20rem] flex-col gap-2">
+        <h1 class="text-2xl font-medium">{{ detalle.nombre }}</h1>
+        <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-sobre-superficie-variante">
+          <span>{{ mensajes.codigo }} <b class="text-sobre-superficie">{{ detalle.codigo }}</b></span>
+          <vit-chip-estado [texto]="etiquetasAlcance[detalle.alcance]" [tono]="tonosAlcance[detalle.alcance]" />
+          <span>{{ mensajes.fuente }} <b class="text-sobre-superficie">{{ detalle.fuente ?? sinFuente }}</b></span>
+          <span>{{ mensajes.version }} <b class="text-sobre-superficie">{{ detalle.version }}</b></span>
+          <span>{{ mensajes.editablePorTenant }} <b class="text-sobre-superficie">{{ detalle.editablePorTenant ? mensajes.si : mensajes.no }}</b></span>
+        </p>
+      </div>
+      <a *siPermiso="permisos.gestionar" mat-stroked-button routerLink="editar" data-accion="editar">
+        <mat-icon aria-hidden="true">edit</mat-icon>
+        {{ mensajes.editar }}
+      </a>
+      @if (detalle.importable) {
+        <a *siPermiso="permisos.importar" mat-flat-button routerLink="importar" data-accion="importar">
+          <mat-icon aria-hidden="true">upload_file</mat-icon>
+          {{ mensajes.importar }}
+        </a>
+      }
+    </header>
+
+    <nav mat-tab-nav-bar [tabPanel]="panelCatalogo" [attr.aria-label]="mensajes.pestanas">
+      <a mat-tab-link [routerLink]="[]" [queryParams]="parametrosDePestana('items')" [active]="pestana() === 'items'" data-pestana="items">{{ mensajes.pestanaItems }}</a>
+      @if (detalle.importable) {
+        <a mat-tab-link [routerLink]="[]" [queryParams]="parametrosDePestana('importaciones')" [active]="pestana() === 'importaciones'" data-pestana="importaciones">
+          {{ mensajes.pestanaImportaciones }}
+        </a>
+      }
+    </nav>
+    <mat-tab-nav-panel #panelCatalogo>
+      @if (pestana() === 'items') {
+        <vit-items-catalogo [catalogo]="detalle" />
+      }
+    </mat-tab-nav-panel>
+  }
+</section>

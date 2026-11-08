@@ -102,7 +102,8 @@ Cada pantalla se verifica en tema claro y oscuro y a 600 px de ancho.
   - `iniciarSeguimientoImportaciones()` con `provideAppInitializer`.
 - **Back, cambio chico en `libs/plataforma/catalogos`**:
   - `importable: boolean` en `CatalogoDto`;
-  - ruta nueva `GET /v1/catalogos/{codigo}/items-globales/{id}`.
+  - ruta nueva `GET /v1/catalogos/{codigo}/items-globales/{id}`;
+  - `codigo` del catálogo en las importaciones activas y `version` en la previsualización (decididos al implementar).
 - **Manifiesto PLAT `1.12.0`**: opción de menú `plat.consola.catalogos`.
 - **`docs/roadmap-specs.md`**: fila 19d con el contenido de este spec y fila nueva 19e.
 - **Pruebas**:
@@ -141,6 +142,7 @@ Cada pantalla se verifica en tema claro y oscuro y a 600 px de ancho.
 
 - `libs/plataforma/catalogos/src/interface/catalogos.dto.ts`: `CatalogoDto.importable`, calculado en el mapeo con `TABLAS_IMPORTABLES.includes(codigo)`.
 - `libs/plataforma/catalogos/src/interface/catalogos.controller.ts`: `@Get(':codigo/items-globales/:id')` con `plat.catalogo.item_gestionar`. Usa un caso de uso nuevo, `ObtenerItemGlobal`, sobre el repositorio de ítems del 19a.
+- `libs/plataforma/catalogos/src/interface/importaciones.*`: `ImportacionActivaDto.codigo` (el código del catálogo) y `PrevisualizacionDto.version` (la que pide `aplicar`).
 - `libs/shared/shell/src/lib/components/layout/layout.component.html`: `<vit-tareas-en-curso />` antes de `<vit-selector-sucursal />`.
 - `libs/shared/shell/src/index.ts`: exporta `TareasEnCursoService` y el tipo `TareaEnCurso`.
 - `apps/plataforma-consola/src/app/app.routes.ts`: `consola/catalogos` va antes de `consola`, como `consola/soporte`.
@@ -168,6 +170,8 @@ importable: boolean;   // true si codigo está en TABLAS_IMPORTABLES
   - La aplicación de importaciones del 19b no pasa por esos casos de uso: usa sus funciones `SECURITY DEFINER`, así que no se afecta.
   - Editar la definición del catálogo (nombre, fuente) sigue permitido.
 - La ruta estática `items-globales/:id` no choca con `items/administracion`: tienen prefijos distintos.
+- `GET /v1/catalogos/importaciones?activas=true` suma `codigo` a cada activa: el seguimiento lo necesita para el título al recargar.
+- `POST /v1/catalogos/{codigo}/importaciones` (201) suma `version`: la página la envía tal cual en `aplicar`.
 
 ### Front, `libs/plataforma/consola-catalogos`
 
@@ -726,6 +730,8 @@ vaciar(): void;
 - **Sí: el estado del asistente de importación solo en memoria de la página.** Recargar vuelve al paso 1. La previsualización sigue en la base y la próxima la vence. No hay datos personales que preservar, pero tampoco hace falta un borrador.
 - **Sí: lista de catálogos filtrada en el cliente.** `GET /v1/catalogos` no pagina y son decenas de filas.
 - **Sí: la opción de menú usa `item_gestionar` y no `leer`.** Un administrador de configuración de un tenant cliente tiene `leer` y no debe ver la consola de catálogos.
+- **Sí: `codigo` en las importaciones activas.** Lo decidió el usuario al implementar. Sin él, el seguimiento no puede titular la tarea al recargar. **No:** un `GET` del detalle por cada activa, ni un título sin el código.
+- **Sí: `version` en la respuesta de la previsualización.** Lo decidió el usuario al implementar. **No:** enviar `version: 0` dando por hecho que nace en 0.
 - **Sí: `exigirMfa()` antes de cada escritura.** `gestionar`, `item_gestionar` e `importar` son sensibles. La consola exige aal2, pero la recencia de 15 min la valida la API.
 
 ## Riesgos

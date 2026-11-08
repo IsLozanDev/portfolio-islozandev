@@ -64,6 +64,9 @@
 <ng-template #celda let-fila let-columna="columna">
   @if (columna.tono; as tonoDe) {
     <vit-chip-estado [texto]="textoDe(fila, columna.clave)" [tono]="tonoDe(fila)" />
+  } @else if (columna.icono?.(fila); as nombreIcono) {
+    <mat-icon class="align-middle" aria-hidden="true">{{ nombreIcono }}</mat-icon>
+    <span class="sr-only">{{ valorDe(fila, columna.clave) }}</span>
   } @else {
     {{ valorDe(fila, columna.clave) }}
   }

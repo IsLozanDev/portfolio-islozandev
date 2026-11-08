@@ -2,6 +2,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, contentChild, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl, MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
 import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -21,7 +22,7 @@ export const BREAKPOINT_MOVIL = '(max-width: 599.98px)';
 /** Tabla con paginación y orden del lado del servidor: recibe la página actual y el total, y emite los cambios. En celular se pinta como lista. */
 @Component({
   selector: 'vit-tabla',
-  imports: [NgTemplateOutlet, MatTableModule, MatSortModule, MatPaginatorModule, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent],
+  imports: [NgTemplateOutlet, MatIconModule, MatTableModule, MatSortModule, MatPaginatorModule, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent],
   providers: [{ provide: MatPaginatorIntl, useClass: PaginadorEnEspanol }],
   templateUrl: './tabla.component.html',
 })
