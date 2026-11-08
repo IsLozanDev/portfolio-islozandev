@@ -5,8 +5,8 @@ import type { EstadoImportacion } from '../../domain/importacion/tipos.js';
 import type { ImportacionListada } from '../ports/importacion.js';
 import type { Seguimiento } from './avance.js';
 
-/** Fila de `?activas=true`: con el estado y el avance que da Redis. */
-export type ImportacionActiva = Omit<ImportacionListada, 'estado'> & Seguimiento;
+/** Fila de `?activas=true`: con el código del catálogo, que el seguimiento muestra, y el estado y el avance que da Redis. */
+export type ImportacionActiva = Omit<ImportacionListada, 'estado'> & Seguimiento & { codigo: string };
 
 const MUESTRA_POR_TIPO = 20;
 

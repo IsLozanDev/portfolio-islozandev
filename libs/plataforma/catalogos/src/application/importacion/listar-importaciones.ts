@@ -1,7 +1,7 @@
 import { buscarCatalogo, exigirOperador } from '../dependencias-catalogos.js';
 import type { ImportacionListada, Listado, Pagina } from '../ports/importacion.js';
 import { seguimientoDe } from './avance.js';
-import type { DependenciasImportacion } from './dependencias-importacion.js';
+import { codigoDeCatalogo, type DependenciasImportacion } from './dependencias-importacion.js';
 import type { ImportacionActiva } from './resultados-importacion.js';
 
 export const TAMANO_PAGINA_MAXIMO = 50;
@@ -21,11 +21,13 @@ export class ListarImportaciones {
 
   /** Las EN_COLA que lanzó el usuario, con el avance de Redis: las que el front sigue por SSE. */
   async activas(comando: { actorId: string }): Promise<ImportacionActiva[]> {
-    const { unidadDeTrabajo, importaciones, canal } = this.dependencias;
+    const { unidadDeTrabajo, importaciones, catalogos, canal } = this.dependencias;
     const enCola = await unidadDeTrabajo.run(async () => {
       await exigirOperador(this.dependencias);
-      return importaciones.activasDe(comando.actorId);
+      const listadas = await importaciones.activasDe(comando.actorId);
+      // Una EN_COLA por catálogo como mucho (ux_importacion_activa): pocas lecturas.
+      return Promise.all(listadas.map(async (listada) => ({ ...listada, codigo: await codigoDeCatalogo(catalogos, listada.catalogoId) })));
     });
-    return Promise.all(enCola.map(async (listada) => ({ ...listada, ...(await seguimientoDe(canal, listada.id, listada.estado)) })));
+    return Promise.all(enCola.map(async (activa) => ({ ...activa, ...(await seguimientoDe(canal, activa.id, activa.estado)) })));
   }
 }

@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -15,6 +15,7 @@ import { ETIQUETAS_ALCANCE, MENSAJES_DETALLE_CATALOGO, MENSAJES_CATALOGOS } from
 import { PERMISOS_CATALOGOS } from '../../models/permisos-catalogos';
 import { TONOS_ALCANCE } from '../../models/tonos';
 import { CatalogosCliente } from '../../services/catalogos.cliente';
+import { SeguimientoImportacionesService } from '../../services/seguimiento-importaciones.service';
 import { PARAMETRO_URL_DETALLE, PESTANA_POR_DEFECTO, pestanaDesdeUrl, type PestanaDetalle } from '../../utils/filtro-url';
 
 const PARAMETRO_CODIGO = 'codigo';
@@ -28,6 +29,8 @@ const PARAMETRO_CODIGO = 'codigo';
 export class CatalogoDetallePage {
   private readonly catalogos = inject(CatalogosCliente);
   private readonly ruta = inject(ActivatedRoute);
+  private readonly items = viewChild(ItemsCatalogoComponent);
+  private readonly historial = viewChild(HistorialImportacionesComponent);
 
   protected readonly mensajes = MENSAJES_DETALLE_CATALOGO;
   protected readonly sinFuente = MENSAJES_CATALOGOS.sinFuente;
@@ -48,6 +51,13 @@ export class CatalogoDetallePage {
 
   constructor() {
     void this.cargar();
+    // Sin polling: al terminar una importación, el historial y los ítems abiertos se ponen al día.
+    inject(SeguimientoImportacionesService)
+      .terminadas.pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        void this.items()?.recargar();
+        void this.historial()?.recargar();
+      });
   }
 
   protected parametrosDePestana(pestana: PestanaDetalle): Record<string, string> {

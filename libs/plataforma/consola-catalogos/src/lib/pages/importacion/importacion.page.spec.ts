@@ -194,7 +194,7 @@ describe('ImportacionPage', () => {
 
   it('sin bajas pide la confirmación normal; el 202 llama a seguir y navega a ?pestana=importaciones', async () => {
     await llegarAlPaso2();
-    const seguir = vi.spyOn(TestBed.inject(SeguimientoImportacionesService), 'seguir');
+    const seguir = vi.spyOn(TestBed.inject(SeguimientoImportacionesService), 'seguir').mockImplementation(() => undefined);
     accion('aplicar')?.click();
     await consola.estable();
 

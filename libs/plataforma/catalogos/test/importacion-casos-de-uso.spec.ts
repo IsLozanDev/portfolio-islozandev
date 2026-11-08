@@ -235,7 +235,7 @@ describe('Consultar, listar y descargar', () => {
     const importacion = await actual.importaciones.buscar(previa.id);
     importacion?.encolar(ANA, AHORA);
     if (importacion) await actual.importaciones.guardar(importacion, importacion.version);
-    expect((await listar.activas({ actorId: ANA })).map((item) => item.id)).toEqual([previa.id]);
+    expect((await listar.activas({ actorId: ANA })).map((item) => [item.id, item.codigo])).toEqual([[previa.id, 'TIPO_COMPROBANTE']]);
     expect(await listar.activas({ actorId: 'otro-usuario' })).toEqual([]);
   });
 

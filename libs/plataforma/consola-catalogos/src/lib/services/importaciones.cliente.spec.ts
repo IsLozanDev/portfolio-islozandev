@@ -122,10 +122,10 @@ describe('ImportacionesCliente', () => {
     expect(historial.items[0]).toMatchObject({ id: ID, estado: 'APLICADA', archivoNombre: 'ubigeo.csv', resumen: { altas: 18, sinCambios: 1874 } });
   });
 
-  it('activas pide ?activas=true y trae el avance', async () => {
+  it('activas pide ?activas=true y trae el código del catálogo y el avance', async () => {
     const promesa = cliente.activas();
-    http.expectOne({ method: 'GET', url: `${API_URL}/catalogos/importaciones?activas=true` }).flush([{ ...LISTADA, avance: 42 }]);
-    expect(await promesa).toEqual([expect.objectContaining({ id: ID, estado: 'EN_COLA', avance: 42 })]);
+    http.expectOne({ method: 'GET', url: `${API_URL}/catalogos/importaciones?activas=true` }).flush([{ ...LISTADA, codigo: 'UBIGEO', avance: 42 }]);
+    expect(await promesa).toEqual([expect.objectContaining({ id: ID, codigo: 'UBIGEO', estado: 'EN_COLA', avance: 42 })]);
   });
 
   it('detalle trae el código del catálogo, el estado y el vencimiento', async () => {

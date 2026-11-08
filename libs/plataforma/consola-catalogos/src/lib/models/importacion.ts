@@ -160,22 +160,22 @@ export interface HistorialImportacionesRespuesta {
   total: number;
 }
 
-/** Una importación en cola del usuario, con el avance que da Redis (0-99). */
+/** Una importación en cola del usuario, con el código del catálogo y el avance que da Redis (0-99). */
 export interface ImportacionActiva extends ImportacionListada {
+  codigo: string;
   avance: number | null;
 }
 
 export interface ImportacionActivaRespuesta extends ImportacionListadaRespuesta {
+  codigo: string;
   avance: number | null;
 }
 
 export interface DetalleImportacion extends ImportacionActiva {
-  codigo: string;
   venceEn: string;
 }
 
 export interface DetalleImportacionRespuesta extends ImportacionActivaRespuesta {
-  codigo: string;
   vence_en: string;
 }
 
@@ -258,11 +258,11 @@ export function aImportacionListada(respuesta: ImportacionListadaRespuesta): Imp
 }
 
 export function aImportacionActiva(respuesta: ImportacionActivaRespuesta): ImportacionActiva {
-  return { ...aImportacionListada(respuesta), avance: respuesta.avance };
+  return { ...aImportacionListada(respuesta), codigo: respuesta.codigo, avance: respuesta.avance };
 }
 
 export function aDetalleImportacion(respuesta: DetalleImportacionRespuesta): DetalleImportacion {
-  return { ...aImportacionActiva(respuesta), codigo: respuesta.codigo, venceEn: respuesta.vence_en };
+  return { ...aImportacionActiva(respuesta), venceEn: respuesta.vence_en };
 }
 
 export function aAvisoImportacion(respuesta: AvisoImportacionRespuesta): AvisoImportacion {

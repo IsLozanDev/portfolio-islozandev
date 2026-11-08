@@ -40,7 +40,7 @@ export function historialDto(listado: Listado<ImportacionListada>): HistorialImp
 }
 
 export function activaDto(activa: ImportacionActiva): ImportacionActivaDto {
-  return { ...listadaDto(activa), estado: activa.estado, avance: activa.avance };
+  return { ...listadaDto(activa), codigo: activa.codigo, estado: activa.estado, avance: activa.avance };
 }
 
 export function detalleDto(detalle: DetalleImportacion): DetalleImportacionDto {

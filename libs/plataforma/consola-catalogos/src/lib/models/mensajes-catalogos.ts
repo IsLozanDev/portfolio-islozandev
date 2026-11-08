@@ -256,6 +256,32 @@ export const MENSAJES_SEGUIMIENTO = {
   enCola: 'En cola',
 } as const;
 
+export function mensajeAplicando(avance: number): string {
+  return `Aplicando ${avance} %`;
+}
+
+function conteo(cantidad: number, singular: string, plural: string): string {
+  return `${cantidad} ${cantidad === 1 ? singular : plural}`;
+}
+
+/** «UBIGEO importado: 18 altas, 0 cambios, 1 baja». */
+export function mensajeImportacionAplicada(codigo: string, resumen: { altas: number; cambios: number; bajas: number }): string {
+  const detalle = [conteo(resumen.altas, 'alta', 'altas'), conteo(resumen.cambios, 'cambio', 'cambios'), conteo(resumen.bajas, 'baja', 'bajas')].join(', ');
+  return `${codigo} importado: ${detalle}`;
+}
+
+export function mensajeImportacionFallida(codigo: string, motivo: string | null): string {
+  return motivo ? `La importación de ${codigo} falló: ${motivo}` : `La importación de ${codigo} falló`;
+}
+
+export function mensajeImportacionObsoleta(codigo: string): string {
+  return `La importación de ${codigo} quedó obsoleta: el catálogo cambió. Vuelva a previsualizar`;
+}
+
+export function mensajeSeguimientoPerdido(codigo: string): string {
+  return `Se perdió el seguimiento de ${codigo}. Revise el historial del catálogo`;
+}
+
 export function mensajeTituloImportando(codigo: string): string {
   return `Importando ${codigo}`;
 }
