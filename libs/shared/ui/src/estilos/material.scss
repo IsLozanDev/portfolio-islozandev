@@ -146,6 +146,12 @@ $tabla-ancho-maximo-celda: 12rem;
     font-size: 12px;
   }
 
+  /* Panel de tareas en curso de la barra (19d): vive en el overlay del CDK, fuera del componente. */
+  .vit-panel-tareas {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+  }
+
   /* En el riel, sobre la esquina del ícono con un borde del color de la franja. */
   .vit-insignia-riel {
     position: absolute;

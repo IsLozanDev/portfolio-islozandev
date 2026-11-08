@@ -3,11 +3,15 @@
     "**/dist/**": true,
     "**/.nx/**": true,
     "**/.angular/**": true,
-    "**/node_modules/**": true
+    "**/node_modules/**": true,
+    "**/coverage/**": true,
+    "**/tmp/**": true,
+    "**/.playwright-mcp/**": true
   },
   "search.exclude": {
     "**/dist": true,
     "**/.nx": true,
     "**/.angular": true
-  }
+  },
+  "typescript.tsserver.maxTsServerMemory": 4096
 }

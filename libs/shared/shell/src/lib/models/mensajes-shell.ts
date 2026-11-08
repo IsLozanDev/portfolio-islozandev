@@ -41,6 +41,10 @@ export const MENSAJES_SHELL = {
   soporteTermino: 'El acceso de soporte terminó',
   saliDeSoporte: 'Salió de la sesión de soporte',
   errorSalirDeSoporte: 'No se pudo salir de la sesión de soporte. Inténtelo de nuevo.',
+  tareasEnCurso: 'Tareas en curso',
+  enCola: 'En cola',
+  verTarea: 'Ver detalle',
+  avisoAlTerminar: 'Al terminar, verá un aviso.',
 } as const;
 
 /** Anuncio del número de resultados de la búsqueda en el menú. */
@@ -74,4 +78,13 @@ export function mensajeTerminaA(hora: string): string {
 /** Lo que oye el lector de pantalla junto a la insignia numérica de una opción del menú. */
 export function mensajeInsigniaMenu(cantidad: number): string {
   return cantidad === 1 ? '1 pendiente' : `${cantidad} pendientes`;
+}
+
+/** Texto accesible del indicador de la barra; se anuncia cuando cambia la cantidad. */
+export function mensajeTareasEnCurso(cantidad: number): string {
+  return `Tareas en curso: ${cantidad}`;
+}
+
+export function mensajeAvancePorcentaje(avance: number): string {
+  return `${avance} %`;
 }

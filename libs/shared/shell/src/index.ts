@@ -6,3 +6,5 @@ export { AccionSensibleService } from './lib/services/accion-sensible.service';
 export { provideVolverA } from './lib/config/provide-volver-a';
 export type { OrigenesVolverA } from './lib/config/volver-a.config';
 export { InsigniasMenuService, type InsigniasMenu } from './lib/services/insignias-menu.service';
+export { TareasEnCursoService } from './lib/services/tareas-en-curso.service';
+export type { TareaEnCurso } from './lib/models/tarea-en-curso';

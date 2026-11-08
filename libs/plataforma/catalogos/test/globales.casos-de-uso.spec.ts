@@ -3,7 +3,9 @@ import type { ContenidoItemComando } from '../src/application/contenido-item.js'
 import { CrearCatalogo, type CrearCatalogoComando } from '../src/application/crear-catalogo.js';
 import { EliminarItemGlobal } from '../src/application/eliminar-item-global.js';
 import { GuardarItemGlobal } from '../src/application/guardar-item-global.js';
+import { GuardarItemPropio } from '../src/application/guardar-item-propio.js';
 import { ListarCatalogos } from '../src/application/listar-catalogos.js';
+import { ObtenerItemGlobal } from '../src/application/obtener-item-global.js';
 import {
   AlcanceNoPermiteError,
   CatalogoDuplicadoError,
@@ -12,6 +14,7 @@ import {
   CodigoItemDuplicadoError,
   ItemNoEncontradoError,
   ItemReferenciadoError,
+  TablaSoloImportacionError,
   VersionObsoletaError,
 } from '../src/domain/errores.js';
 import { ANA, CLIENTE, OperadorRequeridoDoble, escenario, type Escenario } from './support/dobles.js';
@@ -135,9 +138,9 @@ describe('GuardarItemGlobal y EliminarItemGlobal (TR-RF-023)', () => {
   });
 
   it('TR-CA-060: el DNI guarda longitud 8 y regex', async () => {
-    await actual.catalogo('TIPO_DOC_IDENTIDAD', 'GLOBAL');
+    await actual.catalogo('DOC_PRUEBA', 'GLOBAL');
     const item = await new GuardarItemGlobal(actual.dependencias).crear({
-      catalogo: 'TIPO_DOC_IDENTIDAD',
+      catalogo: 'DOC_PRUEBA',
       codigo: 'DNI',
       ...contenido({ nombre: 'DNI', codigoExterno: '1', atributos: { longitud: 8, regex: '^[0-9]{8}$' } }),
       actorId: ANA,
@@ -229,5 +232,90 @@ describe('GuardarItemGlobal y EliminarItemGlobal (TR-RF-023)', () => {
     await expect(
       new EliminarItemGlobal(actual.dependencias).ejecutar({ catalogo: 'MEDIO_PAGO', itemId: yape.id, version: 4, actorId: ANA }),
     ).rejects.toThrow(VersionObsoletaError);
+  });
+});
+
+describe('Tablas importables en solo lectura manual (spec 19d)', () => {
+  let actual: Escenario;
+  beforeEach(() => {
+    actual = escenario();
+  });
+
+  it('crear, actualizar y borrar un global de UBIGEO dan TABLA_SOLO_IMPORTACION sin escribir ni publicar', async () => {
+    const ubigeo = await actual.catalogo('UBIGEO', 'GLOBAL');
+    const lima = await actual.itemGlobal(ubigeo, '150101');
+    const escrituras = actual.items.escrituras;
+    const guardar = new GuardarItemGlobal(actual.dependencias);
+
+    await expect(guardar.crear({ catalogo: 'UBIGEO', codigo: '150102', ...contenido(), actorId: ANA })).rejects.toThrow(
+      new TablaSoloImportacionError(),
+    );
+    await expect(guardar.actualizar({ catalogo: 'UBIGEO', itemId: lima.id, version: 0, ...contenido({ activo: false }), actorId: ANA })).rejects.toThrow(
+      TablaSoloImportacionError,
+    );
+    await expect(
+      new EliminarItemGlobal(actual.dependencias).ejecutar({ catalogo: 'UBIGEO', itemId: lima.id, version: 0, actorId: ANA }),
+    ).rejects.toThrow(TablaSoloImportacionError);
+    expect(actual.items.escrituras).toBe(escrituras);
+    expect(actual.publicados).toEqual([]);
+  });
+
+  it('el mensaje dice que la tabla cambia solo por importación', () => {
+    expect(new TablaSoloImportacionError()).toMatchObject({ code: 'TABLA_SOLO_IMPORTACION', message: 'Esta tabla se actualiza solo por importación' });
+  });
+
+  it('la definición de una tabla importable se sigue editando', async () => {
+    await actual.catalogo('UBIGEO', 'GLOBAL');
+    const definicion = await new ActualizarCatalogo(actual.dependencias).ejecutar({
+      codigo: 'UBIGEO',
+      nombre: 'Ubigeo INEI',
+      fuente: 'INEI',
+      editablePorTenant: false,
+      version: 1,
+      actorId: ANA,
+    });
+    expect(definicion).toMatchObject({ nombre: 'Ubigeo INEI', cambiado: true });
+  });
+});
+
+describe('ObtenerItemGlobal (spec 19d)', () => {
+  let actual: Escenario;
+  beforeEach(() => {
+    actual = escenario();
+  });
+
+  it('devuelve el global con su versión y sus atributos', async () => {
+    await actual.catalogo('MEDIO_PAGO', 'MIXTO');
+    const creado = await new GuardarItemGlobal(actual.dependencias).crear({
+      catalogo: 'MEDIO_PAGO',
+      codigo: 'YAPE',
+      ...contenido({ atributos: { mascara: '999 999 999', propia: true } }),
+      actorId: ANA,
+    });
+    expect(await new ObtenerItemGlobal(actual.dependencias).ejecutar({ catalogo: 'MEDIO_PAGO', itemId: creado.id })).toEqual({
+      ...creado,
+      atributos: { mascara: '999 999 999', propia: true },
+      version: 0,
+    });
+  });
+
+  it('un propio, uno de otro catálogo o uno inexistente dan ITEM_NO_ENCONTRADO', async () => {
+    const mixto = await actual.catalogo('MEDIO_PAGO', 'MIXTO');
+    await actual.catalogo('ESPECIALIDAD', 'MIXTO');
+    const yape = await actual.itemGlobal(mixto, 'YAPE');
+    const propio = await new GuardarItemPropio(actual.dependencias).crear({ catalogo: 'MEDIO_PAGO', codigo: 'VALE', ...contenido(), actorId: ANA });
+    const obtener = new ObtenerItemGlobal(actual.dependencias);
+
+    await expect(obtener.ejecutar({ catalogo: 'MEDIO_PAGO', itemId: propio.id })).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener.ejecutar({ catalogo: 'ESPECIALIDAD', itemId: yape.id })).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener.ejecutar({ catalogo: 'MEDIO_PAGO', itemId: '0193f3a0-0000-7000-8000-0000000dffff' })).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener.ejecutar({ catalogo: 'NO_EXISTE', itemId: yape.id })).rejects.toThrow(CatalogoNoExisteError);
+  });
+
+  it('fuera del operador da 403 OPERADOR_REQUERIDO', async () => {
+    const mixto = await actual.catalogo('MEDIO_PAGO', 'MIXTO');
+    const yape = await actual.itemGlobal(mixto, 'YAPE');
+    actual.comoTenant(CLIENTE);
+    await expect(new ObtenerItemGlobal(actual.dependencias).ejecutar({ catalogo: 'MEDIO_PAGO', itemId: yape.id })).rejects.toThrow(OperadorRequeridoDoble);
   });
 });

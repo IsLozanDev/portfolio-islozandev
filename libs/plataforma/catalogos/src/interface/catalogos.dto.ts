@@ -24,6 +24,9 @@ export class CatalogoDto {
 
   @ApiProperty({ description: 'Versión de contenido global y bloqueo optimista', example: 1 })
   version!: number;
+
+  @ApiProperty({ description: 'true en las tablas oficiales: sus ítems globales cambian solo por importación' })
+  importable!: boolean;
 }
 
 export class CatalogoActualizadoDto extends CatalogoDto {

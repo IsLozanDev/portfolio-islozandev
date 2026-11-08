@@ -1,0 +1,47 @@
+<!-- Fuera del @if: la región viva debe existir antes de que cambie la cantidad para que se anuncie. -->
+<span class="sr-only" aria-live="polite">{{ cantidad() > 0 ? etiqueta() : '' }}</span>
+
+@if (cantidad() > 0) {
+  <button
+    mat-button
+    type="button"
+    data-accion="tareas-en-curso"
+    [matMenuTriggerFor]="panelTareas"
+    [attr.aria-label]="etiqueta()"
+  >
+    <span class="vit-anillo-tareas" aria-hidden="true">
+      @if (promedio() === null) {
+        <mat-progress-spinner mode="indeterminate" [diameter]="diametroSpinner" [strokeWidth]="grosorSpinner" />
+      } @else {
+        <mat-progress-spinner mode="determinate" [value]="promedio() ?? 0" [diameter]="diametroSpinner" [strokeWidth]="grosorSpinner" />
+      }
+      <span class="vit-insignia-tareas">{{ cantidad() }}</span>
+    </span>
+    <!-- A menos de 768 px solo el spinner y la insignia. El span oculta: el CSS de mat-button le gana a `hidden`. -->
+    <span class="ms-2 hidden md:inline" data-texto="avance">{{ textoAvance() }}</span>
+  </button>
+
+  <mat-menu #panelTareas="matMenu" xPosition="before" class="vit-panel-tareas">
+    <p class="px-4 pt-2 pb-3 text-sm font-medium text-sobre-superficie-variante">{{ mensajes.tareasEnCurso }}</p>
+    @for (tarea of tareas(); track tarea.id) {
+      <div class="flex flex-col gap-2 border-t border-borde px-4 py-3" data-tarea>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-sm font-medium text-sobre-superficie">{{ tarea.titulo }}</span>
+          <span class="text-sm text-sobre-superficie-variante tabular-nums">{{ tarea.detalle }}</span>
+        </div>
+        @if (tarea.avance === null) {
+          <mat-progress-bar mode="indeterminate" [attr.aria-label]="tarea.titulo" />
+        } @else {
+          <mat-progress-bar mode="determinate" [value]="tarea.avance" [attr.aria-label]="tarea.titulo" />
+        }
+      </div>
+      @if (tarea.ruta; as ruta) {
+        <button mat-menu-item type="button" data-accion="ver-tarea" (click)="abrir(ruta)">
+          <mat-icon aria-hidden="true">open_in_new</mat-icon>
+          <span>{{ mensajes.verTarea }}<span class="sr-only">: {{ tarea.titulo }}</span></span>
+        </button>
+      }
+    }
+    <p class="border-t border-borde px-4 pt-2 pb-1 text-xs text-sobre-superficie-variante">{{ mensajes.avisoAlTerminar }}</p>
+  </mat-menu>
+}

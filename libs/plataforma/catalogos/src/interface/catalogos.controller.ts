@@ -28,10 +28,12 @@ import { GuardarItemGlobal } from '../application/guardar-item-global.js';
 import { GuardarItemPropio } from '../application/guardar-item-propio.js';
 import { ListarCatalogos } from '../application/listar-catalogos.js';
 import { ListarItemsAdministracion, type PaginaItemsAdministracion } from '../application/listar-items-administracion.js';
+import { ObtenerItemGlobal } from '../application/obtener-item-global.js';
 import { ORIGENES_ITEM, type FilaAdministracion } from '../application/ports/items-administracion.js';
 import type { ItemVisible } from '../application/ports/repositorios.js';
 import type { Actualizado, DefinicionCatalogo, ItemGuardado } from '../application/resultados.js';
 import { ItemNoEncontradoError } from '../domain/errores.js';
+import { esTablaImportable } from '../domain/importacion/tipos.js';
 import { PERMISOS_CAT } from '../domain/permisos-cat.js';
 import { ALCANCES_CATALOGO, ESTADOS_ITEM } from '../domain/tipos.js';
 import {
@@ -141,6 +143,7 @@ export class CatalogosController {
     @Inject(ConsultarItems) private readonly consultarItems: ConsultarItems,
     @Inject(GuardarItemGlobal) private readonly guardarItemGlobal: GuardarItemGlobal,
     @Inject(EliminarItemGlobal) private readonly eliminarItemGlobal: EliminarItemGlobal,
+    @Inject(ObtenerItemGlobal) private readonly obtenerItemGlobal: ObtenerItemGlobal,
     @Inject(GuardarItemPropio) private readonly guardarItemPropio: GuardarItemPropio,
     @Inject(EliminarItemPropio) private readonly eliminarItemPropio: EliminarItemPropio,
     @Inject(AjustarItem) private readonly ajustarItem: AjustarItem,
@@ -244,10 +247,19 @@ export class CatalogosController {
   @ApiCreatedResponse({ type: ItemDto })
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA o ITEM_INVALIDO' })
   @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE' })
-  @ApiConflictResponse({ description: 'CODIGO_DUPLICADO o ALCANCE_NO_PERMITE' })
+  @ApiConflictResponse({ description: 'CODIGO_DUPLICADO, ALCANCE_NO_PERMITE o TABLA_SOLO_IMPORTACION' })
   async crearItemGlobal(@PrincipalActual() principal: Principal, @Param('codigo') codigo: string, @Body() cuerpo: unknown): Promise<ItemDto> {
     const datos = validar(EsquemaCrearItem, cuerpo);
     return itemDto(await this.guardarItemGlobal.crear({ catalogo: codigo, codigo: datos.codigo, ...contenidoDe(datos), actorId: principal.usuarioId }));
+  }
+
+  @Get(':codigo/items-globales/:id')
+  @Permiso(PERMISOS_CAT.itemGestionar)
+  @ApiOkResponse({ type: ItemDto, description: 'El ítem global con su versión y atributos, para editarlo' })
+  @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE o ITEM_NO_ENCONTRADO (id que no es UUID, inexistente, propio de un tenant o de otro catálogo)' })
+  async obtenerGlobal(@Param('codigo') codigo: string, @Param('id') id: string): Promise<ItemDto> {
+    const itemId = exigirUuid(id);
+    return itemDto(await this.obtenerItemGlobal.ejecutar({ catalogo: codigo, itemId }));
   }
 
   @Put(':codigo/items-globales/:id')
@@ -256,7 +268,7 @@ export class CatalogosController {
   @ApiOkResponse({ type: ItemActualizadoDto })
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA o ITEM_INVALIDO' })
   @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE o ITEM_NO_ENCONTRADO' })
-  @ApiConflictResponse({ description: 'VERSION_OBSOLETA' })
+  @ApiConflictResponse({ description: 'VERSION_OBSOLETA o TABLA_SOLO_IMPORTACION' })
   async actualizarItemGlobal(
     @PrincipalActual() principal: Principal,
     @Param('codigo') codigo: string,
@@ -276,7 +288,7 @@ export class CatalogosController {
   @ApiNoContentResponse()
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA' })
   @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE o ITEM_NO_ENCONTRADO' })
-  @ApiConflictResponse({ description: 'ITEM_REFERENCIADO (cierre su vigencia o inactívelo, TR-CA-061) o VERSION_OBSOLETA' })
+  @ApiConflictResponse({ description: 'ITEM_REFERENCIADO (cierre su vigencia o inactívelo, TR-CA-061), VERSION_OBSOLETA o TABLA_SOLO_IMPORTACION' })
   async eliminarGlobal(@PrincipalActual() principal: Principal, @Param('codigo') codigo: string, @Param('id') id: string, @Query() consulta: unknown): Promise<void> {
     const itemId = exigirUuid(id);
     const { version: versionLeida } = validar(EsquemaEliminar, consulta);
@@ -382,6 +394,7 @@ function catalogoDto(definicion: DefinicionCatalogo): CatalogoDto {
     fuente: definicion.fuente,
     editable_por_tenant: definicion.editablePorTenant,
     version: definicion.version,
+    importable: esTablaImportable(definicion.codigo),
   };
 }
 

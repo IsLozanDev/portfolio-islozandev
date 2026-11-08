@@ -1,6 +1,6 @@
 # SPEC 19c — Catálogos: feriados por alcance, `CalendarioPort` de días hábiles y lista de administración de ítems
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 19a, SPEC 09, SPEC 03
 > **Date:** 2026-11-07
 > **Objective:** Agregar a `libs/plataforma/catalogos` los feriados GLOBAL, TENANT y SUCURSAL con su administración bajo `/v1/feriados`, el `CalendarioPort` (`sumarDiasHabiles` y `esDiaHabil`) con el parámetro `plat.calendario.sabado_habil`, y la lista paginada de administración de ítems que la UI del 19d necesita.
