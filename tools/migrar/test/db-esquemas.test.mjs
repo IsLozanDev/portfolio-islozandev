@@ -79,6 +79,7 @@ const CASOS = [
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
   { migracion: '01e_sync_relay.sql', esquema: 'sync', prueba: 'tests/01e_sync_relay.test.sql' },
   { migracion: '01f_cat.sql', esquema: 'cat', prueba: 'tests/01f_cat.test.sql' },
+  { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
 ];
 
@@ -208,6 +209,22 @@ const objetosImportacion = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Tabla y funciones que agrega 01f_cat_feriado (6 en total).
+const objetosFeriado = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'cat.feriado' AS o WHERE to_regclass('cat.feriado') IS NOT NULL
+       UNION ALL SELECT 'cat.' || proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'cat' AND proname IN ('fechas_feriado', 'feriado_choca', 'items_administracion',
+              'guardar_feriado_global', 'eliminar_feriado_global')
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+const feriadosSemilla = async () =>
+  Number((await ejecutar(urlDb, `SELECT count(*) AS n FROM cat.feriado WHERE creado_por IS NULL`)).rows[0].n);
+
 const catalogosOficialesNuevos = async () =>
   Number(
     (
@@ -266,11 +283,19 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await objetosImportacion()).toEqual([]);
     expect(await catalogosOficialesNuevos()).toBe(0);
 
+    // El inverso de 01f_cat_feriado deja cat como lo dejó 01f_cat (con datos). Va antes que el de 01f_cat.
+    expect(await objetosFeriado()).toHaveLength(6);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_feriado.sql'), 'utf8'));
+    expect(await objetosFeriado()).toEqual([]);
+
     // El inverso de 01f_cat borra cat (con datos) y se puede reaplicar. Va primero: cat depende de org y seg.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat.sql'), 'utf8'));
     expect(await existeEsquema('cat')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01f_cat.sql'), 'utf8'));
     expect(await existeEsquema('cat')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01f_cat_feriado.sql'), 'utf8'));
+    expect(await objetosFeriado()).toHaveLength(6);
+    expect(await feriadosSemilla()).toBe(18);
     await ejecutar(urlDb, await readFile(rutaDb('01f_cat_importacion.sql'), 'utf8'));
     expect(await objetosImportacion()).toHaveLength(7);
     expect(await catalogosOficialesNuevos()).toBe(5);

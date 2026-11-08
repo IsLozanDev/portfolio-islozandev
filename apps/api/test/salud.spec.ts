@@ -1,14 +1,16 @@
 import 'reflect-metadata';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { ModulesContainer } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { CALENDARIO_PORT } from '@vitrina/plataforma/catalogos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { RegistrarEmpresa } from '@vitrina/plataforma/org';
-import { PARAMETRO_PORT } from '@vitrina/plataforma/parametros';
+import { PARAMETRO_PORT, ParametrosModule } from '@vitrina/plataforma/parametros';
 import { REGISTRO_ACCESO } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
 import { AltaTenant } from '../src/org/alta-tenant.js';
@@ -157,9 +159,28 @@ describe('api', () => {
     }
   });
 
+  it('GET /v1/docs-json publica las 5 rutas del spec 19c con bearer auth', async () => {
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    for (const [ruta, metodo] of [
+      ['/v1/feriados', 'get'],
+      ['/v1/feriados', 'post'],
+      ['/v1/feriados/{id}', 'put'],
+      ['/v1/feriados/{id}', 'delete'],
+      ['/v1/catalogos/{codigo}/items/administracion', 'get'],
+    ]) {
+      expect(paths[ruta]?.[metodo]?.security).toEqual([{ bearer: [] }]);
+    }
+  });
+
   it('ParametrosModule queda cableado: ParametroPort se resuelve con el AlcanceActor global de seg', () => {
     expect(app.get(PARAMETRO_PORT)).toBeInstanceOf(Object);
     expect(typeof app.get(PARAMETRO_PORT).valor).toBe('function');
+  });
+
+  it('CalendarioPort queda cableado y ParametrosModule se instancia una sola vez (spec 19c)', () => {
+    expect(typeof app.get(CALENDARIO_PORT).sumarDiasHabiles).toBe('function');
+    const instancias = [...app.get(ModulesContainer).values()].filter((modulo) => modulo.metatype === ParametrosModule);
+    expect(instancias).toHaveLength(1);
   });
 
   it('GET /v1/cfg/parametros sin token responde 401', async () => {

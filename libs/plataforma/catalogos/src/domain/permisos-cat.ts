@@ -7,4 +7,6 @@ export const PERMISOS_CAT = {
   itemPropio: 'plat.catalogo.item_propio',
   /** Spec 19b: sensible y solo del operador (TR-RN-009). */
   importar: 'plat.catalogo.importar',
+  /** Spec 19c: feriados del tenant y de sus sucursales; los globales, además, solo desde el operador. */
+  feriadoGestionar: 'plat.feriado.gestionar',
 } as const;

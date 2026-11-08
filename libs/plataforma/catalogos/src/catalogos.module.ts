@@ -1,4 +1,4 @@
-import { Logger, Module, type DynamicModule, type InjectionToken, type OnModuleDestroy } from '@nestjs/common';
+import { Logger, Module, type DynamicModule, type InjectionToken, type ModuleMetadata, type OnModuleDestroy } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
@@ -10,6 +10,14 @@ import { CrearCatalogo } from './application/crear-catalogo.js';
 import type { DependenciasCatalogos } from './application/dependencias-catalogos.js';
 import { EliminarItemGlobal } from './application/eliminar-item-global.js';
 import { EliminarItemPropio } from './application/eliminar-item-propio.js';
+import { ActualizarFeriado } from './application/feriados/actualizar-feriado.js';
+import { CrearFeriado } from './application/feriados/crear-feriado.js';
+import type { DependenciasCalendario } from './application/feriados/dependencias-calendario.js';
+import type { DependenciasFeriados } from './application/feriados/dependencias-feriados.js';
+import { EliminarFeriado } from './application/feriados/eliminar-feriado.js';
+import { EsDiaHabil } from './application/feriados/es-dia-habil.js';
+import { ListarFeriados } from './application/feriados/listar-feriados.js';
+import { SumarDiasHabiles } from './application/feriados/sumar-dias-habiles.js';
 import { GuardarItemGlobal } from './application/guardar-item-global.js';
 import { GuardarItemPropio } from './application/guardar-item-propio.js';
 import { AplicarImportacion } from './application/importacion/aplicar-importacion.js';
@@ -21,6 +29,8 @@ import { PrevisualizarImportacion } from './application/importacion/previsualiza
 import { SeguirImportacion } from './application/importacion/seguir-importacion.js';
 import { EVENTO_ERROR_CACHE, LectorItems } from './application/lector-items.js';
 import { ListarCatalogos } from './application/listar-catalogos.js';
+import { ListarItemsAdministracion } from './application/listar-items-administracion.js';
+import { CALENDARIO_PORT, PARAMETROS_CALENDARIO, type CalendarioPort, type ParametrosCalendario } from './application/ports/calendario.port.js';
 import { CATALOGO_PORT, type CatalogoPort } from './application/ports/catalogo.port.js';
 import { VERIFICADOR_OPERADOR, type VerificadorOperador } from './application/ports/verificador-operador.js';
 import { VERIFICADORES_REFERENCIAS, type VerificadorReferencias } from './application/ports/verificador-referencias.js';
@@ -31,16 +41,22 @@ import { CacheItemsRedis } from './infrastructure/redis/cache-items.redis.js';
 import { CanalAvanceRedis } from './infrastructure/redis/canal-avance.redis.js';
 import { AjustesRepositorioTypeOrm } from './infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from './infrastructure/typeorm/catalogos.repositorio.js';
+import { FeriadosRepositorioTypeOrm } from './infrastructure/typeorm/feriados.repositorio.js';
 import { ImportacionesRepositorioTypeOrm } from './infrastructure/typeorm/importaciones.repositorio.js';
 import { ItemsRepositorioTypeOrm } from './infrastructure/typeorm/items.repositorio.js';
+import { LecturaCalendarioTypeOrm } from './infrastructure/typeorm/lectura-calendario.typeorm.js';
+import { LecturaItemsAdministracionTypeOrm } from './infrastructure/typeorm/lectura-items-administracion.typeorm.js';
 import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
 import { LecturaItemsTypeOrm } from './infrastructure/typeorm/lectura-items.typeorm.js';
 import { CatalogosController } from './interface/catalogos.controller.js';
+import { FeriadosController } from './interface/feriados.controller.js';
 import { ImportacionesController } from './interface/importaciones.controller.js';
 
 const CLIENTE_REDIS_CAT = Symbol('CLIENTE_REDIS_CAT');
 const DEPENDENCIAS_CATALOGOS = Symbol('DEPENDENCIAS_CATALOGOS');
 const DEPENDENCIAS_IMPORTACION = Symbol('DEPENDENCIAS_IMPORTACION');
+const DEPENDENCIAS_FERIADOS = Symbol('DEPENDENCIAS_FERIADOS');
+const DEPENDENCIAS_CALENDARIO = Symbol('DEPENDENCIAS_CALENDARIO');
 const COLA_ABIERTA = Symbol('COLA_ABIERTA');
 
 /** Fábrica de un proveedor que arma la app con sus propios tokens. */
@@ -59,6 +75,10 @@ export interface CatalogosOpciones {
   verificadorOperador: FabricaDe<VerificadorOperador>;
   /** Los de los productos que referencian ítems (spec 25, R2). Por defecto ninguno. */
   verificadoresReferencias?: FabricaDe<VerificadorReferencias[]>;
+  /** `plat.calendario.sabado_habil`: lo implementa apps/api con ParametroPort (TR-RNF-119). */
+  parametrosCalendario: FabricaDe<ParametrosCalendario>;
+  /** Módulos que exportan lo que inyectan las fábricas (ParametrosModule para `parametrosCalendario`). */
+  imports?: ModuleMetadata['imports'];
 }
 
 /** Cierra la conexión a Redis con la app (app.close() en pruebas y apagado). */
@@ -99,11 +119,17 @@ export class CatalogosModule {
       useFactory: (dependencias: DependenciasImportacion) => new tipo(dependencias),
       inject: [DEPENDENCIAS_IMPORTACION],
     });
+    const casoDeFeriados = <T>(tipo: new (dependencias: DependenciasFeriados) => T) => ({
+      provide: tipo,
+      useFactory: (dependencias: DependenciasFeriados) => new tipo(dependencias),
+      inject: [DEPENDENCIAS_FERIADOS],
+    });
 
     return {
       module: CatalogosModule,
+      imports: opciones.imports ?? [],
       // ImportacionesController primero: sus rutas `importaciones` no deben tomarse por un `{codigo}`.
-      controllers: [ImportacionesController, CatalogosController],
+      controllers: [ImportacionesController, CatalogosController, FeriadosController],
       providers: [
         {
           provide: COLA_ABIERTA,
@@ -188,6 +214,18 @@ export class CatalogosModule {
           inject: [TypeOrmUnitOfWork],
         },
         {
+          provide: ListarItemsAdministracion,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock) =>
+            new ListarItemsAdministracion({
+              unidadDeTrabajo,
+              contexto,
+              reloj,
+              catalogos: new CatalogosRepositorioTypeOrm(unidadDeTrabajo),
+              lectura: new LecturaItemsAdministracionTypeOrm(unidadDeTrabajo),
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
+        },
+        {
           provide: ConsultarItems,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, lector: LectorItems) => new ConsultarItems({ unidadDeTrabajo, contexto, lector }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, LectorItems],
@@ -205,8 +243,55 @@ export class CatalogosModule {
         casoDeUso(GuardarItemPropio),
         casoDeUso(EliminarItemPropio),
         casoDeUso(AjustarItem),
+        {
+          provide: DEPENDENCIAS_FERIADOS,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            eventos: EventPublisher,
+            verificadorOperador: VerificadorOperador,
+          ): DependenciasFeriados => ({
+            unidadDeTrabajo,
+            contexto,
+            ids,
+            reloj,
+            eventos,
+            feriados: new FeriadosRepositorioTypeOrm(unidadDeTrabajo, contexto),
+            verificadorOperador,
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, VERIFICADOR_OPERADOR],
+        },
+        casoDeFeriados(CrearFeriado),
+        casoDeFeriados(ActualizarFeriado),
+        casoDeFeriados(EliminarFeriado),
+        casoDeFeriados(ListarFeriados),
+        { provide: PARAMETROS_CALENDARIO, useFactory: opciones.parametrosCalendario.useFactory, inject: opciones.parametrosCalendario.inject ?? [] },
+        {
+          provide: DEPENDENCIAS_CALENDARIO,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, parametros: ParametrosCalendario): DependenciasCalendario => ({
+            unidadDeTrabajo,
+            contexto,
+            lectura: new LecturaCalendarioTypeOrm(unidadDeTrabajo),
+            parametros,
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, PARAMETROS_CALENDARIO],
+        },
+        {
+          provide: CALENDARIO_PORT,
+          useFactory: (dependencias: DependenciasCalendario): CalendarioPort => {
+            const sumar = new SumarDiasHabiles(dependencias);
+            const esHabil = new EsDiaHabil(dependencias);
+            return {
+              sumarDiasHabiles: (fecha, dias, sucursalId) => sumar.sumarDiasHabiles(fecha, dias, sucursalId),
+              esDiaHabil: (fecha, sucursalId) => esHabil.esDiaHabil(fecha, sucursalId),
+            };
+          },
+          inject: [DEPENDENCIAS_CALENDARIO],
+        },
       ],
-      exports: [CATALOGO_PORT],
+      exports: [CATALOGO_PORT, CALENDARIO_PORT],
     };
   }
 }

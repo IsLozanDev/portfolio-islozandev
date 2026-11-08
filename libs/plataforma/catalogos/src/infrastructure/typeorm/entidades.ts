@@ -1,5 +1,6 @@
 import { EntitySchema } from 'typeorm';
 import type { ErrorFila, EstadoImportacion } from '../../domain/importacion/tipos.js';
+import type { AlcanceFeriado } from '../../domain/feriados/tipos.js';
 import type { AlcanceCatalogo } from '../../domain/tipos.js';
 
 // Mapeo ORM de las tablas de cat. El esquema lo definen las migraciones de db/ (sin synchronize):
@@ -195,5 +196,44 @@ export const ImportacionEntidad = new EntitySchema<FilaImportacion>({
   },
 });
 
+export interface FilaFeriado {
+  id: string;
+  alcance: AlcanceFeriado;
+  tenantId: string | null;
+  sucursalId: string | null;
+  /** date: TypeORM lo hidrata como YYYY-MM-DD. */
+  fecha: string;
+  nombre: string;
+  recurrenteAnual: boolean;
+  /** bigint: node-pg lo devuelve como string. */
+  version: string;
+  creadoPor: string | null;
+  creadoEn: Date;
+  modificadoPor: string | null;
+  modificadoEn: Date;
+}
+
+// La app escribe con esta entidad solo los del tenant: los globales van por funciones SECURITY DEFINER.
+export const FeriadoEntidad = new EntitySchema<FilaFeriado>({
+  name: 'Feriado',
+  schema: 'cat',
+  tableName: 'feriado',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    alcance: { type: 'varchar', length: 8, update: false },
+    tenantId: { name: 'tenant_id', type: 'uuid', nullable: true, update: false },
+    sucursalId: { name: 'sucursal_id', type: 'uuid', nullable: true, update: false },
+    fecha: { type: 'date' },
+    nombre: { type: 'varchar', length: 100 },
+    recurrenteAnual: { name: 'recurrente_anual', type: 'boolean' },
+    // Bloqueo optimista propio (WHERE version = previa), como en los ítems.
+    version: { type: 'bigint' },
+    creadoPor: { name: 'creado_por', type: 'uuid', nullable: true, update: false },
+    creadoEn: { name: 'creado_en', type: 'timestamptz', update: false },
+    modificadoPor: { name: 'modificado_por', type: 'uuid', nullable: true },
+    modificadoEn: { name: 'modificado_en', type: 'timestamptz' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (apps/api). */
-export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad, AjusteEntidad, ImportacionEntidad];
+export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad, AjusteEntidad, ImportacionEntidad, FeriadoEntidad];

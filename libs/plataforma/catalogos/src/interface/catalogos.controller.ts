@@ -27,11 +27,13 @@ import { EliminarItemPropio } from '../application/eliminar-item-propio.js';
 import { GuardarItemGlobal } from '../application/guardar-item-global.js';
 import { GuardarItemPropio } from '../application/guardar-item-propio.js';
 import { ListarCatalogos } from '../application/listar-catalogos.js';
+import { ListarItemsAdministracion, type PaginaItemsAdministracion } from '../application/listar-items-administracion.js';
+import { ORIGENES_ITEM, type FilaAdministracion } from '../application/ports/items-administracion.js';
 import type { ItemVisible } from '../application/ports/repositorios.js';
 import type { Actualizado, DefinicionCatalogo, ItemGuardado } from '../application/resultados.js';
 import { ItemNoEncontradoError } from '../domain/errores.js';
 import { PERMISOS_CAT } from '../domain/permisos-cat.js';
-import { ALCANCES_CATALOGO } from '../domain/tipos.js';
+import { ALCANCES_CATALOGO, ESTADOS_ITEM } from '../domain/tipos.js';
 import {
   ActualizarCatalogoDto,
   ActualizarItemDto,
@@ -42,8 +44,10 @@ import {
   CrearCatalogoDto,
   CrearItemDto,
   ItemActualizadoDto,
+  ItemAdministracionDto,
   ItemDto,
   ItemVisibleDto,
+  PaginaItemsAdministracionDto,
 } from './catalogos.dto.js';
 import { CatalogosFiltro, validar } from './catalogos.http.js';
 
@@ -63,6 +67,10 @@ const NOMBRE_ITEM_MAXIMO = 200;
 const ABREVIATURA_MAXIMA = 30;
 const CODIGO_EXTERNO_MAXIMO = 40;
 const ALIAS_MAXIMO = 200;
+const TEXTO_BUSQUEDA_MAXIMO = 60;
+const PAGINA_POR_DEFECTO = 1;
+const TAMANO_POR_DEFECTO = 25;
+const TAMANO_MAXIMO = 100;
 
 const version = z.number().int().min(0);
 const orden = z.number().int().min(ENTERO_MINIMO).max(ENTERO_MAXIMO);
@@ -100,6 +108,13 @@ const EsquemaAjuste = z.object({
   version: version.nullish(),
 });
 const EsquemaEliminar = z.object({ version: z.string().regex(/^\d+$/) });
+const EsquemaAdministracion = z.object({
+  texto: z.string().max(TEXTO_BUSQUEDA_MAXIMO).optional(),
+  estado: z.enum(ESTADOS_ITEM).optional(),
+  origen: z.enum(ORIGENES_ITEM).optional(),
+  pagina: z.coerce.number().int().min(1).default(PAGINA_POR_DEFECTO),
+  tamano: z.coerce.number().int().min(1).max(TAMANO_MAXIMO).default(TAMANO_POR_DEFECTO),
+});
 
 /** Lo que el controlador usa de la respuesta de Express para el ETag y el 304. */
 interface RespuestaItems {
@@ -129,6 +144,7 @@ export class CatalogosController {
     @Inject(GuardarItemPropio) private readonly guardarItemPropio: GuardarItemPropio,
     @Inject(EliminarItemPropio) private readonly eliminarItemPropio: EliminarItemPropio,
     @Inject(AjustarItem) private readonly ajustarItem: AjustarItem,
+    @Inject(ListarItemsAdministracion) private readonly listarItemsAdministracion: ListarItemsAdministracion,
   ) {}
 
   @Get()
@@ -175,6 +191,30 @@ export class CatalogosController {
       actorId: principal.usuarioId,
     });
     return { ...catalogoDto(definicion), cambiado: definicion.cambiado };
+  }
+
+  // Antes de las rutas con {id}: `administracion` no es un id.
+  @Get(':codigo/items/administracion')
+  @Permiso(PERMISOS_CAT.leer)
+  @ApiQuery({ name: 'texto', required: false, description: 'Busca en código o nombre; hasta 60 caracteres' })
+  @ApiQuery({ name: 'estado', required: false, enum: ESTADOS_ITEM })
+  @ApiQuery({ name: 'origen', required: false, enum: ORIGENES_ITEM })
+  @ApiQuery({ name: 'pagina', required: false, example: 1, description: 'Desde 1' })
+  @ApiQuery({ name: 'tamano', required: false, example: 25, description: 'De 1 a 100; 25 por defecto' })
+  @ApiOkResponse({ type: PaginaItemsAdministracionDto, description: 'Globales y propios con su estado de hoy y el ajuste del tenant' })
+  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA' })
+  @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE' })
+  async administracion(@Param('codigo') codigo: string, @Query() consulta: unknown): Promise<PaginaItemsAdministracionDto> {
+    const datos = validar(EsquemaAdministracion, consulta);
+    const pagina = await this.listarItemsAdministracion.ejecutar({
+      catalogo: codigo,
+      texto: datos.texto ?? null,
+      estado: datos.estado ?? null,
+      origen: datos.origen ?? null,
+      pagina: datos.pagina,
+      tamano: datos.tamano,
+    });
+    return paginaAdministracionDto(pagina);
   }
 
   @Get(':codigo/items')
@@ -367,6 +407,29 @@ function itemDto(item: ItemGuardado): ItemDto {
 
 function itemActualizadoDto(item: Actualizado<ItemGuardado>): ItemActualizadoDto {
   return { ...itemDto(item), cambiado: item.cambiado };
+}
+
+function paginaAdministracionDto(pagina: PaginaItemsAdministracion): PaginaItemsAdministracionDto {
+  return { items: pagina.items.map(itemAdministracionDto), total: pagina.total, pagina: pagina.pagina, tamano: pagina.tamano };
+}
+
+function itemAdministracionDto(fila: FilaAdministracion): ItemAdministracionDto {
+  return {
+    item_id: fila.itemId,
+    codigo: fila.codigo,
+    codigo_externo: fila.codigoExterno,
+    nombre: fila.nombre,
+    abreviatura: fila.abreviatura,
+    orden: fila.orden,
+    atributos: fila.atributos,
+    vigente_desde: fila.vigenteDesde,
+    vigente_hasta: fila.vigenteHasta,
+    activo: fila.activo,
+    propio: fila.propio,
+    estado: fila.estado,
+    ajuste: fila.ajuste,
+    version: fila.version,
+  };
 }
 
 function ajusteDto(ajuste: AjusteAplicado): AjusteAplicadoDto {

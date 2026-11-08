@@ -125,10 +125,11 @@ CREATE TABLE cat.feriado (
     OR (alcance = 'SUCURSAL' AND tenant_id IS NOT NULL AND sucursal_id IS NOT NULL))
 );
 CREATE INDEX ix_feriado_fecha ON cat.feriado (fecha);
-CREATE INDEX ix_feriado_mes_dia ON cat.feriado ((to_char(fecha, 'MM-DD'))) WHERE recurrente_anual;
+CREATE INDEX ix_feriado_mes_dia ON cat.feriado ((extract(month FROM fecha)), (extract(day FROM fecha))) WHERE recurrente_anual;
 CREATE INDEX ix_feriado_tenant ON cat.feriado (tenant_id, sucursal_id);
 ```
 
+- `ix_feriado_mes_dia` usa `extract` y no `to_char(fecha, 'MM-DD')`: `to_char` no es IMMUTABLE y PostgreSQL no lo indexa (decidido al implementar el paso 1).
 - La FK compuesta garantiza que la sucursal es del mismo tenant. Con `sucursal_id` NULL no se evalúa (`MATCH SIMPLE`).
 - El duplicado (TR-CA-077) se valida en el dominio y se repite en la función `cat.feriado_choca`. No hay índice único: la regla cruza niveles y recurrencia.
 - RLS `ENABLE + FORCE`:

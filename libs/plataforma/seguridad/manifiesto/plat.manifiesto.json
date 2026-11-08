@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -59,7 +59,8 @@
     { "codigo": "plat.catalogo.leer", "descripcion": "Listar catálogos y leer sus ítems", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.catalogo.personalizar", "descripcion": "Ocultar, reordenar y renombrar ítems globales de catálogos mixtos", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.catalogo.item_propio", "descripcion": "Administrar ítems propios en catálogos mixtos y del tenant", "alcance_minimo": "TENANT", "sensible": false },
-    { "codigo": "plat.catalogo.importar", "descripcion": "Importar las tablas oficiales desde archivo (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true }
+    { "codigo": "plat.catalogo.importar", "descripcion": "Importar las tablas oficiales desde archivo (solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.feriado.gestionar", "descripcion": "Administrar feriados del tenant y de sus sucursales (los globales, solo desde el tenant operador)", "alcance_minimo": "TENANT", "sensible": false }
   ],
   "roles_predefinidos": [
     {
@@ -72,7 +73,7 @@
       "nombre": "Administrador de configuración",
       "permisos": [
         "plat.parametro.leer", "plat.parametro.editar", "plat.sesion.contexto", "plat.serie.gestionar", "plat.catalogo.leer",
-        "plat.catalogo.personalizar", "plat.catalogo.item_propio"
+        "plat.catalogo.personalizar", "plat.catalogo.item_propio", "plat.feriado.gestionar"
       ]
     },
     {
@@ -99,14 +100,15 @@
         "plat.evento.consultar", "plat.evento.reprocesar", "plat.organizacion.consultar", "plat.empresa.crear", "plat.sucursal.gestionar",
         "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar",
         "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
-        "plat.catalogo.item_propio", "plat.catalogo.importar"
+        "plat.catalogo.item_propio", "plat.catalogo.importar", "plat.feriado.gestionar"
       ]
     }
   ],
   "parametros": [
     { "codigo": "plat.sesion.minutos_inactividad", "descripcion": "Minutos de inactividad antes de cerrar la sesión", "tipo": "NUMERO", "valor_defecto": 30, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_gracia", "descripcion": "Días tras el vencimiento antes de suspender el tenant", "tipo": "NUMERO", "valor_defecto": 5, "alcance_maximo": "TENANT" },
-    { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" }
+    { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" },
+    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" }
   ],
   "indicadores": [],
   "reportes": []
