@@ -7,14 +7,14 @@ const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json
 interface Manifiesto {
   version: string;
   permisos: { codigo: string; alcance_minimo: string; sensible: boolean }[];
-  opciones: { codigo: string; permisos: string[] }[];
+  opciones: { codigo: string; modulo: string; padre: string | null; nombre: string; ruta?: string; icono: string; orden: number; permisos: string[] }[];
   roles_predefinidos: { codigo: string; permisos: string[] }[];
   parametros: { codigo: string; descripcion: string; tipo: string; valor_defecto: unknown; alcance_maximo: string }[];
 }
 
 const PREFIJOS_CAT = ['plat.catalogo.', 'plat.feriado.'];
 
-describe('Manifiesto PLAT 1.11.0: parte de cat (specs 19a, 19b y 19c)', () => {
+describe('Manifiesto PLAT 1.12.0: parte de cat (specs 19a, 19b, 19c y 19d)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (rol: string) => manifiesto.roles_predefinidos.find((predefinido) => predefinido.codigo === rol)?.permisos ?? [];
   const esDeCat = (codigo: string) => PREFIJOS_CAT.some((prefijo) => codigo.startsWith(prefijo));
@@ -24,8 +24,8 @@ describe('Manifiesto PLAT 1.11.0: parte de cat (specs 19a, 19b y 19c)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.11.0', () => {
-    expect(manifiesto.version).toBe('1.11.0');
+  it('está en la versión 1.12.0', () => {
+    expect(manifiesto.version).toBe('1.12.0');
   });
 
   it('declara exactamente PERMISOS_CAT, todos de alcance TENANT; gestionar, item_gestionar e importar son sensibles (TR-RN-009)', () => {
@@ -64,7 +64,18 @@ describe('Manifiesto PLAT 1.11.0: parte de cat (specs 19a, 19b y 19c)', () => {
     });
   });
 
-  it('no trae opciones de menú de catálogos ni de feriados: llegan con la UI del 19d', () => {
-    expect(manifiesto.opciones.filter((opcion) => opcion.permisos.some(esDeCat))).toEqual([]);
+  it('la única opción de catálogos es Consola > Catálogos, con item_gestionar y no leer (spec 19d); feriados llega con el 19e', () => {
+    expect(manifiesto.opciones.filter((opcion) => opcion.permisos.some(esDeCat))).toEqual([
+      {
+        codigo: 'plat.consola.catalogos',
+        modulo: 'consola',
+        padre: 'plat.consola',
+        nombre: 'Catálogos',
+        ruta: '/consola/catalogos',
+        icono: 'library_books',
+        orden: 3,
+        permisos: ['plat.catalogo.item_gestionar'],
+      },
+    ]);
   });
 });

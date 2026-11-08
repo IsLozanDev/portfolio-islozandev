@@ -15,5 +15,12 @@ describe('appRoutes de la consola', () => {
 
   it('toda la consola exige aal2', () => {
     expect(hijas.find((ruta) => ruta.path === 'consola')?.canActivate).toEqual([aal2Guard]);
+    expect(hijas.find((ruta) => ruta.path === 'consola/catalogos')?.canActivate).toEqual([aal2Guard]);
+  });
+
+  it('consola/catalogos va antes de consola, que la tomaría como una ruta suya', () => {
+    const rutas = hijas.map((ruta) => ruta.path);
+    expect(rutas.indexOf('consola/catalogos')).toBeGreaterThanOrEqual(0);
+    expect(rutas.indexOf('consola/catalogos')).toBeLessThan(rutas.indexOf('consola'));
   });
 });
