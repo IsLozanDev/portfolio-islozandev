@@ -2,53 +2,58 @@
 
 Un spec es un archivo `specs/NN-slug.md`: un componente TR o un slice de uno. Objetivo en una frase, tres áreas como máximo, cabe en 10 h. `/spec` asigna el número según el orden en que se guardan; esta lista fija el orden de construcción y el contenido.
 
-Estado: todos pendientes. Actualizar la columna Estado cuando un spec pase a Aprobado o Implementado.
+Estado: columna Estado, tomada del encabezado de cada `specs/NN-slug.md` (revisado el 2026-11-08). Se actualiza cuando un spec pasa a Aprobado o Implementado; sin archivo, Pendiente.
 
 Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`). Los specs 03, 04, 06 y 07 originales superaban el tope de 10 h y el alta de tenant dependía de componentes que se construyen después.
 
-## R0 y R1 (sprints 0 a 12): 27 specs
+## R0 y R1 (sprints 0 a 12): 38 specs
 
-| NN | Slug | Cubre | h est. | Depende de | Contexto (`spec-context/NN-*.md`) |
-|---|---|---|---|---|---|
-| 01 | fundaciones-monorepo | F-02, F-03, F-05: Nx, pnpm, CI, docker-compose, Husky. Reglas de límites: etiquetas `comp:*`, ESLint por capa dentro de cada lib, matriz de dependencias entre componentes según PL-10. Debe dejar el generador `modulo-hexagonal`, libs en stub registradas y rangos de migraciones por componente | 7+ | — | — |
-| 02 | supabase-y-kernel | F-04, F-06 (RF 092): proyectos Supabase, kernel, kernel-infra, DDL de `sync.outbox` | 8 | 01 | 02 |
-| 03 | org-dominio-y-suscripcion | O-01 y parte de O-03 (RF 002-006): tenant, empresa, sucursal, unidad, suscripción, estados. Corrige `01a_org.sql` (RLS, CHECK, FK, historial) | 8-9 | 02 | 03 |
-| 04 | seg-identidad-hook-espejo | A-02, A-03: hook de token (`tenant_id`, `tipo_usuario`), espejo `auth.users` a `seg.usuario`, migración con rollback. Crea `db/01b_seg.sql` corregido (tablas con RLS, sin funciones de permisos). Solo dev; prod va al plan de migración a producción | 8-9 | 02, 03 | 04 |
-| 05 | seg-verificador-guard-mfa | A-01, A-05 (RF 017): lib `seguridad` con JWKS (solo ES256), `AutenticacionGuard`, `@Publico`, `@RequiereMfa` (aal2 y factor de 15 min como máximo, 401 step-up), `ultimo_acceso` y `GET /v1/seg/sesion`. Bloqueo por intentos e inactividad quedan como brecha (`docs/ops/supabase-ambientes.md`) | 9-10 | 04 | 04 |
-| 06 | seg-dominio-autorizacion | S-01 (RF 008, 011, 012, 013): permiso, rol, perfil, asignación con alcance y vigencia, manifiesto. `01b_seg.sql` ya existe (spec 04): lo que falte (p. ej. `version` en los agregados) entra como migración nueva | 6-8 | 04 | 06 |
-| 07 | seg-permisos-efectivos-guard | S-02, S-03, S-05 (RF 015, 016): permisos efectivos, caché Redis con invalidación, `@Permiso`, `X-Sucursal-Id`, aislamiento entre tenants. Incluye `seg.permisos_efectivos`, `seg.menu_usuario` y `seg.sucursales_accesibles` (`SECURITY DEFINER`, `search_path` fijo), que el 04 no creó. Del 05: `@Permiso` de un permiso sensible pone la metadata `REQUIERE_MFA`; `TenantContext` por petición desde el token; `/v1/seg/mi-contexto` reemplaza a `/v1/seg/sesion` | 10 | 05, 06 | 06 |
-| 08 | seg-membresias | S-04 (RF 009, 010, 014): invitar, aceptar, revocar, suspender. Límite de tasa en el endpoint público de aceptar (TR-RNF-015, pendiente del 05). Estimado mayor que las 4 h del plan | 8 | 07 | 08 |
-| 09 | cfg-parametros | D-01 y parte de D-05 (RF 030-033) | 8-9 | 07 | 09 |
-| 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | 10 |
-| 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | 11 |
-| 12 | org-alta-tenant-vencimiento | O-02 y vencimiento de O-03 (RF 001, 007): alta transaccional, siembra, invitación al propietario, tarea diaria. IDN y NOT van por puertos con adaptador nulo hasta R2 | 9 | 08, 09, 10, 11 | 03 |
-| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 |
-| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth (Google real; Microsoft pendiente), MFA, recuperar, nueva clave e invitación (pantalla del spec 08). Primera app `plataforma-admin` con Material y Tailwind 4. Sin historia en el plan; se agrega | 12-13 | 13, 08 | 13 |
-| 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI): `shared/ui` (tokens, avisos con SweetAlert2, tabla, filtros, formulario, carga, vacío) y `shared/shell` (layout, menú, selector de sucursal, páginas de sistema, interceptor de errores). Mayor que las 8 h del plan por SweetAlert2, tabla, filtros y formulario | 13-14 | 13, 14 | 15 |
-| 16a | usuarios-asignaciones | U-03 (RF 009, 013, 014) y su back: listar y detalle de miembros, `POST /asignaciones`. Agrega a `confirmarDestructiva` del 15 la opción `longitudMinimaMotivo` (por defecto 10) y la usa con 4 para SEG | 9 | 08, 15, 17a | 16a |
-| 16b | roles | U-04 (RF 011): controladores de roles, catálogo de permisos en árbol y UI de roles. Techo PLAT en `PLAT_PROPIETARIO` (sin escalada a permisos de operador). Perfiles salieron al 16c | 7 | 16a | 16b |
-| 16c | perfiles | U-04 (RF 012): lista, crear, copiar y cambiar roles del perfil (TR-CA-034, 035); `GET /v1/seg/perfiles/roles-disponibles` con `plat.perfil.gestionar`. Techo PLAT en perfiles (`ROL_FUERA_DEL_TECHO`: sin roles PLAT fuera de `PLAT_PROPIETARIO`) | 5-6 | 16b | 16b |
-| 17a | org-http | Back de ORG sin UI: tenants (lista, detalle, estado; `SECURITY DEFINER` para la lista) y empresas, sucursales y unidades. Permisos ORG al manifiesto y a `PLAT_PROPIETARIO`. Operador vs. cliente por permiso (`OPERADOR_REQUERIDO`), no por `tipo_usuario` | 7 | 12 | 17a |
-| 17b | consola-plataforma | O-04 (RF 001, 006): app `plataforma-consola`, solo front | 7 | 15, 17a | 17b |
-| 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida). Front, más `GET` por id de empresa, sucursal y unidad y CORS por variable (`ORIGENES_PERMITIDOS`) | 9 | 16a, 17a | 17c |
-| 15b | identidad-visual | Revisión de diseño (sin historia en el plan): tema esmeralda, shell con menú oscuro, marco de `/auth` con la vitrina, chips de estado, `vit-tabla` como lista en celular; adopción en usuarios y tenants. Canvas «Vitrina · Diseño UI» | 9 | 15, 16a, 17b, 17c | — |
-| 15d | menu-colapsable-y-busqueda | Revisión de diseño (sin historia en el plan): menú lateral que se oculta a una franja de iconos con submenú, preferencia en `localStorage`, búsqueda de opciones con Ctrl K y teclado. Canvas «Shell · menú» | 6 | 15, 15b | — |
-| 15c | tema-oscuro | Revisión de diseño (sin historia en el plan): tema oscuro con selector Sistema / Claro / Oscuro en el menú de usuario, `light-dark()` en tokens, `data-tema` y script anti-parpadeo. Canvas «Tema oscuro» | 6 | 15b, 15d | — |
-| 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 |
-| 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 |
-| 19b | cat-oficiales-feriados-consola | D-04 (RF 028-029), D-06, UI de RF 025/026 (sin dueño en el plan, ~2 h extra) | 7-9 | 19a, 09, 13, 15 | 19 |
-| 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 |
-| 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 |
-| 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — |
-| 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — |
-| 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — |
-| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19, 20 | — |
-| 26 | sazonpos-shell | C-07: CC-08 | 7 | 15, 24 | — |
-| 27 | e2e-uat-produccion-r1 | Q-01, Q-03, P-01, Q-04, P-02, P-04 | 29 | todos | — |
+| NN | Slug | Cubre | h est. | Depende de | Contexto (`spec-context/NN-*.md`) | Estado |
+|---|---|---|---|---|---|---|
+| 01 | fundaciones-monorepo | F-02, F-03, F-05: Nx, pnpm, CI, docker-compose, Husky. Reglas de límites: etiquetas `comp:*`, ESLint por capa dentro de cada lib, matriz de dependencias entre componentes según PL-10. Debe dejar el generador `modulo-hexagonal`, libs en stub registradas y rangos de migraciones por componente | 7+ | — | — | Implementado |
+| 02 | supabase-y-kernel | F-04, F-06 (RF 092): proyectos Supabase, kernel, kernel-infra, DDL de `sync.outbox` | 8 | 01 | 02 | Implementado |
+| 03 | org-dominio-y-suscripcion | O-01 y parte de O-03 (RF 002-006): tenant, empresa, sucursal, unidad, suscripción, estados. Corrige `01a_org.sql` (RLS, CHECK, FK, historial) | 8-9 | 02 | 03 | Implementado |
+| 04 | seg-identidad-hook-espejo | A-02, A-03: hook de token (`tenant_id`, `tipo_usuario`), espejo `auth.users` a `seg.usuario`, migración con rollback. Crea `db/01b_seg.sql` corregido (tablas con RLS, sin funciones de permisos). Solo dev; prod va al plan de migración a producción | 8-9 | 02, 03 | 04 | Implementado |
+| 05 | seg-verificador-guard-mfa | A-01, A-05 (RF 017): lib `seguridad` con JWKS (solo ES256), `AutenticacionGuard`, `@Publico`, `@RequiereMfa` (aal2 y factor de 15 min como máximo, 401 step-up), `ultimo_acceso` y `GET /v1/seg/sesion`. Bloqueo por intentos e inactividad quedan como brecha (`docs/ops/supabase-ambientes.md`) | 9-10 | 04 | 04 | Implementado |
+| 06 | seg-dominio-autorizacion | S-01 (RF 008, 011, 012, 013): permiso, rol, perfil, asignación con alcance y vigencia, manifiesto. `01b_seg.sql` ya existe (spec 04): lo que falte (p. ej. `version` en los agregados) entra como migración nueva | 6-8 | 04 | 06 | Implementado |
+| 07 | seg-permisos-efectivos-guard | S-02, S-03, S-05 (RF 015, 016): permisos efectivos, caché Redis con invalidación, `@Permiso`, `X-Sucursal-Id`, aislamiento entre tenants. Incluye `seg.permisos_efectivos`, `seg.menu_usuario` y `seg.sucursales_accesibles` (`SECURITY DEFINER`, `search_path` fijo), que el 04 no creó. Del 05: `@Permiso` de un permiso sensible pone la metadata `REQUIERE_MFA`; `TenantContext` por petición desde el token; `/v1/seg/mi-contexto` reemplaza a `/v1/seg/sesion` | 10 | 05, 06 | 06 | Implementado (dentro del 06) |
+| 08 | seg-membresias | S-04 (RF 009, 010, 014): invitar, aceptar, revocar, suspender. Límite de tasa en el endpoint público de aceptar (TR-RNF-015, pendiente del 05). Estimado mayor que las 4 h del plan | 8 | 07 | 08 | Implementado |
+| 09 | cfg-parametros | D-01 y parte de D-05 (RF 030-033) | 8-9 | 07 | 09 | Implementado |
+| 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | 10 | Implementado |
+| 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | 11 | Implementado |
+| 12 | org-alta-tenant-vencimiento | O-02 y vencimiento de O-03 (RF 001, 007): alta transaccional, siembra, invitación al propietario, tarea diaria. IDN y NOT van por puertos con adaptador nulo hasta R2 | 9 | 08, 09, 10, 11 | 03 | Implementado |
+| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 | Aprobado |
+| 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth (Google real; Microsoft pendiente), MFA, recuperar, nueva clave e invitación (pantalla del spec 08). Primera app `plataforma-admin` con Material y Tailwind 4. Sin historia en el plan; se agrega | 12-13 | 13, 08 | 13 | Implementado |
+| 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI): `shared/ui` (tokens, avisos con SweetAlert2, tabla, filtros, formulario, carga, vacío) y `shared/shell` (layout, menú, selector de sucursal, páginas de sistema, interceptor de errores). Mayor que las 8 h del plan por SweetAlert2, tabla, filtros y formulario | 13-14 | 13, 14 | 15 | Implementado |
+| 16a | usuarios-asignaciones | U-03 (RF 009, 013, 014) y su back: listar y detalle de miembros, `POST /asignaciones`. Agrega a `confirmarDestructiva` del 15 la opción `longitudMinimaMotivo` (por defecto 10) y la usa con 4 para SEG | 9 | 08, 15, 17a | 16a | Implementado |
+| 16b | roles | U-04 (RF 011): controladores de roles, catálogo de permisos en árbol y UI de roles. Techo PLAT en `PLAT_PROPIETARIO` (sin escalada a permisos de operador). Perfiles salieron al 16c | 7 | 16a | 16b | Implementado |
+| 16c | perfiles | U-04 (RF 012): lista, crear, copiar y cambiar roles del perfil (TR-CA-034, 035); `GET /v1/seg/perfiles/roles-disponibles` con `plat.perfil.gestionar`. Techo PLAT en perfiles (`ROL_FUERA_DEL_TECHO`: sin roles PLAT fuera de `PLAT_PROPIETARIO`) | 5-6 | 16b | 16b | Implementado |
+| 17a | org-http | Back de ORG sin UI: tenants (lista, detalle, estado; `SECURITY DEFINER` para la lista) y empresas, sucursales y unidades. Permisos ORG al manifiesto y a `PLAT_PROPIETARIO`. Operador vs. cliente por permiso (`OPERADOR_REQUERIDO`), no por `tipo_usuario` | 7 | 12 | 17a | Implementado |
+| 17b | consola-plataforma | O-04 (RF 001, 006): app `plataforma-consola`, solo front | 7 | 15, 17a | 17b | Implementado |
+| 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida). Front, más `GET` por id de empresa, sucursal y unidad y CORS por variable (`ORIGENES_PERMITIDOS`) | 9 | 16a, 17a | 17c | Implementado |
+| 15b | identidad-visual | Revisión de diseño (sin historia en el plan): tema esmeralda, shell con menú oscuro, marco de `/auth` con la vitrina, chips de estado, `vit-tabla` como lista en celular; adopción en usuarios y tenants. Canvas «Vitrina · Diseño UI» | 9 | 15, 16a, 17b, 17c | — | Implementado |
+| 15d | menu-colapsable-y-busqueda | Revisión de diseño (sin historia en el plan): menú lateral que se oculta a una franja de iconos con submenú, preferencia en `localStorage`, búsqueda de opciones con Ctrl K y teclado. Canvas «Shell · menú» | 6 | 15, 15b | — | Implementado |
+| 15c | tema-oscuro | Revisión de diseño (sin historia en el plan): tema oscuro con selector Sistema / Claro / Oscuro en el menú de usuario, `light-dark()` en tokens, `data-tema` y script anti-parpadeo. Canvas «Tema oscuro» | 6 | 15b, 15d | — | Implementado |
+| 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 | Implementado |
+| 18b | seg-bitacora-ingreso-exportacion | S-06 (RF 019, 020): `LOGIN` y fallos de contraseña o MFA en la bitácora, ingreso por la API con bloqueo de fuerza bruta en Redis y exportación XLSX con permiso propio auditado | 8 | 05, 06, 13, 14, 18 | 18 | Implementado |
+| 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 | Implementado |
+| 19b | cat-importador-oficiales | D-04, parte de RF 028: importador CSV/XLSX de las 7 tablas oficiales, previsualización que valida todo, aplicación todo o nada en el worker (BullMQ), avance por SSE, reporte de errores en CSV y datos oficiales en `docs/datos-oficiales/` | 10 | 19a, 11, 12 | 19 | Implementado; pendiente CI (PostgreSQL 16) y cierre |
+| 19c | cat-feriados-calendario | D-04, parte de RF 029: `cat.feriado` (GLOBAL/TENANT/SUCURSAL), `CalendarioPort.sumarDiasHabiles`, parámetro `plat.calendario.sabado_habil` y lista paginada de administración de ítems (pendiente del 19a) | 4-5 | 19a, 09 | 19 | Draft |
+| 19d | cat-consola-admin-ui | D-06 y UI de RF 025/026 (parte de D-05 sin dueño): consola de catálogos, ítems e importación (seguimiento global con avance y toast) y admin cliente de propios, ajustes y feriados | 8-10 | 19b, 19c, 15, 17b, 17c | 19 | Pendiente |
+| 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 | Pendiente |
+| 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 | Pendiente |
+| 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — | Pendiente |
+| 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — | Pendiente |
+| 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — | Pendiente |
+| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19a, 19b, 20 | — | Pendiente |
+| 26 | sazonpos-shell | C-07: CC-08 | 7 | 15, 24 | — | Pendiente |
+| 27 | e2e-uat-produccion-r1 | Q-01, Q-03, P-01, Q-04, P-02, P-04 | 29 | todos | — | Pendiente |
 
-Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/NN-slug.md`. Pendientes de decidir al redactar: la UI de 09 y 10 depende de 13 y 15 (hoy declaran solo 07); RF-094 (registro de esquemas) sin spec; el spec 25 depende de 19a y 19b; formato de número de SEQ (8 dígitos vs "A-001").
+Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/NN-slug.md`. Pendientes de decidir al redactar: la UI de 09 y 10 depende de 13 y 15 (hoy declaran solo 07); RF-094 (registro de esquemas) sin spec; formato de número de SEQ (8 dígitos vs "A-001").
 
 Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09 conservan SQL embebido en sus repositorios; migrarlos a TypeORM es un spec de refactor aparte (~6-8 h, sin número ni fecha). Los specs 10 SEQ (`FOR UPDATE`) y 20 AUD (hash encadenado) pueden justificar SQL puntual.
+
+19 se partió en 19a (núcleo), 19b (importador), 19c (feriados y calendario) y 19d (UI): el 19b original tenía 4 áreas y unas 14 h, y el importador creció con el worker, el SSE y el reporte de errores. 19b y 19c se pueden implementar en paralelo; 19d va al final porque consume las rutas de los dos.
 
 16 y 17 se partieron en 16a/16b/16c y 17a/17b/17c: el plan contaba solo las horas de front y la capa HTTP del back no existía. Longitud del motivo: se respeta lo implementado (SEG 4-300, ORG 10-500); la UI la recibe por opción en vez de fijarla. Los specs 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
@@ -66,7 +71,7 @@ Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09
 R2: personas-identidad, archivos, fe-emisor-boleta-factura, fe-notas-contingencia, notificaciones-correo, recordatorios-preferencias, sazonpos-personas-fe, arco-incidentes.
 R3: pagos, reportes, cms, portal-cliente, soporte, obs-negocio-whatsapp.
 
-Total estimado: unos 41 specs (27 en R0 y R1).
+Total estimado: unos 52 specs (38 en R0 y R1, contando las particiones).
 
 ## Olas de implementación en paralelo (worktrees)
 
@@ -75,7 +80,7 @@ Total estimado: unos 41 specs (27 en R0 y R1).
 - Ola 3: 04, luego 05 y 06 en paralelo.
 - Ola 4: 07, luego 08 y 13.
 - Ola 5: 09, 10, 14, 20.
-- Ola 6: 12, 15, 18, 19, 21; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
+- Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
 - SazónPOS (22 a 26) y 27 al final.
 
 Máximo 2 o 3 frentes a la vez: la revisión de diffs es el cuello de botella.

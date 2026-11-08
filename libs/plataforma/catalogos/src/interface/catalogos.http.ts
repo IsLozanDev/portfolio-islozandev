@@ -1,12 +1,17 @@
 import { Catch, HttpException, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
+import { ArchivoDemasiadoGrandeError, ColaNoDisponibleError, FilasInvalidasError } from '../domain/importacion/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
 }
 
+// Los específicos van antes que su clase base: gana el primero que coincide.
 const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => DomainError, number]> = [
+  [FilasInvalidasError, HttpStatus.UNPROCESSABLE_ENTITY],
+  [ArchivoDemasiadoGrandeError, HttpStatus.PAYLOAD_TOO_LARGE],
+  [ColaNoDisponibleError, HttpStatus.SERVICE_UNAVAILABLE],
   [ValidationError, HttpStatus.BAD_REQUEST],
   [NotFoundError, HttpStatus.NOT_FOUND],
   [ConflictError, HttpStatus.CONFLICT],
@@ -27,8 +32,14 @@ export class CatalogosFiltro implements ExceptionFilter {
       .switchToHttp()
       .getResponse<Respuesta>()
       .status(estado)
-      .json({ codigo: CODIGOS_GENERICOS[error.code] ?? error.code, mensaje: error.message });
+      .json({ codigo: CODIGOS_GENERICOS[error.code] ?? error.code, mensaje: error.message, ...detalleDe(error) });
   }
+}
+
+/** 422: la importación RECHAZADA y los primeros errores; el reporte completo se descarga en CSV. */
+function detalleDe(error: DomainError): Record<string, unknown> {
+  if (!(error instanceof FilasInvalidasError)) return {};
+  return { importacion_id: error.importacionId, total_errores: error.totalErrores, errores: error.errores };
 }
 
 /** 400 con las rutas de los campos inválidos, nunca sus valores. */

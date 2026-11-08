@@ -3,7 +3,15 @@ import { ForbiddenError } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, SystemClock, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
+import type { DependenciasImportacion } from '../../src/application/importacion/dependencias-importacion.js';
+import type { DependenciasProcesarImportacion } from '../../src/application/importacion/procesar-importacion.js';
+import type { TrabajoImportacion } from '../../src/application/ports/importacion.js';
+import { CanalAvanceMemoria } from '../../src/infrastructure/canal-avance.memoria.js';
+import { EscrituraImportacionTypeOrm } from '../../src/infrastructure/typeorm/escritura-importacion.typeorm.js';
 import { registrarEsquemasCat } from '../../src/infrastructure/event-schemas.js';
+import { LectorTablaArchivos } from '../../src/infrastructure/lectores/lector-tabla.archivos.js';
+import { ImportacionesRepositorioTypeOrm } from '../../src/infrastructure/typeorm/importaciones.repositorio.js';
+import { LecturaItemsGlobalesTypeOrm } from '../../src/infrastructure/typeorm/lectura-items-globales.typeorm.js';
 import { AjustesRepositorioTypeOrm } from '../../src/infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/catalogos.repositorio.js';
 import { ENTIDADES_CAT } from '../../src/infrastructure/typeorm/entidades.js';
@@ -25,6 +33,10 @@ export interface Tenants {
 export interface EntornoCatalogos {
   dataSource: DataSource;
   dependencias: DependenciasCatalogos;
+  importacion: DependenciasImportacion;
+  procesar: DependenciasProcesarImportacion;
+  canal: CanalAvanceMemoria;
+  cola: { trabajos: TrabajoImportacion[] };
   tenants: Tenants;
   /** Ítems que el verificador de referencias doble da por usados. */
   referenciados: Set<string>;
@@ -62,9 +74,43 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
     verificadoresReferencias: [{ estaReferenciado: async ({ itemId }) => referenciados.has(itemId) }],
   };
 
+  const importaciones = new ImportacionesRepositorioTypeOrm(unidadDeTrabajo);
+  const canal = new CanalAvanceMemoria();
+  const cola = { trabajos: [] as TrabajoImportacion[], encolar: async (trabajo: TrabajoImportacion) => void cola.trabajos.push(trabajo) };
+  const avisar = () => undefined;
+  const importacion: DependenciasImportacion = {
+    unidadDeTrabajo,
+    contexto,
+    ids: dependencias.ids,
+    reloj: dependencias.reloj,
+    catalogos: dependencias.catalogos,
+    importaciones,
+    itemsGlobales: new LecturaItemsGlobalesTypeOrm(unidadDeTrabajo),
+    lector: new LectorTablaArchivos(),
+    verificadorOperador: dependencias.verificadorOperador,
+    cola,
+    canal,
+    avisar,
+  };
+  const procesar: DependenciasProcesarImportacion = {
+    unidadDeTrabajo,
+    contexto,
+    reloj: dependencias.reloj,
+    catalogos: dependencias.catalogos,
+    importaciones,
+    escritura: new EscrituraImportacionTypeOrm(unidadDeTrabajo),
+    eventos: dependencias.eventos,
+    canal,
+    avisar,
+  };
+
   return {
     dataSource,
     dependencias,
+    importacion,
+    procesar,
+    canal,
+    cola,
     tenants,
     referenciados,
     en: (tenantId, trabajo) => contexto.run({ tenantId }, trabajo),

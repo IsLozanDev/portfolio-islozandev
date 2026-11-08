@@ -6,6 +6,7 @@ const nulo = { type: 'null' };
 const uuid = { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' };
 const uuidNulo = { anyOf: [uuid, nulo] };
 const version = { type: 'integer', minimum: 0 };
+const cantidad = { type: 'integer', minimum: 0 };
 
 const objeto = (properties: Record<string, object>) => ({
   type: 'object',
@@ -22,8 +23,22 @@ export const ESQUEMAS_CAT: Readonly<Record<string, object>> = {
     version_global: version,
     version_tenant: version,
     tenant_id: uuidNulo,
-    cambio: { enum: ['CATALOGO', 'ITEM', 'AJUSTE'] },
+    // IMPORTACION llegó con el spec 19b sin subir schema_version: los consumidores ignoran los valores que no conocen.
+    cambio: { enum: ['CATALOGO', 'ITEM', 'AJUSTE', 'IMPORTACION'] },
     item_id: uuidNulo,
+    por: uuid,
+  }),
+  [EVENTOS_CAT.importacionAplicada]: objeto({
+    importacion_id: uuid,
+    catalogo_id: uuid,
+    codigo: { type: 'string', pattern: '^[A-Z][A-Z0-9_]{2,59}$' },
+    version_oficial: { type: 'string', minLength: 1, maxLength: 40 },
+    fecha_vigencia: { type: 'string', pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' },
+    archivo_sha256: { type: 'string', pattern: '^[0-9a-f]{64}$' },
+    altas: cantidad,
+    cambios: cantidad,
+    bajas: cantidad,
+    version_global: version,
     por: uuid,
   }),
 };

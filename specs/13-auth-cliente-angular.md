@@ -1,6 +1,6 @@
 # SPEC 13 — Auth cliente Angular: sesión Supabase, contexto, interceptor, guards y `*siPermiso`
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 05, SPEC 06
 > **Date:** 2026-10-26
 > **Objective:** Crear `libs/shared/auth`, la primera lib Angular 21 del monorepo, que autentica contra Supabase Auth con sesión en cookie, carga el contexto de `GET /v1/seg/mi-contexto` y lo expone con signals, guards, interceptor y `*siPermiso`, incluidos MFA TOTP, step-up ante `MFA_REQUERIDA` y cierre por inactividad.

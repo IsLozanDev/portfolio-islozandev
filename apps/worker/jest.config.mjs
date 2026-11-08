@@ -4,6 +4,7 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   resolver: '<rootDir>/jest.resolver.cjs',
   moduleNameMapper: {
+    '^@vitrina/plataforma/catalogos$': '<rootDir>/../../libs/plataforma/catalogos/src/index.ts',
     '^@vitrina/plataforma/kernel$': '<rootDir>/../../libs/plataforma/kernel/src/index.ts',
     '^@vitrina/plataforma/kernel-infra$': '<rootDir>/../../libs/plataforma/kernel-infra/src/index.ts',
     '^@vitrina/plataforma/org$': '<rootDir>/../../libs/plataforma/org/src/index.ts',

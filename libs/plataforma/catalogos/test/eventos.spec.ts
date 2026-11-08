@@ -61,9 +61,10 @@ describe('eventoCatalogoActualizado', () => {
 });
 
 describe('PERMISOS_CAT', () => {
-  it('declara los 5 permisos plat.catalogo.*', () => {
+  it('declara los 6 permisos plat.catalogo.*', () => {
     expect(Object.values(PERMISOS_CAT).sort()).toEqual([
       'plat.catalogo.gestionar',
+      'plat.catalogo.importar',
       'plat.catalogo.item_gestionar',
       'plat.catalogo.item_propio',
       'plat.catalogo.leer',

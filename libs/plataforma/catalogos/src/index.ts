@@ -21,5 +21,9 @@ export {
   type VerificadorReferencias,
 } from './application/ports/verificador-referencias.js';
 export { ENTIDADES_CAT } from './infrastructure/typeorm/entidades.js';
+export { ProcesarImportacion } from './application/importacion/procesar-importacion.js';
+export type { TrabajoImportacion } from './application/ports/importacion.js';
+export { NOMBRE_COLA_IMPORTACIONES, abrirColaImportaciones, type ColaAbierta } from './infrastructure/bullmq/cola-importaciones.bullmq.js';
+export { crearProcesarImportacion, type PiezasProcesador } from './infrastructure/procesador-importaciones.js';
 export { ESQUEMAS_CAT, registrarEsquemasCat } from './infrastructure/event-schemas.js';
 export { CatalogosModule, type CatalogosOpciones, type FabricaDe } from './catalogos.module.js';

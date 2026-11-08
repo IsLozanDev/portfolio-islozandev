@@ -1,4 +1,5 @@
 import { EntitySchema } from 'typeorm';
+import type { ErrorFila, EstadoImportacion } from '../../domain/importacion/tipos.js';
 import type { AlcanceCatalogo } from '../../domain/tipos.js';
 
 // Mapeo ORM de las tablas de cat. El esquema lo definen las migraciones de db/ (sin synchronize):
@@ -116,5 +117,83 @@ export const AjusteEntidad = new EntitySchema<FilaAjuste>({
   },
 });
 
+export interface FilaImportacion {
+  id: string;
+  tenantId: string;
+  catalogoId: string;
+  versionOficial: string;
+  /** date: TypeORM lo hidrata como YYYY-MM-DD. */
+  fechaVigencia: string;
+  archivoNombre: string;
+  archivoSha256: string;
+  /** bigint: node-pg lo devuelve como string. */
+  versionCatalogo: string;
+  estado: EstadoImportacion;
+  altas: number;
+  cambios: number;
+  bajas: number;
+  sinCambios: number;
+  /** El formato que leen las funciones de aplicación (snake_case). */
+  operaciones: OperacionesJson | null;
+  totalErrores: number;
+  errores: ErrorFila[] | null;
+  motivoFallo: string | null;
+  lanzadoPor: string;
+  creadoEn: Date;
+  encoladoEn: Date | null;
+  aplicadoPor: string | null;
+  terminadoEn: Date | null;
+  /** bigint: node-pg lo devuelve como string. */
+  version: string;
+}
+
+export interface FilaOperacionJson {
+  numero: number;
+  codigo: string;
+  codigo_externo: string | null;
+  nombre: string;
+  abreviatura: string | null;
+  orden: number;
+  atributos: Record<string, string>;
+}
+
+export interface OperacionesJson {
+  altas: FilaOperacionJson[];
+  cambios: (FilaOperacionJson & { item_id: string })[];
+  bajas: string[];
+}
+
+export const ImportacionEntidad = new EntitySchema<FilaImportacion>({
+  name: 'Importacion',
+  schema: 'cat',
+  tableName: 'importacion',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid', update: false },
+    catalogoId: { name: 'catalogo_id', type: 'uuid', update: false },
+    versionOficial: { name: 'version_oficial', type: 'varchar', length: 40, update: false },
+    fechaVigencia: { name: 'fecha_vigencia', type: 'date', update: false },
+    archivoNombre: { name: 'archivo_nombre', type: 'varchar', length: 200, update: false },
+    archivoSha256: { name: 'archivo_sha256', type: 'char', length: 64, update: false },
+    versionCatalogo: { name: 'version_catalogo', type: 'bigint', update: false },
+    estado: { type: 'varchar', length: 14 },
+    altas: { type: 'integer', update: false },
+    cambios: { type: 'integer', update: false },
+    bajas: { type: 'integer', update: false },
+    sinCambios: { name: 'sin_cambios', type: 'integer', update: false },
+    operaciones: { type: 'jsonb', nullable: true },
+    totalErrores: { name: 'total_errores', type: 'integer', update: false },
+    errores: { type: 'jsonb', nullable: true },
+    motivoFallo: { name: 'motivo_fallo', type: 'varchar', length: 300, nullable: true },
+    lanzadoPor: { name: 'lanzado_por', type: 'uuid', update: false },
+    creadoEn: { name: 'creado_en', type: 'timestamptz', update: false },
+    encoladoEn: { name: 'encolado_en', type: 'timestamptz', nullable: true },
+    aplicadoPor: { name: 'aplicado_por', type: 'uuid', nullable: true },
+    terminadoEn: { name: 'terminado_en', type: 'timestamptz', nullable: true },
+    // Bloqueo optimista propio (WHERE version = previa), como en los ítems.
+    version: { type: 'bigint' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (apps/api). */
-export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad, AjusteEntidad];
+export const ENTIDADES_CAT = [CatalogoEntidad, ItemEntidad, AjusteEntidad, ImportacionEntidad];

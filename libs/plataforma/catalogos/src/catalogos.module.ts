@@ -12,21 +12,36 @@ import { EliminarItemGlobal } from './application/eliminar-item-global.js';
 import { EliminarItemPropio } from './application/eliminar-item-propio.js';
 import { GuardarItemGlobal } from './application/guardar-item-global.js';
 import { GuardarItemPropio } from './application/guardar-item-propio.js';
+import { AplicarImportacion } from './application/importacion/aplicar-importacion.js';
+import { ConsultarImportacion } from './application/importacion/consultar-importacion.js';
+import type { DependenciasImportacion } from './application/importacion/dependencias-importacion.js';
+import { DescargarErrores } from './application/importacion/descargar-errores.js';
+import { ListarImportaciones } from './application/importacion/listar-importaciones.js';
+import { PrevisualizarImportacion } from './application/importacion/previsualizar-importacion.js';
+import { SeguirImportacion } from './application/importacion/seguir-importacion.js';
 import { EVENTO_ERROR_CACHE, LectorItems } from './application/lector-items.js';
 import { ListarCatalogos } from './application/listar-catalogos.js';
 import { CATALOGO_PORT, type CatalogoPort } from './application/ports/catalogo.port.js';
 import { VERIFICADOR_OPERADOR, type VerificadorOperador } from './application/ports/verificador-operador.js';
 import { VERIFICADORES_REFERENCIAS, type VerificadorReferencias } from './application/ports/verificador-referencias.js';
 import { ValidarItem } from './application/validar-item.js';
+import { abrirColaImportaciones, EVENTO_ERROR_COLA, type ColaAbierta } from './infrastructure/bullmq/cola-importaciones.bullmq.js';
+import { LectorTablaArchivos } from './infrastructure/lectores/lector-tabla.archivos.js';
 import { CacheItemsRedis } from './infrastructure/redis/cache-items.redis.js';
+import { CanalAvanceRedis } from './infrastructure/redis/canal-avance.redis.js';
 import { AjustesRepositorioTypeOrm } from './infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from './infrastructure/typeorm/catalogos.repositorio.js';
+import { ImportacionesRepositorioTypeOrm } from './infrastructure/typeorm/importaciones.repositorio.js';
 import { ItemsRepositorioTypeOrm } from './infrastructure/typeorm/items.repositorio.js';
+import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
 import { LecturaItemsTypeOrm } from './infrastructure/typeorm/lectura-items.typeorm.js';
 import { CatalogosController } from './interface/catalogos.controller.js';
+import { ImportacionesController } from './interface/importaciones.controller.js';
 
 const CLIENTE_REDIS_CAT = Symbol('CLIENTE_REDIS_CAT');
 const DEPENDENCIAS_CATALOGOS = Symbol('DEPENDENCIAS_CATALOGOS');
+const DEPENDENCIAS_IMPORTACION = Symbol('DEPENDENCIAS_IMPORTACION');
+const COLA_ABIERTA = Symbol('COLA_ABIERTA');
 
 /** Fábrica de un proveedor que arma la app con sus propios tokens. */
 export interface FabricaDe<T> {
@@ -35,7 +50,10 @@ export interface FabricaDe<T> {
 }
 
 export interface CatalogosOpciones {
-  /** Caché de ítems (TR-RNF-102). El mismo Redis de ParametrosModule; conecta con el primer uso. */
+  /**
+   * Caché de ítems (TR-RNF-102), cola de importaciones y su avance (spec 19b). El mismo Redis de
+   * ParametrosModule; la caché conecta con el primer uso.
+   */
   redisUrl: string;
   /** Regla del tenant operador: la implementa apps/api con org (TR-RNF-119). */
   verificadorOperador: FabricaDe<VerificadorOperador>;
@@ -49,6 +67,15 @@ class CierreRedisCat implements OnModuleDestroy {
 
   onModuleDestroy(): void {
     this.redis.disconnect();
+  }
+}
+
+/** Cierra la cola de importaciones con la app. */
+class CierreColaImportaciones implements OnModuleDestroy {
+  constructor(private readonly abierta: ColaAbierta) {}
+
+  onModuleDestroy(): Promise<void> {
+    return this.abierta.cerrar();
   }
 }
 
@@ -67,11 +94,55 @@ export class CatalogosModule {
       useFactory: (dependencias: DependenciasCatalogos) => new tipo(dependencias),
       inject: [DEPENDENCIAS_CATALOGOS],
     });
+    const casoDeImportacion = <T>(tipo: new (dependencias: DependenciasImportacion) => T) => ({
+      provide: tipo,
+      useFactory: (dependencias: DependenciasImportacion) => new tipo(dependencias),
+      inject: [DEPENDENCIAS_IMPORTACION],
+    });
 
     return {
       module: CatalogosModule,
-      controllers: [CatalogosController],
+      // ImportacionesController primero: sus rutas `importaciones` no deben tomarse por un `{codigo}`.
+      controllers: [ImportacionesController, CatalogosController],
       providers: [
+        {
+          provide: COLA_ABIERTA,
+          // Solo el nombre del error: el mensaje puede traer la URL con la clave (TR-RNF-026).
+          useFactory: (): ColaAbierta => abrirColaImportaciones(opciones.redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_COLA, error: error.name })),
+        },
+        { provide: CierreColaImportaciones, useFactory: (abierta: ColaAbierta) => new CierreColaImportaciones(abierta), inject: [COLA_ABIERTA] },
+        {
+          provide: DEPENDENCIAS_IMPORTACION,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            verificadorOperador: VerificadorOperador,
+            abierta: ColaAbierta,
+            redis: Redis,
+          ): DependenciasImportacion => ({
+            unidadDeTrabajo,
+            contexto,
+            ids,
+            reloj,
+            catalogos: new CatalogosRepositorioTypeOrm(unidadDeTrabajo),
+            importaciones: new ImportacionesRepositorioTypeOrm(unidadDeTrabajo),
+            itemsGlobales: new LecturaItemsGlobalesTypeOrm(unidadDeTrabajo),
+            lector: new LectorTablaArchivos(),
+            verificadorOperador,
+            cola: abierta.cola,
+            canal: new CanalAvanceRedis(redis),
+            avisar,
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, VERIFICADOR_OPERADOR, COLA_ABIERTA, CLIENTE_REDIS_CAT],
+        },
+        casoDeImportacion(PrevisualizarImportacion),
+        casoDeImportacion(ListarImportaciones),
+        casoDeImportacion(ConsultarImportacion),
+        casoDeImportacion(DescargarErrores),
+        casoDeImportacion(AplicarImportacion),
+        casoDeImportacion(SeguirImportacion),
         {
           provide: CLIENTE_REDIS_CAT,
           // Solo el nombre del error: el mensaje puede traer la URL con la clave (TR-RNF-026).

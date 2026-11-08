@@ -1,0 +1,1828 @@
+codigo,descripcion,abreviatura
+10,grupo,
+11,equipo,
+13,ración,
+14,disparo,
+15,"barra, militar",
+20,contenedor de veinte pies,
+21,contenedor de cuarenta pies,
+22,decilitro por gramo,dl/g
+23,gramo por centímetro cúbico,g/cm³
+24,libra teórica,
+25,gramo por centímetro cuadrado,g/cm²
+27,tonelada teórica,
+28,kilogramo por metro cuadrado,kg/m²
+33,kilopascal metro cuadrado por gramo,kPa·m²/g
+34,kilopascal por milímetro,kPa/mm
+35,mililitro por centímetro cuadrado segundo,ml/(cm²·s)
+37,onza por pie cuadrado,oz/ft²
+38,"onza por pie cuadrado por 0,01 pulgada",oz/(ft²/cin)
+40,mililitro por segundo,ml/s
+41,mililitro por minuto,ml/min
+56,sitas,
+57,malla,
+58,kilogramo neto,
+59,parte por millón,ppm
+60,por ciento en peso,
+61,parte por billón (EE. UU.),ppb
+64,"libra por pulgada cuadrada, manométrica",
+66,oersted,Oe
+74,milipascal,mPa
+76,gauss,Gs
+77,milipulgada,mil
+78,kilogauss,kGs
+80,libra por pulgada cuadrada absoluta,lb/in²
+81,henry,H
+84,kilolibra-fuerza por pulgada cuadrada,klbf/in²
+85,pie libra-fuerza,ft·lbf
+87,libra por pie cúbico,lb/ft³
+89,poise,P
+91,stokes,St
+1I,tarifa fija,
+2A,radián por segundo,rad/s
+2B,radián por segundo al cuadrado,rad/s²
+2C,roentgen,R
+2G,voltio CA,V
+2H,voltio CC,V
+2I,unidad térmica británica (tabla internacional) por hora,BtuIT/h
+2J,centímetro cúbico por segundo,cm³/s
+2K,pie cúbico por hora,ft³/h
+2L,pie cúbico por minuto,ft³/min
+2M,centímetro por segundo,cm/s
+2N,decibelio,dB
+2P,kilobyte,kbyte
+2Q,kilobecquerel,kBq
+2R,kilocurie,kCi
+2U,megagramo,Mg
+2X,metro por minuto,m/min
+2Y,miliroentgen,mR
+2Z,milivoltio,mV
+3B,megajulio,MJ
+3C,mes-hombre,
+4C,centistokes,cSt
+4G,microlitro,µl
+4H,micrómetro (micra),µm
+4K,miliamperio,mA
+4L,megabyte,Mbyte
+4M,miligramo por hora,mg/h
+4N,megabecquerel,MBq
+4O,microfaradio,µF
+4P,newton por metro,N/m
+4Q,onza pulgada,oz·in
+4R,onza pie,oz·ft
+4T,picofaradio,pF
+4U,libra por hora,lb/h
+4W,tonelada corta (EE. UU.) por hora,ton (US) /h
+4X,kilolitro por hora,kl/h
+5A,barril (EE. UU.) por minuto,barrel (US)/min
+5B,lote,
+5E,MMSCF/día,
+5J,caballo de fuerza hidráulico,
+A1,caloría a 15 °C,cal₁₅
+A10,amperio metro cuadrado por julio segundo,A·m²/(J·s)
+A11,angstrom,Å
+A12,unidad astronómica,ua
+A13,attojulio,aJ
+A14,barn,b
+A15,barn por electronvoltio,b/eV
+A16,barn por estereorradián electronvoltio,b/(sr·eV)
+A17,barn por estereorradián,b/sr
+A18,becquerel por kilogramo,Bq/kg
+A19,becquerel por metro cúbico,Bq/m³
+A2,amperio por centímetro,A/cm
+A20,unidad térmica británica (tabla internacional) por segundo pie cuadrado grado Rankine,BtuIT/(s·ft²·°R)
+A21,unidad térmica británica (tabla internacional) por libra grado Rankine,BtuIT/(lb·°R)
+A22,unidad térmica británica (tabla internacional) por segundo pie grado Rankine,BtuIT/(s·ft·°R)
+A23,unidad térmica británica (tabla internacional) por hora pie cuadrado grado Rankine,BtuIT/(h·ft²·°R)
+A24,candela por metro cuadrado,cd/m²
+A25,caballo de vapor,CV
+A26,culombio metro,C·m
+A27,culombio metro al cuadrado por voltio,C·m²/V
+A28,culombio por centímetro cúbico,C/cm³
+A29,culombio por metro cúbico,C/m³
+A3,amperio por milímetro,A/mm
+A30,culombio por milímetro cúbico,C/mm³
+A31,culombio por kilogramo segundo,C/(kg·s)
+A32,culombio por mol,C/mol
+A33,culombio por centímetro cuadrado,C/cm²
+A34,culombio por metro cuadrado,C/m²
+A35,culombio por milímetro cuadrado,C/mm²
+A36,centímetro cúbico por mol,cm³/mol
+A37,decímetro cúbico por mol,dm³/mol
+A38,metro cúbico por culombio,m³/C
+A39,metro cúbico por kilogramo,m³/kg
+A4,amperio por centímetro cuadrado,A/cm²
+A40,metro cúbico por mol,m³/mol
+A41,amperio por metro cuadrado,A/m²
+A42,curie por kilogramo,Ci/kg
+A43,tonelaje de peso muerto,dwt
+A44,decalitro,dal
+A45,decámetro,dam
+A47,decitex,dtex (g/10km)
+A48,grado Rankine,°R
+A49,denier,den (g/9 km)
+A5,amperio metro cuadrado,A·m²
+A50,dina segundo por centímetro cúbico,dyn·s/cm³
+A51,dina segundo por centímetro,dyn·s/cm
+A52,dina segundo por centímetro a la quinta potencia,dyn·s/cm⁵
+A53,electronvoltio,eV
+A54,electronvoltio por metro,eV/m
+A55,electronvoltio metro cuadrado,eV·m²
+A56,electronvoltio metro cuadrado por kilogramo,eV·m²/kg
+A57,ergio,erg
+A58,ergio por centímetro,erg/cm
+A59,nubosidad en octas,
+A6,amperio por metro cuadrado kelvin al cuadrado,A/(m²·K²)
+A60,ergio por centímetro cúbico,erg/cm³
+A61,ergio por gramo,erg/g
+A62,ergio por gramo segundo,erg/g·s
+A63,ergio por segundo,erg/s
+A64,ergio por segundo centímetro cuadrado,erg/(s·cm²)
+A65,ergio por centímetro cuadrado segundo,erg/(cm²·s)
+A66,ergio centímetro cuadrado,erg·cm²
+A67,ergio centímetro cuadrado por gramo,erg·cm²/g
+A68,exajulio,EJ
+A69,faradio por metro,F/m
+A7,amperio por milímetro cuadrado,A/mm²
+A70,femtojulio,fJ
+A71,femtómetro,fm
+A73,pie por segundo al cuadrado,ft/s²
+A74,pie libra-fuerza por segundo,ft·lbf/s
+A75,tonelada de flete,
+A76,gal,Gal
+A77,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de desplazamiento,
+A78,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de corriente eléctrica,
+A79,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de carga eléctrica,
+A8,amperio segundo,A·s
+A80,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de intensidad de campo eléctrico,
+A81,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de polarización eléctrica,
+A82,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de potencial eléctrico,
+A83,unidad CGS gaussiana (sistema centímetro-gramo-segundo) de magnetización,
+A84,gigaculombio por metro cúbico,GC/m³
+A85,gigaelectronvoltio,GeV
+A86,gigahertz,GHz
+A87,gigaohm,GΩ
+A88,gigaohm metro,GΩ·m
+A89,gigapascal,GPa
+A9,tarifa,
+A90,gigavatio,GW
+A91,gon,gon
+A93,gramo por metro cúbico,g/m³
+A94,gramo por mol,g/mol
+A95,gray,Gy
+A96,gray por segundo,Gy/s
+A97,hectopascal,hPa
+A98,henry por metro,H/m
+A99,bit,bit
+AA,bola,
+AB,paquete a granel,pk
+ACR,acre,acre
+ACT,actividad,
+AD,byte,byte
+AE,amperio por metro,A/m
+AH,minuto adicional,
+AI,minuto promedio por llamada,
+AK,braza,fth
+AL,línea de acceso,
+AMH,amperio hora,A·h
+AMP,amperio,A
+ANN,año,y
+APZ,onza troy u onza de boticario,tr oz
+AQ,unidad de factor antihemofílico (AHF),
+ARE,área,a
+AS,surtido,
+ASM,grado alcohólico en masa,
+ASU,grado alcohólico en volumen,
+ATM,atmósfera estándar,atm
+ATT,atmósfera técnica,at
+AWG,calibre de alambre estadounidense (AWG),AWG
+AY,ensamble,
+AZ,unidad térmica británica (tabla internacional) por libra,BtuIT/lb
+B1,barril (EE. UU.) por día,barrel (US)/d
+B10,bit por segundo,bit/s
+B11,julio por kilogramo kelvin,J/(kg·K)
+B12,julio por metro,J/m
+B13,julio por metro cuadrado,J/m²
+B14,julio por metro a la cuarta potencia,J/m⁴
+B15,julio por mol,J/mol
+B16,julio por mol kelvin,J/(mol·K)
+B17,crédito,
+B18,julio segundo,J·s
+B19,dígito,
+B20,julio metro cuadrado por kilogramo,J·m²/kg
+B21,kelvin por vatio,K/W
+B22,kiloamperio,kA
+B23,kiloamperio por metro cuadrado,kA/m²
+B24,kiloamperio por metro,kA/m
+B25,kilobecquerel por kilogramo,kBq/kg
+B26,kiloculombio,kC
+B27,kiloculombio por metro cúbico,kC/m³
+B28,kiloculombio por metro cuadrado,kC/m²
+B29,kiloelectronvoltio,keV
+B3,libra de guata (batting pound),
+B30,gibibit,Gibit
+B31,kilogramo metro por segundo,kg·m/s
+B32,kilogramo metro al cuadrado,kg·m²
+B33,kilogramo metro al cuadrado por segundo,kg·m²/s
+B34,kilogramo por decímetro cúbico,kg/dm³
+B35,kilogramo por litro,kg/l or kg/L
+B36,caloría (termoquímica) por gramo,calth/g
+B37,kilogramo-fuerza,kgf
+B38,kilogramo-fuerza metro,kgf·m
+B39,kilogramo-fuerza metro por segundo,kgf·m/s
+B4,"barril, imperial",
+B40,kilogramo-fuerza por metro cuadrado,kgf/m²
+B41,kilojulio por kelvin,kJ/K
+B42,kilojulio por kilogramo,kJ/kg
+B43,kilojulio por kilogramo kelvin,kJ/(kg·K)
+B44,kilojulio por mol,kJ/mol
+B45,kilomol,kmol
+B46,kilomol por metro cúbico,kmol/m³
+B47,kilonewton,kN
+B48,kilonewton metro,kN·m
+B49,kiloohm,kΩ
+B50,kiloohm metro,kΩ·m
+B51,kilopondio,kp
+B52,kilosegundo,ks
+B53,kilosiemens,kS
+B54,kilosiemens por metro,kS/m
+B55,kilovoltio por metro,kV/m
+B56,kiloweber por metro,kWb/m
+B57,año luz,ly
+B58,litro por mol,l/mol
+B59,lumen hora,lm·h
+B60,lumen por metro cuadrado,lm/m²
+B61,lumen por vatio,lm/W
+B62,lumen segundo,lm·s
+B63,lux hora,lx·h
+B64,lux segundo,lx·s
+B65,maxwell,Mx
+B66,megaamperio por metro cuadrado,MA/m²
+B67,megabecquerel por kilogramo,MBq/kg
+B68,gigabit,Gbit
+B69,megaculombio por metro cúbico,MC/m³
+B7,ciclo,
+B70,megaculombio por metro cuadrado,MC/m²
+B71,megaelectronvoltio,MeV
+B72,megagramo por metro cúbico,Mg/m³
+B73,meganewton,MN
+B74,meganewton metro,MN·m
+B75,megaohm,MΩ
+B76,megaohm metro,MΩ·m
+B77,megasiemens por metro,MS/m
+B78,megavoltio,MV
+B79,megavoltio por metro,MV/m
+B8,julio por metro cúbico,J/m³
+B80,gigabit por segundo,Gbit/s
+B81,metro cuadrado recíproco segundo recíproco,m⁻²/s
+B82,pulgada por pie lineal,
+B83,metro a la cuarta potencia,m⁴
+B84,microamperio,µA
+B85,microbar,µbar
+B86,microculombio,µC
+B87,microculombio por metro cúbico,µC/m³
+B88,microculombio por metro cuadrado,µC/m²
+B89,microfaradio por metro,µF/m
+B90,microhenry,µH
+B91,microhenry por metro,µH/m
+B92,micronewton,µN
+B93,micronewton metro,µN·m
+B94,microohm,µΩ
+B95,microohm metro,µΩ·m
+B96,micropascal,µPa
+B97,microrradián,µrad
+B98,microsegundo,µs
+B99,microsiemens,µS
+BAR,bar [unidad de presión],bar
+BB,caja base,
+BFT,pie tablar,fbm
+BHP,caballo de fuerza al freno,BHP
+BIL,billón (EUR),
+BLD,barril seco (EE. UU.),bbl (US)
+BLL,barril (EE. UU.),barrel (US)
+BP,cien pies tablares,
+BPM,latidos por minuto,BPM
+BQL,becquerel,Bq
+BTU,unidad térmica británica (tabla internacional),BtuIT
+BUA,bushel (EE. UU.),bu (US)
+BUI,bushel (RU),bushel (UK)
+C0,llamada,
+C10,milifaradio,mF
+C11,miligal,mGal
+C12,miligramo por metro,mg/m
+C13,miligray,mGy
+C14,milihenry,mH
+C15,milijulio,mJ
+C16,milímetro por segundo,mm/s
+C17,milímetro al cuadrado por segundo,mm²/s
+C18,milimol,mmol
+C19,mol por kilogramo,mol/kg
+C20,milinewton,mN
+C21,kibibit,Kibit
+C22,milinewton por metro,mN/m
+C23,miliohm metro,mΩ·m
+C24,milipascal segundo,mPa·s
+C25,milirradián,mrad
+C26,milisegundo,ms
+C27,milisiemens,mS
+C28,milisievert,mSv
+C29,militesla,mT
+C3,microvoltio por metro,µV/m
+C30,milivoltio por metro,mV/m
+C31,milivatio,mW
+C32,milivatio por metro cuadrado,mW/m²
+C33,miliweber,mWb
+C34,mol,mol
+C35,mol por decímetro cúbico,mol/dm³
+C36,mol por metro cúbico,mol/m³
+C37,kilobit,kbit
+C38,mol por litro,mol/l
+C39,nanoamperio,nA
+C40,nanoculombio,nC
+C41,nanofaradio,nF
+C42,nanofaradio por metro,nF/m
+C43,nanohenry,nH
+C44,nanohenry por metro,nH/m
+C45,nanómetro,nm
+C46,nanoohm metro,nΩ·m
+C47,nanosegundo,ns
+C48,nanotesla,nT
+C49,nanovatio,nW
+C50,neper,Np
+C51,neper por segundo,Np/s
+C52,picómetro,pm
+C53,newton metro segundo,N·m·s
+C54,newton metro al cuadrado por kilogramo al cuadrado,N·m²/kg²
+C55,newton por metro cuadrado,N/m²
+C56,newton por milímetro cuadrado,N/mm²
+C57,newton segundo,N·s
+C58,newton segundo por metro,N·s/m
+C59,octava,
+C60,ohm centímetro,Ω·cm
+C61,ohm metro,Ω·m
+C62,uno,1
+C63,pársec,pc
+C64,pascal por kelvin,Pa/K
+C65,pascal segundo,Pa·s
+C66,pascal segundo por metro cúbico,Pa·s/m³
+C67,pascal segundo por metro,Pa· s/m
+C68,petajulio,PJ
+C69,fonio,
+C7,centipoise,cP
+C70,picoamperio,pA
+C71,picoculombio,pC
+C72,picofaradio por metro,pF/m
+C73,picohenry,pH
+C74,kilobit por segundo,kbit/s
+C75,picovatio,pW
+C76,picovatio por metro cuadrado,pW/m²
+C78,libra-fuerza,lbf
+C79,kilovoltio amperio hora,kVAh
+C8,miliculombio por kilogramo,mC/kg
+C80,rad,rad
+C81,radián,rad
+C82,radián metro cuadrado por mol,rad·m²/mol
+C83,radián metro cuadrado por kilogramo,rad·m²/kg
+C84,radián por metro,rad/m
+C85,angstrom recíproco,Å⁻¹
+C86,metro cúbico recíproco,m⁻³
+C87,metro cúbico recíproco por segundo,m⁻³/s
+C88,electronvoltio recíproco por metro cúbico,eV⁻¹/m³
+C89,henry recíproco,H⁻¹
+C9,grupo de bobinas,
+C90,julio recíproco por metro cúbico,J⁻¹/m³
+C91,kelvin recíproco o kelvin a la potencia menos uno,K⁻¹
+C92,metro recíproco,m⁻¹
+C93,metro cuadrado recíproco,m⁻²
+C94,minuto recíproco,min⁻¹
+C95,mol recíproco,mol⁻¹
+C96,pascal recíproco o pascal a la potencia menos uno,Pa⁻¹
+C97,segundo recíproco,s⁻¹
+C99,segundo recíproco por metro al cuadrado,s⁻¹/m²
+CCT,capacidad de carga en toneladas métricas,
+CDL,candela,cd
+CEL,grado Celsius,°C
+CEN,centena,
+CG,tarjeta,
+CGM,centigramo,cg
+CKG,culombio por kilogramo,C/kg
+CLF,cien hojas,
+CLT,centilitro,cl
+CMK,centímetro cuadrado,cm²
+CMQ,centímetro cúbico,cm³
+CMT,centímetro,cm
+CNP,cien paquetes,
+CNT,cental (RU),
+COU,culombio,C
+CTG,gramo de contenido,
+CTM,quilate métrico,
+CTN,tonelada de contenido (métrica),
+CUR,curie,Ci
+CWA,quintal (cwt) / quintal corto (EE. UU.),cwt (US)
+CWI,quintal largo (RU),cwt (UK)
+D03,kilovatio hora por hora,kW·h/h
+D04,lot [unidad de peso],
+D1,segundo recíproco por estereorradián,s⁻¹/sr
+D10,siemens por metro,S/m
+D11,mebibit,Mibit
+D12,siemens metro cuadrado por mol,S·m²/mol
+D13,sievert,Sv
+D15,sonio,
+D16,centímetro cuadrado por ergio,cm²/erg
+D17,centímetro cuadrado por estereorradián ergio,cm²/(sr·erg)
+D18,metro kelvin,m·K
+D19,metro cuadrado kelvin por vatio,m²·K/W
+D2,segundo recíproco por estereorradián metro al cuadrado,s⁻¹/(sr·m²)
+D20,metro cuadrado por julio,m²/J
+D21,metro cuadrado por kilogramo,m²/kg
+D22,metro cuadrado por mol,m²/mol
+D23,gramo de proteína (pen gram),
+D24,metro cuadrado por estereorradián,m²/sr
+D25,metro cuadrado por estereorradián julio,m²/(sr·J)
+D26,metro cuadrado por voltio segundo,m²/(V·s)
+D27,estereorradián,sr
+D29,terahertz,THz
+D30,terajulio,TJ
+D31,teravatio,TW
+D32,teravatio hora,TW·h
+D33,tesla,T
+D34,tex,tex (g/km)
+D35,caloría (termoquímica),calth
+D36,megabit,Mbit
+D37,caloría (termoquímica) por gramo kelvin,calth/(g·K)
+D38,caloría (termoquímica) por segundo centímetro kelvin,calth/(s·cm·K)
+D39,caloría (termoquímica) por segundo centímetro cuadrado kelvin,calth/(s·cm²·K)
+D41,tonelada métrica por metro cúbico,t/m³
+D42,año trópico,y (tropical)
+D43,unidad de masa atómica unificada,u
+D44,var,var
+D45,voltio al cuadrado por kelvin al cuadrado,V²/K²
+D46,voltio-amperio,V·A
+D47,voltio por centímetro,V/cm
+D48,voltio por kelvin,V/K
+D49,milivoltio por kelvin,mV/K
+D5,kilogramo por centímetro cuadrado,kg/cm²
+D50,voltio por metro,V/m
+D51,voltio por milímetro,V/mm
+D52,vatio por kelvin,W/K
+D53,vatio por metro kelvin,W/(m·K)
+D54,vatio por metro cuadrado,W/m²
+D55,vatio por metro cuadrado kelvin,W/(m²·K)
+D56,vatio por metro cuadrado kelvin a la cuarta potencia,W/(m²·K⁴)
+D57,vatio por estereorradián,W/sr
+D58,vatio por estereorradián metro cuadrado,W/(sr·m²)
+D59,weber por metro,Wb/m
+D6,roentgen por segundo,R/s
+D60,weber por milímetro,Wb/mm
+D61,minuto [unidad de ángulo],'
+D62,segundo [unidad de ángulo],""""
+D63,libro,
+D65,ronda,
+D68,número de palabras,
+D69,pulgada a la cuarta potencia,in⁴
+D70,caloría (tabla internacional),calIT
+D71,caloría (tabla internacional) por segundo centímetro kelvin,calIT/(s·cm·K)
+D72,caloría (tabla internacional) por segundo centímetro cuadrado kelvin,calIT/(s·cm²·K)
+D73,julio metro cuadrado,J·m²
+D74,kilogramo por mol,kg/mol
+D75,caloría (tabla internacional) por gramo,calIT/g
+D76,caloría (tabla internacional) por gramo kelvin,calIT/(g·K)
+D77,megaculombio,MC
+D78,megajulio por segundo,MJ/s
+D80,microvatio,µW
+D81,microtesla,µT
+D82,microvoltio,µV
+D83,milinewton metro,mN·m
+D85,microvatio por metro cuadrado,µW/m²
+D86,miliculombio,mC
+D87,milimol por kilogramo,mmol/kg
+D88,miliculombio por metro cúbico,mC/m³
+D89,miliculombio por metro cuadrado,mC/m²
+D9,dina por centímetro cuadrado,dyn/cm²
+D91,rem,rem
+D93,segundo por metro cúbico,s/m³
+D94,segundo por metro cúbico radián,s/(rad·m³)
+D95,julio por gramo,J/g
+DAA,decárea,daa
+DAD,diez días,
+DAY,día,d
+DB,libra seca,
+DD,grado [unidad de ángulo],°
+DEC,década,
+DG,decigramo,dg
+DJ,decagramo,dag
+DLT,decilitro,dl
+DMA,decámetro cúbico,dam³
+DMK,decímetro cuadrado,dm²
+DMO,kilolitro estándar,
+DMQ,decímetro cúbico,dm³
+DMT,decímetro,dm
+DN,decinewton metro,dN·m
+DPC,docena de piezas,
+DPR,docena de pares,
+DPT,tonelaje de desplazamiento,
+DRA,dracma (EE. UU.),
+DRI,dracma (RU),
+DRL,docena de rollos,
+DT,tonelada seca,
+DTN,decitonelada,dt or dtn
+DU,dina,dyn
+DWT,pennyweight,
+DX,dina por centímetro,dyn/cm
+DZN,docena,DOZ
+DZP,docena de paquetes,
+E01,newton por centímetro cuadrado,N/cm²
+E07,megavatio hora por hora,MW·h/h
+E08,megavatio por hertz,MW/Hz
+E09,miliamperio hora,mA·h
+E10,grado día,deg da
+E11,gigacaloría,
+E12,millar,
+E14,kilocaloría (tabla internacional),kcalIT
+E15,kilocaloría (termoquímica) por hora,kcalth/h
+E16,millón de BTU (IT) por hora,BtuIT/h
+E17,pie cúbico por segundo,ft³/s
+E18,tonelada métrica por hora,t/h
+E19,ping,
+E20,megabit por segundo,Mbit/s
+E21,acciones,
+E22,TEU,
+E23,neumático,
+E25,unidad activa,
+E27,dosis,
+E28,tonelada secada al aire,
+E30,hebra,
+E31,metro cuadrado por litro,m²/l
+E32,litro por hora,l/h
+E33,pie por millar,
+E34,gigabyte,Gbyte
+E35,terabyte,Tbyte
+E36,petabyte,Pbyte
+E37,píxel,
+E38,megapíxel,
+E39,puntos por pulgada,dpi
+E4,kilogramo bruto,
+E40,parte por cien mil,ppht
+E41,kilogramo-fuerza por milímetro cuadrado,kgf/mm²
+E42,kilogramo-fuerza por centímetro cuadrado,kgf/cm²
+E43,julio por centímetro cuadrado,J/cm²
+E44,kilogramo-fuerza metro por centímetro cuadrado,kgf·m/cm²
+E45,miliohm,mΩ
+E46,kilovatio hora por metro cúbico,kW·h/m³
+E47,kilovatio hora por kelvin,kW·h/K
+E48,unidad de servicio,
+E49,día laborable,
+E50,unidad contable,
+E51,trabajo,
+E52,pie corrido,
+E53,prueba,
+E54,viaje,
+E55,uso,
+E56,pozo,
+E57,zona,
+E58,exabit por segundo,Ebit/s
+E59,exbibyte,Eibyte
+E60,pebibyte,Pibyte
+E61,tebibyte,Tibyte
+E62,gibibyte,Gibyte
+E63,mebibyte,Mibyte
+E64,kibibyte,Kibyte
+E65,exbibit por metro,Eibit/m
+E66,exbibit por metro cuadrado,Eibit/m²
+E67,exbibit por metro cúbico,Eibit/m³
+E68,gigabyte por segundo,Gbyte/s
+E69,gibibit por metro,Gibit/m
+E70,gibibit por metro cuadrado,Gibit/m²
+E71,gibibit por metro cúbico,Gibit/m³
+E72,kibibit por metro,Kibit/m
+E73,kibibit por metro cuadrado,Kibit/m²
+E74,kibibit por metro cúbico,Kibit/m³
+E75,mebibit por metro,Mibit/m
+E76,mebibit por metro cuadrado,Mibit/m²
+E77,mebibit por metro cúbico,Mibit/m³
+E78,petabit,Pbit
+E79,petabit por segundo,Pbit/s
+E80,pebibit por metro,Pibit/m
+E81,pebibit por metro cuadrado,Pibit/m²
+E82,pebibit por metro cúbico,Pibit/m³
+E83,terabit,Tbit
+E84,terabit por segundo,Tbit/s
+E85,tebibit por metro,Tibit/m
+E86,tebibit por metro cúbico,Tibit/m³
+E87,tebibit por metro cuadrado,Tibit/m²
+E88,bit por metro,bit/m
+E89,bit por metro cuadrado,bit/m²
+E90,centímetro recíproco,cm⁻¹
+E91,día recíproco,d⁻¹
+E92,decímetro cúbico por hora,dm³/h
+E93,kilogramo por hora,kg/h
+E94,kilomol por segundo,kmol/s
+E95,mol por segundo,mol/s
+E96,grado por segundo,°/s
+E97,milímetro por grado Celsius metro,mm/(°C·m)
+E98,grado Celsius por kelvin,°C/K
+E99,hectopascal por bar,hPa/bar
+EA,cada uno,
+EB,buzón de correo electrónico,
+EQ,galón equivalente,
+F01,bit por metro cúbico,bit/m³
+F02,kelvin por kelvin,K/K
+F03,kilopascal por bar,kPa/bar
+F04,milibar por bar,mbar/bar
+F05,megapascal por bar,MPa/bar
+F06,poise por bar,P/bar
+F07,pascal por bar,Pa/bar
+F08,miliamperio por pulgada,mA/in
+F10,kelvin por hora,K/h
+F11,kelvin por minuto,K/min
+F12,kelvin por segundo,K/s
+F13,slug,slug
+F14,gramo por kelvin,g/K
+F15,kilogramo por kelvin,kg/K
+F16,miligramo por kelvin,mg/K
+F17,libra-fuerza por pie,lbf/ft
+F18,kilogramo centímetro cuadrado,kg·cm²
+F19,kilogramo milímetro cuadrado,kg·mm²
+F20,libra pulgada al cuadrado,lb·in²
+F21,libra-fuerza pulgada,lbf·in
+F22,libra-fuerza pie por amperio,lbf·ft/A
+F23,gramo por decímetro cúbico,g/dm³
+F24,kilogramo por kilomol,kg/kmol
+F25,gramo por hertz,g/Hz
+F26,gramo por día,g/d
+F27,gramo por hora,g/h
+F28,gramo por minuto,g/min
+F29,gramo por segundo,g/s
+F30,kilogramo por día,kg/d
+F31,kilogramo por minuto,kg/min
+F32,miligramo por día,mg/d
+F33,miligramo por minuto,mg/min
+F34,miligramo por segundo,mg/s
+F35,gramo por día kelvin,g/(d·K)
+F36,gramo por hora kelvin,g/(h·K)
+F37,gramo por minuto kelvin,g/(min·K)
+F38,gramo por segundo kelvin,g/(s·K)
+F39,kilogramo por día kelvin,kg/(d·K)
+F40,kilogramo por hora kelvin,kg/(h·K)
+F41,kilogramo por minuto kelvin,kg/(min·K)
+F42,kilogramo por segundo kelvin,kg/(s·K)
+F43,miligramo por día kelvin,mg/(d·K)
+F44,miligramo por hora kelvin,mg/(h·K)
+F45,miligramo por minuto kelvin,mg/(min·K)
+F46,miligramo por segundo kelvin,mg/(s·K)
+F47,newton por milímetro,N/mm
+F48,libra-fuerza por pulgada,lbf/in
+F49,rod [unidad de distancia],rd (US)
+F50,micrómetro por kelvin,µm/K
+F51,centímetro por kelvin,cm/K
+F52,metro por kelvin,m/K
+F53,milímetro por kelvin,mm/K
+F54,miliohm por metro,mΩ/m
+F55,ohm por milla (milla terrestre),Ω/mi
+F56,ohm por kilómetro,Ω/km
+F57,miliamperio por libra-fuerza por pulgada cuadrada,mA/(lbf/in²)
+F58,bar recíproco,1/bar
+F59,miliamperio por bar,mA/bar
+F60,grado Celsius por bar,°C/bar
+F61,kelvin por bar,K/bar
+F62,gramo por día bar,g/(d·bar)
+F63,gramo por hora bar,g/(h·bar)
+F64,gramo por minuto bar,g/(min·bar)
+F65,gramo por segundo bar,g/(s·bar)
+F66,kilogramo por día bar,kg/(d·bar)
+F67,kilogramo por hora bar,kg/(h·bar)
+F68,kilogramo por minuto bar,kg/(min·bar)
+F69,kilogramo por segundo bar,kg/(s·bar)
+F70,miligramo por día bar,mg/(d·bar)
+F71,miligramo por hora bar,mg/(h·bar)
+F72,miligramo por minuto bar,mg/(min·bar)
+F73,miligramo por segundo bar,mg/(s·bar)
+F74,gramo por bar,g/bar
+F75,miligramo por bar,mg/bar
+F76,miliamperio por milímetro,mA/mm
+F77,pascal segundo por kelvin,Pa.s/K
+F78,pulgada de agua,inH₂O
+F79,pulgada de mercurio,inHg
+F80,caballo de fuerza hidráulico,
+F81,bar por kelvin,bar/K
+F82,hectopascal por kelvin,hPa/K
+F83,kilopascal por kelvin,kPa/K
+F84,milibar por kelvin,mbar/K
+F85,megapascal por kelvin,MPa/K
+F86,poise por kelvin,P/K
+F87,voltio por litro minuto,V/(l·min)
+F88,newton centímetro,N·cm
+F89,newton metro por grado,Nm/°
+F90,newton metro por amperio,N·m/A
+F91,bar litro por segundo,bar·l/s
+F92,bar metro cúbico por segundo,bar·m³/s
+F93,hectopascal litro por segundo,hPa·l/s
+F94,hectopascal metro cúbico por segundo,hPa·m³/s
+F95,milibar litro por segundo,mbar·l/s
+F96,milibar metro cúbico por segundo,mbar·m³/s
+F97,megapascal litro por segundo,MPa·l/s
+F98,megapascal metro cúbico por segundo,MPa·m³/s
+F99,pascal litro por segundo,Pa·l/s
+FAH,grado Fahrenheit,°F
+FAR,faradio,F
+FBM,metro de fibra,
+FC,mil pies cúbicos,kft³
+FF,cien metros cúbicos,
+FH,micromol,µmol
+FIT,fallas en el tiempo,FIT
+FL,tonelada en escamas (flake ton),
+FOT,pie,ft
+FP,libra por pie cuadrado,lb/ft²
+FR,pie por minuto,ft/min
+FS,pie por segundo,ft/s
+FTK,pie cuadrado,ft²
+FTQ,pie cúbico,ft³
+G01,pascal metro cúbico por segundo,Pa·m³/s
+G04,centímetro por bar,cm/bar
+G05,metro por bar,m/bar
+G06,milímetro por bar,mm/bar
+G08,pulgada cuadrada por segundo,in²/s
+G09,metro cuadrado por segundo kelvin,m²/(s·K)
+G10,stokes por kelvin,St/K
+G11,gramo por centímetro cúbico bar,g/(cm³·bar)
+G12,gramo por decímetro cúbico bar,g/(dm³·bar)
+G13,gramo por litro bar,g/(l·bar)
+G14,gramo por metro cúbico bar,g/(m³·bar)
+G15,gramo por mililitro bar,g/(ml·bar)
+G16,kilogramo por centímetro cúbico bar,kg/(cm³·bar)
+G17,kilogramo por litro bar,kg/(l·bar)
+G18,kilogramo por metro cúbico bar,kg/(m³·bar)
+G19,newton metro por kilogramo,N·m/kg
+G2,galón (EE. UU.) por minuto,gal (US) /min
+G20,libra-fuerza pie por libra,lbf·ft/lb
+G21,taza [unidad de volumen],cup (US)
+G23,peck,pk (US)
+G24,cucharada (EE. UU.),tablespoon (US)
+G25,cucharadita (EE. UU.),teaspoon (US)
+G26,estéreo,st
+G27,centímetro cúbico por kelvin,cm³/K
+G28,litro por kelvin,l/K
+G29,metro cúbico por kelvin,m³/K
+G3,galón imperial por minuto,gal (UK) /min
+G30,mililitro por kelvin,ml/K
+G31,kilogramo por centímetro cúbico,kg/cm³
+G32,onza (avoirdupois) por yarda cúbica,oz/yd³
+G33,gramo por centímetro cúbico kelvin,g/(cm³·K)
+G34,gramo por decímetro cúbico kelvin,g/(dm³·K)
+G35,gramo por litro kelvin,g/(l·K)
+G36,gramo por metro cúbico kelvin,g/(m³·K)
+G37,gramo por mililitro kelvin,g/(ml·K)
+G38,kilogramo por centímetro cúbico kelvin,kg/(cm³·K)
+G39,kilogramo por litro kelvin,kg/(l·K)
+G40,kilogramo por metro cúbico kelvin,kg/(m³·K)
+G41,metro cuadrado por segundo bar,m²/(s·bar)
+G42,microsiemens por centímetro,µS/cm
+G43,microsiemens por metro,µS/m
+G44,nanosiemens por centímetro,nS/cm
+G45,nanosiemens por metro,nS/m
+G46,stokes por bar,St/bar
+G47,centímetro cúbico por día,cm³/d
+G48,centímetro cúbico por hora,cm³/h
+G49,centímetro cúbico por minuto,cm³/min
+G50,galón (EE. UU.) por hora,gal/h
+G51,litro por segundo,l/s
+G52,metro cúbico por día,m³/d
+G53,metro cúbico por minuto,m³/min
+G54,mililitro por día,ml/d
+G55,mililitro por hora,ml/h
+G56,pulgada cúbica por hora,in³/h
+G57,pulgada cúbica por minuto,in³/min
+G58,pulgada cúbica por segundo,in³/s
+G59,miliamperio por litro minuto,mA/(l·min)
+G60,voltio por bar,V/bar
+G61,centímetro cúbico por día kelvin,cm³/(d·K)
+G62,centímetro cúbico por hora kelvin,cm³/(h·K)
+G63,centímetro cúbico por minuto kelvin,cm³/(min·K)
+G64,centímetro cúbico por segundo kelvin,cm³/(s·K)
+G65,litro por día kelvin,l/(d·K)
+G66,litro por hora kelvin,l/(h·K)
+G67,litro por minuto kelvin,l/(min·K)
+G68,litro por segundo kelvin,l/(s·K)
+G69,metro cúbico por día kelvin,m³/(d·K)
+G70,metro cúbico por hora kelvin,m³/(h·K)
+G71,metro cúbico por minuto kelvin,m³/(min·K)
+G72,metro cúbico por segundo kelvin,m³/(s·K)
+G73,mililitro por día kelvin,ml/(d·K)
+G74,mililitro por hora kelvin,ml/(h·K)
+G75,mililitro por minuto kelvin,ml/(min·K)
+G76,mililitro por segundo kelvin,ml/(s·K)
+G77,milímetro a la cuarta potencia,mm⁴
+G78,centímetro cúbico por día bar,cm³/(d·bar)
+G79,centímetro cúbico por hora bar,cm³/(h·bar)
+G80,centímetro cúbico por minuto bar,cm³/(min·bar)
+G81,centímetro cúbico por segundo bar,cm³/(s·bar)
+G82,litro por día bar,l/(d·bar)
+G83,litro por hora bar,l/(h·bar)
+G84,litro por minuto bar,l/(min·bar)
+G85,litro por segundo bar,l/(s·bar)
+G86,metro cúbico por día bar,m³/(d·bar)
+G87,metro cúbico por hora bar,m³/(h·bar)
+G88,metro cúbico por minuto bar,m³/(min·bar)
+G89,metro cúbico por segundo bar,m³/(s·bar)
+G90,mililitro por día bar,ml/(d·bar)
+G91,mililitro por hora bar,ml/(h·bar)
+G92,mililitro por minuto bar,ml/(min·bar)
+G93,mililitro por segundo bar,ml/(s·bar)
+G94,centímetro cúbico por bar,cm³/bar
+G95,litro por bar,l/bar
+G96,metro cúbico por bar,m³/bar
+G97,mililitro por bar,ml/bar
+G98,microhenry por kiloohm,µH/kΩ
+G99,microhenry por ohm,µH/Ω
+GB,galón (EE. UU.) por día,gal (US)/d
+GBQ,gigabecquerel,GBq
+GDW,"gramo, peso seco",
+GE,libra por galón (EE. UU.),lb/gal (US)
+GF,gramo por metro (gramo por 100 centímetros),g/m
+GFI,gramo de isótopo fisible,gi F/S
+GGR,gran gruesa,
+GIA,gill (EE. UU.),gi (US)
+GIC,"gramo, incluido el envase",
+GII,gill (RU),gi (UK)
+GIP,"gramo, incluido el embalaje interior",
+GJ,gramo por mililitro,g/ml
+GL,gramo por litro,g/l
+GLD,galón seco (EE. UU.),dry gal (US)
+GLI,galón (RU),gal (UK)
+GLL,galón (EE. UU.),gal (US)
+GM,gramo por metro cuadrado,g/m²
+GO,miligramo por metro cuadrado,mg/m²
+GP,miligramo por metro cúbico,mg/m³
+GQ,microgramo por metro cúbico,µg/m³
+GRM,gramo,g
+GRN,grano,gr
+GRO,gruesa,gr
+GRT,tonelada de registro bruto,
+GT,tonelada bruta,
+GV,gigajulio,GJ
+GWH,gigavatio hora,GW·h
+H03,henry por kiloohm,H/kΩ
+H04,henry por ohm,H/Ω
+H05,milihenry por kiloohm,mH/kΩ
+H06,milihenry por ohm,mH/Ω
+H07,pascal segundo por bar,Pa·s/bar
+H08,microbecquerel,µBq
+H09,año recíproco,1/y
+H10,hora recíproca,1/h
+H11,mes recíproco,1/mo
+H12,grado Celsius por hora,°C/h
+H13,grado Celsius por minuto,°C/min
+H14,grado Celsius por segundo,°C/s
+H15,centímetro cuadrado por gramo,cm²/g
+H16,decámetro cuadrado,dam²
+H18,hectómetro cuadrado,hm²
+H19,hectómetro cúbico,hm³
+H20,kilómetro cúbico,km³
+H21,en blanco,
+H22,voltio pulgada cuadrada por libra-fuerza,V/(lbf/in²)
+H23,voltio por pulgada,V/in
+H24,voltio por microsegundo,V/µs
+H25,por ciento por kelvin,%/K
+H26,ohm por metro,Ω/m
+H27,grado por metro,°/m
+H28,microfaradio por kilómetro,µF/km
+H29,microgramo por litro,µg/l
+H30,micrómetro cuadrado (micra cuadrada),µm²
+H31,amperio por kilogramo,A/kg
+H32,amperio al cuadrado segundo,A²·s
+H33,faradio por kilómetro,F/km
+H34,hertz metro,Hz·m
+H35,kelvin metro por vatio,K·m/W
+H36,megaohm por kilómetro,MΩ/km
+H37,megaohm por metro,MΩ/m
+H38,megaamperio,MA
+H39,megahertz kilómetro,MHz·km
+H40,newton por amperio,N/A
+H41,"newton metro vatio a la potencia menos 0,5",N·m·W⁻⁰‧⁵
+H42,pascal por metro,Pa/m
+H43,siemens por centímetro,S/cm
+H44,teraohm,TΩ
+H45,voltio segundo por metro,V·s/m
+H46,voltio por segundo,V/s
+H47,vatio por metro cúbico,W/m³
+H48,attofaradio,aF
+H49,centímetro por hora,cm/h
+H50,centímetro cúbico recíproco,cm⁻³
+H51,decibel por kilómetro,dB/km
+H52,decibel por metro,dB/m
+H53,kilogramo por bar,kg/bar
+H54,kilogramo por decímetro cúbico kelvin,(kg/dm³)/K
+H55,kilogramo por decímetro cúbico bar,(kg/dm³)/bar
+H56,kilogramo por metro cuadrado segundo,kg/(m²·s)
+H57,pulgada por dos pi radianes,in/revolution
+H58,metro por voltio segundo,m/(V·s)
+H59,metro cuadrado por newton,m²/N
+H60,metro cúbico por metro cúbico,m³/m³
+H61,milisiemens por centímetro,mS/cm
+H62,milivoltio por minuto,mV/min
+H63,miligramo por centímetro cuadrado,mg/cm²
+H64,miligramo por gramo,mg/g
+H65,mililitro por metro cúbico,ml/m³
+H66,milímetro por año,mm/y
+H67,milímetro por hora,mm/h
+H68,milimol por gramo,mmol/g
+H69,picopascal por kilómetro,pPa/km
+H70,picosegundo,ps
+H71,por ciento por mes,%/mo
+H72,por ciento por hectobar,%/hbar
+H73,por ciento por decakelvin,%/daK
+H74,vatio por metro,W/m
+H75,decapascal,daPa
+H76,gramo por milímetro,g/mm
+H77,ancho de módulo,MW
+H78,centímetro convencional de agua,cm H₂O
+H79,calibre francés,Fg
+H80,unidad de rack,U or RU
+H81,milímetro por minuto,mm/min
+H82,punto grande (big point),bp
+H83,litro por kilogramo,l/kg
+H84,gramo milímetro,g·mm
+H85,semana recíproca,1/wk
+H87,pieza,
+H88,megaohm kilómetro,MΩ·km
+H89,por ciento por ohm,%/Ω
+H90,por ciento por grado,%/°
+H91,por ciento por diez mil,%/10000
+H92,por ciento por cien mil,%/100000
+H93,por ciento por cien,%/100
+H94,por ciento por mil,%/1000
+H95,por ciento por voltio,%/V
+H96,por ciento por bar,%/bar
+H98,por ciento por pulgada,%/in
+H99,por ciento por metro,%/m
+HA,madeja,
+HAR,hectárea,ha
+HBA,hectobar,hbar
+HBX,cien cajas,
+HC,cien unidades,
+HDW,"cien kilogramos, peso seco",
+HEA,cabeza,
+HGM,hectogramo,hg
+HH,cien pies cúbicos,
+HIU,cien unidades internacionales,
+HJ,caballo de fuerza métrico,metric hp
+HKM,"cien kilogramos, masa neta",
+HLT,hectolitro,hl
+HM,milla por hora (milla terrestre),mile/h
+HMQ,millón de metros cúbicos,Mm³
+HMT,hectómetro,hm
+HN,milímetro convencional de mercurio,mm Hg
+HP,milímetro convencional de agua,mm H₂O
+HPA,hectolitro de alcohol puro,
+HTZ,hertz,Hz
+HUR,hora,h
+IA,pulgada libra (libra pulgada),in·lb
+IE,persona,
+INH,pulgada,in
+INK,pulgada cuadrada,in²
+INQ,pulgada cúbica,in³
+ISD,grado internacional de azúcar,
+IU,pulgada por segundo,in/s
+IUG,unidad internacional por gramo,
+IV,pulgada por segundo al cuadrado,in/s²
+J10,por ciento por milímetro,%/mm
+J12,por mil por psi,‰/psi
+J13,grado API,°API
+J14,grado Baumé (escala de origen),°Bé
+J15,grado Baumé (EE. UU. pesado),°Bé (US heavy)
+J16,grado Baumé (EE. UU. ligero),°Bé (US light)
+J17,grado Balling,°Balling
+J18,grado Brix,°Bx
+J19,grado Fahrenheit hora pie cuadrado por unidad térmica británica (termoquímica),°F·h·ft²/Btuth
+J2,julio por kilogramo,J/kg
+J20,grado Fahrenheit por kelvin,°F/K
+J21,grado Fahrenheit por bar,°F/bar
+J22,grado Fahrenheit hora pie cuadrado por unidad térmica británica (tabla internacional),°F·h·ft²/BtuIT
+J23,grado Fahrenheit por hora,°F/h
+J24,grado Fahrenheit por minuto,°F/min
+J25,grado Fahrenheit por segundo,°F/s
+J26,grado Fahrenheit recíproco,1/°F
+J27,grado Oechsle,°Oechsle
+J28,grado Rankine por hora,°R/h
+J29,grado Rankine por minuto,°R/min
+J30,grado Rankine por segundo,°R/s
+J31,grado Twaddell,°Tw
+J32,micropoise,µP
+J33,microgramo por kilogramo,µg/kg
+J34,microgramo por metro cúbico kelvin,(µg/m³)/K
+J35,microgramo por metro cúbico bar,(µg/m³)/bar
+J36,microlitro por litro,µl/l
+J38,baudio,Bd
+J39,unidad térmica británica (media),Btu
+J40,unidad térmica británica (tabla internacional) pie por hora pie cuadrado grado Fahrenheit,BtuIT·ft/(h·ft²·°F)
+J41,unidad térmica británica (tabla internacional) pulgada por hora pie cuadrado grado Fahrenheit,BtuIT·in/(h·ft²·°F)
+J42,unidad térmica británica (tabla internacional) pulgada por segundo pie cuadrado grado Fahrenheit,BtuIT·in/(s·ft²·°F)
+J43,unidad térmica británica (tabla internacional) por libra grado Fahrenheit,BtuIT/(lb·°F)
+J44,unidad térmica británica (tabla internacional) por minuto,BtuIT/min
+J45,unidad térmica británica (tabla internacional) por segundo,BtuIT/s
+J46,unidad térmica británica (termoquímica) pie por hora pie cuadrado grado Fahrenheit,Btuth·ft/(h·ft²·°F)
+J47,unidad térmica británica (termoquímica) por hora,Btuth/h
+J48,unidad térmica británica (termoquímica) pulgada por hora pie cuadrado grado Fahrenheit,Btuth·in/(h·ft²·°F)
+J49,unidad térmica británica (termoquímica) pulgada por segundo pie cuadrado grado Fahrenheit,Btuth·in/(s·ft²·°F)
+J50,unidad térmica británica (termoquímica) por libra grado Fahrenheit,Btuth/(lb·°F)
+J51,unidad térmica británica (termoquímica) por minuto,Btuth/min
+J52,unidad térmica británica (termoquímica) por segundo,Btuth/s
+J53,culombio metro cuadrado por kilogramo,C·m²/kg
+J54,megabaudio,MBd
+J55,vatio segundo,W·s
+J56,bar por bar,bar/bar
+J57,barril (RU petróleo),bbl (UK liq.)
+J58,barril (RU petróleo) por minuto,bbl (UK liq.)/min
+J59,barril (RU petróleo) por día,bbl (UK liq.)/d
+J60,barril (RU petróleo) por hora,bbl (UK liq.)/h
+J61,barril (RU petróleo) por segundo,bbl (UK liq.)/s
+J62,barril (EE. UU. petróleo) por hora,bbl (US)/h
+J63,barril (EE. UU. petróleo) por segundo,bbl (US)/s
+J64,bushel (RU) por día,bu (UK)/d
+J65,bushel (RU) por hora,bu (UK)/h
+J66,bushel (RU) por minuto,bu (UK)/min
+J67,bushel (RU) por segundo,bu (UK)/s
+J68,"bushel (EE. UU., áridos) por día",bu (US dry)/d
+J69,"bushel (EE. UU., áridos) por hora",bu (US dry)/h
+J70,"bushel (EE. UU., áridos) por minuto",bu (US dry)/min
+J71,"bushel (EE. UU., áridos) por segundo",bu (US dry)/s
+J72,centinewton metro,cN·m
+J73,centipoise por kelvin,cP/K
+J74,centipoise por bar,cP/bar
+J75,caloría (media),cal
+J76,caloría (tabla internacional) por gramo grado Celsius,calIT/(g·°C)
+J78,caloría (termoquímica) por centímetro segundo grado Celsius,calth/(cm·s·°C)
+J79,caloría (termoquímica) por gramo grado Celsius,calth/(g·°C)
+J81,caloría (termoquímica) por minuto,calth/min
+J82,caloría (termoquímica) por segundo,calth/s
+J83,clo,clo
+J84,centímetro por segundo kelvin,(cm/s)/K
+J85,centímetro por segundo bar,(cm/s)/bar
+J87,centímetro cúbico por metro cúbico,cm³/m³
+J89,centímetro de mercurio,cm Hg
+J90,decímetro cúbico por día,dm³/d
+J91,decímetro cúbico por metro cúbico,dm³/m³
+J92,decímetro cúbico por minuto,dm³/min
+J93,decímetro cúbico por segundo,dm³/s
+J94,dina centímetro,dyn·cm
+J95,onza (RU líquida) por día,fl oz (UK)/d
+J96,onza (RU líquida) por hora,fl oz (UK)/h
+J97,onza (RU líquida) por minuto,fl oz (UK)/min
+J98,onza (RU líquida) por segundo,fl oz (UK)/s
+J99,onza (EE. UU. líquida) por día,fl oz (US)/d
+JE,julio por kelvin,J/K
+JK,megajulio por kilogramo,MJ/kg
+JM,megajulio por metro cúbico,MJ/m³
+JNT,junta de tubería,
+JOU,julio,J
+JPS,cien metros,
+JWL,número de joyas,
+K1,demanda en kilovatios,
+K10,onza (EE. UU. líquida) por hora,fl oz (US)/h
+K11,onza (EE. UU. líquida) por minuto,fl oz (US)/min
+K12,onza (EE. UU. líquida) por segundo,fl oz (US)/s
+K13,pie por grado Fahrenheit,ft/°F
+K14,pie por hora,ft/h
+K15,pie libra-fuerza por hora,ft·lbf/h
+K16,pie libra-fuerza por minuto,ft·lbf/min
+K17,pie por psi,ft/psi
+K18,pie por segundo grado Fahrenheit,(ft/s)/°F
+K19,pie por segundo psi,(ft/s)/psi
+K2,demanda en kilovoltio amperio reactivo,
+K20,pie cúbico recíproco,1/ft³
+K21,pie cúbico por grado Fahrenheit,ft³/°F
+K22,pie cúbico por día,ft³/d
+K23,pie cúbico por psi,ft³/psi
+K24,pie de agua,ft H₂O
+K25,pie de mercurio,ft Hg
+K26,galón (RU) por día,gal (UK)/d
+K27,galón (RU) por hora,gal (UK)/h
+K28,galón (RU) por segundo,gal (UK)/s
+K3,kilovoltio amperio reactivo hora,kvar·h
+K30,"galón (EE. UU., líquidos) por segundo",gal (US liq.)/s
+K31,gramo-fuerza por centímetro cuadrado,gf/cm²
+K32,gill (RU) por día,gi (UK)/d
+K33,gill (RU) por hora,gi (UK)/h
+K34,gill (RU) por minuto,gi (UK)/min
+K35,gill (RU) por segundo,gi (UK)/s
+K36,gill (EE. UU.) por día,gi (US)/d
+K37,gill (EE. UU.) por hora,gi (US)/h
+K38,gill (EE. UU.) por minuto,gi (US)/min
+K39,gill (EE. UU.) por segundo,gi (US)/s
+K40,aceleración estándar de la gravedad,gn
+K41,grano por galón (EE. UU.),gr/gal (US)
+K42,caballo de fuerza (caldera),boiler hp
+K43,caballo de fuerza (eléctrico),electric hp
+K45,pulgada por grado Fahrenheit,in/°F
+K46,pulgada por psi,in/psi
+K47,pulgada por segundo grado Fahrenheit,(in/s)/°F
+K48,pulgada por segundo psi,(in/s)/psi
+K49,pulgada cúbica recíproca,1/in³
+K5,kilovoltio amperio (reactivo),kvar
+K50,kilobaudio,kBd
+K51,kilocaloría (media),kcal
+K52,kilocaloría (tabla internacional) por hora metro grado Celsius,kcal/(m·h·°C)
+K53,kilocaloría (termoquímica),kcalth
+K54,kilocaloría (termoquímica) por minuto,kcalth/min
+K55,kilocaloría (termoquímica) por segundo,kcalth/s
+K58,kilomol por hora,kmol/h
+K59,kilomol por metro cúbico kelvin,(kmol/m³)/K
+K6,kilolitro,kl
+K60,kilomol por metro cúbico bar,(kmol/m³)/bar
+K61,kilomol por minuto,kmol/min
+K62,litro por litro,l/l
+K63,litro recíproco,1/l
+K64,libra (avoirdupois) por grado Fahrenheit,lb/°F
+K65,libra (avoirdupois) pie cuadrado,lb·ft²
+K66,libra (avoirdupois) por día,lb/d
+K67,libra por pie hora,lb/(ft·h)
+K68,libra por pie segundo,lb/(ft·s)
+K69,libra (avoirdupois) por pie cúbico grado Fahrenheit,(lb/ft³)/°F
+K70,libra (avoirdupois) por pie cúbico psi,(lb/ft³)/psi
+K71,libra (avoirdupois) por galón (RU),lb/gal (UK)
+K73,libra (avoirdupois) por hora grado Fahrenheit,(lb/h)/°F
+K74,libra (avoirdupois) por hora psi,(lb/h)/psi
+K75,libra (avoirdupois) por pulgada cúbica grado Fahrenheit,(lb/in³)/°F
+K76,libra (avoirdupois) por pulgada cúbica psi,(lb/in³)/psi
+K77,libra (avoirdupois) por psi,lb/psi
+K78,libra (avoirdupois) por minuto,lb/min
+K79,libra (avoirdupois) por minuto grado Fahrenheit,lb/(min·°F)
+K80,libra (avoirdupois) por minuto psi,(lb/min)/psi
+K81,libra (avoirdupois) por segundo,lb/s
+K82,libra (avoirdupois) por segundo grado Fahrenheit,(lb/s)/°F
+K83,libra (avoirdupois) por segundo psi,(lb/s)/psi
+K84,libra por yarda cúbica,lb/yd³
+K85,libra-fuerza por pie cuadrado,lbf/ft²
+K86,libra-fuerza por pulgada cuadrada grado Fahrenheit,psi/°F
+K87,psi pulgada cúbica por segundo,psi·in³/s
+K88,psi litro por segundo,psi·l/s
+K89,psi metro cúbico por segundo,psi·m³/s
+K90,psi yarda cúbica por segundo,psi·yd³/s
+K91,libra-fuerza segundo por pie cuadrado,lbf·s/ft²
+K92,libra-fuerza segundo por pulgada cuadrada,lbf·s/in²
+K93,psi recíproco,1/psi
+K94,"cuarto de galón (RU, líquidos) por día",qt (UK liq.)/d
+K95,"cuarto de galón (RU, líquidos) por hora",qt (UK liq.)/h
+K96,"cuarto de galón (RU, líquidos) por minuto",qt (UK liq.)/min
+K97,"cuarto de galón (RU, líquidos) por segundo",qt (UK liq.)/s
+K98,"cuarto de galón (EE. UU., líquidos) por día",qt (US liq.)/d
+K99,"cuarto de galón (EE. UU., líquidos) por hora",qt (US liq.)/h
+KA,torta,
+KAT,katal,kat
+KB,kilocarácter,
+KBA,kilobar,kbar
+KCC,kilogramo de cloruro de colina,kg C₅ H₁₄ClNO
+KDW,kilogramo de peso neto escurrido,kg/net eda
+KEL,kelvin,K
+KGM,kilogramo,kg
+KGS,kilogramo por segundo,kg/s
+KHY,kilogramo de peróxido de hidrógeno,kg H₂O₂
+KHZ,kilohertz,kHz
+KI,kilogramo por milímetro de ancho,
+KIC,"kilogramo, incluido el contenedor",
+KIP,"kilogramo, incluido el embalaje interior",
+KJ,kilosegmento,
+KJO,kilojulio,kJ
+KL,kilogramo por metro,kg/m
+KLK,porcentaje de materia seca láctica,
+KLX,kilolux,klx
+KMA,kilogramo de metilamina,kg met.am.
+KMH,kilómetro por hora,km/h
+KMK,kilómetro cuadrado,km²
+KMQ,kilogramo por metro cúbico,kg/m³
+KMT,kilómetro,km
+KNI,kilogramo de nitrógeno,kg N
+KNM,kilonewton por metro cuadrado,kN/m2
+KNS,kilogramo de sustancia designada,
+KNT,nudo,kn
+KO,miliequivalente de potasa cáustica por gramo de producto,
+KPA,kilopascal,kPa
+KPH,kilogramo de hidróxido de potasio (potasa cáustica),kg KOH
+KPO,kilogramo de óxido de potasio,kg K₂O
+KPP,kilogramo de pentóxido de fósforo (anhídrido fosfórico),
+KR,kiloroentgen,kR
+KSD,kilogramo de sustancia 90 % seca,kg 90 % sdt
+KSH,kilogramo de hidróxido de sodio (soda cáustica),kg NaOH
+KT,kit,
+KTN,kilotonelada,kt
+KUR,kilogramo de uranio,kg U
+KVA,kilovoltio amperio,kV·A
+KVR,kilovar,kvar
+KVT,kilovoltio,kV
+KW,kilogramo por milímetro,kg/mm
+KWH,kilovatio hora,kW·h
+KWY,kilovatio año,kW/year
+KWN,kilovatio hora por metro cúbico normalizado,
+KWO,kilogramo de trióxido de tungsteno,kg WO₃
+KWS,kilovatio hora por metro cúbico estándar,
+KWT,kilovatio,kW
+KX,mililitro por kilogramo,ml/kg
+L10,"cuarto de galón (EE. UU., líquidos) por minuto",qt (US liq.)/min
+L11,"cuarto de galón (EE. UU., líquidos) por segundo",qt (US liq.)/s
+L12,metro por segundo kelvin,(m/s)/K
+L13,metro por segundo bar,(m/s)/bar
+L14,metro cuadrado hora grado Celsius por kilocaloría (tabla internacional),m²·h·°C/kcal
+L15,milipascal segundo por kelvin,mPa·s/K
+L16,milipascal segundo por bar,mPa·s/bar
+L17,miligramo por metro cúbico kelvin,(mg/m³)/K
+L18,miligramo por metro cúbico bar,(mg/m³)/bar
+L19,mililitro por litro,ml/l
+L2,litro por minuto,l/min
+L20,milímetro cúbico recíproco,1/mm³
+L21,milímetro cúbico por metro cúbico,mm³/m³
+L23,mol por hora,mol/h
+L24,mol por kilogramo kelvin,(mol/kg)/K
+L25,mol por kilogramo bar,(mol/kg)/bar
+L26,mol por litro kelvin,(mol/l)/K
+L27,mol por litro bar,(mol/l)/bar
+L28,mol por metro cúbico kelvin,(mol/m³)/K
+L29,mol por metro cúbico bar,(mol/m³)/bar
+L30,mol por minuto,mol/min
+L31,mili roentgen equivalente hombre (milirem),mrem
+L32,nanogramo por kilogramo,ng/kg
+L33,onza (avoirdupois) por día,oz/d
+L34,onza (avoirdupois) por hora,oz/h
+L35,onza (avoirdupois) por minuto,oz/min
+L36,onza (avoirdupois) por segundo,oz/s
+L37,onza (avoirdupois) por galón (RU),oz/gal (UK)
+L38,onza (avoirdupois) por galón (EE. UU.),oz/gal (US)
+L39,onza (avoirdupois) por pulgada cúbica,oz/in³
+L40,onza (avoirdupois)-fuerza,ozf
+L41,onza (avoirdupois)-fuerza pulgada,ozf·in
+L42,picosiemens por metro,pS/m
+L43,peck (RU),pk (UK)
+L44,peck (RU) por día,pk (UK)/d
+L45,peck (RU) por hora,pk (UK)/h
+L46,peck (RU) por minuto,pk (UK)/min
+L47,peck (RU) por segundo,pk (UK)/s
+L48,"peck (EE. UU., áridos) por día",pk (US dry)/d
+L49,"peck (EE. UU., áridos) por hora",pk (US dry)/h
+L50,"peck (EE. UU., áridos) por minuto",pk (US dry)/min
+L51,"peck (EE. UU., áridos) por segundo",pk (US dry)/s
+L52,psi por psi,psi/psi
+L53,pinta (RU) por día,pt (UK)/d
+L54,pinta (RU) por hora,pt (UK)/h
+L55,pinta (RU) por minuto,pt (UK)/min
+L56,pinta (RU) por segundo,pt (UK)/s
+L57,"pinta (EE. UU., líquidos) por día",pt (US liq.)/d
+L58,"pinta (EE. UU., líquidos) por hora",pt (US liq.)/h
+L59,"pinta (EE. UU., líquidos) por minuto",pt (US liq.)/min
+L60,"pinta (EE. UU., líquidos) por segundo",pt (US liq.)/s
+L63,slug por día,slug/d
+L64,slug por pie segundo,slug/(ft·s)
+L65,slug por pie cúbico,slug/ft³
+L66,slug por hora,slug/h
+L67,slug por minuto,slug/min
+L68,slug por segundo,slug/s
+L69,tonelada métrica por kelvin,t/K
+L70,tonelada métrica por bar,t/bar
+L71,tonelada métrica por día,t/d
+L72,tonelada métrica por día kelvin,(t/d)/K
+L73,tonelada métrica por día bar,(t/d)/bar
+L74,tonelada métrica por hora kelvin,(t/h)/K
+L75,tonelada métrica por hora bar,(t/h)/bar
+L76,tonelada métrica por metro cúbico kelvin,(t/m³)/K
+L77,tonelada métrica por metro cúbico bar,(t/m³)/bar
+L78,tonelada métrica por minuto,t/min
+L79,tonelada métrica por minuto kelvin,(t/min)/K
+L80,tonelada métrica por minuto bar,(t/min)/bar
+L81,tonelada métrica por segundo,t/s
+L82,tonelada métrica por segundo kelvin,(t/s)/K
+L83,tonelada métrica por segundo bar,(t/s)/bar
+L84,tonelada de flete (RU),British shipping ton
+L85,tonelada larga (RU) por día,ton (UK)/d
+L86,tonelada de flete (EE. UU.),(US) shipping ton
+L87,tonelada corta (EE. UU.) por grado Fahrenheit,ton (US)/°F
+L88,tonelada corta (EE. UU.) por día,ton (US)/d
+L89,tonelada corta (EE. UU.) por hora grado Fahrenheit,ton (US)/(h·°F)
+L90,tonelada corta (EE. UU.) por hora psi,(ton (US)/h)/psi
+L91,tonelada corta (EE. UU.) por psi,ton (US)/psi
+L92,tonelada larga (RU) por yarda cúbica,ton.l/yd³ (UK)
+L93,tonelada corta (EE. UU.) por yarda cúbica,ton.s/yd³ (US)
+L94,tonelada-fuerza corta (EE. UU.),ton.sh-force
+L95,año común,y (365 days)
+L96,año sideral,y (sidereal)
+L98,yarda por grado Fahrenheit,yd/°F
+L99,yarda por psi,yd/psi
+LA,libra por pulgada cúbica,lb/in³
+LAC,porcentaje de exceso de lactosa,
+LBR,libra,lb
+LBT,libra troy (EE. UU.),
+LD,litro por día,l/d
+LEF,hoja,
+LF,pie lineal,
+LH,hora de trabajo,
+LK,eslabón,
+LM,metro lineal,
+LN,longitud,
+LO,lote [unidad de adquisición],
+LP,libra líquida,
+LPA,litro de alcohol puro,
+LR,capa,
+LS,suma global,
+LTN,tonelada larga (RU) o tonelada larga (EE. UU.),ton (UK)
+LTR,litro,l
+LUB,"tonelada métrica, aceite lubricante",
+LUM,lumen,lm
+LUX,lux,lx
+LY,yarda lineal,
+M1,miligramo por litro,mg/l
+M10,yarda cúbica recíproca,1/yd³
+M11,yarda cúbica por grado Fahrenheit,yd³/°F
+M12,yarda cúbica por día,yd³/d
+M13,yarda cúbica por hora,yd³/h
+M14,yarda cúbica por psi,yd³/psi
+M15,yarda cúbica por minuto,yd³/min
+M16,yarda cúbica por segundo,yd³/s
+M17,kilohertz metro,kHz·m
+M18,gigahertz metro,GHz·m
+M19,Beaufort,Bft
+M20,megakelvin recíproco o megakelvin a la potencia menos uno,1/MK
+M21,kilovoltio amperio recíproco hora recíproca,1/kVAh
+M22,mililitro por centímetro cuadrado minuto,(ml/min)/cm²
+M23,newton por centímetro,N/cm
+M24,ohm kilómetro,Ω·km
+M25,por ciento por grado Celsius,%/°C
+M26,gigaohm por metro,GΩ/m
+M27,megahertz metro,MHz·m
+M29,kilogramo por kilogramo,kg/kg
+M30,voltio amperio recíproco segundo recíproco,1/(V·A·s)
+M31,kilogramo por kilómetro,kg/km
+M32,pascal segundo por litro,Pa·s/l
+M33,milimol por litro,mmol/l
+M34,newton metro por metro cuadrado,N·m/m²
+M35,milivoltio amperio,mV·A
+M36,mes de 30 días,mo (30 days)
+M37,real/360,y (360 days)
+M38,kilómetro por segundo al cuadrado,km/s²
+M39,centímetro por segundo al cuadrado,cm/s²
+M4,valor monetario,
+M40,yarda por segundo al cuadrado,yd/s²
+M41,milímetro por segundo al cuadrado,mm/s²
+M42,milla (milla terrestre) por segundo al cuadrado,mi/s²
+M43,mil,mil
+M44,revolución,rev
+M45,grado [unidad de ángulo] por segundo al cuadrado,°/s²
+M46,revolución por minuto,r/min
+M47,mil circular,cmil
+M48,milla cuadrada (basada en el pie de agrimensura de EE. UU.),mi² (US survey)
+M49,cadena (basada en el pie de agrimensura de EE. UU.),ch (US survey)
+M5,microcurie,µCi
+M50,furlong,fur
+M51,pie (agrimensura de EE. UU.),ft (US survey)
+M52,milla (basada en el pie de agrimensura de EE. UU.),mi (US survey)
+M53,metro por pascal,m/Pa
+M55,metro por radián,m/rad
+M56,shake,shake
+M57,milla por minuto,mi/min
+M58,milla por segundo,mi/s
+M59,metro por segundo pascal,(m/s)/Pa
+M60,metro por hora,m/h
+M61,pulgada por año,in/y
+M62,kilómetro por segundo,km/s
+M63,pulgada por minuto,in/min
+M64,yarda por segundo,yd/s
+M65,yarda por minuto,yd/min
+M66,yarda por hora,yd/h
+M67,acre-pie (basado en el pie de agrimensura de EE. UU.),acre-ft (US survey)
+M68,cuerda (128 ft3),cord
+M69,milla cúbica (milla terrestre RU),mi³
+M7,micropulgada,µin
+M70,"tonelada, de registro",RT
+M71,metro cúbico por pascal,m³/Pa
+M72,belio,B
+M73,kilogramo por metro cúbico pascal,(kg/m³)/Pa
+M74,kilogramo por pascal,kg/Pa
+M75,kilolibra-fuerza,kip
+M76,poundal,pdl
+M77,kilogramo metro por segundo al cuadrado,kg·m/s²
+M78,pond,p
+M79,pie cuadrado por hora,ft²/h
+M80,stokes por pascal,St/Pa
+M81,centímetro cuadrado por segundo,cm²/s
+M82,metro cuadrado por segundo pascal,(m²/s)/Pa
+M83,denier,den
+M84,libra por yarda,lb/yd
+M85,"tonelada, de ensayo",
+M86,pfund,pfd
+M87,kilogramo por segundo pascal,(kg/s)/Pa
+M88,tonelada métrica por mes,t/mo
+M89,tonelada métrica por año,t/y
+M9,millón de BTU por 1000 pies cúbicos,MBTU/kft³
+M90,kilolibra por hora,klb/h
+M91,libra por libra,lb/lb
+M92,libra-fuerza pie,lbf·ft
+M93,newton metro por radián,N·m/rad
+M94,kilogramo metro,kg·m
+M95,poundal pie,pdl·ft
+M96,poundal pulgada,pdl·in
+M97,dina metro,dyn·m
+M98,kilogramo centímetro por segundo,kg·(cm/s)
+M99,gramo centímetro por segundo,g·(cm/s)
+MAH,megavoltio amperio reactivo hora,Mvar·h
+MAL,megalitro,Ml
+MAM,megámetro,Mm
+MAR,megavar,Mvar
+MAW,megavatio,MW
+MBE,mil equivalentes de ladrillo estándar,
+MBF,mil pies tablares,
+MBR,milibar,mbar
+MC,microgramo,µg
+MCU,milicurio,mCi
+MD,tonelada métrica secada al aire,
+MGM,miligramo,mg
+MHZ,megahertz,MHz
+MIK,milla cuadrada (milla terrestre),mi²
+MIL,mil,
+MIN,minuto [unidad de tiempo],min
+MIO,millón,
+MIU,millón de unidades internacionales,
+MLD,millardo,
+MLT,mililitro,ml
+MMK,milímetro cuadrado,mm²
+MMQ,milímetro cúbico,mm³
+MMT,milímetro,mm
+MND,"kilogramo, peso seco",
+MON,mes,mo
+MPA,megapascal,MPa
+MQH,metro cúbico por hora,m³/h
+MQS,metro cúbico por segundo,m³/s
+MSK,metro por segundo al cuadrado,m/s²
+MTK,metro cuadrado,m²
+MTQ,metro cúbico,m³
+MTR,metro,m
+MTS,metro por segundo,m/s
+MVA,megavoltio amperio,MV·A
+MWH,megavatio hora (1000 kW.h),MW·h
+N1,caloría por ración,
+N10,libra pie por segundo,lb·(ft/s)
+N11,libra pulgada por segundo,lb·(in/s)
+N12,Pferdestärke (caballo de vapor métrico),PS
+N13,centímetro de mercurio (0 ºC),cmHg (0 ºC)
+N14,centímetro de agua (4 ºC),cmH₂O (4 °C)
+N15,pie de agua (39.2 ºF),"ftH₂O (39,2 ºF)"
+N16,pulgada de mercurio (32 ºF),inHG (32 ºF)
+N17,pulgada de mercurio (60 ºF),inHg (60 ºF)
+N18,pulgada de agua (39.2 ºF),"inH₂O (39,2 ºF)"
+N19,pulgada de agua (60 ºF),inH₂O (60 ºF)
+N20,kip por pulgada cuadrada,ksi
+N21,poundal por pie cuadrado,pdl/ft²
+N22,onza (avoirdupois) por pulgada cuadrada,oz/in²
+N23,metro de agua convencional,mH₂O
+N24,gramo por milímetro cuadrado,g/mm²
+N25,libra por yarda cuadrada,lb/yd²
+N26,poundal por pulgada cuadrada,pdl/in²
+N27,pie a la cuarta potencia,ft⁴
+N28,decímetro cúbico por kilogramo,dm³/kg
+N29,pie cúbico por libra,ft³/lb
+N3,punto de impresión,
+N30,pulgada cúbica por libra,in³/lb
+N31,kilonewton por metro,kN/m
+N32,poundal por pulgada,pdl/in
+N33,libra-fuerza por yarda,lbf/yd
+N34,poundal segundo por pie cuadrado,(pdl/ft²)·s
+N35,poise por pascal,P/Pa
+N36,newton segundo por metro cuadrado,(N/m²)·s
+N37,kilogramo por metro segundo,kg/(m·s)
+N38,kilogramo por metro minuto,kg/(m·min)
+N39,kilogramo por metro día,kg/(m·d)
+N40,kilogramo por metro hora,kg/(m·h)
+N41,gramo por centímetro segundo,g/(cm·s)
+N42,poundal segundo por pulgada cuadrada,(pdl/in²)·s
+N43,libra por pie minuto,lb/(ft·min)
+N44,libra por pie día,lb/(ft·d)
+N45,metro cúbico por segundo pascal,(m³/s)/Pa
+N46,pie poundal,ft·pdl
+N47,pulgada poundal,in·pdl
+N48,vatio por centímetro cuadrado,W/cm²
+N49,vatio por pulgada cuadrada,W/in²
+N50,unidad térmica británica (tabla internacional) por pie cuadrado hora,BtuIT/(ft²·h)
+N51,unidad térmica británica (termoquímica) por pie cuadrado hora,Btuth/(ft²·h)
+N52,unidad térmica británica (termoquímica) por pie cuadrado minuto,Btuth/(ft²·min)
+N53,unidad térmica británica (tabla internacional) por pie cuadrado segundo,BtuIT/(ft²·s)
+N54,unidad térmica británica (termoquímica) por pie cuadrado segundo,Btuth/(ft²·s)
+N55,unidad térmica británica (tabla internacional) por pulgada cuadrada segundo,BtuIT/(in²·s)
+N56,caloría (termoquímica) por centímetro cuadrado minuto,calth/(cm²·min)
+N57,caloría (termoquímica) por centímetro cuadrado segundo,calth/(cm²·s)
+N58,unidad térmica británica (tabla internacional) por pie cúbico,BtuIT/ft³
+N59,unidad térmica británica (termoquímica) por pie cúbico,Btuth/ft³
+N60,unidad térmica británica (tabla internacional) por grado Fahrenheit,BtuIT/ºF
+N61,unidad térmica británica (termoquímica) por grado Fahrenheit,Btuth/ºF
+N62,unidad térmica británica (tabla internacional) por grado Rankine,BtuIT/ºR
+N63,unidad térmica británica (termoquímica) por grado Rankine,Btuth/ºR
+N64,unidad térmica británica (termoquímica) por libra grado Rankine,(Btuth/°R)/lb
+N65,kilocaloría (tabla internacional) por gramo kelvin,(kcalIT/K)/g
+N66,unidad térmica británica (39 ºF),Btu (39 ºF)
+N67,unidad térmica británica (59 ºF),Btu (59 ºF)
+N68,unidad térmica británica (60 ºF),Btu (60 ºF)
+N69,caloría (20 ºC),cal₂₀
+N70,quad (1015 BtuIT),quad
+N71,termia (CE),thm (EC)
+N72,termia (EE. UU.),thm (US)
+N73,unidad térmica británica (termoquímica) por libra,Btuth/lb
+N74,unidad térmica británica (tabla internacional) por hora pie cuadrado grado Fahrenheit,BtuIT/(h·ft²·ºF)
+N75,unidad térmica británica (termoquímica) por hora pie cuadrado grado Fahrenheit,Btuth/(h·ft²·ºF)
+N76,unidad térmica británica (tabla internacional) por segundo pie cuadrado grado Fahrenheit,BtuIT/(s·ft²·ºF)
+N77,unidad térmica británica (termoquímica) por segundo pie cuadrado grado Fahrenheit,Btuth/(s·ft²·ºF)
+N78,kilovatio por metro cuadrado kelvin,kW/(m²·K)
+N79,kelvin por pascal,K/Pa
+N80,vatio por metro grado Celsius,W/(m·°C)
+N81,kilovatio por metro kelvin,kW/(m·K)
+N82,kilovatio por metro grado Celsius,kW/(m·°C)
+N83,metro por grado Celsius metro,m/(°C·m)
+N84,grado Fahrenheit hora por unidad térmica británica (tabla internacional),ºF/(BtuIT/h)
+N85,grado Fahrenheit hora por unidad térmica británica (termoquímica),ºF/(Btuth/h)
+N86,grado Fahrenheit segundo por unidad térmica británica (tabla internacional),ºF/(BtuIT/s)
+N87,grado Fahrenheit segundo por unidad térmica británica (termoquímica),ºF/(Btuth/s)
+N88,grado Fahrenheit hora pie cuadrado por unidad térmica británica (tabla internacional) pulgada,ºF·h·ft²/(BtuIT·in)
+N89,grado Fahrenheit hora pie cuadrado por unidad térmica británica (termoquímica) pulgada,ºF·h·ft²/(Btuth·in)
+N90,kilofaradio,kF
+N91,julio recíproco,1/J
+N92,picosiemens,pS
+N93,amperio por pascal,A/Pa
+N94,franklin,Fr
+N95,amperio minuto,A·min
+N96,biot,Bi
+N97,gilbert,Gi
+N98,voltio por pascal,V/Pa
+N99,picovoltio,pV
+NA,miligramo por kilogramo,mg/kg
+NAR,número de artículos,
+NCL,número de celdas,
+NEW,newton,N
+NF,mensaje,
+NIL,nulo,()
+NIU,número de unidades internacionales,
+NL,carga,
+NM3,metro cúbico normalizado,
+NMI,milla náutica,n mile
+NMP,número de paquetes,
+NPR,número de pares,
+NPT,número de partes,
+NQ,mho,
+NR,micromho,
+NT,tonelada neta,
+NTT,tonelada de registro neto,
+NU,newton metro,N·m
+NX,parte por mil,‰
+OA,panel,
+ODE,equivalente de agotamiento de ozono,
+ODG,gramos de SAO,
+ODK,kilogramos de SAO,
+ODM,miligramos de SAO,
+OHM,ohm,Ω
+ON,onza por yarda cuadrada,oz/yd²
+ONZ,onza (avoirdupois),oz
+OPM,oscilaciones por minuto,o/min
+OT,hora extra,
+OZ,onza avoirdupois,
+OZA,onza líquida (EE. UU.),fl oz (US)
+OZI,onza líquida (RU),fl oz (UK)
+P1,por ciento,% or pct
+P10,culombio por metro,C/m
+P11,kiloweber,kWb
+P12,gamma,γ
+P13,kilotesla,kT
+P14,julio por segundo,J/s
+P15,julio por minuto,J/min
+P16,julio por hora,J/h
+P17,julio por día,J/d
+P18,kilojulio por segundo,kJ/s
+P19,kilojulio por minuto,kJ/min
+P2,libra por pie,lb/ft
+P20,kilojulio por hora,kJ/h
+P21,kilojulio por día,kJ/d
+P22,nanoohm,nΩ
+P23,ohm mil circular por pie,Ω·cmil/ft
+P24,kilohenry,kH
+P25,lumen por pie cuadrado,lm/ft²
+P26,phot,ph
+P27,pie-candela,ftc
+P28,candela por pulgada cuadrada,cd/in²
+P29,pie-lambert,ftL
+P30,lambert,Lb
+P31,stilb,sb
+P32,candela por pie cuadrado,cd/ft²
+P33,kilocandela,kcd
+P34,milicandela,mcd
+P35,bujía Hefner (Hefner-Kerze),HK
+P36,bujía internacional,IK
+P37,unidad térmica británica (tabla internacional) por pie cuadrado,BtuIT/ft²
+P38,unidad térmica británica (termoquímica) por pie cuadrado,Btuth/ft²
+P39,caloría (termoquímica) por centímetro cuadrado,calth/cm²
+P40,langley,Ly
+P41,década (logarítmica),dec
+P42,pascal al cuadrado segundo,Pa²·s
+P43,belio por metro,B/m
+P44,libra mol,lbmol
+P45,libra mol por segundo,lbmol/s
+P46,libra mol por minuto,lbmol/h
+P47,kilomol por kilogramo,kmol/kg
+P48,libra mol por libra,lbmol/lb
+P49,newton metro cuadrado por amperio,N·m²/A
+P5,paquete de cinco,
+P50,weber metro,Wb·m
+P51,mol por kilogramo pascal,(mol/kg)/Pa
+P52,mol por metro cúbico pascal,(mol/m³)/Pa
+P53,polo unitario,unit pole
+P54,miligray por segundo,mGy/s
+P55,microgray por segundo,µGy/s
+P56,nanogray por segundo,nGy/s
+P57,gray por minuto,Gy/min
+P58,miligray por minuto,mGy/min
+P59,microgray por minuto,µGy/min
+P60,nanogray por minuto,nGy/min
+P61,gray por hora,Gy/h
+P62,miligray por hora,mGy/h
+P63,microgray por hora,µGy/h
+P64,nanogray por hora,nGy/h
+P65,sievert por segundo,Sv/s
+P66,milisievert por segundo,mSv/s
+P67,microsievert por segundo,µSv/s
+P68,nanosievert por segundo,nSv/s
+P69,rem por segundo,rem/s
+P70,sievert por hora,Sv/h
+P71,milisievert por hora,mSv/h
+P72,microsievert por hora,µSv/h
+P73,nanosievert por hora,nSv/h
+P74,sievert por minuto,Sv/min
+P75,milisievert por minuto,mSv/min
+P76,microsievert por minuto,µSv/min
+P77,nanosievert por minuto,nSv/min
+P78,pulgada cuadrada recíproca,1/in²
+P79,pascal metro cuadrado por kilogramo,Pa/(kg/m²)
+P80,milipascal por metro,mPa/m
+P81,kilopascal por metro,kPa/m
+P82,hectopascal por metro,hPa/m
+P83,atmósfera estándar por metro,Atm/m
+P84,atmósfera técnica por metro,at/m
+P85,torr por metro,Torr/m
+P86,psi por pulgada,psi/in
+P87,metro cúbico por segundo metro cuadrado,(m³/s)/m²
+P88,rhe,rhe
+P89,libra-fuerza pie por pulgada,lbf·ft/in
+P90,libra-fuerza pulgada por pulgada,lbf·in/in
+P91,perm (0 ºC),perm (0 ºC)
+P92,perm (23 ºC),perm (23 ºC)
+P93,byte por segundo,byte/s
+P94,kilobyte por segundo,kbyte/s
+P95,megabyte por segundo,Mbyte/s
+P96,voltio recíproco,1/V
+P97,radián recíproco,1/rad
+P98,pascal elevado a la suma de los números estequiométricos,PaΣνB
+P99,mol por metro cúbico elevado a la suma de los números estequiométricos,(mol/m³)∑νB
+PAL,pascal,Pa
+PD,bloc,
+PFL,litro proof,
+PGL,galón proof,
+PI,paso,
+PLA,grado Plato,°P
+PO,libra por pulgada de longitud,lb/in
+PQ,página por pulgada,ppi
+PR,par,
+PS,libra-fuerza por pulgada cuadrada,lbf/in²
+PT,pinta (EE. UU.),pt (US)
+PTD,pinta para áridos (EE. UU.),dry pt (US)
+PTI,pinta (RU),pt (UK)
+PTL,pinta para líquidos (EE. UU.),liq pt (US)
+PTN,porción,PTN
+Q10,julio por tesla,J/T
+Q11,erlang,E
+Q12,octeto,o
+Q13,octeto por segundo,o/s
+Q14,shannon,Sh
+Q15,hartley,Hart
+Q16,unidad natural de información,nat
+Q17,shannon por segundo,Sh/s
+Q18,hartley por segundo,Hart/s
+Q19,unidad natural de información por segundo,nat/s
+Q20,segundo por kilogramo,s/kg
+Q21,vatio metro cuadrado,W·m²
+Q22,segundo por radián metro cúbico,1/(Hz·rad·m³)
+Q23,weber a la potencia menos uno,1/Wb
+Q24,pulgada recíproca,1/in
+Q25,dioptría,dpt
+Q26,uno por uno,1/1
+Q27,newton metro por metro,N·m/m²
+Q28,kilogramo por metro cuadrado pascal segundo,kg/(m²·Pa·s)
+Q29,microgramo por hectogramo,µg/hg
+Q30,pH (potencial de hidrógeno),pH
+Q31,kilojulio por gramo,kJ/g
+Q32,femtolitro,fl
+Q33,picolitro,pl
+Q34,nanolitro,nl
+Q35,megavatios por minuto,MW/min
+Q36,metro cuadrado por metro cúbico,m2/m3
+Q37,metro cúbico estándar por día,
+Q38,metro cúbico estándar por hora,
+Q39,metro cúbico normalizado por día,
+Q40,metro cúbico normalizado por hora,
+Q41,julio por metro cúbico normalizado,
+Q42,julio por metro cúbico estándar,
+MNJ,megajulio por metro cúbico normalizado,MJ/m³
+Q3,comida,
+QA,página - facsímil,
+QAN,trimestre (de un año),
+QB,página - copia impresa,
+QR,mano de papel,qr
+QT,cuarto de galón (EE. UU.),qt (US)
+QTD,cuarto de galón para áridos (EE. UU.),dry qt (US)
+QTI,cuarto de galón (RU),qt (UK)
+QTL,cuarto de galón para líquidos (EE. UU.),liq qt (US)
+QTR,quarter (RU),Qr (UK)
+R1,pica,
+R9,mil metros cúbicos,
+RH,hora de funcionamiento u operación,
+RM,resma,
+ROM,habitación,
+RP,libra por resma,
+RPM,revoluciones por minuto,r/min
+RPS,revoluciones por segundo,r/s
+RT,tonelada milla de ingreso,
+S3,pie cuadrado por segundo,ft²/s
+S4,metro cuadrado por segundo,m²/s
+SAN,semestre (6 meses),
+SCO,veintena,
+SCR,escrúpulo,
+SEC,segundo [unidad de tiempo],s
+SET,juego,
+SG,segmento,
+SHT,tonelada de flete,
+SIE,siemens,S
+SM3,metro cúbico estándar,
+SMI,milla (milla terrestre),mile
+SQ,cuadrado,
+SQR,"cuadrado, techado",
+SR,tira,
+STC,palo,
+STI,stone (RU),st
+STK,"unidad, cigarrillo",
+STL,litro estándar,
+STN,tonelada corta (EE. UU.) o tonelada corta (RU/EE. UU.),ton (US)
+STW,pajita,
+SW,madeja,
+SX,envío,
+SYR,jeringa,
+T0,línea de telecomunicaciones en servicio,
+T3,mil piezas,
+TAH,kiloamperio hora (mil amperios hora),kA·h
+TAN,índice de acidez total,TAN
+TI,mil pulgadas cuadradas,
+TIC,"tonelada métrica, incluido el contenedor",
+TIP,"tonelada métrica, incluido el embalaje interior",
+TKM,tonelada métrica kilómetro,t·km
+TMS,"kilogramo de carne importada, sin despojos",
+TNE,tonelada métrica,t
+TP,paquete de diez,
+TPI,dientes por pulgada,TPI
+TPR,diez pares,
+TQD,mil metros cúbicos por día,km³/d
+TRL,billón (EUR),
+TST,diez juegos,
+TTS,diez mil unidades,
+U1,tratamiento,
+U2,tableta,
+UA,torr,Torr
+UB,promedio de líneas de telecomunicaciones en servicio,
+UC,puerto de telecomunicaciones,
+VA,voltio amperio por kilogramo,V·A / kg
+VLT,voltio,V
+VP,porcentaje en volumen,
+W2,kilo húmedo,
+WA,vatio por kilogramo,W/kg
+WB,libra húmeda,
+WCD,cuerda,
+WE,tonelada húmeda,
+WEB,weber,Wb
+WEE,semana,wk
+WG,galón de vino,
+WHR,vatio hora,W·h
+WM,mes laboral,
+WSD,estándar,std
+WTT,vatio,W
+WW,mililitro de agua,
+X1,cadena de Gunter,ch (UK)
+YDK,yarda cuadrada,yd²
+YDQ,yarda cúbica,yd³
+YRD,yarda,yd
+Z11,contenedor colgante,
+ZP,página,
+ZZ,definido de común acuerdo,
+MRW,metro semana,m·wk
+MKW,metro cuadrado semana,m²· wk
+MQW,metro cúbico semana,m³·wk
+HWE,pieza semana,piece·k
+MRD,metro día,m·day
+MKD,metro cuadrado día,m²·d
+MQD,metro cúbico día,m³·d
+HAD,pieza día,piece·d
+MRM,metro mes,m·mo
+MKM,metro cuadrado mes,m²·mo
+MQM,metro cúbico mes,m³·mo
+HMO,pieza mes,piece·mo
+DBW,decibelio vatio,dBW
+DBM,decibelio milivatio,dBm
+FNU,unidad nefelométrica de formacina,FNU
+NTU,unidad nefelométrica de turbidez,NTU
+MTZ,milihertz,mHz
+Z9,nanomol,nmol

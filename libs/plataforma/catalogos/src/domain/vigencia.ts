@@ -30,7 +30,7 @@ export class Vigencia {
 }
 
 /** Formato y fecha real: 2026-02-30 no pasa. */
-function esFecha(valor: string): boolean {
+export function esFecha(valor: string): boolean {
   if (!FORMATO_FECHA.test(valor)) return false;
   const fecha = new Date(`${valor}T00:00:00Z`);
   return !Number.isNaN(fecha.getTime()) && fecha.toISOString().startsWith(valor);

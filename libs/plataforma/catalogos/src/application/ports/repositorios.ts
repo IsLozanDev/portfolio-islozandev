@@ -7,6 +7,7 @@ import type { EstadoItem, MotivoInvalido } from '../../domain/tipos.js';
 /** Catálogos, dentro de la transacción activa. Las escrituras van por funciones SECURITY DEFINER. */
 export interface RepositorioCatalogos {
   buscarPorCodigo(codigo: string): Promise<Catalogo | null>;
+  buscarPorId(id: string): Promise<Catalogo | null>;
   listar(): Promise<Catalogo[]>;
   /** CatalogoDuplicadoError si el código ya existe. */
   crear(catalogo: Catalogo): Promise<void>;
