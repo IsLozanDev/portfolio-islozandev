@@ -43,7 +43,6 @@ import {
   CatalogoDto,
   CrearCatalogoDto,
   CrearItemDto,
-  FILTROS_ADMINISTRACION,
   ItemActualizadoDto,
   ItemAdministracionDto,
   ItemDto,
@@ -198,8 +197,8 @@ export class CatalogosController {
   @Get(':codigo/items/administracion')
   @Permiso(PERMISOS_CAT.leer)
   @ApiQuery({ name: 'texto', required: false, description: 'Busca en código o nombre; hasta 60 caracteres' })
-  @ApiQuery({ name: 'estado', required: false, enum: FILTROS_ADMINISTRACION.estados })
-  @ApiQuery({ name: 'origen', required: false, enum: FILTROS_ADMINISTRACION.origenes })
+  @ApiQuery({ name: 'estado', required: false, enum: ESTADOS_ITEM })
+  @ApiQuery({ name: 'origen', required: false, enum: ORIGENES_ITEM })
   @ApiQuery({ name: 'pagina', required: false, example: 1, description: 'Desde 1' })
   @ApiQuery({ name: 'tamano', required: false, example: 25, description: 'De 1 a 100; 25 por defecto' })
   @ApiOkResponse({ type: PaginaItemsAdministracionDto, description: 'Globales y propios con su estado de hoy y el ajuste del tenant' })

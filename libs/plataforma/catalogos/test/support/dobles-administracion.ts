@@ -22,7 +22,8 @@ export class LecturaItemsAdministracionEnMemoria implements LecturaItemsAdminist
   }
 
   private filaDe(leido: FilaItemLeido, tenantId: string): FilaAdministracion {
-    const item = this.escenario.items.filas.get(leido.itemId)!;
+    const item = this.escenario.items.filas.get(leido.itemId);
+    if (!item) throw new Error(`el ítem ${leido.itemId} no está en el doble`);
     const guardado = this.escenario.ajustes.de(item.id, tenantId);
     return {
       itemId: item.id,

@@ -1,11 +1,11 @@
 import { AggregateRoot } from '@vitrina/plataforma/kernel';
-import { esFecha } from '../vigencia.js';
-import { esBisiesto } from './calendario.js';
+import { esBisiesto, exigirFecha } from './calendario.js';
 import { FeriadoInvalidoError } from './errores.js';
 import type { AlcanceFeriado } from './tipos.js';
 
 const NOMBRE_MINIMO = 3;
 const NOMBRE_MAXIMO = 100;
+const LARGO_ANIO = 4;
 const POSICION_MES_DIA = 5;
 const MES_DIA_BISIESTO = '02-29';
 /** Igual que el DEFAULT de `cat.feriado.version`. */
@@ -166,7 +166,7 @@ export class Feriado extends AggregateRoot {
 }
 
 function anioDe(fecha: string): number {
-  return Number(fecha.slice(0, 4));
+  return Number(fecha.slice(0, LARGO_ANIO));
 }
 
 function validarSucursal(alcance: AlcanceFeriado, sucursalId: string | null): void {
@@ -180,6 +180,6 @@ function validarContenido(contenido: ContenidoFeriado): ContenidoFeriado {
   if (contenido.nombre.length < NOMBRE_MINIMO || contenido.nombre.length > NOMBRE_MAXIMO) {
     throw new FeriadoInvalidoError('El nombre debe tener de 3 a 100 caracteres');
   }
-  if (!esFecha(contenido.fecha)) throw new FeriadoInvalidoError('La fecha no es válida');
+  exigirFecha(contenido.fecha);
   return { fecha: contenido.fecha, nombre: contenido.nombre, recurrenteAnual: contenido.recurrenteAnual };
 }

@@ -54,7 +54,7 @@ function siguienteHabilDesde(fecha: string, feriados: ReadonlySet<string>, sabad
   return actual;
 }
 
-function exigirFecha(fecha: string): void {
+export function exigirFecha(fecha: string): void {
   if (!esFecha(fecha)) throw new FeriadoInvalidoError('La fecha no es válida');
 }
 

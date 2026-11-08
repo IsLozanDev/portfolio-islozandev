@@ -1,7 +1,7 @@
 import type { DomainEvent, TenantScope } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
-import type { DependenciasFeriados } from '../../src/application/feriados/dependencias-feriados.js';
 import type { DependenciasCalendario } from '../../src/application/feriados/dependencias-calendario.js';
+import type { DependenciasFeriados } from '../../src/application/feriados/dependencias-feriados.js';
 import type { ParametrosCalendario } from '../../src/application/ports/calendario.port.js';
 import type { LecturaCalendario, RepositorioFeriados } from '../../src/application/ports/feriados.js';
 import { chocan } from '../../src/domain/feriados/duplicado.js';
@@ -117,7 +117,8 @@ export class LecturaCalendarioEnMemoria implements LecturaCalendario {
 
   async fechasFeriado(desde: string, hasta: string, sucursalId: string | null) {
     this.lecturas.push({ desde, hasta, sucursalId });
-    const anios = Array.from({ length: Number(hasta.slice(0, 4)) - Number(desde.slice(0, 4)) + 1 }, (_, indice) => Number(desde.slice(0, 4)) + indice);
+    const anioDesde = Number(desde.slice(0, 4));
+    const anios = Array.from({ length: Number(hasta.slice(0, 4)) - anioDesde + 1 }, (_, indice) => anioDesde + indice);
     const fechas = new Set<string>();
     for (const feriado of this.feriados.filas.values()) {
       if (!this.aplica(feriado, sucursalId)) continue;

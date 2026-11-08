@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ORIGENES_ITEM } from '../application/ports/items-administracion.js';
 import { ALCANCES_CATALOGO, ESTADOS_ITEM } from '../domain/tipos.js';
 
 // Cuerpos y respuestas de /v1/catalogos en snake_case, solo para OpenAPI. La validación va con zod.
@@ -264,6 +263,3 @@ export class PaginaItemsAdministracionDto {
   @ApiProperty()
   tamano!: number;
 }
-
-/** Valores de los filtros, para la documentación de la query. */
-export const FILTROS_ADMINISTRACION = { estados: ESTADOS_ITEM, origenes: ORIGENES_ITEM } as const;
