@@ -9,6 +9,11 @@ import { ConsultarItems } from './application/consultar-items.js';
 import { CrearCatalogo } from './application/crear-catalogo.js';
 import type { DependenciasCatalogos } from './application/dependencias-catalogos.js';
 import { EliminarItemGlobal } from './application/eliminar-item-global.js';
+import { ActualizarFeriado } from './application/feriados/actualizar-feriado.js';
+import { CrearFeriado } from './application/feriados/crear-feriado.js';
+import type { DependenciasFeriados } from './application/feriados/dependencias-feriados.js';
+import { EliminarFeriado } from './application/feriados/eliminar-feriado.js';
+import { ListarFeriados } from './application/feriados/listar-feriados.js';
 import { EliminarItemPropio } from './application/eliminar-item-propio.js';
 import { GuardarItemGlobal } from './application/guardar-item-global.js';
 import { GuardarItemPropio } from './application/guardar-item-propio.js';
@@ -31,6 +36,7 @@ import { CacheItemsRedis } from './infrastructure/redis/cache-items.redis.js';
 import { CanalAvanceRedis } from './infrastructure/redis/canal-avance.redis.js';
 import { AjustesRepositorioTypeOrm } from './infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from './infrastructure/typeorm/catalogos.repositorio.js';
+import { FeriadosRepositorioTypeOrm } from './infrastructure/typeorm/feriados.repositorio.js';
 import { ImportacionesRepositorioTypeOrm } from './infrastructure/typeorm/importaciones.repositorio.js';
 import { ItemsRepositorioTypeOrm } from './infrastructure/typeorm/items.repositorio.js';
 import { LecturaItemsGlobalesTypeOrm } from './infrastructure/typeorm/lectura-items-globales.typeorm.js';
@@ -41,6 +47,7 @@ import { ImportacionesController } from './interface/importaciones.controller.js
 const CLIENTE_REDIS_CAT = Symbol('CLIENTE_REDIS_CAT');
 const DEPENDENCIAS_CATALOGOS = Symbol('DEPENDENCIAS_CATALOGOS');
 const DEPENDENCIAS_IMPORTACION = Symbol('DEPENDENCIAS_IMPORTACION');
+const DEPENDENCIAS_FERIADOS = Symbol('DEPENDENCIAS_FERIADOS');
 const COLA_ABIERTA = Symbol('COLA_ABIERTA');
 
 /** Fábrica de un proveedor que arma la app con sus propios tokens. */
@@ -98,6 +105,11 @@ export class CatalogosModule {
       provide: tipo,
       useFactory: (dependencias: DependenciasImportacion) => new tipo(dependencias),
       inject: [DEPENDENCIAS_IMPORTACION],
+    });
+    const casoDeFeriados = <T>(tipo: new (dependencias: DependenciasFeriados) => T) => ({
+      provide: tipo,
+      useFactory: (dependencias: DependenciasFeriados) => new tipo(dependencias),
+      inject: [DEPENDENCIAS_FERIADOS],
     });
 
     return {
@@ -205,6 +217,30 @@ export class CatalogosModule {
         casoDeUso(GuardarItemPropio),
         casoDeUso(EliminarItemPropio),
         casoDeUso(AjustarItem),
+        {
+          provide: DEPENDENCIAS_FERIADOS,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            eventos: EventPublisher,
+            verificadorOperador: VerificadorOperador,
+          ): DependenciasFeriados => ({
+            unidadDeTrabajo,
+            contexto,
+            ids,
+            reloj,
+            eventos,
+            feriados: new FeriadosRepositorioTypeOrm(unidadDeTrabajo, contexto),
+            verificadorOperador,
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, VERIFICADOR_OPERADOR],
+        },
+        casoDeFeriados(CrearFeriado),
+        casoDeFeriados(ActualizarFeriado),
+        casoDeFeriados(EliminarFeriado),
+        casoDeFeriados(ListarFeriados),
       ],
       exports: [CATALOGO_PORT],
     };

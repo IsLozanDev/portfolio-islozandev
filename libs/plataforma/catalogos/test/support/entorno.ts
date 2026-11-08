@@ -3,6 +3,7 @@ import { ForbiddenError } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, SystemClock, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
 import type { DependenciasCatalogos } from '../../src/application/dependencias-catalogos.js';
+import type { DependenciasFeriados } from '../../src/application/feriados/dependencias-feriados.js';
 import type { DependenciasImportacion } from '../../src/application/importacion/dependencias-importacion.js';
 import type { DependenciasProcesarImportacion } from '../../src/application/importacion/procesar-importacion.js';
 import type { TrabajoImportacion } from '../../src/application/ports/importacion.js';
@@ -15,6 +16,7 @@ import { LecturaItemsGlobalesTypeOrm } from '../../src/infrastructure/typeorm/le
 import { AjustesRepositorioTypeOrm } from '../../src/infrastructure/typeorm/ajustes.repositorio.js';
 import { CatalogosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/catalogos.repositorio.js';
 import { ENTIDADES_CAT } from '../../src/infrastructure/typeorm/entidades.js';
+import { FeriadosRepositorioTypeOrm } from '../../src/infrastructure/typeorm/feriados.repositorio.js';
 import { ItemsRepositorioTypeOrm } from '../../src/infrastructure/typeorm/items.repositorio.js';
 import { LecturaItemsTypeOrm } from '../../src/infrastructure/typeorm/lectura-items.typeorm.js';
 import { createTempDb, type TempDb } from './temp-db.js';
@@ -33,6 +35,7 @@ export interface Tenants {
 export interface EntornoCatalogos {
   dataSource: DataSource;
   dependencias: DependenciasCatalogos;
+  feriados: DependenciasFeriados;
   importacion: DependenciasImportacion;
   procesar: DependenciasProcesarImportacion;
   canal: CanalAvanceMemoria;
@@ -74,6 +77,16 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
     verificadoresReferencias: [{ estaReferenciado: async ({ itemId }) => referenciados.has(itemId) }],
   };
 
+  const feriados: DependenciasFeriados = {
+    unidadDeTrabajo,
+    contexto,
+    ids: dependencias.ids,
+    reloj: dependencias.reloj,
+    eventos: dependencias.eventos,
+    feriados: new FeriadosRepositorioTypeOrm(unidadDeTrabajo, contexto),
+    verificadorOperador: dependencias.verificadorOperador,
+  };
+
   const importaciones = new ImportacionesRepositorioTypeOrm(unidadDeTrabajo);
   const canal = new CanalAvanceMemoria();
   const cola = { trabajos: [] as TrabajoImportacion[], encolar: async (trabajo: TrabajoImportacion) => void cola.trabajos.push(trabajo) };
@@ -107,6 +120,7 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
   return {
     dataSource,
     dependencias,
+    feriados,
     importacion,
     procesar,
     canal,

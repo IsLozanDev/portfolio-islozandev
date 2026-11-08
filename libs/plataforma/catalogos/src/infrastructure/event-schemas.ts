@@ -41,6 +41,18 @@ export const ESQUEMAS_CAT: Readonly<Record<string, object>> = {
     version_global: version,
     por: uuid,
   }),
+  [EVENTOS_CAT.feriadoActualizado]: objeto({
+    feriado_id: uuid,
+    accion: { enum: ['CREADO', 'MODIFICADO', 'ELIMINADO'] },
+    alcance: { enum: ['GLOBAL', 'TENANT', 'SUCURSAL'] },
+    tenant_id: uuidNulo,
+    sucursal_id: uuidNulo,
+    fecha: { type: 'string', pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' },
+    nombre: { type: 'string', minLength: 3, maxLength: 100 },
+    recurrente_anual: { type: 'boolean' },
+    version,
+    por: uuid,
+  }),
 };
 
 export function registrarEsquemasCat(validador: Pick<InMemoryEventSchemaValidator, 'register'>): void {

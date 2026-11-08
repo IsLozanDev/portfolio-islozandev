@@ -4,6 +4,7 @@ import type { DomainEvent } from '@vitrina/plataforma/kernel';
 export const EVENTOS_CAT = {
   catalogoActualizado: 'catalogo.actualizado',
   importacionAplicada: 'catalogo.importacion_aplicada',
+  feriadoActualizado: 'feriado.actualizado',
 } as const;
 
 export const AGREGADO_CATALOGO = 'catalogo';
