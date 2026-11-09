@@ -1,21 +1,17 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
-import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDatepickerIntl } from '@angular/material/datepicker';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormularioItemComponent, type ItemCatalogo, type SolicitudItem } from '@vitrina/plataforma/catalogos-ui';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
+import { provideFechaPeru } from '../../config/provide-fecha-peru';
 import { aErrorCatalogos, type ErrorCatalogos } from '../../models/error-catalogos';
 import { mensajeCatalogoDelItem, MENSAJES_FORMULARIO_ITEM_CONSOLA } from '../../models/mensajes-catalogos';
-import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service';
-import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
 import { ItemsCliente } from '../../services/items.cliente';
 import { PARAMETRO_URL_DETALLE, PESTANA_POR_DEFECTO } from '../../utils/filtro-url';
 
 const PARAMETRO_CODIGO = 'codigo';
 const PARAMETRO_ITEM = 'id';
-const LOCALE_PERU = 'es-PE';
 const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
 const CODIGO_ITEM_NO_ENCONTRADO = 'ITEM_NO_ENCONTRADO';
 const CAMPO_CODIGO = 'codigo';
@@ -24,12 +20,7 @@ const CAMPO_CODIGO = 'codigo';
 @Component({
   selector: 'vit-item-formulario',
   imports: [MatButtonModule, RouterLink, CargandoComponent, EstadoVacioComponent, FormularioItemComponent],
-  providers: [
-    provideNativeDateAdapter(),
-    { provide: DateAdapter, useClass: AdaptadorFechaPeru },
-    { provide: MAT_DATE_LOCALE, useValue: LOCALE_PERU },
-    { provide: MatDatepickerIntl, useClass: CalendarioEnEspanol },
-  ],
+  providers: [provideFechaPeru()],
   templateUrl: './item-formulario.page.html',
 })
 export class ItemFormularioPage {

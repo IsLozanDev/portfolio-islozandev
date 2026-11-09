@@ -10,7 +10,6 @@ const FIN_DE_EVENTO = '\n\n';
 const SALTO = '\n';
 const RETORNO = '\r';
 const SALTOS_DE_LINEA = /\r\n?/g;
-const PREFIJO_COMENTARIO = ':';
 const CAMPO_DATOS = 'data:';
 
 /**
@@ -34,7 +33,7 @@ export function lectorEventos(pendiente: string, fragmento: string): LecturaEven
 function datosDelBloque(bloque: string): string | null {
   const datos = bloque
     .split(SALTO)
-    .filter((linea) => !linea.startsWith(PREFIJO_COMENTARIO) && linea.startsWith(CAMPO_DATOS))
+    .filter((linea) => linea.startsWith(CAMPO_DATOS))
     .map((linea) => linea.slice(CAMPO_DATOS.length).trimStart());
   return datos.length === 0 ? null : datos.join(SALTO);
 }

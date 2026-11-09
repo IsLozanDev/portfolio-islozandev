@@ -37,7 +37,7 @@ const detalle = (estado: DetalleImportacion['estado'], cambios: Partial<DetalleI
 
 class SesionDePrueba {
   readonly autenticado = signal(true);
-  readonly contexto = signal<{ aal: string; permisos: string[] } | null>(null);
+  readonly contexto = signal<{ aal: string; mfaVigente: boolean; permisos: string[] } | null>(null);
   tiene(permiso: string): boolean {
     return this.contexto()?.permisos.includes(permiso) ?? false;
   }
@@ -69,7 +69,7 @@ describe('SeguimientoImportacionesService', () => {
   }
 
   async function conSesionAal2(permisos: string[] = [PERMISOS_CATALOGOS.importar]): Promise<void> {
-    sesion.contexto.set({ aal: 'aal2', permisos });
+    sesion.contexto.set({ aal: 'aal2', mfaVigente: true, permisos });
     TestBed.tick();
     await esperar();
   }
@@ -100,14 +100,20 @@ describe('SeguimientoImportacionesService', () => {
     expect(tarea(CIE10)).toMatchObject({ avance: null, detalle: 'En cola' });
   });
 
-  it('sin plat.catalogo.importar, o con aal1, no llama a activas', async () => {
+  it('sin plat.catalogo.importar, con aal1 o con el MFA vencido no llama a activas (evita el 401 MFA_REQUERIDA)', async () => {
     crear();
     await conSesionAal2([PERMISOS_CATALOGOS.leer]);
-    sesion.contexto.set({ aal: 'aal1', permisos: [PERMISOS_CATALOGOS.importar] });
+    sesion.contexto.set({ aal: 'aal1', mfaVigente: false, permisos: [PERMISOS_CATALOGOS.importar] });
+    TestBed.tick();
+    sesion.contexto.set({ aal: 'aal2', mfaVigente: false, permisos: [PERMISOS_CATALOGOS.importar] });
     TestBed.tick();
     await esperar();
-
     expect(importaciones.activas).not.toHaveBeenCalled();
+
+    sesion.contexto.set({ aal: 'aal2', mfaVigente: true, permisos: [PERMISOS_CATALOGOS.importar] });
+    TestBed.tick();
+    await esperar();
+    expect(importaciones.activas).toHaveBeenCalledTimes(1);
   });
 
   it('seguir dos veces la misma importación abre un solo stream', () => {

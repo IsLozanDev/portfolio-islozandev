@@ -91,12 +91,14 @@ function filasDelCambio({ antes, despues }: CambioEnMuestra): FilaCambio[] {
     atributos: [antes.atributos, despues.atributos],
   };
   return (Object.keys(valores) as CampoComparado[])
-    .map((campo) => ({ campo, antes: comoTexto(valores[campo][0]), despues: comoTexto(valores[campo][1]) }))
-    .filter((comparacion) => comparacion.antes !== comparacion.despues)
-    .map((comparacion) => ({ codigo: despues.codigo, campo: CAMPOS_COMPARADOS[comparacion.campo], antes: comparacion.antes, despues: comparacion.despues }));
+    .map((campo) => ({ codigo: despues.codigo, campo: CAMPOS_COMPARADOS[campo], antes: comoTexto(valores[campo][0]), despues: comoTexto(valores[campo][1]) }))
+    .filter((fila) => fila.antes !== fila.despues);
 }
 
+/** Los atributos se comparan con las claves ordenadas: el mismo objeto en otro orden no es un cambio. */
 function comoTexto(valor: unknown): string {
   if (valor === null || valor === undefined || valor === '') return MENSAJES_RESUMEN.sinValor;
-  return typeof valor === 'object' ? JSON.stringify(valor) : String(valor);
+  if (typeof valor !== 'object') return String(valor);
+  const ordenado = Object.fromEntries(Object.entries(valor).sort(([claveA], [claveB]) => claveA.localeCompare(claveB)));
+  return JSON.stringify(ordenado);
 }

@@ -56,6 +56,7 @@ describe('ImportacionPage', () => {
   let consola: ConsolaDePrueba;
 
   const elemento = () => consola.elemento();
+  const pasoActual = () => elemento().querySelector('.mat-step-header[aria-selected="true"]')?.textContent?.trim();
   const accion = (nombre: string) => elemento().querySelector<HTMLButtonElement>(`[data-accion="${nombre}"]`);
 
   async function abrir(catalogos = [catalogo('UBIGEO', true), catalogo('MEDIO_PAGO', false)], ruta = '/consola/catalogos/UBIGEO/importar'): Promise<void> {
@@ -141,6 +142,7 @@ describe('ImportacionPage', () => {
     await consola.estable();
 
     expect(elemento().querySelector('[data-total-errores]')?.textContent).toContain('Se encontraron 3000 errores; se muestran los primeros 100');
+    expect(pasoActual()).toContain('Archivo');
     expect(elemento().querySelector('vit-errores-importacion mat-paginator')?.textContent).toContain('de 100');
     expect(accion('descargar-errores')).not.toBeNull();
     expect(accion('aplicar')).toBeNull();
@@ -161,6 +163,7 @@ describe('ImportacionPage', () => {
   it('TR-CA-072: el 201 pasa al paso 2 con 18 altas, la muestra y el vencimiento', async () => {
     await llegarAlPaso2();
 
+    expect(pasoActual()).toContain('Previsualización');
     expect(elemento().querySelector('[data-contador="Altas"]')?.textContent).toContain('18');
     expect(elemento().querySelectorAll('[data-muestra="altas"] tr[mat-row]')).toHaveLength(18);
     expect(elemento().querySelector('[data-vencimiento]')?.textContent).toContain('Puede aplicarla hasta el 09/11/2026 10:42');
@@ -218,6 +221,7 @@ describe('ImportacionPage', () => {
     await consola.estable();
 
     expect(elemento().querySelector('[data-error="api"]')?.textContent).toContain(MENSAJES_IMPORTACION.vencida);
+    expect(pasoActual()).toContain('Archivo');
     expect(accion('aplicar')).toBeNull();
     expect(accion('previsualizar')).not.toBeNull();
   });
@@ -230,7 +234,7 @@ describe('ImportacionPage', () => {
     await consola.estable();
 
     expect(elemento().querySelector('[data-error="api"]')?.textContent).toContain(MENSAJES_IMPORTACION.colaNoDisponible);
-    expect(accion('aplicar')).not.toBeNull();
+    expect(pasoActual()).toContain('Previsualización');
   });
 
   it('un catálogo no importable muestra «Este catálogo no se importa»', async () => {

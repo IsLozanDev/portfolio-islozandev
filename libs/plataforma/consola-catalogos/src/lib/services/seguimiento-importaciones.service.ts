@@ -20,13 +20,13 @@ import { ImportacionesCliente } from './importaciones.cliente';
 /** Espera entre reintentos del `GET` de recuperación cuando ese `GET` falla. */
 export const ESPERA_RECONEXION_MS = 5000;
 export const REINTENTOS_MAXIMOS = 3;
-const NIVEL_MFA = 'aal2';
 const HTTP_NO_ENCONTRADO = 404;
 const ESTADOS_EN_CURSO: readonly string[] = ['EN_COLA', 'EN_PROCESO'];
 const RUTA_CATALOGOS = '/consola/catalogos';
 const PESTANA_IMPORTACIONES = 'pestana=importaciones';
 
 type AvisoDeFin = Extract<AvisoImportacion, { tipo: 'fin' }>;
+type AvisoDeAvance = Extract<AvisoImportacion, { tipo: 'avance' }>;
 
 interface Seguimiento {
   codigo: string;
@@ -61,7 +61,9 @@ export class SeguimientoImportacionesService {
         this.detenerTodo();
         return;
       }
-      if (contexto.aal === NIVEL_MFA && this.sesion.tiene(PERMISOS_CATALOGOS.importar)) void this.recuperarActivas();
+      // `importar` es sensible: con el MFA vencido la API responde 401 MFA_REQUERIDA y el interceptor llevaría
+      // a verificar desde cualquier pantalla. Se espera a que el contexto diga que el MFA está vigente.
+      if (contexto.mfaVigente && this.sesion.tiene(PERMISOS_CATALOGOS.importar)) void this.recuperarActivas();
     });
   }
 
@@ -86,7 +88,7 @@ export class SeguimientoImportacionesService {
     try {
       for (const activa of await this.importaciones.activas()) {
         this.seguir(activa.id, activa.codigo);
-        if (activa.avance !== null) this.mostrarAvance(activa.id, { tipo: 'avance', estado: 'EN_PROCESO', avance: activa.avance });
+        if (activa.avance !== null) this.mostrarAvance(activa.id, avanceEnProceso(activa.avance));
       }
     } catch {
       this.activasRecuperadas = false;
@@ -102,7 +104,7 @@ export class SeguimientoImportacionesService {
     });
   }
 
-  private mostrarAvance(importacionId: string, aviso: Extract<AvisoImportacion, { tipo: 'avance' }>): void {
+  private mostrarAvance(importacionId: string, aviso: AvisoDeAvance): void {
     if (aviso.estado === 'EN_COLA') {
       this.tareas.actualizar(importacionId, { avance: null, detalle: MENSAJES_SEGUIMIENTO.enCola });
       return;
@@ -145,7 +147,7 @@ export class SeguimientoImportacionesService {
       this.darPorPerdido(importacionId);
       return;
     }
-    if (detalle.estado === 'EN_PROCESO' && detalle.avance !== null) this.mostrarAvance(importacionId, { tipo: 'avance', estado: 'EN_PROCESO', avance: detalle.avance });
+    if (detalle.estado === 'EN_PROCESO' && detalle.avance !== null) this.mostrarAvance(importacionId, avanceEnProceso(detalle.avance));
     this.conectar(importacionId);
   }
 
@@ -186,6 +188,10 @@ export class SeguimientoImportacionesService {
     this.tareas.vaciar();
     this.activasRecuperadas = false;
   }
+}
+
+function avanceEnProceso(avance: number): AvisoDeAvance {
+  return { tipo: 'avance', estado: 'EN_PROCESO', avance };
 }
 
 function avisoDeFinDe(detalle: DetalleImportacion): AvisoDeFin {

@@ -28,7 +28,7 @@
       <a mat-stroked-button class="self-start" [routerLink]="[codigo]" [relativeTo]="rutaMontaje" data-accion="volver">{{ mensajes.volverAlCatalogo }}</a>
     } @else {
       <mat-stepper linear [selectedIndex]="paso()" (selectionChange)="paso.set($event.selectedIndex)" [attr.aria-label]="mensajes.asistente" #asistente>
-        <mat-step [label]="mensajes.pasoArchivo" [completed]="previsualizacion() !== null" [editable]="!aplicando()">
+        <mat-step [label]="mensajes.pasoArchivo" [completed]="previsualizacion() !== null">
           <form class="flex flex-col gap-4 pt-2" [formGroup]="grupo" (ngSubmit)="previsualizar()" novalidate>
             @if (filasInvalidas(); as filas) {
               <vit-errores-importacion [filas]="filas" />
@@ -45,7 +45,7 @@
                   {{ mensajes.ayudaArchivo }}
                 </span>
               </div>
-              <input #selectorArchivo class="sr-only" id="vit-archivo-importacion" type="file" [accept]="aceptados" data-campo="archivo" (change)="elegirArchivo($event)" />
+              <input #selectorArchivo class="sr-only" id="vit-archivo-importacion" type="file" tabindex="-1" [attr.aria-label]="mensajes.elegirArchivo" [accept]="aceptados" data-campo="archivo" (change)="elegirArchivo($event)" />
               <button mat-stroked-button type="button" (click)="selectorArchivo.click()" data-accion="elegir-archivo">
                 <mat-icon aria-hidden="true">upload_file</mat-icon>
                 {{ archivo() ? mensajes.cambiarArchivo : mensajes.elegirArchivo }}

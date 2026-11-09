@@ -1,8 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { afterNextRender, Component, computed, inject, Injector, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
-import { MatDatepickerIntl, MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -13,6 +12,7 @@ import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
 import { ErroresImportacionComponent } from '../../components/errores-importacion/errores-importacion.component';
 import { ResumenPrevisualizacionComponent } from '../../components/resumen-previsualizacion/resumen-previsualizacion.component';
+import { provideFechaPeru } from '../../config/provide-fecha-peru';
 import type { Catalogo } from '../../models/catalogo';
 import { aErrorCatalogos, ErrorFilasInvalidas, type ErrorCatalogos } from '../../models/error-catalogos';
 import type { FilasInvalidas, Previsualizacion } from '../../models/importacion';
@@ -25,8 +25,6 @@ import {
   mensajeTituloImportar,
   mensajeVenceEn,
 } from '../../models/mensajes-catalogos';
-import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service';
-import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
 import { CatalogosCliente } from '../../services/catalogos.cliente';
 import { ImportacionesCliente } from '../../services/importaciones.cliente';
 import { SeguimientoImportacionesService } from '../../services/seguimiento-importaciones.service';
@@ -42,7 +40,6 @@ import {
 } from '../../utils/formulario-importacion';
 
 const PARAMETRO_CODIGO = 'codigo';
-const LOCALE_PERU = 'es-PE';
 const PASO_ARCHIVO = 0;
 const PASO_PREVISUALIZACION = 1;
 const CODIGO_NO_APLICABLE = 'IMPORTACION_NO_APLICABLE';
@@ -69,12 +66,7 @@ const PESTANA_IMPORTACIONES: PestanaDetalle = 'importaciones';
     ErroresImportacionComponent,
     ResumenPrevisualizacionComponent,
   ],
-  providers: [
-    provideNativeDateAdapter(),
-    { provide: DateAdapter, useClass: AdaptadorFechaPeru },
-    { provide: MAT_DATE_LOCALE, useValue: LOCALE_PERU },
-    { provide: MatDatepickerIntl, useClass: CalendarioEnEspanol },
-  ],
+  providers: [provideFechaPeru()],
   templateUrl: './importacion.page.html',
 })
 export class ImportacionPage {
@@ -85,6 +77,7 @@ export class ImportacionPage {
   private readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
+  private readonly injector = inject(Injector);
 
   protected readonly mensajes = MENSAJES_IMPORTACION;
   protected readonly migaCatalogos = MENSAJES_DETALLE_CATALOGO.migaCatalogos;
@@ -148,7 +141,8 @@ export class ImportacionPage {
     this.filasInvalidas.set(null);
     try {
       this.previsualizacion.set(await this.importaciones.previsualizar(this.codigo, aArchivoAPrevisualizar(this.grupo)));
-      this.paso.set(PASO_PREVISUALIZACION);
+      // El stepper es lineal: el paso 1 debe verse completado antes de pedirle el 2, o lo rechaza.
+      afterNextRender(() => this.paso.set(PASO_PREVISUALIZACION), { injector: this.injector });
     } catch (error) {
       this.mostrarErrorDeArchivo(aErrorCatalogos(error));
     } finally {

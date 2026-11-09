@@ -13,7 +13,8 @@ const COLUMNAS: ColumnaTabla<ErrorFila>[] = [
   { clave: 'valor', titulo: MENSAJES_ERRORES_IMPORTACION.valor, movil: 'detalle' },
   { clave: 'mensaje', titulo: MENSAJES_ERRORES_IMPORTACION.mensaje, movil: 'detalle' },
 ];
-const PRIMERA_PAGINA: CambioPagina = { indice: 0, tamano: 20 };
+const TAMANO_PAGINA = 20;
+const PRIMERA_PAGINA: CambioPagina = { indice: 0, tamano: TAMANO_PAGINA };
 
 /** TR-CA-073: el archivo rechazado, con el total, los primeros 100 errores y la descarga del CSV completo. */
 @Component({

@@ -4,8 +4,11 @@ import { mensajeDeValidacion } from '@vitrina/shared/ui';
 import { MENSAJES_IMPORTACION } from '../models/mensajes-catalogos';
 import type { ArchivoAPrevisualizar } from '../services/importaciones.cliente';
 
+const BYTES_POR_KILOBYTE = 1024;
+const KILOBYTES_POR_MEGABYTE = 1024;
+const LOCALE_PERU = 'es-PE';
 /** El mismo tope que el back (19b). */
-export const TAMANO_MAXIMO_ARCHIVO = 20 * 1024 * 1024;
+export const TAMANO_MAXIMO_ARCHIVO = 20 * KILOBYTES_POR_MEGABYTE * BYTES_POR_KILOBYTE;
 export const EXTENSIONES_ACEPTADAS = ['.csv', '.xlsx'] as const;
 const VERSION_OFICIAL_MAXIMA = 40;
 
@@ -22,7 +25,7 @@ export type GrupoImportacion = FormGroup<{
 const MENSAJE_POR_ERROR: Readonly<Record<string, string>> = {
   [ERROR_ARCHIVO_GRANDE]: MENSAJES_IMPORTACION.archivoGrande,
   [ERROR_ARCHIVO_TIPO]: MENSAJES_IMPORTACION.archivoTipo,
-  [ERROR_FECHA_INVALIDA]: 'Ingrese una fecha válida (dd/mm/aaaa)',
+  [ERROR_FECHA_INVALIDA]: MENSAJES_IMPORTACION.fechaInvalida,
 };
 
 export function crearGrupoImportacion(): GrupoImportacion {
@@ -51,9 +54,9 @@ export function mensajeDeErrorArchivo(errores: ValidationErrors | null): string 
 
 /** «412 KB» o «1,5 MB»: el tamaño del archivo elegido. */
 export function tamanoLegible(bytes: number): string {
-  const kilobytes = bytes / 1024;
-  if (kilobytes < 1024) return `${Math.max(1, Math.round(kilobytes))} KB`;
-  return `${(kilobytes / 1024).toLocaleString('es-PE', { maximumFractionDigits: 1 })} MB`;
+  const kilobytes = bytes / BYTES_POR_KILOBYTE;
+  if (kilobytes < KILOBYTES_POR_MEGABYTE) return `${Math.max(1, Math.round(kilobytes))} KB`;
+  return `${(kilobytes / KILOBYTES_POR_MEGABYTE).toLocaleString(LOCALE_PERU, { maximumFractionDigits: 1 })} MB`;
 }
 
 /** Validado en el cliente para no subir 20 MB que el back va a rechazar. */

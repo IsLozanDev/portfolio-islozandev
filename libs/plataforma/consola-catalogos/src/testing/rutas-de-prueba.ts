@@ -44,6 +44,11 @@ export interface ConsolaDePrueba {
   estable: () => Promise<void>;
 }
 
+/** El seguimiento global pide las activas al ver el MFA vigente: en las pruebas de páginas no hay ninguna. */
+function responderActivasVacias(http: HttpTestingController): void {
+  http.match((solicitud) => solicitud.urlWithParams.endsWith('/catalogos/importaciones?activas=true')).forEach((pedido) => pedido.flush([]));
+}
+
 /**
  * Monta las rutas reales de la lib bajo `consola/catalogos`, con HTTP de prueba, el doble de sesión y el de
  * avisos. `extra` va antes que las de la lib: una ruta literal (p. ej. `DOC_PRUEBA`) reemplaza al detalle por un destino vacío.
@@ -69,6 +74,7 @@ export async function abrirConsola(ruta: string, sesion: DobleSesion, avisos: Do
     for (let vuelta = 0; vuelta < VUELTAS_DE_ESPERA; vuelta++) {
       await new Promise((resolver) => setTimeout(resolver));
       await harness.fixture.whenStable();
+      responderActivasVacias(http);
     }
   };
   await estable();

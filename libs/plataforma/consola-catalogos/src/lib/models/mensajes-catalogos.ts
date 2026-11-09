@@ -154,6 +154,7 @@ export const MENSAJES_IMPORTACION = {
   ayudaVersionOficial: 'Como la publica la fuente, de 1 a 40 caracteres',
   fechaVigencia: 'Fecha de vigencia',
   ayudaFechaVigencia: 'Desde cuándo rigen las altas y los cambios (dd/mm/aaaa)',
+  fechaInvalida: 'Ingrese una fecha válida (dd/mm/aaaa)',
   previsualizar: 'Previsualizar',
   validando: 'Validando el archivo completo…',
   cancelar: 'Cancelar',
