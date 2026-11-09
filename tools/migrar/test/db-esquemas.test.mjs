@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -83,6 +83,7 @@ const CASOS = [
   { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
   { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
+  { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -170,6 +171,26 @@ async function inversoTiposIngresoConFilas() {
     await c.query('BEGIN');
     await c.query(`INSERT INTO seg.evento_seguridad (tipo) VALUES ('LOGIN_FALLIDO')`);
     return await c.query(await readFile(rutaDb('rollback/01b_seg_tipos_ingreso.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Con una fila en aud.evento_auditoria el inverso de 01g_aud se niega (TR-RN-028); la transacción se revierte.
+async function inversoAuditoriaConFilas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(
+      `INSERT INTO aud.evento_auditoria (id, tenant_id, tipo, origen, accion, entidad_tipo, entidad_id, ocurrido_en)
+       VALUES (gen_random_uuid(), gen_random_uuid(), 'OPERACION', 'DIRECTO', 'rest.venta.anular', 'venta', 'V-000981', now())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01g_aud.sql'), 'utf8')).then(
       () => null,
       (error) => error.code,
     );
@@ -297,6 +318,14 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01g_aud se niega con filas; sin filas borra aud y se puede reaplicar.
+    expect(await inversoAuditoriaConFilas()).toBe('55006');
+    expect(await existeEsquema('aud')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01g_aud.sql'), 'utf8'));
+    expect(await existeEsquema('aud')).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01g_aud.sql'), 'utf8'));
+    expect(await existeEsquema('aud')).toBe(true);
 
     // El inverso de 01f_cat_items_busqueda deja la búsqueda en código o nombre y se puede reaplicar.
     expect(await buscaEnAtributos()).toBe(true);
