@@ -151,6 +151,40 @@ class TablaConTono {
   readonly filas: Membresia[] = [{ correo: 'ana@vitrina.pe', estado: 'Activo' }];
 }
 
+interface Archivo {
+  nombre: string;
+  importable: string;
+}
+
+@Component({
+  imports: [TablaComponent],
+  template: `<vit-tabla [columnas]="columnas" [filas]="filas" [total]="2" />`,
+})
+class TablaConIcono {
+  readonly columnas: ColumnaTabla<Archivo>[] = [
+    { clave: 'nombre', titulo: 'Nombre' },
+    { clave: 'importable', titulo: 'Importable', icono: (fila) => (fila.importable === 'Sí' ? 'upload_file' : null) },
+  ];
+  readonly filas: Archivo[] = [
+    { nombre: 'UBIGEO', importable: 'Sí' },
+    { nombre: 'MEDIO_PAGO', importable: '—' },
+  ];
+}
+
+describe('TablaComponent con ícono', () => {
+  it('pinta el ícono con el valor como texto accesible; sin ícono, el valor', async () => {
+    const fixture = TestBed.createComponent(TablaConIcono);
+    await fixture.whenStable();
+    const [, conIcono, , sinIcono] = fixture.nativeElement.querySelectorAll('td.mat-mdc-cell') as NodeListOf<HTMLElement>;
+
+    expect(conIcono.querySelector('mat-icon')?.textContent?.trim()).toBe('upload_file');
+    expect(conIcono.querySelector('mat-icon')?.getAttribute('aria-hidden')).toBe('true');
+    expect(conIcono.querySelector('.sr-only')?.textContent?.trim()).toBe('Sí');
+    expect(sinIcono.querySelector('mat-icon')).toBeNull();
+    expect(sinIcono.textContent?.trim()).toBe('—');
+  });
+});
+
 describe('TablaComponent con tono', () => {
   it('la columna con tono pinta un chip y la columna sin tono pinta texto', async () => {
     const fixture = TestBed.createComponent(TablaConTono);

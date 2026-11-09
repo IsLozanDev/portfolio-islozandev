@@ -78,6 +78,7 @@ describe('PrevisualizarImportacion (TR-RF-028)', () => {
       comando(csv('codigo;descripcion;orden', '01;Factura;1', '03;Boleta de venta;2', '07;Nota de crédito;3')),
     );
     expect(resultado).toMatchObject<Partial<Previsualizacion>>({
+      version: 0,
       estado: 'PREVISUALIZADA',
       versionOficial: '2026-06',
       fechaVigencia: '2026-06-01',
@@ -234,7 +235,7 @@ describe('Consultar, listar y descargar', () => {
     const importacion = await actual.importaciones.buscar(previa.id);
     importacion?.encolar(ANA, AHORA);
     if (importacion) await actual.importaciones.guardar(importacion, importacion.version);
-    expect((await listar.activas({ actorId: ANA })).map((item) => item.id)).toEqual([previa.id]);
+    expect((await listar.activas({ actorId: ANA })).map((item) => [item.id, item.codigo])).toEqual([[previa.id, 'TIPO_COMPROBANTE']]);
     expect(await listar.activas({ actorId: 'otro-usuario' })).toEqual([]);
   });
 

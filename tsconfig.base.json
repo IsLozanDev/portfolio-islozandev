@@ -74,6 +74,12 @@
       ],
       "@vitrina/plataforma/consola-soporte": [
         "./libs/plataforma/consola-soporte/src/index.ts"
+      ],
+      "@vitrina/plataforma/consola-catalogos": [
+        "./libs/plataforma/consola-catalogos/src/index.ts"
+      ],
+      "@vitrina/plataforma/catalogos-ui": [
+        "./libs/plataforma/catalogos-ui/src/index.ts"
       ]
     }
   }

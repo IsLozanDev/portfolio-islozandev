@@ -5,6 +5,7 @@ import { authInterceptor, provideAuth } from '@vitrina/shared/auth';
 import { erroresHttpInterceptor, provideVolverA } from '@vitrina/shared/shell';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
+import { iniciarSeguimientoImportaciones } from './iniciar-seguimiento-importaciones';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,5 +14,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, erroresHttpInterceptor])),
     provideAuth(environment.auth),
     provideVolverA(environment.origenesVolverA),
+    iniciarSeguimientoImportaciones(),
   ],
 };

@@ -2,6 +2,7 @@ import { VersionObsoletaError } from '../domain/errores.js';
 import {
   buscarCatalogo,
   buscarItemDe,
+  exigirEdicionManualDeGlobales,
   exigirOperador,
   exigirSinReferencias,
   publicarCambioDeItemGlobal,
@@ -28,6 +29,7 @@ export class EliminarItemGlobal {
     return unidadDeTrabajo.run(async () => {
       await exigirOperador(this.dependencias);
       const catalogo = await buscarCatalogo(catalogos, comando.catalogo);
+      exigirEdicionManualDeGlobales(catalogo);
       const item = await buscarItemDe(items, catalogo, comando.itemId, 'GLOBAL');
       if (item.version !== comando.version) throw new VersionObsoletaError();
       await exigirSinReferencias(verificadoresReferencias, catalogo, item);

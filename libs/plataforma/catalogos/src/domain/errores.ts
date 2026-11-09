@@ -60,6 +60,15 @@ export class AlcanceNoPermiteError extends ConflictError {
   }
 }
 
+/** Las tablas importables no se editan a mano: la aplicación de importaciones va por sus funciones de base. */
+export class TablaSoloImportacionError extends ConflictError {
+  override readonly code = 'TABLA_SOLO_IMPORTACION';
+
+  constructor() {
+    super('Esta tabla se actualiza solo por importación');
+  }
+}
+
 export class VersionObsoletaError extends ConflictError {
   override readonly code = 'VERSION_OBSOLETA';
 

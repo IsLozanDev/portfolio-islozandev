@@ -1,6 +1,7 @@
 import { AggregateRoot } from '@vitrina/plataforma/kernel';
 import { CodigoCatalogo } from './codigo-catalogo.js';
 import { CatalogoInvalidoError } from './errores.js';
+import { esTablaImportable } from './importacion/tipos.js';
 import type { AlcanceCatalogo } from './tipos.js';
 
 const NOMBRE_MINIMO = 3;
@@ -141,6 +142,11 @@ export class Catalogo extends AggregateRoot {
 
   admiteAjustes(): boolean {
     return this.props.alcance === 'MIXTO';
+  }
+
+  /** Las tablas oficiales cambian solo por importación, para que coincidan con su fuente (TR-RNF-017). */
+  admiteEdicionManualDeGlobales(): boolean {
+    return !esTablaImportable(this.props.codigo);
   }
 
   private cambia(cambios: CambiosCatalogo): boolean {

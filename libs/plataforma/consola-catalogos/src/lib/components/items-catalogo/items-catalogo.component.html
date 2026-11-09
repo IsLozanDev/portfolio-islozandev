@@ -1,0 +1,52 @@
+<div class="flex flex-col gap-4">
+  @if (soloDelTenant()) {
+    <p role="note" class="flex items-center gap-2 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-nota="solo-tenant">
+      <mat-icon aria-hidden="true">info</mat-icon>
+      {{ mensajes.soloTenant }}
+    </p>
+  } @else if (catalogo().importable) {
+    <p role="note" class="flex flex-wrap items-center gap-2 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-nota="solo-importacion">
+      <mat-icon aria-hidden="true">lock</mat-icon>
+      <span class="flex-1 basis-64">{{ mensajes.soloImportacion }}</span>
+      <a *siPermiso="permisos.importar" class="font-medium underline" routerLink="importar">{{ mensajes.importarArchivo }}</a>
+    </p>
+  }
+
+  <div class="flex flex-wrap items-start gap-3">
+    <div class="min-w-0 flex-1">
+      <vit-filtros [definiciones]="filtros" [placeholderBusqueda]="mensajes.buscar" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+    </div>
+    @if (editable()) {
+      <a *siPermiso="permisos.itemGestionar" mat-flat-button routerLink="items/nuevo" data-accion="nuevo-item">
+        <mat-icon aria-hidden="true">add</mat-icon>
+        {{ mensajes.nuevoItem }}
+      </a>
+    }
+  </div>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="items">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas()"
+    [filas]="filas()"
+    [total]="total()"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="mensajes.sinItems"
+    (pagina)="paginar($event)"
+  >
+    @if (editable()) {
+      <ng-template vitAccionesFila let-item>
+        <span *siPermiso="permisos.itemGestionar" class="flex gap-1">
+          <a mat-button [routerLink]="['items', item.itemId, 'editar']" data-accion="editar" [attr.aria-label]="mensajes.editar + ': ' + item.codigo">{{ mensajes.editar }}</a>
+          <button mat-button type="button" class="vit-destructivo" data-accion="borrar" [disabled]="ocupado()" [attr.aria-label]="mensajes.borrar + ': ' + item.codigo" (click)="borrar(item)">
+            {{ mensajes.borrar }}
+          </button>
+        </span>
+      </ng-template>
+    }
+  </vit-tabla>
+</div>

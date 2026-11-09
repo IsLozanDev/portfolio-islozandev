@@ -1,0 +1,117 @@
+<section class="flex max-w-4xl flex-col gap-4">
+  <nav class="flex flex-wrap items-center gap-1 text-sm text-sobre-superficie-variante" [attr.aria-label]="migas">
+    <a class="underline" routerLink="." [relativeTo]="rutaMontaje">{{ migaCatalogos }}</a>
+    <span aria-hidden="true">›</span>
+    <a class="underline" [routerLink]="[codigo]" [relativeTo]="rutaMontaje">{{ codigo }}</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">{{ mensajes.migaImportar }}</span>
+  </nav>
+
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">{{ titulo }}</h1>
+    @if (catalogo(); as detalle) {
+      <p class="text-sobre-superficie-variante">{{ detalle.nombre }}</p>
+    }
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (cargando()) {
+    <vit-cargando />
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="library_books" [titulo]="noExisteCatalogo" />
+  } @else if (catalogo(); as detalle) {
+    @if (!detalle.importable) {
+      <vit-estado-vacio icono="block" [titulo]="mensajes.noImportable" />
+      <a mat-stroked-button class="self-start" [routerLink]="[codigo]" [relativeTo]="rutaMontaje" data-accion="volver">{{ mensajes.volverAlCatalogo }}</a>
+    } @else {
+      <mat-stepper linear [selectedIndex]="paso()" (selectionChange)="paso.set($event.selectedIndex)" [attr.aria-label]="mensajes.asistente" #asistente>
+        <mat-step [label]="mensajes.pasoArchivo" [completed]="previsualizacion() !== null">
+          <form class="flex flex-col gap-4 pt-2" [formGroup]="grupo" (ngSubmit)="previsualizar()" novalidate>
+            @if (filasInvalidas(); as filas) {
+              <vit-errores-importacion [filas]="filas" />
+            }
+
+            <div class="flex flex-wrap items-center gap-3 rounded-tarjeta border border-borde p-3">
+              <mat-icon aria-hidden="true">description</mat-icon>
+              <div class="flex min-w-0 flex-1 flex-col">
+                <b class="truncate" data-archivo-elegido>{{ archivo()?.name ?? mensajes.sinArchivo }}</b>
+                <span class="text-sm text-sobre-superficie-variante">
+                  @if (tamanoArchivo(); as tamano) {
+                    {{ tamano }} ·
+                  }
+                  {{ mensajes.ayudaArchivo }}
+                </span>
+              </div>
+              <input #selectorArchivo class="sr-only" id="vit-archivo-importacion" type="file" tabindex="-1" [attr.aria-label]="mensajes.elegirArchivo" [accept]="aceptados" data-campo="archivo" (change)="elegirArchivo($event)" />
+              <button mat-stroked-button type="button" (click)="selectorArchivo.click()" data-accion="elegir-archivo">
+                <mat-icon aria-hidden="true">upload_file</mat-icon>
+                {{ archivo() ? mensajes.cambiarArchivo : mensajes.elegirArchivo }}
+              </button>
+            </div>
+            @if (grupo.controls.archivo.touched && grupo.controls.archivo.errors) {
+              <p role="alert" class="text-sm text-error" data-error="archivo">{{ mensajeDeErrorArchivo(grupo.controls.archivo.errors) }}</p>
+            }
+
+            <div class="grid gap-x-4 sm:grid-cols-2">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ mensajes.versionOficial }}</mat-label>
+                <input matInput formControlName="versionOficial" data-campo="versionOficial" maxlength="40" autocomplete="off" required />
+                <mat-hint>{{ mensajes.ayudaVersionOficial }}</mat-hint>
+                <mat-error>{{ mensajeDeError(grupo.controls.versionOficial.errors) }}</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ mensajes.fechaVigencia }}</mat-label>
+                <input matInput [matDatepicker]="calendarioVigencia" formControlName="fechaVigencia" data-campo="fechaVigencia" required />
+                <mat-hint>{{ mensajes.ayudaFechaVigencia }}</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="calendarioVigencia" />
+                <mat-datepicker #calendarioVigencia />
+                <mat-error>{{ mensajeDeError(grupo.controls.fechaVigencia.errors) }}</mat-error>
+              </mat-form-field>
+            </div>
+
+            @if (previsualizando()) {
+              <vit-cargando [texto]="mensajes.validando" />
+            }
+
+            <div class="flex flex-wrap justify-end gap-2">
+              <button mat-button type="button" (click)="cancelar()" data-accion="cancelar">{{ mensajes.cancelar }}</button>
+              <button mat-flat-button type="submit" [disabled]="previsualizando()" data-accion="previsualizar">
+                <mat-icon aria-hidden="true">fact_check</mat-icon>
+                {{ mensajes.previsualizar }}
+              </button>
+            </div>
+          </form>
+        </mat-step>
+
+        <mat-step [label]="mensajes.pasoPrevisualizacion">
+          @if (previsualizacion(); as previa) {
+            <div class="flex flex-col gap-4 pt-2">
+              <p class="flex items-start gap-2 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-vencimiento>
+                <mat-icon aria-hidden="true">schedule</mat-icon>
+                <span>{{ previa.versionOficial }} · {{ vigenciaPrevia() }}. {{ vencimiento() }}.</span>
+              </p>
+
+              <vit-resumen-previsualizacion [previsualizacion]="previa" />
+
+              <div class="flex flex-wrap gap-2">
+                <button mat-button type="button" [disabled]="aplicando()" (click)="cambiarArchivo()" data-accion="cambiar-archivo">
+                  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+                  {{ mensajes.cambiarArchivo }}
+                </button>
+                <span class="flex-1"></span>
+                <button mat-button type="button" (click)="cancelar()">{{ mensajes.cancelar }}</button>
+                <button mat-flat-button type="button" [disabled]="aplicando()" (click)="aplicar()" data-accion="aplicar">
+                  <mat-icon aria-hidden="true">play_arrow</mat-icon>
+                  {{ mensajes.aplicar }}
+                </button>
+              </div>
+            </div>
+          }
+        </mat-step>
+      </mat-stepper>
+    }
+  }
+</section>

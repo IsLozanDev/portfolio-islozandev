@@ -1,0 +1,30 @@
+.vit-anillo-tareas {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+/* Sobre la esquina del spinner, con un borde del color de la barra para separarla. */
+.vit-insignia-tareas {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--mat-toolbar-container-background-color, var(--color-superficie));
+  border-radius: 9px;
+  background: var(--color-primario);
+  color: var(--color-sobre-primario);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}

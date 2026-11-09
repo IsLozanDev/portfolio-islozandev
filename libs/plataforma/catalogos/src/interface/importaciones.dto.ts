@@ -70,6 +70,7 @@ export class MuestraDto {
 
 export class PrevisualizacionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ description: 'La que se envía en `aplicar` (bloqueo optimista)', example: 0 }) version!: number;
   @ApiProperty({ enum: ESTADOS_IMPORTACION }) estado!: string;
   @ApiProperty() version_oficial!: string;
   @ApiProperty() fecha_vigencia!: string;
@@ -117,6 +118,7 @@ export class HistorialImportacionesDto {
 
 /** `estado` es EN_COLA o EN_PROCESO (si Redis lo dice y la base sigue EN_COLA). */
 export class ImportacionActivaDto extends ImportacionListadaDto {
+  @ApiProperty({ example: 'UBIGEO', description: 'Código del catálogo' }) codigo!: string;
   @ApiProperty({ nullable: true, type: Number, description: '0-99 desde Redis; el 100 llega con el fin' }) avance!: number | null;
 }
 

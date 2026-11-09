@@ -1,0 +1,63 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ codigo ? mensajes.tituloEdicion : mensajes.tituloNuevo }}</h1>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (versionObsoleta()) {
+    <div role="alert" class="flex flex-wrap items-center justify-between gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="version">
+      <span>{{ mensajes.versionObsoleta }}</span>
+      <button mat-stroked-button type="button" (click)="recargar()" data-accion="recargar">{{ mensajes.recargar }}</button>
+    </div>
+  }
+
+  @if (noExiste()) {
+    <vit-estado-vacio icono="library_books" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" routerLink="." [relativeTo]="rutaMontaje">{{ mensajes.volver }}</a>
+  } @else if (cargando()) {
+    <vit-cargando />
+  } @else {
+    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
+      <div class="grid gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.codigo }}</mat-label>
+          <input matInput formControlName="codigo" data-campo="codigo" maxlength="60" autocomplete="off" required />
+          <mat-hint>{{ mensajes.ayudaCodigo }}</mat-hint>
+          <mat-error>{{ mensajeDeError(grupo.controls.codigo.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombre }}</mat-label>
+          <input matInput formControlName="nombre" data-campo="nombre" maxlength="150" autocomplete="off" required />
+          <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="sm:col-span-2">
+          <mat-label>{{ mensajes.fuente }}</mat-label>
+          <input matInput formControlName="fuente" data-campo="fuente" maxlength="150" autocomplete="off" />
+          <mat-error>{{ mensajeDeError(grupo.controls.fuente.errors) }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <fieldset class="flex flex-col gap-1">
+        <legend id="vit-etiqueta-alcance" class="text-sm font-medium text-sobre-superficie">{{ mensajes.alcance }}</legend>
+        <mat-radio-group class="flex flex-wrap gap-x-4" formControlName="alcance" aria-labelledby="vit-etiqueta-alcance" data-campo="alcance">
+          @for (alcance of alcances; track alcance) {
+            <mat-radio-button [value]="alcance">{{ etiquetasAlcance[alcance] }}</mat-radio-button>
+          }
+        </mat-radio-group>
+        @if (codigo) {
+          <p class="text-xs text-sobre-superficie-variante">{{ mensajes.ayudaAlcance }}</p>
+        }
+      </fieldset>
+
+      <div class="flex flex-col">
+        <mat-checkbox formControlName="editablePorTenant" data-campo="editablePorTenant">{{ mensajes.editablePorTenant }}</mat-checkbox>
+        <p class="ps-10 text-xs text-sobre-superficie-variante">
+          {{ grupo.controls.editablePorTenant.value ? mensajes.ayudaNoGlobal : mensajes.ayudaGlobal }}
+        </p>
+      </div>
+
+      <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="codigo ? mensajes.guardarCambios : mensajes.crear" (cancelar)="cancelar()" />
+    </form>
+  }
+</section>

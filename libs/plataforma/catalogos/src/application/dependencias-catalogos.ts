@@ -1,6 +1,6 @@
 import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { Catalogo } from '../domain/catalogo.js';
-import { CatalogoNoExisteError, ItemNoEncontradoError, ItemReferenciadoError } from '../domain/errores.js';
+import { CatalogoNoExisteError, ItemNoEncontradoError, ItemReferenciadoError, TablaSoloImportacionError } from '../domain/errores.js';
 import { eventoCatalogoActualizado, type CambioCatalogo } from '../domain/eventos.js';
 import type { ItemCatalogo } from '../domain/item-catalogo.js';
 import type { LecturaItems, RepositorioAjustes, RepositorioCatalogos, RepositorioItems } from './ports/repositorios.js';
@@ -36,6 +36,11 @@ export async function buscarCatalogo(catalogos: Pick<RepositorioCatalogos, 'busc
   const catalogo = await catalogos.buscarPorCodigo(codigo);
   if (!catalogo) throw new CatalogoNoExisteError();
   return catalogo;
+}
+
+/** Las escrituras manuales de globales no tocan las tablas importables. */
+export function exigirEdicionManualDeGlobales(catalogo: Catalogo): void {
+  if (!catalogo.admiteEdicionManualDeGlobales()) throw new TablaSoloImportacionError();
 }
 
 /** Un id de otro catálogo, global en vez de propio o al revés, o de otro tenant: 404. */

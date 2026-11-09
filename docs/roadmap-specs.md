@@ -39,7 +39,8 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 19a | cat-catalogos-nucleo | D-03 (RF 022-027): modelo, caché/ETag, `CatalogoPort` | 7 | 07 | 19 | Implementado |
 | 19b | cat-importador-oficiales | D-04, parte de RF 028: importador CSV/XLSX de las 7 tablas oficiales, previsualización que valida todo, aplicación todo o nada en el worker (BullMQ), avance por SSE, reporte de errores en CSV y datos oficiales en `docs/datos-oficiales/` | 10 | 19a, 11, 12 | 19 | Implementado; pendiente CI (PostgreSQL 16) y cierre |
 | 19c | cat-feriados-calendario | D-04, parte de RF 029: `cat.feriado` (GLOBAL/TENANT/SUCURSAL), `CalendarioPort.sumarDiasHabiles`, parámetro `plat.calendario.sabado_habil` y lista paginada de administración de ítems (pendiente del 19a) | 4-5 | 19a, 09 | 19 | Draft |
-| 19d | cat-consola-admin-ui | D-06 y UI de RF 025/026 (parte de D-05 sin dueño): consola de catálogos, ítems e importación (seguimiento global con avance y toast) y admin cliente de propios, ajustes y feriados | 8-10 | 19b, 19c, 15, 17b, 17c | 19 | Pendiente |
+| 19d | cat-consola-catalogos-ui | D-06, UI de RF 022, 023 y 028: consola de catálogos e ítems globales con vigencia y atributos (lib `catalogos-ui` compartida), tablas importables en solo lectura manual, importación por pasos y seguimiento global del avance en el shell con toast al terminar | 9 | 19a, 19b, 19c, 15, 15b, 15c, 15d, 17b | 19 | Draft |
+| 19e | cat-admin-propios-feriados-ui | UI de RF 025, 026 y 029 (parte de D-05 sin dueño): lib `feriados` con una página por año en las dos apps (GLOBAL en la consola; TENANT y SUCURSAL en admin) y páginas de propios y ajustes en `admin-cliente` | 8-10 | 19c, 19d, 17c | 19 | Pendiente |
 | 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 | Pendiente |
 | 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 | Pendiente |
 | 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — | Pendiente |
@@ -53,7 +54,7 @@ Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/
 
 Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09 conservan SQL embebido en sus repositorios; migrarlos a TypeORM es un spec de refactor aparte (~6-8 h, sin número ni fecha). Los specs 10 SEQ (`FOR UPDATE`) y 20 AUD (hash encadenado) pueden justificar SQL puntual.
 
-19 se partió en 19a (núcleo), 19b (importador), 19c (feriados y calendario) y 19d (UI): el 19b original tenía 4 áreas y unas 14 h, y el importador creció con el worker, el SSE y el reporte de errores. 19b y 19c se pueden implementar en paralelo; 19d va al final porque consume las rutas de los dos.
+19 se partió en 19a (núcleo), 19b (importador), 19c (feriados y calendario) y 19d (UI): el 19b original tenía 4 áreas y unas 14 h, y el importador creció con el worker, el SSE y el reporte de errores. 19b y 19c se pueden implementar en paralelo; 19d va al final porque consume las rutas de los dos. La UI se partió a su vez en 19d (consola: catálogos, ítems globales, importación y seguimiento) y 19e (feriados en las dos apps, y propios y ajustes del tenant en admin): junta llegaba a 14-16 h.
 
 16 y 17 se partieron en 16a/16b/16c y 17a/17b/17c: el plan contaba solo las horas de front y la capa HTTP del back no existía. Longitud del motivo: se respeta lo implementado (SEG 4-300, ORG 10-500); la UI la recibe por opción en vez de fijarla. Los specs 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
@@ -80,7 +81,7 @@ Total estimado: unos 52 specs (38 en R0 y R1, contando las particiones).
 - Ola 3: 04, luego 05 y 06 en paralelo.
 - Ola 4: 07, luego 08 y 13.
 - Ola 5: 09, 10, 14, 20.
-- Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
+- Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c, y 19e tras 19d; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
 - SazónPOS (22 a 26) y 27 al final.
 
 Máximo 2 o 3 frentes a la vez: la revisión de diffs es el cuello de botella.

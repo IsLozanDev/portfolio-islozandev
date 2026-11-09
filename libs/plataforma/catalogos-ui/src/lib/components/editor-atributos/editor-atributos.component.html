@@ -1,0 +1,39 @@
+<fieldset class="flex flex-col gap-2" [formGroup]="grupo()">
+  <legend class="mb-2 text-base font-medium text-sobre-superficie">{{ mensajes.atributos }}</legend>
+  <div class="grid gap-x-4 sm:grid-cols-2">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.longitud }}</mat-label>
+      <input matInput formControlName="longitud" data-campo="longitud" inputmode="numeric" autocomplete="off" />
+      <mat-error>{{ mensajeDeError(grupo().controls.longitud.errors) }}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.regex }}</mat-label>
+      <input matInput formControlName="regex" data-campo="regex" maxlength="200" autocomplete="off" spellcheck="false" />
+      <mat-error>{{ mensajeDeError(grupo().controls.regex.errors) }}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.mascara }}</mat-label>
+      <input matInput formControlName="mascara" data-campo="mascara" maxlength="50" autocomplete="off" />
+      <mat-error>{{ mensajeDeError(grupo().controls.mascara.errors) }}</mat-error>
+    </mat-form-field>
+    <div class="flex items-center">
+      <mat-checkbox formControlName="validaReniec" data-campo="validaReniec">{{ mensajes.validaReniec }}</mat-checkbox>
+    </div>
+  </div>
+
+  <mat-expansion-panel class="shadow-none!" [expanded]="panelAbierto()" (opened)="panelAbierto.set(true)" (closed)="panelAbierto.set(false)" data-panel="json-avanzado">
+    <mat-expansion-panel-header>
+      <mat-panel-title>{{ mensajes.jsonAvanzado }}</mat-panel-title>
+    </mat-expansion-panel-header>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ mensajes.jsonAvanzado }}</mat-label>
+      <textarea matInput formControlName="avanzado" data-campo="avanzado" rows="5" spellcheck="false" class="font-mono"></textarea>
+      <mat-hint>{{ mensajes.ayudaJsonAvanzado }}</mat-hint>
+      <mat-error>{{ mensajeDeError(grupo().controls.avanzado.errors) }}</mat-error>
+    </mat-form-field>
+  </mat-expansion-panel>
+
+  @if (grupo().hasError(errorAtributosGrandes)) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="atributos">{{ mensajes.atributosGrandes }}</p>
+  }
+</fieldset>

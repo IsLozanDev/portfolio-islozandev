@@ -20,6 +20,11 @@ export const appRoutes: Route[] = [
         loadChildren: () => import('@vitrina/plataforma/consola-soporte').then((modulo) => modulo.CONSOLA_SOPORTE_ROUTES),
       },
       {
+        path: 'consola/catalogos',
+        canActivate: [aal2Guard],
+        loadChildren: () => import('@vitrina/plataforma/consola-catalogos').then((modulo) => modulo.CONSOLA_CATALOGOS_ROUTES),
+      },
+      {
         path: 'consola',
         canActivate: [aal2Guard],
         loadChildren: () => import('@vitrina/plataforma/consola-tenants').then((modulo) => modulo.CONSOLA_TENANTS_ROUTES),

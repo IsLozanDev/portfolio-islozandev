@@ -8,6 +8,8 @@ export interface ColumnaTabla<Fila> {
   ordenable?: boolean;
   /** Con tono, la celda es un `vit-chip-estado`. */
   tono?: (fila: Fila) => TonoEstado;
+  /** Con un nombre de Material Symbols, la celda pinta ese ícono y su valor queda como texto accesible; con null, el valor. */
+  icono?: (fila: Fila) => string | null;
   /** Sin movil, la columna no aparece en celular. */
   movil?: RolMovil;
 }

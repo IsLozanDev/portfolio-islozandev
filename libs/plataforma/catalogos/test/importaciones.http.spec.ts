@@ -49,6 +49,7 @@ type DependenciasGuard = ConstructorParameters<typeof PermisoGuard>;
 
 const previsualizacion: Previsualizacion = {
   id: IMPORTACION,
+  version: 0,
   estado: 'PREVISUALIZADA',
   versionOficial: '2026-06',
   fechaVigencia: '2026-06-01',
@@ -137,7 +138,7 @@ describe('HTTP /v1/catalogos/.../importaciones (TR-RF-028)', () => {
       controllers: [ImportacionesController],
       providers: [
         { provide: PrevisualizarImportacion, useValue: { ejecutar: doble('previsualizar', previsualizacion) } },
-        { provide: ListarImportaciones, useValue: { historial: doble('historial', { items: [listada], total: 1 }), activas: doble('activas', []) } },
+        { provide: ListarImportaciones, useValue: { historial: doble('historial', { items: [listada], total: 1 }), activas: doble('activas', [{ ...listada, codigo: 'UBIGEO', estado: 'EN_PROCESO', avance: 42 }]) } },
         {
           provide: ConsultarImportacion,
           useValue: { ejecutar: doble('consultar', { ...listada, codigo: 'UBIGEO', estado: 'EN_PROCESO', avance: 40, venceEn: AHORA }) },
@@ -178,6 +179,7 @@ describe('HTTP /v1/catalogos/.../importaciones (TR-RF-028)', () => {
       expect(respuesta.status).toBe(201);
       expect(respuesta.body).toEqual({
         id: IMPORTACION,
+        version: 0,
         estado: 'PREVISUALIZADA',
         version_oficial: '2026-06',
         fecha_vigencia: '2026-06-01',
@@ -259,10 +261,10 @@ describe('HTTP /v1/catalogos/.../importaciones (TR-RF-028)', () => {
     expect(respuesta.body.codigo).toBe('IMPORTACION_NO_APLICABLE');
   });
 
-  it('GET /v1/catalogos/importaciones?activas=true lista las del usuario; sin el filtro, 400', async () => {
+  it('GET /v1/catalogos/importaciones?activas=true lista las del usuario con el código del catálogo; sin el filtro, 400', async () => {
     const respuesta = await conSucursal(http().get('/v1/catalogos/importaciones?activas=true'));
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body).toEqual([]);
+    expect(respuesta.body).toEqual([expect.objectContaining({ id: IMPORTACION, codigo: 'UBIGEO', estado: 'EN_PROCESO', avance: 42 })]);
     expect(comandos['activas']).toEqual([{ actorId: ANA }]);
     expect((await conSucursal(http().get('/v1/catalogos/importaciones'))).status).toBe(400);
   });

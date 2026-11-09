@@ -8,6 +8,7 @@ export {
   ItemInvalidoError,
   ItemNoEncontradoError,
   ItemReferenciadoError,
+  TablaSoloImportacionError,
   VersionObsoletaError,
 } from './domain/errores.js';
 export type { AtributosItem } from './domain/atributos-item.js';

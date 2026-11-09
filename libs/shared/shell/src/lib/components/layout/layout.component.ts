@@ -19,6 +19,7 @@ import { MenuLateralComponent } from '../menu-lateral/menu-lateral.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
 import { RielMenuComponent } from '../riel-menu/riel-menu.component';
 import { SelectorSucursalComponent } from '../selector-sucursal/selector-sucursal.component';
+import { TareasEnCursoComponent } from '../tareas-en-curso/tareas-en-curso.component';
 
 export const ANCHO_ESCRITORIO_PX = 1024;
 const CONSULTA_ESCRITORIO = `(min-width: ${ANCHO_ESCRITORIO_PX}px)`;
@@ -42,6 +43,7 @@ const FOCO_INICIAL_MENU_MOVIL = 'vit-buscador-menu input';
     MenuUsuarioComponent,
     RielMenuComponent,
     SelectorSucursalComponent,
+    TareasEnCursoComponent,
   ],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',

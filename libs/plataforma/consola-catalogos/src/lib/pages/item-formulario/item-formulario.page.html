@@ -1,0 +1,26 @@
+<section class="flex max-w-3xl flex-col gap-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">{{ itemId ? mensajes.tituloEdicion : mensajes.tituloNuevo }}</h1>
+    <p class="text-sobre-superficie-variante">{{ subtitulo }}</p>
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (versionObsoleta()) {
+    <div role="alert" class="flex flex-wrap items-center justify-between gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="version">
+      <span>{{ mensajes.versionObsoleta }}</span>
+      <button mat-stroked-button type="button" (click)="recargar()" data-accion="recargar">{{ mensajes.recargar }}</button>
+    </div>
+  }
+
+  @if (noExiste()) {
+    <vit-estado-vacio icono="library_books" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" [routerLink]="[codigoCatalogo]" [relativeTo]="rutaMontaje" [queryParams]="parametrosDetalle">{{ mensajes.volver }}</a>
+  } @else if (cargando()) {
+    <vit-cargando />
+  } @else {
+    <vit-formulario-item [catalogo]="catalogo" [item]="item()" [enviando]="guardando()" (guardar)="guardar($event)" (cancelar)="volverAlDetalle()" />
+  }
+</section>

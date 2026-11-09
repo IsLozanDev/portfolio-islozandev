@@ -4,3 +4,5 @@
 @source "./";
 @source "../../../libs/shared";
 @source "../../../libs/plataforma/consola-tenants";
+@source "../../../libs/plataforma/consola-catalogos";
+@source "../../../libs/plataforma/catalogos-ui";
