@@ -14,4 +14,8 @@ export interface EventoEntregado {
   payload: unknown;
   schemaVersion: number;
   occurredAt: string;
+  /** Usuario que hizo la operación; `null` = sistema. */
+  actorId: string | null;
+  ip: string | null;
+  traceId: string | null;
 }

@@ -5,7 +5,7 @@ import type { EventoEntregado, OrigenEvento } from '../../domain/evento-entregad
 // SQL crudo justificado (regla 11): llamadas a las funciones SECURITY DEFINER sync.read_events*, que
 // el ORM no expresa. bigint como texto para no perder precisión en JavaScript.
 const COLUMNAS = `event_id, seq::text AS seq, tenant_id, sede_id, aggregate_type, aggregate_id, event_type,
-  version::text AS version, origin, payload, schema_version, occurred_at`;
+  version::text AS version, origin, payload, schema_version, occurred_at, actor_id, ip, trace_id`;
 const LEER = `SELECT ${COLUMNAS} FROM sync.read_events($1, make_interval(secs => $2), $3)`;
 const LEER_VENTANA = `SELECT ${COLUMNAS} FROM sync.read_events_ventana($1, make_interval(secs => $2), $3)`;
 
@@ -22,6 +22,9 @@ interface FilaOutbox {
   payload: unknown;
   schema_version: number;
   occurred_at: Date;
+  actor_id: string | null;
+  ip: string | null;
+  trace_id: string | null;
 }
 
 /** Lee con el EntityManager de la transacción del cursor. */
@@ -56,5 +59,8 @@ function eventoDesdeFila(fila: FilaOutbox): EventoEntregado {
     payload: fila.payload,
     schemaVersion: fila.schema_version,
     occurredAt: fila.occurred_at.toISOString(),
+    actorId: fila.actor_id,
+    ip: fila.ip,
+    traceId: fila.trace_id,
   };
 }

@@ -120,7 +120,7 @@ describeConDb('PermisoGuard y ContextoTenantInterceptor (TR-RF-016)', () => {
     cierres = 0;
   });
 
-  it('con el permiso: 200, req.contexto con lo verificado y TenantContext con tenant y sucursal', async () => {
+  it('con el permiso: 200, req.contexto con lo verificado y TenantContext con tenant, sucursal, usuario e IP', async () => {
     const res = await pedir('/p/abrir', { 'X-Unidad-Id': org.cajas[0] });
     expect(res.status).toBe(200);
     expect(res.body.contexto).toEqual({
@@ -129,13 +129,23 @@ describeConDb('PermisoGuard y ContextoTenantInterceptor (TR-RF-016)', () => {
       unidadId: org.cajas[0],
       permisos: ['rest.caja.abrir', 'rest.caja.cerrar'],
     });
-    expect(res.body.alcance).toEqual({ tenantId: tenant, branchId: org.sucursales[0] });
+    expect(res.body.alcance).toEqual({ tenantId: tenant, branchId: org.sucursales[0], actorId: maria.usuarioId, ip: expect.any(String) });
+  });
+
+  it('con traceparent válido, TenantContext lleva su trace-id; inválido o en ceros, ninguno', async () => {
+    const traceId = '4bf92f3577b34da6a3ce929d0e0e4736';
+    const valido = await pedir('/p/libre', { traceparent: `00-${traceId}-00f067aa0ba902b7-01` });
+    expect(valido.body.alcance.traceId).toBe(traceId);
+    for (const traceparent of ['basura', `00-${'0'.repeat(32)}-00f067aa0ba902b7-01`]) {
+      const res = await pedir('/p/libre', { traceparent });
+      expect(res.body.alcance).not.toHaveProperty('traceId');
+    }
   });
 
   it('sin @Permiso el handler ve el tenant, pero no una sucursal sin verificar', async () => {
     const res = await pedir('/p/libre');
     expect(res.status).toBe(200);
-    expect(res.body.alcance).toEqual({ tenantId: tenant });
+    expect(res.body.alcance).toEqual({ tenantId: tenant, actorId: maria.usuarioId, ip: expect.any(String) });
   });
 
   it('token sin tenant_id: 403 SIN_TENANT', async () => {

@@ -3,8 +3,9 @@ import type { TypeOrmUnitOfWork } from './typeorm-unit-of-work.js';
 
 const INSERT_OUTBOX = `
   INSERT INTO sync.outbox
-    (event_id, tenant_id, sede_id, aggregate_type, aggregate_id, event_type, version, origin, payload, schema_version, occurred_at)
-  VALUES ($1, $2, $3, $4, $5, $6, $7, 'CLOUD', $8::jsonb, $9, $10)`;
+    (event_id, tenant_id, sede_id, aggregate_type, aggregate_id, event_type, version, origin, payload, schema_version,
+     occurred_at, actor_id, ip, trace_id)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, 'CLOUD', $8::jsonb, $9, $10, $11, $12::inet, $13)`;
 
 export class OutboxPublisher implements EventPublisher {
   constructor(
@@ -17,7 +18,7 @@ export class OutboxPublisher implements EventPublisher {
   async publish(event: DomainEvent): Promise<void> {
     const manager = this.uow.manager;
     this.validator.validate(event);
-    const { tenantId, branchId } = this.tenantContext.current();
+    const { tenantId, branchId, actorId, ip, traceId } = this.tenantContext.current();
     await manager.query(INSERT_OUTBOX, [
       this.ids.next(),
       tenantId,
@@ -29,6 +30,9 @@ export class OutboxPublisher implements EventPublisher {
       JSON.stringify(event.payload),
       event.schemaVersion,
       event.occurredAt,
+      actorId ?? null,
+      ip ?? null,
+      traceId ?? null,
     ]);
   }
 }

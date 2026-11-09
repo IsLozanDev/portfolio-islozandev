@@ -9,6 +9,7 @@ import { crearConexionColas, crearConexionProductor } from '../src/infrastructur
 import type { PoliticaReintentos } from '../src/infrastructure/bullmq/politica-reintentos.js';
 import { TrabajadoresEventos } from '../src/infrastructure/bullmq/trabajadores-eventos.js';
 import { NombreConsumidor } from '../src/domain/nombre-consumidor.js';
+import { LecturaOutboxTypeOrm } from '../src/infrastructure/typeorm/lectura-outbox.typeorm.js';
 import { crearEntornoEntrega, esperarHasta, SuscripcionesEnMemoria, type EntornoEntrega } from './support/entorno.js';
 import { ColaEnMemoria, crearRelay, cursorActual, insertarEnOutbox, pausa, seqDe } from './support/relay.js';
 import { describeConDb } from './support/temp-db.js';
@@ -94,6 +95,31 @@ describeConDb('Relay del outbox con PostgreSQL 16 (TR-RF-093, TR-RN-035, TR-RNF-
     await trabajadores.cerrar();
     await cola.cerrar();
     await vaciarColas([consumidorA, consumidorB]);
+  });
+
+  test('spec 20a: el actor, la IP y el trace del contexto llegan en el EventoEntregado (relay y lectura por id)', async () => {
+    const tipo = 'prueba.traza';
+    const suscripciones = new SuscripcionesEnMemoria();
+    suscripciones.suscribir('prueba-a', tipo, sinEfecto);
+    const cola = new ColaEnMemoria();
+    const validador = new InMemoryEventSchemaValidator();
+    validador.register(tipo, 1, { type: 'object' });
+    let eventId = '';
+    const publicador = new OutboxPublisher(entorno.unidadDeTrabajo, entorno.dependencias.contexto, validador, { next: () => (eventId = uuidV7()) });
+    const alcance = { tenantId: uuidV7(), actorId: uuidV7(), ip: '190.42.10.8', traceId: '4bf92f3577b34da6a3ce929d0e0e4736' };
+    await entorno.dependencias.contexto.run(alcance, () =>
+      entorno.unidadDeTrabajo.run(() =>
+        publicador.publish({ eventType: tipo, aggregateType: 'cita', aggregateId: uuidV7(), aggregateVersion: 1, schemaVersion: 1, payload: {}, occurredAt: new Date() }),
+      ),
+    );
+
+    await crearRelay(entorno.dataSource, cola, suscripciones).ejecutar();
+    const trazaEsperada = { actorId: alcance.actorId, ip: alcance.ip, traceId: alcance.traceId };
+    expect(cola.entregas.find((entrega) => entrega.evento.eventId === eventId)?.evento).toMatchObject(trazaEsperada);
+    const leido = await entorno.dependencias.contexto.run({ tenantId: alcance.tenantId }, () =>
+      entorno.unidadDeTrabajo.run(() => new LecturaOutboxTypeOrm(entorno.unidadDeTrabajo, entorno.dependencias.contexto).buscar(eventId)),
+    );
+    expect(leido).toMatchObject(trazaEsperada);
   });
 
   test('TR-CA-230: con margen de 5 s, el 1001 confirmado 2 s después del 1002 se entrega y no se salta', async () => {

@@ -1,21 +1,43 @@
 import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import type { TenantContext } from '@vitrina/plataforma/kernel';
+import type { TenantContext, TenantScope } from '@vitrina/plataforma/kernel';
 import { from, lastValueFrom, type Observable } from 'rxjs';
+import { ipLegible } from '../infrastructure/origen-peticion.js';
 import type { SolicitudAutenticada } from './decoradores.js';
+import { traceIdDeTraceparent } from './traza.js';
+
+interface SolicitudConOrigen extends SolicitudAutenticada {
+  ip?: string;
+  headers: Record<string, string | string[] | undefined>;
+}
 
 /**
- * Corre el handler en `TenantContext.run` con el tenant del token. La sucursal solo entra si
- * PermisoGuard la verificó: el `X-Sucursal-Id` de una ruta sin `@Permiso` no se usa.
+ * Corre el handler en `TenantContext.run` con el tenant y el usuario del token, la IP y el trace de la
+ * petición. La sucursal solo entra si PermisoGuard la verificó: el `X-Sucursal-Id` de una ruta sin
+ * `@Permiso` no se usa.
  */
 export class ContextoTenantInterceptor implements NestInterceptor {
   constructor(private readonly contexto: TenantContext) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const { principal, contexto } = ctx.switchToHttp().getRequest<SolicitudAutenticada>();
-    const tenantId = principal?.tenantId;
-    if (!tenantId) return next.handle();
-    const alcance = contexto ? { tenantId, branchId: contexto.sucursalId } : { tenantId };
+    const solicitud = ctx.switchToHttp().getRequest<SolicitudConOrigen>();
+    const alcance = alcanceDeSolicitud(solicitud);
+    if (!alcance) return next.handle();
     // next.handle() dentro de run: Nest liga el handler al contexto asíncrono donde se llama.
     return from(this.contexto.run(alcance, () => lastValueFrom(next.handle(), { defaultValue: undefined })));
   }
+}
+
+function alcanceDeSolicitud({ principal, contexto, ip, headers }: SolicitudConOrigen): TenantScope | null {
+  const tenantId = principal?.tenantId;
+  if (!principal || !tenantId) return null;
+  const ipCliente = ipLegible(ip || null);
+  const traceparent = headers['traceparent'];
+  const traceId = traceIdDeTraceparent(typeof traceparent === 'string' ? traceparent : undefined);
+  return {
+    tenantId,
+    actorId: principal.usuarioId,
+    ...(contexto ? { branchId: contexto.sucursalId } : {}),
+    ...(ipCliente ? { ip: ipCliente } : {}),
+    ...(traceId ? { traceId } : {}),
+  };
 }

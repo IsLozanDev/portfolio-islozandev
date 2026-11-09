@@ -78,6 +78,7 @@ const CASOS = [
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
   { migracion: '01e_sync_relay.sql', esquema: 'sync', prueba: 'tests/01e_sync_relay.test.sql' },
+  { migracion: '01e_sync_traza.sql', esquema: 'sync', prueba: 'tests/01e_sync_traza.test.sql' },
   { migracion: '01f_cat.sql', esquema: 'cat', prueba: 'tests/01f_cat.test.sql' },
   { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
@@ -194,6 +195,16 @@ const objetosRelay = async () =>
        ORDER BY 1`,
     )
   ).rows.map((r) => r.o);
+
+// Columnas que agrega 01e_sync_traza a sync.outbox (3 en total).
+const columnasTraza = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name AS c FROM information_schema.columns
+        WHERE table_schema = 'sync' AND table_name = 'outbox' AND column_name IN ('actor_id', 'ip', 'trace_id') ORDER BY 1`,
+    )
+  ).rows.map((r) => r.c);
 
 // Tabla, funciones y marca en cat.subir_version_global() que agrega 01f_cat_importacion (7 en total).
 const objetosImportacion = async () =>
@@ -317,6 +328,13 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01f_cat_importacion.sql'), 'utf8'));
     expect(await objetosImportacion()).toHaveLength(7);
     expect(await catalogosOficialesNuevos()).toBe(5);
+
+    // El inverso de 01e_sync_traza deja sync.outbox sin actor, IP ni trace (con datos) y se puede reaplicar.
+    expect(await columnasTraza()).toEqual(['actor_id', 'ip', 'trace_id']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01e_sync_traza.sql'), 'utf8'));
+    expect(await columnasTraza()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01e_sync_traza.sql'), 'utf8'));
+    expect(await columnasTraza()).toEqual(['actor_id', 'ip', 'trace_id']);
 
     // El inverso de 01e_sync_relay deja sync como lo dejó 01e_sync_outbox (con datos) y se puede reaplicar.
     // Va primero: evento_fallido referencia seg.usuario.
