@@ -1,11 +1,14 @@
 import { Route } from '@angular/router';
-import { aal2Guard } from '@vitrina/shared/auth';
+import { aal2Guard, permisoGuard } from '@vitrina/shared/auth';
 import { rutasDelShell } from '@vitrina/shared/shell';
 import { environment } from '../environments/environment';
 
 export const NOMBRE_APP = 'Consola de plataforma';
 /** El menú de `mi-contexto` trae también las opciones de admin; aquí solo van las de la consola. */
 export const PREFIJO_MENU_CONSOLA = '/consola';
+const PERMISO_FERIADOS = 'plat.feriado.gestionar';
+/** La consola solo gestiona los feriados nacionales (spec 19e). */
+const ALCANCES_FERIADOS_CONSOLA = ['GLOBAL'];
 
 /** Toda la consola exige aal2 (TR-RN-009); el guard corre antes de pintar el layout. */
 export const appRoutes: Route[] = [
@@ -23,6 +26,13 @@ export const appRoutes: Route[] = [
         path: 'consola/catalogos',
         canActivate: [aal2Guard],
         loadChildren: () => import('@vitrina/plataforma/consola-catalogos').then((modulo) => modulo.CONSOLA_CATALOGOS_ROUTES),
+      },
+      {
+        path: 'consola/feriados',
+        canActivate: [aal2Guard],
+        canMatch: [permisoGuard(PERMISO_FERIADOS)],
+        data: { alcances: ALCANCES_FERIADOS_CONSOLA },
+        loadChildren: () => import('@vitrina/plataforma/feriados').then((modulo) => modulo.FERIADOS_ROUTES),
       },
       {
         path: 'consola',

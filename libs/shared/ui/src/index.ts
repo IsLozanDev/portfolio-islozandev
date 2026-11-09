@@ -6,6 +6,7 @@ export { FiltrosComponent } from './lib/components/filtros/filtros.component';
 export { PanelLateralComponent } from './lib/components/panel-lateral/panel-lateral.component';
 export { TablaComponent } from './lib/components/tabla/tabla.component';
 export { AccionesFilaDirective } from './lib/directives/acciones-fila.directive';
+export { CeldaTablaDirective } from './lib/directives/celda-tabla.directive';
 export type {
   OpcionesConfirmacion,
   OpcionesConfirmacionDestructiva,

@@ -7,6 +7,7 @@ import { MatSelectHarness } from '@angular/material/select/testing';
 import { MatSortHarness } from '@angular/material/sort/testing';
 import { of } from 'rxjs';
 import { AccionesFilaDirective } from '../../directives/acciones-fila.directive';
+import { CeldaTablaDirective } from '../../directives/celda-tabla.directive';
 import type { CambioOrden, CambioPagina, ColumnaTabla } from '../../models/columna-tabla';
 import { TablaComponent } from './tabla.component';
 
@@ -258,3 +259,35 @@ describe('TablaComponent en celular', () => {
     expect(elemento.querySelector('table')?.textContent).toContain('999888777');
   });
 });
+
+@Component({
+  imports: [TablaComponent, CeldaTablaDirective],
+  template: `
+    <vit-tabla [columnas]="columnas" [filas]="filas" [total]="1">
+      <ng-template vitCeldaTabla="correo" let-fila>
+        <a [href]="'mailto:' + fila.correo">Escribir a {{ fila.nombre }}</a>
+      </ng-template>
+    </vit-tabla>
+  `,
+})
+class TablaConCelda {
+  readonly columnas: ColumnaTabla<Contacto>[] = [
+    { clave: 'nombre', titulo: 'Nombre', movil: 'titulo' },
+    { clave: 'correo', titulo: 'Correo', movil: 'detalle' },
+    { clave: 'telefono', titulo: 'Teléfono' },
+  ];
+  readonly filas: Contacto[] = [{ nombre: 'Ana Torres', correo: 'ana@vitrina.pe', telefono: '999888777', estado: 'Invitado' }];
+}
+
+describe('TablaComponent con vitCeldaTabla', () => {
+  it.each([false, true])('la plantilla reemplaza el texto de su columna (celular: %s); las demás quedan igual', async (esMovil) => {
+    simularAncho(esMovil);
+    const fixture = TestBed.createComponent(TablaConCelda);
+    await fixture.whenStable();
+    const enlace: HTMLAnchorElement | null = fixture.nativeElement.querySelector('a[href="mailto:ana@vitrina.pe"]');
+
+    expect(enlace?.textContent?.trim()).toBe('Escribir a Ana Torres');
+    expect(fixture.nativeElement.textContent).toContain('Ana Torres');
+  });
+});
+

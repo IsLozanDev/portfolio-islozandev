@@ -1,0 +1,31 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="titulo">
+    <div class="flex flex-col gap-3">
+      @if (error(); as mensajeError) {
+        <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="panel">{{ mensajeError }}</p>
+      }
+
+      <p class="text-sm">
+        <span class="text-sobre-superficie-variante">{{ mensajes.nombreGlobal }}</span>
+        <b class="ml-2">{{ fila.nombre }}</b>
+      </p>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.alias }}</mat-label>
+        <input matInput formControlName="alias" maxlength="200" data-campo="alias" />
+        <mat-hint>{{ mensajes.ayudaAlias }}</mat-hint>
+        <mat-error>{{ formulario.controls.alias.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.orden }}</mat-label>
+        <input matInput formControlName="orden" inputmode="numeric" data-campo="orden" />
+        <mat-hint>{{ mensajes.ayudaOrden }}</mat-hint>
+        <mat-error>{{ formulario.controls.orden.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="visible" data-campo="visible">{{ mensajes.visible }}</mat-checkbox>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

@@ -14,7 +14,7 @@ interface Manifiesto {
 
 const PREFIJOS_CAT = ['plat.catalogo.', 'plat.feriado.'];
 
-describe('Manifiesto PLAT 1.12.0: parte de cat (specs 19a, 19b, 19c y 19d)', () => {
+describe('Manifiesto PLAT 1.13.0: parte de cat (specs 19a a 19e)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (rol: string) => manifiesto.roles_predefinidos.find((predefinido) => predefinido.codigo === rol)?.permisos ?? [];
   const esDeCat = (codigo: string) => PREFIJOS_CAT.some((prefijo) => codigo.startsWith(prefijo));
@@ -24,8 +24,8 @@ describe('Manifiesto PLAT 1.12.0: parte de cat (specs 19a, 19b, 19c y 19d)', () 
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.12.0', () => {
-    expect(manifiesto.version).toBe('1.12.0');
+  it('está en la versión 1.13.0', () => {
+    expect(manifiesto.version).toBe('1.13.0');
   });
 
   it('declara exactamente PERMISOS_CAT, todos de alcance TENANT; gestionar, item_gestionar e importar son sensibles (TR-RN-009)', () => {
@@ -64,18 +64,25 @@ describe('Manifiesto PLAT 1.12.0: parte de cat (specs 19a, 19b, 19c y 19d)', () 
     });
   });
 
-  it('la única opción de catálogos es Consola > Catálogos, con item_gestionar y no leer (spec 19d); feriados llega con el 19e', () => {
-    expect(manifiesto.opciones.filter((opcion) => opcion.permisos.some(esDeCat))).toEqual([
-      {
-        codigo: 'plat.consola.catalogos',
-        modulo: 'consola',
-        padre: 'plat.consola',
-        nombre: 'Catálogos',
-        ruta: '/consola/catalogos',
-        icono: 'library_books',
-        orden: 3,
-        permisos: ['plat.catalogo.item_gestionar'],
-      },
+  it('las opciones de catálogos y feriados: Consola > Catálogos y Feriados con item_gestionar; Configuración > Catálogos y Feriados en admin (spec 19e)', () => {
+    const opcion = (codigo: string, padre: string, nombre: string, ruta: string, icono: string, orden: number, permisos: string[]) => ({
+      codigo,
+      modulo: padre.split('.')[1],
+      padre,
+      nombre,
+      ruta,
+      icono,
+      orden,
+      permisos,
+    });
+    expect(manifiesto.opciones.filter((candidata) => candidata.permisos.some(esDeCat))).toEqual([
+      opcion('plat.configuracion.catalogos', 'plat.configuracion', 'Catálogos', '/admin/catalogos', 'library_books', 3, [
+        'plat.catalogo.personalizar',
+        'plat.catalogo.item_propio',
+      ]),
+      opcion('plat.configuracion.feriados', 'plat.configuracion', 'Feriados', '/admin/feriados', 'event', 4, ['plat.feriado.gestionar']),
+      opcion('plat.consola.catalogos', 'plat.consola', 'Catálogos', '/consola/catalogos', 'library_books', 3, ['plat.catalogo.item_gestionar']),
+      opcion('plat.consola.feriados', 'plat.consola', 'Feriados', '/consola/feriados', 'event', 4, ['plat.catalogo.item_gestionar']),
     ]);
   });
 });

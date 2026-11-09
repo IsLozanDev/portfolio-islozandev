@@ -1,0 +1,100 @@
+<section class="flex flex-col gap-4">
+  <nav class="flex items-center gap-1 text-sm text-sobre-superficie-variante" [attr.aria-label]="mensajes.migas">
+    <a class="underline" routerLink="catalogos" [relativeTo]="rutaMontaje">{{ mensajes.migaCatalogos }}</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">{{ codigo }}</span>
+  </nav>
+
+  @if (cargandoCatalogo()) {
+    <vit-cargando />
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="library_books" [titulo]="mensajes.noExiste" />
+    <a mat-stroked-button class="self-start" routerLink="catalogos" [relativeTo]="rutaMontaje" data-accion="volver">{{ mensajes.volver }}</a>
+  } @else if (catalogo(); as detalle) {
+    <header class="flex flex-wrap items-start gap-3">
+      <div class="flex min-w-0 flex-[1_1_20rem] flex-col gap-2">
+        <h1 class="text-2xl font-medium">{{ detalle.nombre }}</h1>
+        <p class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-sobre-superficie-variante">
+          <span>{{ mensajes.codigo }} <b class="text-sobre-superficie">{{ detalle.codigo }}</b></span>
+          <vit-chip-estado [texto]="etiquetasAlcance[detalle.alcance]" [tono]="tonosAlcance[detalle.alcance]" />
+        </p>
+      </div>
+      @if (gestionaPropios()) {
+        <a *siPermiso="permisos.itemPropio" mat-flat-button routerLink="items/nuevo" data-accion="nuevo-item">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          {{ mensajes.nuevoItemPropio }}
+        </a>
+      }
+    </header>
+
+    @if (esGlobal()) {
+      <p role="note" class="flex items-center gap-2 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-nota="normativo">
+        <mat-icon aria-hidden="true">lock</mat-icon>
+        {{ mensajes.notaNormativo }}
+      </p>
+    } @else {
+      <p role="note" class="flex items-center gap-2 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-nota="solo-empresa">
+        <mat-icon aria-hidden="true">info</mat-icon>
+        {{ mensajes.notaSoloEmpresa }}
+      </p>
+    }
+
+    <vit-filtros [definiciones]="definicionesFiltro()" [placeholderBusqueda]="mensajes.buscar" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+
+    @if (error(); as mensajeError) {
+      <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="items">{{ mensajeError }}</p>
+    }
+
+    <vit-tabla
+      [columnas]="columnas()"
+      [filas]="filas()"
+      [total]="total()"
+      [cargando]="cargando()"
+      [indicePagina]="filtro().pagina - 1"
+      [tamanoPagina]="filtro().tamano"
+      [textoVacio]="mensajes.sinItems"
+      (pagina)="paginar($event)"
+    >
+      <ng-template vitCeldaTabla="nombre" let-fila>
+        <span class="flex flex-col leading-tight">
+          <span class="truncate">{{ fila.nombre }}</span>
+          @if (fila.nombreGlobal) {
+            <span class="truncate text-xs text-sobre-superficie-variante" data-nombre-global>{{ mensajes.global(fila.nombreGlobal) }}</span>
+          }
+        </span>
+      </ng-template>
+      <ng-template vitCeldaTabla="visible" let-fila>
+        @if (esAjustable(fila)) {
+          <mat-slide-toggle
+            hideIcon
+            data-accion="visible"
+            [checked]="fila.visible"
+            [disabled]="ajustando().has(fila.itemId)"
+            [attr.aria-label]="mensajes.visible + ': ' + fila.nombre"
+            (change)="cambiarVisible(fila, $event)"
+          />
+        }
+      </ng-template>
+
+      @if (!esGlobal()) {
+        <ng-template vitAccionesFila let-fila>
+          <span class="flex gap-1">
+            @if (esAjustable(fila)) {
+              <button mat-button type="button" data-accion="personalizar" [attr.aria-label]="mensajes.personalizar + ': ' + fila.nombre" (click)="personalizar(fila)">
+                {{ mensajes.personalizar }}
+              </button>
+              @if (fila.item.ajuste) {
+                <button mat-button type="button" data-accion="restablecer" [attr.aria-label]="mensajes.restablecer + ': ' + fila.nombre" (click)="restablecer(fila)">
+                  {{ mensajes.restablecer }}
+                </button>
+              }
+            }
+            @if (fila.item.propio && gestionaPropios()) {
+              <a mat-button [routerLink]="['items', fila.itemId, 'editar']" data-accion="editar" [attr.aria-label]="mensajes.editar + ': ' + fila.codigo">{{ mensajes.editar }}</a>
+            }
+          </span>
+        </ng-template>
+      }
+    </vit-tabla>
+  }
+</section>

@@ -23,4 +23,13 @@ describe('appRoutes de la consola', () => {
     expect(rutas.indexOf('consola/catalogos')).toBeGreaterThanOrEqual(0);
     expect(rutas.indexOf('consola/catalogos')).toBeLessThan(rutas.indexOf('consola'));
   });
+
+  it('consola/feriados va antes de consola, exige aal2 y feriado.gestionar y solo gestiona GLOBAL (spec 19e)', () => {
+    const rutas = hijas.map((ruta) => ruta.path);
+    const feriados = hijas.find((ruta) => ruta.path === 'consola/feriados');
+    expect(rutas.indexOf('consola/feriados')).toBeLessThan(rutas.indexOf('consola'));
+    expect(feriados?.canActivate).toEqual([aal2Guard]);
+    expect(feriados?.canMatch).toHaveLength(1);
+    expect(feriados?.data).toEqual({ alcances: ['GLOBAL'] });
+  });
 });
