@@ -9,6 +9,7 @@ import { DobleSesion, RUTA_PROHIBIDO } from '../testing/doble-sesion';
 import { API_URL } from '../testing/http-de-prueba';
 import { ADMIN_CLIENTE_ROUTES } from './admin-cliente.routes';
 import { PERMISOS_ADMIN } from './models/permisos-admin';
+import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
 
 @Component({ template: '' })
 class Prohibido {}
@@ -119,6 +120,20 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar);
 
     expect((await navegar(ruta)).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/feriados abre los feriados con plat.feriado.gestionar y sin él va a /403 (spec 19e)', async () => {
+    sesion.conPermisos(PERMISOS_CATALOGOS_ADMIN.feriadoGestionar);
+    expect(await navegar('/admin/feriados')).toEqual({ url: '/admin/feriados', titulo: 'Feriados' });
+
+    TestBed.resetTestingModule();
+    sesion = new DobleSesion().conPermisos(PERMISOS_CATALOGOS_ADMIN.leer);
+    expect((await navegar('/admin/feriados')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/catalogos sin personalizar ni item_propio va a /403 (spec 19e)', async () => {
+    sesion.conPermisos(PERMISOS_CATALOGOS_ADMIN.leer, PERMISOS_CATALOGOS_ADMIN.feriadoGestionar);
+    expect((await navegar('/admin/catalogos')).url).toBe(RUTA_PROHIBIDO);
   });
 
   it('/admin/empresas sin plat.organizacion.consultar va a /403', async () => {

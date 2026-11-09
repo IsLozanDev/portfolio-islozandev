@@ -19,14 +19,14 @@ import { z } from 'zod';
 import { ActualizarFeriado } from '../application/feriados/actualizar-feriado.js';
 import { CrearFeriado } from '../application/feriados/crear-feriado.js';
 import { EliminarFeriado } from '../application/feriados/eliminar-feriado.js';
-import { ListarFeriados } from '../application/feriados/listar-feriados.js';
+import { ListarFeriados, type PaginaFeriados } from '../application/feriados/listar-feriados.js';
 import type { FeriadoDelAnio, FeriadoGuardado } from '../application/feriados/resultados.js';
 import type { Actualizado } from '../application/resultados.js';
 import { FeriadoNoEncontradoError } from '../domain/feriados/errores.js';
 import { ALCANCES_FERIADO } from '../domain/feriados/tipos.js';
 import { PERMISOS_CAT } from '../domain/permisos-cat.js';
 import { CatalogosFiltro, validar } from './catalogos.http.js';
-import { ActualizarFeriadoDto, CrearFeriadoDto, FeriadoActualizadoDto, FeriadoDelAnioDto, FeriadoDto } from './feriados.dto.js';
+import { ActualizarFeriadoDto, CrearFeriadoDto, FeriadoActualizadoDto, FeriadoDelAnioDto, FeriadoDto, PaginaFeriadosDto } from './feriados.dto.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
@@ -34,6 +34,9 @@ const ANIO_MINIMO = 2000;
 const ANIO_MAXIMO = 2100;
 // Cota de entrada: el mínimo de 3 lo valida el dominio, con su mensaje.
 const NOMBRE_MAXIMO = 100;
+const PAGINA_POR_DEFECTO = 1;
+const TAMANO_POR_DEFECTO = 20;
+const TAMANO_MAXIMO = 100;
 
 const uuid = z.string().regex(UUID);
 const fecha = z.string().regex(FECHA);
@@ -42,6 +45,9 @@ const nombre = z.string().max(NOMBRE_MAXIMO);
 const EsquemaListar = z.object({
   anio: z.coerce.number().int().min(ANIO_MINIMO).max(ANIO_MAXIMO),
   sucursal_id: uuid.optional(),
+  alcance: z.enum(ALCANCES_FERIADO).optional(),
+  pagina: z.coerce.number().int().min(1).default(PAGINA_POR_DEFECTO),
+  tamano: z.coerce.number().int().min(1).max(TAMANO_MAXIMO).default(TAMANO_POR_DEFECTO),
 });
 const EsquemaCrear = z.object({
   alcance: z.enum(ALCANCES_FERIADO),
@@ -83,12 +89,21 @@ export class FeriadosController {
   @Permiso(PERMISOS_CAT.feriadoGestionar)
   @ApiQuery({ name: 'anio', required: true, example: 2027, description: 'De 2000 a 2100' })
   @ApiQuery({ name: 'sucursal_id', required: false, description: 'Sin ella, los de todas las sucursales del tenant' })
-  @ApiOkResponse({ type: [FeriadoDelAnioDto], description: 'Los que aplican en el año, con los recurrentes proyectados y por fecha' })
+  @ApiQuery({ name: 'alcance', required: false, enum: ALCANCES_FERIADO, description: 'Sin él, todos los alcances' })
+  @ApiQuery({ name: 'pagina', required: false, example: 1, description: 'Desde 1; más allá de la última trae items vacío con el total real' })
+  @ApiQuery({ name: 'tamano', required: false, example: 20, description: 'De 1 a 100; 20 por defecto' })
+  @ApiOkResponse({ type: PaginaFeriadosDto, description: 'Los que aplican en el año, con los recurrentes proyectados, por fecha y nombre' })
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA' })
-  async listar(@Query() consulta: unknown): Promise<FeriadoDelAnioDto[]> {
+  async listar(@Query() consulta: unknown): Promise<PaginaFeriadosDto> {
     const datos = validar(EsquemaListar, consulta);
-    const feriados = await this.listarFeriados.ejecutar({ anio: datos.anio, sucursalId: datos.sucursal_id ?? null });
-    return feriados.map(feriadoDelAnioDto);
+    const pagina = await this.listarFeriados.ejecutar({
+      anio: datos.anio,
+      sucursalId: datos.sucursal_id ?? null,
+      alcance: datos.alcance ?? null,
+      pagina: datos.pagina,
+      tamano: datos.tamano,
+    });
+    return paginaFeriadosDto(pagina);
   }
 
   @Post()
@@ -169,6 +184,10 @@ function feriadoDto(feriado: FeriadoGuardado): FeriadoDto {
 
 function feriadoDelAnioDto(feriado: FeriadoDelAnio): FeriadoDelAnioDto {
   return { ...feriadoDto(feriado), fecha_en_anio: feriado.fechaEnAnio, editable: feriado.editable };
+}
+
+function paginaFeriadosDto(pagina: PaginaFeriados): PaginaFeriadosDto {
+  return { items: pagina.items.map(feriadoDelAnioDto), total: pagina.total, pagina: pagina.pagina, tamano: pagina.tamano };
 }
 
 function feriadoActualizadoDto(feriado: Actualizado<FeriadoGuardado>): FeriadoActualizadoDto {

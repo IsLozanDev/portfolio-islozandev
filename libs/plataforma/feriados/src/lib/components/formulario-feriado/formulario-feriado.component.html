@@ -1,0 +1,59 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="titulo">
+    <div class="flex flex-col gap-3">
+      @if (error(); as mensajeError) {
+        <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="panel">{{ mensajeError }}</p>
+      }
+
+      @if (feriado; as editado) {
+        <dl class="flex flex-col gap-1 text-sm" data-solo-lectura="alcance">
+          <div class="flex gap-2">
+            <dt class="text-sobre-superficie-variante">{{ mensajes.alcance }}</dt>
+            <dd class="font-medium">{{ etiquetasAlcance[editado.alcance] }}</dd>
+          </div>
+          @if (editado.alcance === alcanceSucursal) {
+            <div class="flex gap-2">
+              <dt class="text-sobre-superficie-variante">{{ mensajes.sucursal }}</dt>
+              <dd class="font-medium">{{ nombreSucursal }}</dd>
+            </div>
+          }
+        </dl>
+      } @else if (modoGlobal) {
+        <p role="note" class="rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-nota="global">{{ mensajes.notaGlobal }}</p>
+      } @else {
+        <mat-button-toggle-group formControlName="alcance" class="self-start" [attr.aria-label]="mensajes.alcance" data-campo="alcance">
+          <mat-button-toggle [value]="alcanceTenant" data-alcance="TENANT">{{ mensajes.todaLaEmpresa }}</mat-button-toggle>
+          <mat-button-toggle [value]="alcanceSucursal" data-alcance="SUCURSAL">{{ mensajes.unaSucursal }}</mat-button-toggle>
+        </mat-button-toggle-group>
+        @if (alcanceElegido() === alcanceSucursal) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.sucursal }}</mat-label>
+            <mat-select formControlName="sucursalId" data-campo="sucursal" required>
+              @for (sucursal of sucursales; track sucursal.id) {
+                <mat-option [value]="sucursal.id">{{ sucursal.nombre }}</mat-option>
+              }
+            </mat-select>
+            <mat-error data-error="sucursal">{{ mensajeDeError(formulario.controls.sucursalId.errors) }}</mat-error>
+          </mat-form-field>
+        }
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.fecha }}</mat-label>
+        <input matInput [matDatepicker]="calendario" formControlName="fecha" [placeholder]="mensajes.formatoFecha" data-campo="fecha" required />
+        <mat-datepicker-toggle matIconSuffix [for]="calendario" />
+        <mat-datepicker #calendario />
+        <mat-error data-error="fecha">{{ mensajeDeError(formulario.controls.fecha.errors) }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.nombre }}</mat-label>
+        <input matInput formControlName="nombre" maxlength="100" data-campo="nombre" required />
+        <mat-error>{{ mensajeDeError(formulario.controls.nombre.errors) }}</mat-error>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="recurrenteAnual" data-campo="recurrente">{{ mensajes.recurrente }}</mat-checkbox>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

@@ -1,6 +1,12 @@
 import type { Routes } from '@angular/router';
 import { permisoGuard } from '@vitrina/shared/auth';
 import { PERMISOS_ADMIN } from './models/permisos-admin';
+import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
+
+/** En admin se gestionan los feriados de la empresa y de sus sucursales; los globales se ven en solo lectura (spec 19e). */
+const ALCANCES_FERIADOS_ADMIN = ['TENANT', 'SUCURSAL'];
+/** Los catálogos de admin se abren con cualquiera de los dos (OR): personalizar globales o gestionar propios. */
+const PERMISOS_CATALOGO_TENANT = [PERMISOS_CATALOGOS_ADMIN.personalizar, PERMISOS_CATALOGOS_ADMIN.itemPropio];
 
 /** Rutas de la administración del cliente; la app anfitriona las monta bajo `admin` (TR-RNF-122). */
 export const ADMIN_CLIENTE_ROUTES: Routes = [
@@ -128,6 +134,32 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     path: 'soporte/:accesoId/aprobar',
     canMatch: [permisoGuard(PERMISOS_ADMIN.soporteAutorizar)],
     loadComponent: () => import('./pages/soporte-aprobar/soporte-aprobar.page').then((modulo) => modulo.SoporteAprobarPage),
+  },
+  {
+    path: 'catalogos',
+    canMatch: [permisoGuard(PERMISOS_CATALOGO_TENANT)],
+    loadComponent: () => import('./pages/catalogos-lista/catalogos-lista.page').then((modulo) => modulo.CatalogosListaPage),
+  },
+  {
+    path: 'catalogos/:codigo/items/nuevo',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.itemPropio)],
+    loadComponent: () => import('./pages/item-propio-formulario/item-propio-formulario.page').then((modulo) => modulo.ItemPropioFormularioPage),
+  },
+  {
+    path: 'catalogos/:codigo/items/:id/editar',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.itemPropio)],
+    loadComponent: () => import('./pages/item-propio-formulario/item-propio-formulario.page').then((modulo) => modulo.ItemPropioFormularioPage),
+  },
+  {
+    path: 'catalogos/:codigo',
+    canMatch: [permisoGuard(PERMISOS_CATALOGO_TENANT)],
+    loadComponent: () => import('./pages/catalogo-detalle/catalogo-detalle.page').then((modulo) => modulo.CatalogoDetallePage),
+  },
+  {
+    path: 'feriados',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.feriadoGestionar)],
+    data: { alcances: ALCANCES_FERIADOS_ADMIN },
+    loadChildren: () => import('@vitrina/plataforma/feriados').then((modulo) => modulo.FERIADOS_ROUTES),
   },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.

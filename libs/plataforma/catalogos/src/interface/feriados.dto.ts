@@ -34,6 +34,20 @@ export class FeriadoDelAnioDto extends FeriadoDto {
   editable!: boolean;
 }
 
+export class PaginaFeriadosDto {
+  @ApiProperty({ type: [FeriadoDelAnioDto] })
+  items!: FeriadoDelAnioDto[];
+
+  @ApiProperty({ description: 'Feriados del año que cumplen los filtros, sin paginar' })
+  total!: number;
+
+  @ApiProperty()
+  pagina!: number;
+
+  @ApiProperty()
+  tamano!: number;
+}
+
 export class FeriadoActualizadoDto extends FeriadoDto {
   @ApiProperty({ description: 'false si no había cambios: no se escribió ni se publicó' })
   cambiado!: boolean;

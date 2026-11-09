@@ -1,6 +1,6 @@
 # SPEC 19e — Catálogos: admin cliente de propios y ajustes, feriados en las dos apps y panel lateral para formularios
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 19c, SPEC 19d, SPEC 17c, SPEC 15, SPEC 15b, SPEC 15c
 > **Date:** 2026-11-08
 > **Objective:** Dar al administrador del tenant, en `plataforma-admin`, la gestión de sus ítems propios y de los ajustes de los ítems globales, y crear `libs/plataforma/feriados` con una lista paginada por año que la consola usa para los feriados GLOBAL y admin para los del tenant y de sucursal, con los formularios en un panel lateral nuevo de `shared/ui`.

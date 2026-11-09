@@ -1,0 +1,26 @@
+<section class="flex flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+
+  <vit-filtros [definiciones]="filtros" [placeholderBusqueda]="mensajes.buscar" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filasVisibles()"
+    [total]="filas().length"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="mensajes.sinCatalogos"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-catalogo>
+      <a mat-icon-button [routerLink]="catalogo.codigo" [attr.aria-label]="mensajes.verDetalle + ': ' + catalogo.codigo">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>

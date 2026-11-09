@@ -1,0 +1,50 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center gap-3">
+    <h1 class="flex-1 text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <vit-selector-anio [anio]="filtro().anio" (cambio)="cambiarAnio($event)" />
+    <button mat-flat-button type="button" data-accion="nuevo" (click)="nuevo()">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      {{ mensajes.nuevoFeriado }}
+    </button>
+  </header>
+
+  @if (!modoGlobal) {
+    <vit-filtros [conBusqueda]="false" [definiciones]="definicionesFiltro()" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="feriados">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filas()"
+    [total]="total()"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="textoVacio()"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-fila>
+      @if (fila.gestionable) {
+        <span class="flex flex-col items-end sm:flex-row sm:gap-1">
+          <button mat-button type="button" data-accion="editar" [attr.aria-label]="mensajes.editar + ': ' + fila.nombre" (click)="editar(fila)">
+            {{ mensajes.editar }}
+          </button>
+          <button
+            mat-button
+            type="button"
+            class="vit-destructivo"
+            data-accion="borrar"
+            [disabled]="ocupado()"
+            [attr.aria-label]="mensajes.borrar + ': ' + fila.nombre"
+            (click)="borrar(fila)"
+          >
+            {{ mensajes.borrar }}
+          </button>
+        </span>
+      }
+    </ng-template>
+  </vit-tabla>
+</section>

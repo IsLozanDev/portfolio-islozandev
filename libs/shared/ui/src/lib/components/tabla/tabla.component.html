@@ -14,7 +14,13 @@
                 }
               </div>
               @for (detalle of columnasDetalle(); track detalle.clave) {
-                <span class="truncate text-[13px] text-sobre-superficie-variante">{{ valorDe(fila, detalle.clave) }}</span>
+                @if (plantillaDe(detalle.clave); as plantilla) {
+                  <div class="text-[13px] text-sobre-superficie-variante">
+                    <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila }" />
+                  </div>
+                } @else {
+                  <span class="truncate text-[13px] text-sobre-superficie-variante">{{ valorDe(fila, detalle.clave) }}</span>
+                }
               }
             </div>
             @if (accionesFila(); as acciones) {
@@ -62,7 +68,9 @@
 </div>
 
 <ng-template #celda let-fila let-columna="columna">
-  @if (columna.tono; as tonoDe) {
+  @if (plantillaDe(columna.clave); as plantilla) {
+    <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila }" />
+  } @else if (columna.tono; as tonoDe) {
     <vit-chip-estado [texto]="textoDe(fila, columna.clave)" [tono]="tonoDe(fila)" />
   } @else if (columna.icono?.(fila); as nombreIcono) {
     <mat-icon class="align-middle" aria-hidden="true">{{ nombreIcono }}</mat-icon>

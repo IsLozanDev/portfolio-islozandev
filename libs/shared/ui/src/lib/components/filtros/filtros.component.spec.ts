@@ -103,4 +103,18 @@ describe('FiltrosComponent', () => {
     expect(await select.getValueText()).toBe('Suspendido');
     expect(emitidos).toEqual([]);
   });
+
+  it('sin búsqueda solo pinta los selects y usa el textoTodos de la definición', async () => {
+    fixture.componentRef.destroy();
+    const sinBusqueda = TestBed.createComponent(FiltrosComponent);
+    sinBusqueda.componentRef.setInput('conBusqueda', false);
+    sinBusqueda.componentRef.setInput('definiciones', [{ ...anfitrion.definiciones[0], textoTodos: 'Todas' }]);
+    await sinBusqueda.whenStable();
+
+    expect(sinBusqueda.nativeElement.querySelector('input[type="search"]')).toBeNull();
+    const select = await TestbedHarnessEnvironment.loader(sinBusqueda).getHarness(MatSelectHarness);
+    await select.open();
+    const [opcionTodas] = await select.getOptions();
+    expect(await opcionTodas.getText()).toBe('Todas');
+  });
 });

@@ -1,6 +1,6 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, contentChild, inject, input, output } from '@angular/core';
+import { Component, computed, contentChild, contentChildren, inject, input, output, type TemplateRef } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl, MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
@@ -8,6 +8,7 @@ import { MatSortModule, type Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { map } from 'rxjs';
 import { AccionesFilaDirective } from '../../directives/acciones-fila.directive';
+import { CeldaTablaDirective, type ContextoCeldaTabla } from '../../directives/celda-tabla.directive';
 import type { CambioOrden, CambioPagina, ColumnaTabla, RolMovil } from '../../models/columna-tabla';
 import { MENSAJES_UI } from '../../models/mensajes-ui';
 import { PaginadorEnEspanol } from '../../services/paginador-en-espanol.service';
@@ -41,6 +42,8 @@ export class TablaComponent<Fila extends object> {
   readonly orden = output<CambioOrden>();
 
   protected readonly accionesFila = contentChild<AccionesFilaDirective<Fila>>(AccionesFilaDirective);
+  private readonly celdas = contentChildren<CeldaTablaDirective<Fila>>(CeldaTablaDirective);
+  private readonly plantillasCelda = computed(() => new Map(this.celdas().map((celda) => [celda.clave(), celda.plantilla])));
   protected readonly tituloAcciones = MENSAJES_UI.acciones;
   protected readonly columnaAcciones = COLUMNA_ACCIONES;
   protected readonly esMovil = toSignal(
@@ -60,6 +63,10 @@ export class TablaComponent<Fila extends object> {
 
   private columnaConRol(rol: RolMovil): ColumnaTabla<Fila> | undefined {
     return this.columnas().find((columna) => columna.movil === rol);
+  }
+
+  protected plantillaDe(clave: string): TemplateRef<ContextoCeldaTabla<Fila>> | undefined {
+    return this.plantillasCelda().get(clave);
   }
 
   protected valorDe(fila: Fila, clave: keyof Fila): unknown {

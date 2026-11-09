@@ -13,6 +13,7 @@ import {
   EstadoVacioComponent,
   FiltrosComponent,
   MensajeValidacionPipe,
+  PanelLateralService,
   TablaComponent,
   type CambioOrden,
   type CambioPagina,
@@ -20,6 +21,7 @@ import {
   type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
+import { PanelDeMuestraComponent, type DatosPanelDeMuestra } from './panel-de-muestra/panel-de-muestra.component';
 import { COLUMNAS_USUARIOS, filtrarYOrdenar, FILTROS_USUARIOS, USUARIOS_DE_MUESTRA, type UsuarioDeMuestra } from './usuarios-de-muestra';
 
 const TAMANO_PAGINA_INICIAL = 10;
@@ -51,6 +53,7 @@ const FILTROS_VACIOS: ValorFiltros = { busqueda: '', estado: null };
 })
 export class ComponentesPage {
   private readonly avisos = inject(AvisosService);
+  private readonly paneles = inject(PanelLateralService);
 
   protected readonly tiposDeAviso = TIPOS_DE_AVISO;
   protected readonly tonosDeChip = TONOS_DE_CHIP;
@@ -121,5 +124,14 @@ export class ComponentesPage {
 
   protected cancelar(): void {
     this.formulario.reset();
+  }
+
+  protected abrirPanel(): void {
+    this.paneles
+      .abrir<PanelDeMuestraComponent, DatosPanelDeMuestra, string>(PanelDeMuestraComponent, { datos: { nombre: 'Inti Raymi' } })
+      .afterClosed()
+      .subscribe((nombre) => {
+        if (nombre) this.avisos.toast('exito', `Guardado: ${nombre}`);
+      });
   }
 }

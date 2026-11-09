@@ -1,0 +1,9 @@
+<div class="flex items-center gap-1" role="group" [attr.aria-label]="mensajes.anio">
+  <button mat-icon-button type="button" data-accion="anio-anterior" [attr.aria-label]="mensajes.anterior" [disabled]="esElPrimero()" (click)="anterior()">
+    <mat-icon>chevron_left</mat-icon>
+  </button>
+  <span class="min-w-16 text-center text-lg font-medium tabular-nums" aria-live="polite" data-anio>{{ anio() }}</span>
+  <button mat-icon-button type="button" data-accion="anio-siguiente" [attr.aria-label]="mensajes.siguiente" [disabled]="esElUltimo()" (click)="siguiente()">
+    <mat-icon>chevron_right</mat-icon>
+  </button>
+</div>
