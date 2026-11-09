@@ -61,6 +61,13 @@ export const MENSAJES_DETALLE_CATALOGO_ADMIN = {
   sinCambios: 'No había cambios',
   versionObsoleta: 'Otro usuario modificó el registro; recargue',
   sinValor: '—',
+  confirmarBorrar: 'Borrar',
+  borrarItem: (codigo: string) => `¿Borrar el ítem ${codigo}?`,
+  itemBorrado: 'Ítem borrado',
+  enUso: 'El ítem está en uso y no se puede borrar. ¿Cerrar su vigencia hoy?',
+  cerrarVigencia: 'Cerrar vigencia',
+  vigenciaCerrada: 'Vigencia cerrada',
+  aunNoVigente: 'El ítem aún no entra en vigencia; edítelo para cambiarla',
   vigencia: (desde: string, hasta: string | null) => (hasta ? `${desde} – ${hasta}` : `Desde ${desde}`),
 } as const;
 
@@ -82,4 +89,17 @@ export const MENSAJES_PANEL_AJUSTE = {
   ayudaOrden: 'Número entero; vacío usa el orden global',
   visible: 'Visible para su empresa',
   nombreGlobal: 'Nombre global',
+} as const;
+
+export const MENSAJES_FORMULARIO_ITEM_PROPIO = {
+  tituloNuevo: 'Nuevo ítem propio',
+  tituloEdicion: 'Editar ítem propio',
+  catalogo: (codigo: string) => `Catálogo ${codigo}`,
+  creado: 'Ítem creado',
+  actualizado: 'Ítem actualizado',
+  codigoDuplicado: 'El código ya existe en el catálogo',
+  noExiste: 'El ítem no existe',
+  volver: 'Volver al catálogo',
+  versionObsoleta: 'Otro usuario modificó el ítem. Recargue para ver sus cambios.',
+  recargar: 'Recargar',
 } as const;

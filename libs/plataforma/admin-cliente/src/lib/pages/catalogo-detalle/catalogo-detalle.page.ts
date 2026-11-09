@@ -4,7 +4,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule, type MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ESTADOS_ITEM, ETIQUETAS_ESTADO_ITEM, formatearFechaCalendario, TONOS_ESTADO_ITEM, type EstadoItem } from '@vitrina/plataforma/catalogos-ui';
+import {
+  ESTADOS_ITEM,
+  ETIQUETAS_ESTADO_ITEM,
+  formatearFechaCalendario,
+  hoyEnLima,
+  solicitudDeItem,
+  TONOS_ESTADO_ITEM,
+  type EstadoItem,
+} from '@vitrina/plataforma/catalogos-ui';
 import { SesionService, SiPermisoDirective } from '@vitrina/shared/auth';
 import {
   AccionesFilaDirective,
@@ -39,6 +47,7 @@ import { filtroItemsDesdeUrl, PARAMETRO_URL_CATALOGOS, parametrosUrlItems, valor
 
 const PARAMETRO_CODIGO = 'codigo';
 const CLAVE_VISIBLE = 'visible';
+const CODIGO_ITEM_REFERENCIADO = 'ITEM_REFERENCIADO';
 
 /** Lo que muestra cada celda, ya como texto, con la fila de la API para ajustar, editar o borrar. */
 export interface FilaTablaItemAdmin {
@@ -121,6 +130,7 @@ export class CatalogoDetallePage {
   protected readonly filas = signal<FilaTablaItemAdmin[]>([]);
   protected readonly total = signal(0);
   protected readonly cargando = signal(false);
+  protected readonly borrando = signal(false);
   /** Ítems con un ajuste en viaje: su interruptor queda deshabilitado (TR-RNF-008). */
   protected readonly ajustando = signal<ReadonlySet<string>>(new Set());
   protected readonly error = signal<string | null>(null);
@@ -175,6 +185,56 @@ export class CatalogoDetallePage {
     const confirmado = await this.avisos.confirmar({ titulo: MENSAJES_DETALLE_CATALOGO_ADMIN.confirmarRestablecer(fila.nombre) });
     if (!confirmado) return;
     if (await this.ajustar(fila, ajusteNeutro(fila.item))) this.avisos.toast('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.restablecido);
+  }
+
+  protected async borrar(fila: FilaTablaItemAdmin): Promise<void> {
+    if (this.borrando()) return;
+    const confirmacion = await this.avisos.confirmarDestructiva({
+      titulo: MENSAJES_DETALLE_CATALOGO_ADMIN.borrarItem(fila.codigo),
+      textoConfirmar: MENSAJES_DETALLE_CATALOGO_ADMIN.confirmarBorrar,
+    });
+    if (!confirmacion.confirmado) return;
+
+    this.borrando.set(true);
+    this.error.set(null);
+    try {
+      await this.borrarOCerrarVigencia(fila);
+    } catch (error) {
+      this.error.set(aErrorAdmin(error).message);
+    } finally {
+      this.borrando.set(false);
+    }
+  }
+
+  private async borrarOCerrarVigencia(fila: FilaTablaItemAdmin): Promise<void> {
+    try {
+      await this.catalogos.eliminarPropio(this.codigo, fila.itemId, fila.item.version);
+    } catch (error) {
+      if (aErrorAdmin(error).codigo !== CODIGO_ITEM_REFERENCIADO) throw error;
+      await this.ofrecerCerrarVigencia(fila);
+      return;
+    }
+    this.avisos.toast('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.itemBorrado);
+    await this.cargarItems();
+  }
+
+  /** TR-RN-013: el propio en uso no se borra; se cierra su vigencia hoy con el contenido y la versión que tiene ahora. */
+  private async ofrecerCerrarVigencia(fila: FilaTablaItemAdmin): Promise<void> {
+    const confirmacion = await this.avisos.confirmarDestructiva({
+      titulo: MENSAJES_DETALLE_CATALOGO_ADMIN.enUso,
+      textoConfirmar: MENSAJES_DETALLE_CATALOGO_ADMIN.cerrarVigencia,
+    });
+    if (!confirmacion.confirmado) return;
+
+    const item = await this.catalogos.obtenerPropio(this.codigo, fila.itemId);
+    const hoy = hoyEnLima();
+    if (item.vigenteDesde > hoy) {
+      this.avisos.toast('advertencia', MENSAJES_DETALLE_CATALOGO_ADMIN.aunNoVigente);
+      return;
+    }
+    await this.catalogos.actualizarPropio(this.codigo, item.id, { ...solicitudDeItem(item), vigenteHasta: hoy }, item.version);
+    this.avisos.toast('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.vigenciaCerrada);
+    await this.cargarItems();
   }
 
   private async alCerrarPanel(resultado: ResultadoPanelAjuste | undefined): Promise<void> {

@@ -91,6 +91,17 @@
             }
             @if (fila.item.propio && gestionaPropios()) {
               <a mat-button [routerLink]="['items', fila.itemId, 'editar']" data-accion="editar" [attr.aria-label]="mensajes.editar + ': ' + fila.codigo">{{ mensajes.editar }}</a>
+              <button
+                mat-button
+                type="button"
+                class="vit-destructivo"
+                data-accion="borrar"
+                [disabled]="borrando()"
+                [attr.aria-label]="mensajes.borrar + ': ' + fila.codigo"
+                (click)="borrar(fila)"
+              >
+                {{ mensajes.borrar }}
+              </button>
             }
           </span>
         </ng-template>

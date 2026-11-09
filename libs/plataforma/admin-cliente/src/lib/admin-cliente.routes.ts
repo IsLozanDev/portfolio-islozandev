@@ -141,6 +141,16 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     loadComponent: () => import('./pages/catalogos-lista/catalogos-lista.page').then((modulo) => modulo.CatalogosListaPage),
   },
   {
+    path: 'catalogos/:codigo/items/nuevo',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.itemPropio)],
+    loadComponent: () => import('./pages/item-propio-formulario/item-propio-formulario.page').then((modulo) => modulo.ItemPropioFormularioPage),
+  },
+  {
+    path: 'catalogos/:codigo/items/:id/editar',
+    canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.itemPropio)],
+    loadComponent: () => import('./pages/item-propio-formulario/item-propio-formulario.page').then((modulo) => modulo.ItemPropioFormularioPage),
+  },
+  {
     path: 'catalogos/:codigo',
     canMatch: [permisoGuard(PERMISOS_CATALOGO_TENANT)],
     loadComponent: () => import('./pages/catalogo-detalle/catalogo-detalle.page').then((modulo) => modulo.CatalogoDetallePage),

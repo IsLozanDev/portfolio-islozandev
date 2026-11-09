@@ -6,6 +6,7 @@ import {
   filaPlin,
   filaVale,
   PLIN_ID,
+  VALE_ID,
   URL_CATALOGOS,
   type AdminDePrueba,
   type DobleAvisosCatalogos,
@@ -47,7 +48,10 @@ describe('CatalogoDetallePage (admin)', () => {
     avisos = crearDobleAvisos();
   });
 
-  afterEach(() => pantalla.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    pantalla.http.verify();
+  });
 
   it('TR-CA-067: TIPO_COMPROBANTE (GLOBAL) va en solo lectura, con la nota, sin interruptor ni acciones', async () => {
     await abrir('/admin/catalogos/TIPO_COMPROBANTE', [filaPlin({ codigo: 'FACTURA', nombre: 'Factura' })]);
@@ -157,4 +161,56 @@ describe('CatalogoDetallePage (admin)', () => {
     expect(accion('VALE', 'editar')).toBeNull();
     expect(accion('PLIN', 'visible')).not.toBeNull();
   });
+
+  it('TR-CA-068: el propio se ve con origen «Propio» y el global con «Global»', async () => {
+    await abrir('/admin/catalogos/MEDIO_PAGO');
+    expect(fila('VALE')?.querySelector('vit-chip-estado')?.textContent?.trim()).toBe('Propio');
+    expect(fila('PLIN')?.querySelector('vit-chip-estado')?.textContent?.trim()).toBe('Global');
+  });
+
+  it('borrar un propio libre envía la versión y recarga', async () => {
+    await abrir('/admin/catalogos/MEDIO_PAGO');
+    accion('VALE', 'borrar')?.click();
+    await pantalla.estable();
+
+    expect(avisos.confirmarDestructiva).toHaveBeenCalledWith({ titulo: '¿Borrar el ítem VALE?', textoConfirmar: MENSAJES_DETALLE_CATALOGO_ADMIN.confirmarBorrar });
+    pantalla.http.expectOne({ method: 'DELETE', url: `${URL_CATALOGOS}/MEDIO_PAGO/items/${VALE_ID}?version=2` }).flush(null);
+    await responderItems([filaPlin()]);
+    expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.itemBorrado);
+  });
+
+  it('TR-RN-013: borrar un propio referenciado ofrece cerrar su vigencia hoy con la versión actual', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-08T15:00:00Z'));
+    await abrir('/admin/catalogos/MEDIO_PAGO');
+    accion('VALE', 'borrar')?.click();
+    await pantalla.estable();
+    pantalla.http
+      .expectOne({ method: 'DELETE', url: `${URL_CATALOGOS}/MEDIO_PAGO/items/${VALE_ID}?version=2` })
+      .flush({ codigo: 'ITEM_REFERENCIADO', mensaje: 'El ítem está en uso' }, { status: 409, statusText: 'Conflict' });
+    await pantalla.estable();
+
+    expect(avisos.confirmarDestructiva).toHaveBeenLastCalledWith({ titulo: MENSAJES_DETALLE_CATALOGO_ADMIN.enUso, textoConfirmar: MENSAJES_DETALLE_CATALOGO_ADMIN.cerrarVigencia });
+    const vale = {
+      id: VALE_ID,
+      codigo: 'VALE',
+      codigo_externo: null,
+      nombre: 'Vale de consumo',
+      abreviatura: null,
+      orden: 9,
+      atributos: {},
+      vigente_desde: '2026-01-01',
+      vigente_hasta: null,
+      activo: true,
+      version: 3,
+    };
+    pantalla.http.expectOne({ method: 'GET', url: `${URL_CATALOGOS}/MEDIO_PAGO/items/${VALE_ID}` }).flush(vale);
+    await pantalla.estable();
+    const cierre = pantalla.http.expectOne({ method: 'PUT', url: `${URL_CATALOGOS}/MEDIO_PAGO/items/${VALE_ID}` });
+    expect(cierre.request.body).toMatchObject({ vigente_hasta: '2026-11-08', version: 3 });
+    cierre.flush({ ...vale, vigente_hasta: '2026-11-08', version: 4 });
+    await responderItems();
+    expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.vigenciaCerrada);
+  });
 });
+
