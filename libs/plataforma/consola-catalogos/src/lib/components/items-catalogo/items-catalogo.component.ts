@@ -32,12 +32,15 @@ import type { FilaItem, FiltroItems } from '../../models/fila-item';
 import { COLUMNAS_ITEMS, mensajeBorrarItem, MENSAJES_ITEMS, mensajeVigencia } from '../../models/mensajes-catalogos';
 import { PERMISOS_CATALOGOS } from '../../models/permisos-catalogos';
 import { ItemsCliente } from '../../services/items.cliente';
+import { celdasDeAtributos, claveDeCelda, clavesDeAtributos, tituloDeAtributo, type ClaveAtributo } from '../../utils/columnas-atributos';
 import { filtroItemsDesdeUrl, PARAMETRO_URL_DETALLE, parametrosUrlItems, valorFiltrosItems } from '../../utils/filtro-url';
 
 const CODIGO_ITEM_REFERENCIADO = 'ITEM_REFERENCIADO';
 
-/** Lo que muestra cada celda, ya como texto. */
-export interface FilaTablaItem {
+/** Lo que muestra cada celda, ya como texto; los atributos van en claves `atributo.<clave>`. */
+export type FilaTablaItem = DatosFilaItem & Record<ClaveAtributo, string>;
+
+interface DatosFilaItem {
   itemId: string;
   codigo: string;
   codigoExterno: string;
@@ -50,10 +53,12 @@ export interface FilaTablaItem {
   version: number;
 }
 
-const COLUMNAS: ColumnaTabla<FilaTablaItem>[] = [
+const COLUMNAS_ANTES_DE_ATRIBUTOS: ColumnaTabla<FilaTablaItem>[] = [
   { clave: 'codigo', titulo: COLUMNAS_ITEMS.codigo, movil: 'detalle' },
   { clave: 'codigoExterno', titulo: COLUMNAS_ITEMS.codigoExterno },
   { clave: 'nombre', titulo: COLUMNAS_ITEMS.nombre, movil: 'titulo' },
+];
+const COLUMNAS_DESPUES_DE_ATRIBUTOS: ColumnaTabla<FilaTablaItem>[] = [
   { clave: 'orden', titulo: COLUMNAS_ITEMS.orden },
   { clave: 'vigencia', titulo: COLUMNAS_ITEMS.vigencia, movil: 'detalle' },
   { clave: 'estado', titulo: COLUMNAS_ITEMS.estado, movil: 'estado', tono: (fila) => fila.tonoEstado },
@@ -89,12 +94,18 @@ export class ItemsCatalogoComponent implements OnInit {
 
   protected readonly mensajes = MENSAJES_ITEMS;
   protected readonly permisos = PERMISOS_CATALOGOS;
-  protected readonly columnas = COLUMNAS;
+  /** Una columna por clave de atributo de la página, entre el nombre y el orden (UBIGEO: departamento y provincia). */
+  protected readonly columnas = computed<ColumnaTabla<FilaTablaItem>[]>(() => [
+    ...COLUMNAS_ANTES_DE_ATRIBUTOS,
+    ...this.clavesAtributos().map((clave): ColumnaTabla<FilaTablaItem> => ({ clave: claveDeCelda(clave), titulo: tituloDeAtributo(clave), movil: 'detalle' })),
+    ...COLUMNAS_DESPUES_DE_ATRIBUTOS,
+  ]);
   protected readonly filtros = FILTROS;
 
   protected readonly filtro = signal<FiltroItems>(filtroItemsDesdeUrl(this.ruta.snapshot.queryParamMap));
   protected readonly valorInicialFiltros = valorFiltrosItems(this.filtro());
   protected readonly filas = signal<FilaTablaItem[]>([]);
+  private readonly clavesAtributos = signal<string[]>([]);
   protected readonly total = signal(0);
   protected readonly cargando = signal(false);
   protected readonly ocupado = signal(false);
@@ -188,7 +199,9 @@ export class ItemsCatalogoComponent implements OnInit {
     try {
       const pagina = await this.items.listarAdministracion(this.catalogo().codigo, this.filtro());
       if (consulta !== this.consultaActual) return;
-      this.filas.set(pagina.items.map(filaDe));
+      const claves = clavesDeAtributos(pagina.items.map((item) => item.atributos));
+      this.clavesAtributos.set(claves);
+      this.filas.set(pagina.items.map((item) => filaDe(item, claves)));
       this.total.set(pagina.total);
     } catch (error) {
       if (consulta !== this.consultaActual) return;
@@ -201,7 +214,7 @@ export class ItemsCatalogoComponent implements OnInit {
   }
 }
 
-function filaDe(item: FilaItem): FilaTablaItem {
+function filaDe(item: FilaItem, clavesAtributos: readonly string[]): FilaTablaItem {
   const hasta = item.vigenteHasta === null ? null : formatearFechaCalendario(item.vigenteHasta);
   return {
     itemId: item.itemId,
@@ -214,5 +227,6 @@ function filaDe(item: FilaItem): FilaTablaItem {
     tonoEstado: TONOS_ESTADO_ITEM[item.estado],
     activo: item.activo ? MENSAJES_ITEMS.si : MENSAJES_ITEMS.no,
     version: item.version,
+    ...celdasDeAtributos(clavesAtributos, item.atributos),
   };
 }

@@ -122,6 +122,22 @@ describe('CatalogoDetallePage', () => {
     expect(elemento().querySelector('[data-pestana="importaciones"]')?.textContent).toContain(MENSAJES_DETALLE_CATALOGO.pestanaImportaciones);
   });
 
+  it('en UBIGEO muestra departamento y provincia de los atributos entre el nombre y el orden', async () => {
+    const distrito = { ...filaYape, item_id: 'u-1', codigo: '010101', nombre: 'CHACHAPOYAS', atributos: { provincia: 'CHACHAPOYAS', departamento: 'AMAZONAS' } };
+    await abrir('/consola/catalogos/UBIGEO', [distrito]);
+
+    const cabeceras = [...elemento().querySelectorAll('th')].map((celda) => celda.textContent?.trim());
+    expect(cabeceras.slice(0, 6)).toEqual(['Código', 'Código externo', 'Nombre', 'Departamento', 'Provincia', 'Orden']);
+    const celdas = [...elemento().querySelectorAll('tr[mat-row] td')].map((celda) => celda.textContent?.trim());
+    expect(celdas.slice(0, 5)).toEqual(['010101', '—', 'CHACHAPOYAS', 'AMAZONAS', 'CHACHAPOYAS']);
+  });
+
+  it('un catálogo sin atributos no suma columnas', async () => {
+    await abrir('/consola/catalogos/MEDIO_PAGO', [{ ...filaYape, atributos: {} }]);
+    const cabeceras = [...elemento().querySelectorAll('th')].map((celda) => celda.textContent?.trim());
+    expect(cabeceras.slice(0, 4)).toEqual(['Código', 'Código externo', 'Nombre', 'Orden']);
+  });
+
   it('con ?pestana=importaciones en un catálogo no importable se queda en «Ítems»', async () => {
     const pedido = await abrir('/consola/catalogos/MEDIO_PAGO?pestana=importaciones');
     expect(pedido).not.toBeNull();

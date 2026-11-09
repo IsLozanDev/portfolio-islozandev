@@ -119,6 +119,7 @@ Cada pantalla se verifica en tema claro y oscuro y a 600 px de ancho.
 - **Seguir importaciones lanzadas por otro operador**: el SSE y las activas son solo de quien la lanzó (19b). El historial sí las muestra.
 - **Notificaciones push o por correo al terminar.**
 - **`<ui-catalogo-select>`**: no tiene RF ni historia.
+- **Selección de UBIGEO en cascada** (departamento → provincia → distrito), por ejemplo al registrar la dirección de un cliente. Habrá muchos formularios así. Lo pidió el usuario como algo a tener en cuenta. Va con `<ui-catalogo-select>` o con el primer spec que capture direcciones. Hoy `GET /v1/catalogos/UBIGEO/items` ya trae los distritos con `departamento` y `provincia` en `atributos` y con ETag, así que la cascada se puede armar en el cliente. Falta decidir si conviene una ruta que filtre por nivel o por atributo.
 - **Mover los DTO a `libs/shared/contracts`.**
 - **E2E multinavegador y axe en CI**: spec 27.
 - **Proyecto prod.**
@@ -143,6 +144,7 @@ Cada pantalla se verifica en tema claro y oscuro y a 600 px de ancho.
 - `libs/plataforma/catalogos/src/interface/catalogos.dto.ts`: `CatalogoDto.importable`, calculado en el mapeo con `TABLAS_IMPORTABLES.includes(codigo)`.
 - `libs/plataforma/catalogos/src/interface/catalogos.controller.ts`: `@Get(':codigo/items-globales/:id')` con `plat.catalogo.item_gestionar`. Usa un caso de uso nuevo, `ObtenerItemGlobal`, sobre el repositorio de ítems del 19a.
 - `libs/plataforma/catalogos/src/interface/importaciones.*`: `ImportacionActivaDto.codigo` (el código del catálogo) y `PrevisualizacionDto.version` (la que pide `aplicar`).
+- `db/01f_cat_items_busqueda.sql` (con su inverso y su prueba SQL): `cat.items_administracion` busca el `texto` también en los valores de `atributos`. Así, en UBIGEO se encuentran los distritos por departamento o provincia. La clave del atributo no cuenta, solo su valor.
 - `libs/shared/shell/src/lib/components/layout/layout.component.html`: `<vit-tareas-en-curso />` antes de `<vit-selector-sucursal />`.
 - `libs/shared/shell/src/index.ts`: exporta `TareasEnCursoService` y el tipo `TareaEnCurso`.
 - `apps/plataforma-consola/src/app/app.routes.ts`: `consola/catalogos` va antes de `consola`, como `consola/soporte`.
@@ -315,7 +317,7 @@ vaciar(): void;
 
 - **Arranque.** `iniciarSeguimientoImportaciones()` en `apps/plataforma-consola` lo instancia con `import()` dinámico, como `iniciarInsigniasSoporte`.
 - **Sesión.** Observa el estado de `SesionService`:
-  - Al quedar con sesión aal2 y el permiso `plat.catalogo.importar`, hace un `GET /v1/catalogos/importaciones?activas=true` y llama a `seguir(id, codigo)` por cada activa.
+  - Al quedar con sesión aal2, el MFA vigente (`contexto.mfaVigente`) y el permiso `plat.catalogo.importar`, hace un `GET /v1/catalogos/importaciones?activas=true` y llama a `seguir(id, codigo)` por cada activa.
   - Sin sesión, aborta todos los streams y llama a `TareasEnCursoService.vaciar()`.
 - **`seguir(id, codigo)`.**
   - Lo llama también la página de importación después del 202 de `aplicar`.
@@ -423,9 +425,10 @@ vaciar(): void;
   - si `importable`, botón «Importar» con `*siPermiso="plat.catalogo.importar"`.
 - `mat-tab-group`. La pestaña activa va en `?pestana=items|importaciones`, y «Importaciones» solo aparece si `importable`.
 - **Pestaña «Ítems»** (`items-catalogo`):
-  - consume `GET .../items/administracion` con `origen=GLOBAL` fijo, `texto`, `estado`, `pagina` y `tamano`, todo en la URL;
+  - consume `GET .../items/administracion` con `origen=GLOBAL` fijo, `texto`, `estado`, `pagina` y `tamano`, todo en la URL. `texto` busca en código, nombre o el valor de un atributo;
   - paginador estándar con `TAMANOS_PAGINA` (20, 50 y 100; 20 por defecto);
   - columnas código, código externo, nombre, orden, vigencia (`dd/MM/yyyy` – `dd/MM/yyyy` o «sin fin»), estado (chip) y activo;
+  - entre nombre y orden, una columna por clave de `atributos` que traen los ítems de la página, en orden alfabético y con «—» si el ítem no la tiene. En UBIGEO son «Departamento» y «Provincia» (el nombre es el distrito). Un catálogo sin atributos no suma columnas;
   - acciones de fila (32 px):
     - «Editar», que navega al formulario;
     - «Borrar», con `vit-destructivo`;
@@ -732,6 +735,9 @@ vaciar(): void;
 - **Sí: la opción de menú usa `item_gestionar` y no `leer`.** Un administrador de configuración de un tenant cliente tiene `leer` y no debe ver la consola de catálogos.
 - **Sí: `codigo` en las importaciones activas.** Lo decidió el usuario al implementar. Sin él, el seguimiento no puede titular la tarea al recargar. **No:** un `GET` del detalle por cada activa, ni un título sin el código.
 - **Sí: `version` en la respuesta de la previsualización.** Lo decidió el usuario al implementar. **No:** enviar `version: 0` dando por hecho que nace en 0.
+- **Sí: la búsqueda de la pestaña «Ítems» también busca en los valores de los atributos.** Lo pidió el usuario: en UBIGEO no encontraba por departamento ni por provincia. Se resuelve en `cat.items_administracion`, con una migración nueva. **No:** filtrar en el cliente, porque la lista está paginada en el servidor.
+- **Sí: una columna por atributo en la pestaña «Ítems», entre nombre y orden.** Lo decidió el usuario al verificar UBIGEO, que solo mostraba el distrito. Las columnas existentes no cambian. **No:** una sola columna «Atributos» ni columnas fijas solo para UBIGEO.
+- **Sí: el seguimiento recupera las activas solo con el MFA vigente (`contexto.mfaVigente`), no con solo aal2.** Salió de la verificación en navegador: `importar` es sensible y, con el MFA vencido, la API responde 401 `MFA_REQUERIDA` y el interceptor sacaba al operador a `/auth/mfa` desde cualquier pantalla.
 - **Sí: `exigirMfa()` antes de cada escritura.** `gestionar`, `item_gestionar` e `importar` son sensibles. La consola exige aal2, pero la recencia de 15 min la valida la API.
 
 ## Riesgos

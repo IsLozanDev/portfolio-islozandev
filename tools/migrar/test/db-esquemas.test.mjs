@@ -81,6 +81,7 @@ const CASOS = [
   { migracion: '01f_cat.sql', esquema: 'cat', prueba: 'tests/01f_cat.test.sql' },
   { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
+  { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -222,6 +223,16 @@ const objetosFeriado = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Si cat.items_administracion busca también en los valores de los atributos (01f_cat_items_busqueda).
+const buscaEnAtributos = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'cat' AND proname = 'items_administracion' AND prosrc LIKE '%jsonb_each_text%'`,
+    )
+  ).rowCount === 1;
+
 const feriadosSemilla = async () =>
   Number((await ejecutar(urlDb, `SELECT count(*) AS n FROM cat.feriado WHERE creado_por IS NULL`)).rows[0].n);
 
@@ -275,6 +286,13 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01f_cat_items_busqueda deja la búsqueda en código o nombre y se puede reaplicar.
+    expect(await buscaEnAtributos()).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_items_busqueda.sql'), 'utf8'));
+    expect(await buscaEnAtributos()).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01f_cat_items_busqueda.sql'), 'utf8'));
+    expect(await buscaEnAtributos()).toBe(true);
 
     // El inverso de 01f_cat_importacion deja cat como lo dejó 01f_cat (con datos) y se puede reaplicar.
     // Va antes que el de 01f_cat: reemplaza cat.subir_version_global().

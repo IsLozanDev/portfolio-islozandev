@@ -199,7 +199,7 @@ export class CatalogosController {
   // Antes de las rutas con {id}: `administracion` no es un id.
   @Get(':codigo/items/administracion')
   @Permiso(PERMISOS_CAT.leer)
-  @ApiQuery({ name: 'texto', required: false, description: 'Busca en código o nombre; hasta 60 caracteres' })
+  @ApiQuery({ name: 'texto', required: false, description: 'Busca en código, nombre o el valor de un atributo (p. ej. departamento en UBIGEO); hasta 60 caracteres' })
   @ApiQuery({ name: 'estado', required: false, enum: ESTADOS_ITEM })
   @ApiQuery({ name: 'origen', required: false, enum: ORIGENES_ITEM })
   @ApiQuery({ name: 'pagina', required: false, example: 1, description: 'Desde 1' })

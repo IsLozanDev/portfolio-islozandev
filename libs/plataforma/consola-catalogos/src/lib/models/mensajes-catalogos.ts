@@ -81,7 +81,7 @@ export const MENSAJES_DETALLE_CATALOGO = {
 } as const;
 
 export const MENSAJES_ITEMS = {
-  buscar: 'Buscar código o nombre',
+  buscar: 'Buscar código, nombre o atributo',
   estado: 'Estado',
   nuevoItem: 'Nuevo ítem',
   sinItems: 'No hay ítems con estos filtros.',
