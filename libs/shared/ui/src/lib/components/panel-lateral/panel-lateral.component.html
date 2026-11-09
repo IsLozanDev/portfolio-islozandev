@@ -1,0 +1,12 @@
+<header class="flex h-16 shrink-0 items-center gap-2 border-b border-borde pr-2 pl-6">
+  <h2 mat-dialog-title class="vit-panel-lateral-titulo m-0 flex-1 truncate">{{ titulo() }}</h2>
+  <button mat-icon-button type="button" [attr.aria-label]="textoCerrar" (click)="cerrar()">
+    <mat-icon>close</mat-icon>
+  </button>
+</header>
+<div class="vit-panel-lateral-cuerpo flex-1 overflow-y-auto px-6 py-4">
+  <ng-content />
+</div>
+<footer class="shrink-0 border-t border-borde px-6 py-3">
+  <ng-content select="[accionesPanel]" />
+</footer>

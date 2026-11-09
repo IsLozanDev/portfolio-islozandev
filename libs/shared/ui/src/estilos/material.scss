@@ -124,6 +124,74 @@ $tabla-ancho-maximo-celda: 12rem;
     }
   }
 
+  /* Panel lateral para formularios (19e): MatDialog pegado a la derecha. La animación reemplaza la escala
+     de MatDialog; las clases `mdc-dialog--open` y `--closing` las pone el contenedor del diálogo. */
+  .vit-panel-lateral {
+    @include mat.dialog-overrides((
+      container-color: var(--mat-sys-surface-container-lowest),
+      container-shape: 0,
+      container-max-width: 100vw,
+      container-small-max-width: 100vw,
+    ));
+
+    .mat-mdc-dialog-surface {
+      transform: none;
+    }
+
+    .mat-mdc-dialog-inner-container {
+      opacity: 0;
+      transform: translateX(100%);
+      transition:
+        transform var(--duracion-panel-entrada) var(--curva-entrada),
+        opacity var(--duracion-panel-entrada) var(--curva-entrada);
+    }
+
+    .mdc-dialog--open .mat-mdc-dialog-inner-container {
+      opacity: 1;
+      transform: none;
+    }
+
+    .mdc-dialog--closing .mat-mdc-dialog-inner-container {
+      opacity: 1;
+      transform: translateX(100%);
+      transition: transform var(--duracion-panel-salida) var(--curva-salida);
+    }
+
+    /* `mat-dialog-title` trae padding y una línea base propios del diálogo centrado. */
+    .vit-panel-lateral-titulo {
+      padding: 0;
+      font: var(--mat-sys-title-large);
+
+      &::before {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mat-mdc-dialog-inner-container,
+      .mdc-dialog--open .mat-mdc-dialog-inner-container,
+      .mdc-dialog--closing .mat-mdc-dialog-inner-container {
+        transform: none;
+        transition: opacity var(--duracion-panel-reducida) linear;
+      }
+
+      .mdc-dialog--closing .mat-mdc-dialog-inner-container {
+        opacity: 0;
+      }
+    }
+  }
+
+  /* MatDialog fija el ancho en línea (`min(480px, 100vw)`): a 600 px o menos ocupa todo el ancho. */
+  @media (max-width: 600px) {
+    .cdk-overlay-pane.vit-panel-lateral {
+      width: 100vw !important;
+    }
+  }
+
+  .vit-panel-lateral-fondo {
+    background-color: color-mix(in srgb, var(--mat-sys-scrim) 32%, transparent);
+  }
+
   /* Insignia numérica de una opción del menú (spec 18): menú lateral, riel y su submenú, que vive en el overlay. */
   .vit-insignia-menu,
   .vit-insignia-riel {

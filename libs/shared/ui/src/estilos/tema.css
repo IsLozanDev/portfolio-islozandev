@@ -35,5 +35,14 @@
   --color-borde-lateral: light-dark(transparent, #1E2926);
 }
 
+/* Panel lateral (19e): curvas emphasized de M3. `PanelLateralService` repite las duraciones en milisegundos. */
+:root {
+  --duracion-panel-entrada: 280ms;
+  --duracion-panel-salida: 200ms;
+  --duracion-panel-reducida: 150ms;
+  --curva-entrada: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --curva-salida: cubic-bezier(0.3, 0, 0.8, 0.15);
+}
+
 /* `dark:` sigue al tema efectivo de `data-tema`, no a `prefers-color-scheme`: respeta la elección manual. */
 @custom-variant dark (&:where([data-tema=oscuro], [data-tema=oscuro] *));

@@ -10,7 +10,7 @@ import { MENSAJES_UI } from '../../models/mensajes-ui';
 export const ESPERA_BUSQUEDA_MS = 300;
 
 /**
- * Búsqueda con espera y filtros de selección; emite el valor completo en cada cambio. `valorInicial`
+ * Búsqueda con espera (opcional) y filtros de selección; emite el valor completo en cada cambio. `valorInicial`
  * precarga los controles (p. ej. desde la URL) sin emitir.
  */
 @Component({
@@ -20,6 +20,8 @@ export const ESPERA_BUSQUEDA_MS = 300;
 })
 export class FiltrosComponent implements OnInit {
   readonly definiciones = input<DefinicionFiltro[]>([]);
+  /** Sin búsqueda, el filtro solo trae los selects (p. ej. cuando la API no busca por texto). */
+  readonly conBusqueda = input<boolean>(true);
   readonly placeholderBusqueda = input<string>(MENSAJES_UI.buscar);
   readonly valorInicial = input<Readonly<Record<string, string | null>>>({});
   readonly cambio = output<ValorFiltros>();

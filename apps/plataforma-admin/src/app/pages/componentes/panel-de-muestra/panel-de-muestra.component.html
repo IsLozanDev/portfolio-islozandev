@@ -1,0 +1,17 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral titulo="Nuevo feriado">
+    <div class="flex flex-col gap-1">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" required />
+        <mat-error>{{ formulario.controls.nombre.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="descripcion" rows="4"></textarea>
+      </mat-form-field>
+      <mat-checkbox formControlName="recurrente">Se repite cada año desde esta fecha</mat-checkbox>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cancelar()" />
+  </vit-panel-lateral>
+</form>
