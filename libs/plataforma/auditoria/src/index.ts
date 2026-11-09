@@ -1,6 +1,8 @@
 export { AUDITORIA, type AuditoriaPort } from './application/ports/auditoria.port.js';
 export { AuditoriaModule } from './auditoria.module.js';
 export { ENTIDADES_AUDITORIA } from './infrastructure/typeorm/entidades.js';
+export { Auditable, AuditableInterceptor, type OpcionesAuditable } from './interface/auditable.interceptor.js';
+export { EVENTOS_AUDITADOS } from './interface/auditoria.consumidor.js';
 export {
   ACCION_ACCESO_SENSIBLE,
   FINALIDADES,

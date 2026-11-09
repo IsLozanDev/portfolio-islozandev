@@ -245,7 +245,7 @@ RegistroAuditoria { insertar(fila: FilaAuditoria): Promise<void> }   // FilaAudi
 
 ### Consumidor (`interface/auditoria.consumidor.ts`)
 
-- `EVENTOS_AUDITADOS`: `tenant.creado`, `suscripcion.cambiada`, `suscripcion.vencida`, `empresa.creada`, `empresa.actualizada`, `sucursal.creada`, `sucursal.actualizada`, `sucursal.inactivada`, `unidad.creada`, `unidad.actualizada`. `suscripcion.por_vencer` no: es un aviso, no una operación.
+- `EVENTOS_AUDITADOS`: `tenant.creado`, `tenant.suspendido`, `tenant.reactivado`, `tenant.dado_de_baja`, `suscripcion.cambiada`, `suscripcion.vencida`, `empresa.creada`, `empresa.actualizada`, `sucursal.creada`, `sucursal.actualizada`, `sucursal.inactivada`, `unidad.creada`, `unidad.actualizada`, `unidad.inactivada`. `suscripcion.por_vencer` no: es un aviso, no una operación.
 - Un método con `@SuscribirEvento(tipo, { consumidor: 'auditoria' })` por tipo, todos llaman a `AuditarEventoDePlataforma`. Corre en la transacción de `EntregarEvento` con el tenant del evento.
 - Idempotencia doble: `sync.evento_procesado` (spec 11) y `ux_evento_auditoria_evento`.
 - `tenant.creado` y los de suscripción que publica el sistema (tarea diaria) llegan con `actor_id` NULL y se guardan como sistema.
@@ -368,6 +368,7 @@ No publica eventos propios.
 - **Sí:** actor, IP y trace como columnas de `sync.outbox` y campos opcionales de `TenantScope`. Decisión del usuario. Sirve a todos los consumidores; ponerlo en cada payload era inconsistente.
 - **Sí:** `trace_id` solo de `traceparent`. Generar trazas es del spec 21.
 - **Sí:** auditar ORG y suscripción por evento. Decisión del usuario. `seq.numero.emitido` no (volumen alto, sin valor); `suscripcion.por_vencer` no (aviso, no operación).
+- **Sí:** sumar a `EVENTOS_AUDITADOS` `tenant.suspendido`, `tenant.reactivado`, `tenant.dado_de_baja` y `unidad.inactivada`. Decisión del usuario al implementar el paso 6: el contraste con lo que publica ORG los encontró fuera de la lista y son operaciones de usuario, con el mismo valor de auditoría que `sucursal.inactivada`.
 - **Sí:** en eventos, `antes = null` y `despues = payload`. El payload es la foto tras el cambio; reconstruir el antes exigiría leer el evento previo del agregado.
 - **Sí:** `@Auditable` incluido y probado con un controlador de prueba, sin uso real. Decisión del usuario. El primer uso es el spec 25.
 - **Sí:** `@Auditable` abre la transacción alrededor del handler y el caso de uso la reutiliza (`TypeOrmUnitOfWork` anidado). Así la fila y el cambio confirman juntos.
