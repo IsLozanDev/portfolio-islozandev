@@ -24,6 +24,7 @@ import {
   filtroCatalogosDesdeUrl,
   PARAMETRO_URL_CATALOGOS,
   parametrosUrlCatalogos,
+  PRIMERA_PAGINA,
   valorFiltrosCatalogos,
   type FiltroCatalogosAdmin,
 } from '../../utils/filtro-url-catalogos';
@@ -88,7 +89,7 @@ export class CatalogosListaPage {
       ...this.filtro(),
       q: valor.busqueda.trim() || undefined,
       alcance: ALCANCES_CATALOGO.find((alcance) => alcance === valor[PARAMETRO_URL_CATALOGOS.alcance]),
-      pagina: 1,
+      pagina: PRIMERA_PAGINA,
     });
   }
 

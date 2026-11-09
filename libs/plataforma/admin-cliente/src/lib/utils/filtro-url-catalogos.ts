@@ -3,7 +3,7 @@ import { ESTADOS_ITEM } from '@vitrina/plataforma/catalogos-ui';
 import { tamanoPaginaDesdeTexto, tamanoPaginaParaUrl } from '@vitrina/shared/ui';
 import { ALCANCES_CATALOGO, ORIGENES_ITEM, type AlcanceCatalogo, type FiltroItemsAdmin } from '../models/catalogo-admin';
 
-const PRIMERA_PAGINA = 1;
+export const PRIMERA_PAGINA = 1;
 
 /** Query params de la lista de catálogos y del detalle (spec 19e). */
 export const PARAMETRO_URL_CATALOGOS = {

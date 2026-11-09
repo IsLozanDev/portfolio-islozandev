@@ -28,7 +28,7 @@
   >
     <ng-template vitAccionesFila let-fila>
       @if (fila.gestionable) {
-        <span class="flex gap-1">
+        <span class="flex flex-col items-end sm:flex-row sm:gap-1">
           <button mat-button type="button" data-accion="editar" [attr.aria-label]="mensajes.editar + ': ' + fila.nombre" (click)="editar(fila)">
             {{ mensajes.editar }}
           </button>

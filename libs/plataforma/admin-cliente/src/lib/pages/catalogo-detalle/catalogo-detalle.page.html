@@ -78,7 +78,7 @@
 
       @if (!esGlobal()) {
         <ng-template vitAccionesFila let-fila>
-          <span class="flex gap-1">
+          <span class="flex flex-col items-end sm:flex-row sm:gap-1">
             @if (esAjustable(fila)) {
               <button mat-button type="button" data-accion="personalizar" [attr.aria-label]="mensajes.personalizar + ': ' + fila.nombre" (click)="personalizar(fila)">
                 {{ mensajes.personalizar }}

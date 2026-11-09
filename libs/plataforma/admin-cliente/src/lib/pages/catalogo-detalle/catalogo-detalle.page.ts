@@ -11,7 +11,6 @@ import {
   hoyEnLima,
   solicitudDeItem,
   TONOS_ESTADO_ITEM,
-  type EstadoItem,
 } from '@vitrina/plataforma/catalogos-ui';
 import { SesionService, SiPermisoDirective } from '@vitrina/shared/auth';
 import {
@@ -43,7 +42,7 @@ import {
 import { PERMISOS_CATALOGOS_ADMIN } from '../../models/permisos-catalogos-admin';
 import { TONOS_ALCANCE_CATALOGO, TONOS_ORIGEN } from '../../models/tonos-catalogos-admin';
 import { CatalogosAdminCliente } from '../../services/catalogos-admin.cliente';
-import { filtroItemsDesdeUrl, PARAMETRO_URL_CATALOGOS, parametrosUrlItems, valorFiltrosItems } from '../../utils/filtro-url-catalogos';
+import { filtroItemsDesdeUrl, PARAMETRO_URL_CATALOGOS, parametrosUrlItems, PRIMERA_PAGINA, valorFiltrosItems } from '../../utils/filtro-url-catalogos';
 
 const PARAMETRO_CODIGO = 'codigo';
 const CLAVE_VISIBLE = 'visible';
@@ -150,7 +149,7 @@ export class CatalogoDetallePage {
       texto: valor.busqueda.trim() || undefined,
       estado: ESTADOS_ITEM.find((estado) => estado === valor[PARAMETRO_URL_CATALOGOS.estado]),
       origen: ORIGENES_ITEM.find((origen) => origen === valor[PARAMETRO_URL_CATALOGOS.origen]),
-      pagina: 1,
+      pagina: PRIMERA_PAGINA,
     });
   }
 
@@ -238,14 +237,17 @@ export class CatalogoDetallePage {
   }
 
   private async alCerrarPanel(resultado: ResultadoPanelAjuste | undefined): Promise<void> {
+    if (!resultado) return;
     if (resultado === 'obsoleta') {
       await this.avisarVersionObsoleta();
       return;
     }
-    if (!resultado) return;
-    const guardado = resultado === 'guardado';
-    this.avisos.toast(guardado ? 'exito' : 'info', guardado ? MENSAJES_DETALLE_CATALOGO_ADMIN.ajusteGuardado : MENSAJES_DETALLE_CATALOGO_ADMIN.sinCambios);
-    if (guardado) await this.cargarItems();
+    if (resultado === 'sin-cambios') {
+      this.avisos.toast('info', MENSAJES_DETALLE_CATALOGO_ADMIN.sinCambios);
+      return;
+    }
+    this.avisos.toast('exito', MENSAJES_DETALLE_CATALOGO_ADMIN.ajusteGuardado);
+    await this.cargarItems();
   }
 
   /** `true` si se aplicó y recargó la página; un error se avisa y no se reintenta. */
@@ -330,7 +332,7 @@ function definicionesFiltro(conOrigen: boolean): DefinicionFiltro[] {
   const estado: DefinicionFiltro = {
     clave: PARAMETRO_URL_CATALOGOS.estado,
     etiqueta: MENSAJES_DETALLE_CATALOGO_ADMIN.estado,
-    opciones: ESTADOS_ITEM.map((valor: EstadoItem) => ({ valor, etiqueta: ETIQUETAS_ESTADO_ITEM[valor] })),
+    opciones: ESTADOS_ITEM.map((valor) => ({ valor, etiqueta: ETIQUETAS_ESTADO_ITEM[valor] })),
   };
   if (!conOrigen) return [estado];
   const origen: DefinicionFiltro = {
