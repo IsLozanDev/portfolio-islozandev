@@ -89,7 +89,7 @@ describe('HTTP /v1/feriados (TR-RF-029)', () => {
     const modulo = await Test.createTestingModule({
       controllers: [FeriadosController],
       providers: [
-        { provide: ListarFeriados, useValue: { ejecutar: doble('listar', [{ ...fiestasPatrias, fechaEnAnio: '2027-07-28', editable: false }]) } },
+        { provide: ListarFeriados, useValue: { ejecutar: doble('listar', { items: [{ ...fiestasPatrias, fechaEnAnio: '2027-07-28', editable: false }], total: 1, pagina: 1, tamano: 20 }) } },
         { provide: CrearFeriado, useValue: { ejecutar: doble('crear', fiestasPatrias) } },
         { provide: ActualizarFeriado, useValue: { ejecutar: doble('actualizar', { ...fiestasPatrias, version: 1, cambiado: true }) } },
         { provide: EliminarFeriado, useValue: { ejecutar: doble('eliminar', undefined) } },
@@ -122,16 +122,22 @@ describe('HTTP /v1/feriados (TR-RF-029)', () => {
     eliminar: conSucursal(http().delete(`/v1/feriados/${FERIADO}?version=0`)),
   });
 
-  it('GET /v1/feriados?anio=2027 trae la fecha en el año y editable, en snake_case', async () => {
+  it('GET /v1/feriados?anio=2027 trae la página con la fecha en el año y editable, en snake_case', async () => {
     const respuesta = await rutas().listar;
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body).toEqual([{ ...fiestasPatriasRespuesta, fecha_en_anio: '2027-07-28', editable: false }]);
-    expect(comandos.listar).toEqual([{ anio: 2027, sucursalId: null }]);
+    expect(respuesta.body).toEqual({ items: [{ ...fiestasPatriasRespuesta, fecha_en_anio: '2027-07-28', editable: false }], total: 1, pagina: 1, tamano: 20 });
+    expect(comandos.listar).toEqual([{ anio: 2027, sucursalId: null, alcance: null, pagina: 1, tamano: 20 }]);
   });
 
-  it('GET /v1/feriados con sucursal_id la pasa al caso de uso', async () => {
-    await conSucursal(http().get(`/v1/feriados?anio=2026&sucursal_id=${CUSCO}`));
-    expect(comandos.listar).toEqual([{ anio: 2026, sucursalId: CUSCO }]);
+  it('GET /v1/feriados con sucursal_id, alcance, pagina y tamano los pasa al caso de uso', async () => {
+    await conSucursal(http().get(`/v1/feriados?anio=2026&sucursal_id=${CUSCO}&alcance=GLOBAL&pagina=3&tamano=5`));
+    expect(comandos.listar).toEqual([{ anio: 2026, sucursalId: CUSCO, alcance: 'GLOBAL', pagina: 3, tamano: 5 }]);
+  });
+
+  it.each(['tamano=101', 'tamano=0', 'pagina=0', 'alcance=REGIONAL'])('GET /v1/feriados con %s da 400 SOLICITUD_INVALIDA', async (parametro) => {
+    const respuesta = await conSucursal(http().get(`/v1/feriados?anio=2027&${parametro}`));
+    expect([respuesta.status, respuesta.body.codigo]).toEqual([400, 'SOLICITUD_INVALIDA']);
+    expect(comandos.listar).toBeUndefined();
   });
 
   it('POST /v1/feriados responde 201 con el feriado y el actor del token', async () => {

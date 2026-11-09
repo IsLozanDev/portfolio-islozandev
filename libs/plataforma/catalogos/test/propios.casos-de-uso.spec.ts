@@ -2,6 +2,7 @@ import { AjustarItem, type AjustarItemComando } from '../src/application/ajustar
 import type { ContenidoItemComando } from '../src/application/contenido-item.js';
 import { EliminarItemPropio } from '../src/application/eliminar-item-propio.js';
 import { GuardarItemPropio } from '../src/application/guardar-item-propio.js';
+import { ObtenerItemPropio } from '../src/application/obtener-item-propio.js';
 import type { Catalogo } from '../src/domain/catalogo.js';
 import {
   AlcanceNoPermiteError,
@@ -191,5 +192,40 @@ describe('AjustarItem (TR-RF-025)', () => {
 
   it('un alias vacío da ITEM_INVALIDO', async () => {
     await expect(ajustar({ alias: '' })).rejects.toThrow(ItemInvalidoError);
+  });
+});
+
+describe('ObtenerItemPropio (spec 19e)', () => {
+  let actual: Escenario;
+  let especialidad: Catalogo;
+  beforeEach(async () => {
+    actual = escenario();
+    especialidad = await actual.catalogo('ESPECIALIDAD', 'MIXTO');
+    actual.comoTenant(CLIENTE);
+  });
+
+  const obtener = (itemId: string, catalogo = 'ESPECIALIDAD') => new ObtenerItemPropio(actual.dependencias).ejecutar({ catalogo, itemId });
+
+  it('devuelve el propio con su versión y sus atributos', async () => {
+    const creado = await new GuardarItemPropio(actual.dependencias).crear({
+      catalogo: 'ESPECIALIDAD',
+      codigo: 'NUTRI',
+      ...contenido({ nombre: 'Nutrición clínica', atributos: { colegio: 'CNP' } }),
+      actorId: ANA,
+    });
+    expect(await obtener(creado.id)).toEqual({ ...creado, atributos: { colegio: 'CNP' }, version: 0 });
+  });
+
+  it('un global, uno de otro tenant, de otro catálogo o inexistente dan ITEM_NO_ENCONTRADO', async () => {
+    const medGen = await actual.itemGlobal(especialidad, 'MED_GEN');
+    await actual.catalogo('MEDIO_PAGO', 'MIXTO');
+    const propio = await new GuardarItemPropio(actual.dependencias).crear({ catalogo: 'ESPECIALIDAD', codigo: 'NUTRI', ...contenido(), actorId: ANA });
+
+    await expect(obtener(medGen.id)).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener(propio.id, 'MEDIO_PAGO')).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener('0193f3a0-0000-7000-8000-0000000dffff')).rejects.toThrow(ItemNoEncontradoError);
+    await expect(obtener(propio.id, 'NO_EXISTE')).rejects.toThrow(CatalogoNoExisteError);
+    actual.comoTenant(OTRA_CLINICA);
+    await expect(obtener(propio.id)).rejects.toThrow(ItemNoEncontradoError);
   });
 });

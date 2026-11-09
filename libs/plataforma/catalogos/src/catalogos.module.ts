@@ -30,6 +30,7 @@ import { SeguirImportacion } from './application/importacion/seguir-importacion.
 import { EVENTO_ERROR_CACHE, LectorItems } from './application/lector-items.js';
 import { ListarCatalogos } from './application/listar-catalogos.js';
 import { ObtenerItemGlobal } from './application/obtener-item-global.js';
+import { ObtenerItemPropio } from './application/obtener-item-propio.js';
 import { ListarItemsAdministracion } from './application/listar-items-administracion.js';
 import { CALENDARIO_PORT, PARAMETROS_CALENDARIO, type CalendarioPort, type ParametrosCalendario } from './application/ports/calendario.port.js';
 import { CATALOGO_PORT, type CatalogoPort } from './application/ports/catalogo.port.js';
@@ -242,6 +243,7 @@ export class CatalogosModule {
         casoDeUso(GuardarItemGlobal),
         casoDeUso(EliminarItemGlobal),
         casoDeUso(ObtenerItemGlobal),
+        casoDeUso(ObtenerItemPropio),
         casoDeUso(GuardarItemPropio),
         casoDeUso(EliminarItemPropio),
         casoDeUso(AjustarItem),

@@ -29,6 +29,7 @@ import { GuardarItemPropio } from '../application/guardar-item-propio.js';
 import { ListarCatalogos } from '../application/listar-catalogos.js';
 import { ListarItemsAdministracion, type PaginaItemsAdministracion } from '../application/listar-items-administracion.js';
 import { ObtenerItemGlobal } from '../application/obtener-item-global.js';
+import { ObtenerItemPropio } from '../application/obtener-item-propio.js';
 import { ORIGENES_ITEM, type FilaAdministracion } from '../application/ports/items-administracion.js';
 import type { ItemVisible } from '../application/ports/repositorios.js';
 import type { Actualizado, DefinicionCatalogo, ItemGuardado } from '../application/resultados.js';
@@ -144,6 +145,7 @@ export class CatalogosController {
     @Inject(GuardarItemGlobal) private readonly guardarItemGlobal: GuardarItemGlobal,
     @Inject(EliminarItemGlobal) private readonly eliminarItemGlobal: EliminarItemGlobal,
     @Inject(ObtenerItemGlobal) private readonly obtenerItemGlobal: ObtenerItemGlobal,
+    @Inject(ObtenerItemPropio) private readonly obtenerItemPropio: ObtenerItemPropio,
     @Inject(GuardarItemPropio) private readonly guardarItemPropio: GuardarItemPropio,
     @Inject(EliminarItemPropio) private readonly eliminarItemPropio: EliminarItemPropio,
     @Inject(AjustarItem) private readonly ajustarItem: AjustarItem,
@@ -218,6 +220,15 @@ export class CatalogosController {
       tamano: datos.tamano,
     });
     return paginaAdministracionDto(pagina);
+  }
+
+  @Get(':codigo/items/:id')
+  @Permiso(PERMISOS_CAT.itemPropio)
+  @ApiOkResponse({ type: ItemDto, description: 'El ítem propio con su versión y atributos, para editarlo' })
+  @ApiNotFoundResponse({ description: 'CATALOGO_NO_EXISTE o ITEM_NO_ENCONTRADO (id que no es UUID, inexistente, global, de otro tenant o de otro catálogo)' })
+  async obtenerPropio(@Param('codigo') codigo: string, @Param('id') id: string): Promise<ItemDto> {
+    const itemId = exigirUuid(id);
+    return itemDto(await this.obtenerItemPropio.ejecutar({ catalogo: codigo, itemId }));
   }
 
   @Get(':codigo/items')

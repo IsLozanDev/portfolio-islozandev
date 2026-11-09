@@ -1,7 +1,7 @@
 import { ActualizarFeriado, type ActualizarFeriadoComando } from '../src/application/feriados/actualizar-feriado.js';
 import { CrearFeriado, type CrearFeriadoComando } from '../src/application/feriados/crear-feriado.js';
 import { EliminarFeriado } from '../src/application/feriados/eliminar-feriado.js';
-import { ListarFeriados } from '../src/application/feriados/listar-feriados.js';
+import { ListarFeriados, type ListarFeriadosConsulta } from '../src/application/feriados/listar-feriados.js';
 import { VersionObsoletaError } from '../src/domain/errores.js';
 import {
   FeriadoDuplicadoError,
@@ -11,6 +11,8 @@ import {
 } from '../src/domain/feriados/errores.js';
 import { ANA, CLIENTE, OPERADOR, OperadorRequeridoDoble } from './support/dobles.js';
 import { CUSCO, GLOBALES, LIMA, escenarioFeriados, type EscenarioFeriados } from './support/dobles-feriados.js';
+
+const TAMANO_MAXIMO = 100;
 
 const comandoCrear = (cambios: Partial<CrearFeriadoComando> = {}): CrearFeriadoComando => ({
   alcance: 'TENANT',
@@ -35,7 +37,9 @@ const comandoActualizar = (feriadoId: string, cambios: Partial<ActualizarFeriado
 describe('Feriados: casos de uso (TR-RF-029)', () => {
   let actual: EscenarioFeriados;
   const crear = (cambios: Partial<CrearFeriadoComando> = {}) => new CrearFeriado(actual.dependencias).ejecutar(comandoCrear(cambios));
-  const listar = (anio: number, sucursalId: string | null = null) => new ListarFeriados(actual.dependencias).ejecutar({ anio, sucursalId });
+  const listarPagina = (anio: number, cambios: Partial<ListarFeriadosConsulta> = {}) =>
+    new ListarFeriados(actual.dependencias).ejecutar({ anio, sucursalId: null, alcance: null, pagina: 1, tamano: TAMANO_MAXIMO, ...cambios });
+  const listar = async (anio: number, sucursalId: string | null = null) => (await listarPagina(anio, { sucursalId })).items;
 
   beforeEach(() => {
     actual = escenarioFeriados();
@@ -240,6 +244,24 @@ describe('Feriados: casos de uso (TR-RF-029)', () => {
         ['2027-07-29', false],
         ['2027-10-08', false],
       ]);
+    });
+
+    it('alcance=GLOBAL solo trae globales', async () => {
+      await crear({ fecha: '2026-01-15', nombre: 'Aniversario de la clínica', recurrenteAnual: true });
+      const pagina = await listarPagina(2027, { alcance: 'GLOBAL' });
+      expect(pagina.items.map((feriado) => feriado.alcance)).toEqual(['GLOBAL', 'GLOBAL', 'GLOBAL']);
+      expect(pagina.total).toBe(3);
+    });
+
+    it('corta la página y devuelve el total antes de cortar', async () => {
+      await crear({ fecha: '2026-01-15', nombre: 'Aniversario de la clínica', recurrenteAnual: true });
+      const pagina = await listarPagina(2027, { pagina: 2, tamano: 2 });
+      expect(pagina).toMatchObject({ total: 4, pagina: 2, tamano: 2 });
+      expect(pagina.items.map((feriado) => feriado.fechaEnAnio)).toEqual(['2027-07-29', '2027-10-08']);
+    });
+
+    it('una página más allá de la última trae items vacío con el total real', async () => {
+      expect(await listarPagina(2027, { pagina: 5, tamano: 2 })).toEqual({ items: [], total: 3, pagina: 5, tamano: 2 });
     });
 
     it('otro tenant no ve los feriados del cliente', async () => {

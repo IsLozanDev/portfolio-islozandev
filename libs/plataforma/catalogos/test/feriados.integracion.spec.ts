@@ -2,7 +2,7 @@ import { uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { ActualizarFeriado } from '../src/application/feriados/actualizar-feriado.js';
 import { CrearFeriado, type CrearFeriadoComando } from '../src/application/feriados/crear-feriado.js';
 import { EliminarFeriado } from '../src/application/feriados/eliminar-feriado.js';
-import { ListarFeriados } from '../src/application/feriados/listar-feriados.js';
+import { ListarFeriados, type ListarFeriadosConsulta } from '../src/application/feriados/listar-feriados.js';
 import { VersionObsoletaError } from '../src/domain/errores.js';
 import { FeriadoDuplicadoError, FeriadoNoEncontradoError, SucursalNoEncontradaError } from '../src/domain/feriados/errores.js';
 import { crearEntornoCatalogos, OperadorRequeridoDoble, type EntornoCatalogos } from './support/entorno.js';
@@ -11,6 +11,7 @@ import { describeConDb } from './support/temp-db.js';
 // Ids de la semilla de 01f_cat_feriado.sql.
 const ANGAMOS = 'ca700000-0000-0000-00fe-000000000012';
 const FIESTAS_PATRIAS = 'ca700000-0000-0000-00fe-000000000008';
+const TAMANO_MAXIMO = 100;
 
 describeConDb('Feriados (TR-RF-029, PostgreSQL 16)', () => {
   let entorno: EntornoCatalogos;
@@ -28,7 +29,9 @@ describeConDb('Feriados (TR-RF-029, PostgreSQL 16)', () => {
       actorId,
       ...comando,
     });
-  const listar = (anio: number, sucursalId: string | null = null) => new ListarFeriados(entorno.feriados).ejecutar({ anio, sucursalId });
+  const listarPagina = (anio: number, cambios: Partial<ListarFeriadosConsulta> = {}) =>
+    new ListarFeriados(entorno.feriados).ejecutar({ anio, sucursalId: null, alcance: null, pagina: 1, tamano: TAMANO_MAXIMO, ...cambios });
+  const listar = async (anio: number, sucursalId: string | null = null) => (await listarPagina(anio, { sucursalId })).items;
 
   beforeAll(async () => {
     entorno = await crearEntornoCatalogos();
@@ -146,6 +149,15 @@ describeConDb('Feriados (TR-RF-029, PostgreSQL 16)', () => {
     expect(fechas).toEqual(expect.arrayContaining(['2027-01-01', '2027-03-25', '2027-03-26', '2027-12-25']));
     expect(fechas).not.toContain('2026-04-02');
     expect((await comoOperador(() => listar(2027))).find((feriado) => feriado.id === FIESTAS_PATRIAS)?.editable).toBe(true);
+  });
+
+  it('2027 con tamano=5 trae 5 filas y el total real; alcance=GLOBAL solo globales', async () => {
+    const todos = await comoCliente(() => listar(2027));
+    const pagina = await comoCliente(() => listarPagina(2027, { tamano: 5 }));
+    expect(pagina.items).toEqual(todos.slice(0, 5));
+    expect(pagina.total).toBe(todos.length);
+    const globales = await comoCliente(() => listarPagina(2027, { alcance: 'GLOBAL' }));
+    expect(globales.items.every((feriado) => feriado.alcance === 'GLOBAL')).toBe(true);
   });
 
   it('un tenant no ve ni borra los feriados de otro', async () => {
