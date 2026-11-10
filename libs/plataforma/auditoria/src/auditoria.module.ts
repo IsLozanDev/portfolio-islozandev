@@ -1,25 +1,63 @@
 import { Logger, Module, type DynamicModule } from '@nestjs/common';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { ALCANCE_ACTOR, DIRECTORIO_SEG, type AlcanceActor, type DirectorioSeg } from '@vitrina/plataforma/seguridad';
 import { AuditarEventoDePlataforma } from './application/auditar-evento-de-plataforma.js';
+import { ConsultarAuditoria, type DependenciasConsultaAuditoria } from './application/consultar-auditoria.js';
 import type { DependenciasRegistro } from './application/dependencias-registro.js';
 import { AUDITORIA, type AuditoriaPort } from './application/ports/auditoria.port.js';
+import { ObtenerEventoAuditoria } from './application/obtener-evento-auditoria.js';
 import { RegistrarAccesoSensible } from './application/registrar-acceso-sensible.js';
 import { RegistrarEvento } from './application/registrar-evento.js';
+import { LecturaAuditoriaTypeOrm } from './infrastructure/typeorm/lectura-auditoria.typeorm.js';
 import { RegistroAuditoriaTypeOrm } from './infrastructure/typeorm/registro-auditoria.typeorm.js';
+import { AuditoriaController } from './interface/auditoria.controller.js';
 import { AuditoriaConsumidor } from './interface/auditoria.consumidor.js';
 
 const CONTEXTO_LOG = 'Auditoria';
+const DEPENDENCIAS_CONSULTA = Symbol('DEPENDENCIAS_CONSULTA_AUDITORIA');
+type CasoDeConsulta<T> = new (dependencias: DependenciasConsultaAuditoria) => T;
+
+/** Los casos de uso de lectura reciben las mismas dependencias. */
+const deConsulta = <T>(Clase: CasoDeConsulta<T>) => ({
+  provide: Clase,
+  useFactory: (dependencias: DependenciasConsultaAuditoria) => new Clase(dependencias),
+  inject: [DEPENDENCIAS_CONSULTA],
+});
 
 // Usa los tokens de KernelInfraModule (global), que la app debe importar.
 @Module({})
 export class AuditoriaModule {
-  /** `AUDITORIA` para los casos de uso de apps/api. Global: los módulos de producto lo inyectan sin importarlo. */
+  /**
+   * `AUDITORIA` para los casos de uso de apps/api y las rutas /v1/aud (spec 20b). Global: los módulos de
+   * producto lo inyectan sin importarlo. Usa ALCANCE_ACTOR y DIRECTORIO_SEG de SeguridadModule (global).
+   */
   static registrarApi(): DynamicModule {
     return {
       module: AuditoriaModule,
       global: true,
+      controllers: [AuditoriaController],
       providers: [
+        {
+          provide: DEPENDENCIAS_CONSULTA,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            reloj: Clock,
+            alcanceActor: AlcanceActor,
+            directorio: DirectorioSeg,
+          ): DependenciasConsultaAuditoria => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            alcanceActor,
+            directorio,
+            lectura: new LecturaAuditoriaTypeOrm(unidadDeTrabajo, contexto),
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ALCANCE_ACTOR, DIRECTORIO_SEG],
+        },
+        deConsulta(ConsultarAuditoria),
+        deConsulta(ObtenerEventoAuditoria),
         {
           provide: AUDITORIA,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>

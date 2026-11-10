@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { AlsTenantContext, SystemClock, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
+import { ENTIDADES_SEG_LECTURA } from '@vitrina/plataforma/seguridad';
 import type { DependenciasRegistro } from '../../src/application/dependencias-registro.js';
 import { RegistrarAccesoSensible } from '../../src/application/registrar-acceso-sensible.js';
 import { RegistrarEvento } from '../../src/application/registrar-evento.js';
@@ -35,7 +36,10 @@ export interface FilaLeida {
   hash_recalculado: string;
 }
 
-/** Pila real del registro directo: base temporal con db/ aplicado, UoW y adaptador ORM. Con las entidades de eventos para el worker. */
+/**
+ * Pila real del registro directo: base temporal con db/ aplicado, UoW y adaptador ORM. Con las entidades de
+ * eventos para el worker y las de lectura de seg para DirectorioSeg (spec 20b).
+ */
 export interface EntornoAuditoria {
   dataSource: DataSource;
   unidadDeTrabajo: TypeOrmUnitOfWork;
@@ -50,7 +54,7 @@ export interface EntornoAuditoria {
 
 export async function crearEntornoAuditoria(): Promise<EntornoAuditoria> {
   const baseTemporal: TempDb = await createTempDb();
-  const dataSource = new DataSource({ type: 'postgres', url: baseTemporal.url, entities: [...ENTIDADES_AUDITORIA, ...ENTIDADES_EVT] });
+  const dataSource = new DataSource({ type: 'postgres', url: baseTemporal.url, entities: [...ENTIDADES_AUDITORIA, ...ENTIDADES_EVT, ...ENTIDADES_SEG_LECTURA] });
   await dataSource.initialize();
   const contexto = new AlsTenantContext();
   const unidadDeTrabajo = new TypeOrmUnitOfWork(dataSource, contexto);

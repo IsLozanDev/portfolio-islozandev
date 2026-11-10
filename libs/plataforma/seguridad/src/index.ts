@@ -121,6 +121,7 @@ export {
   type SucursalDirectorio,
   type UsuarioDirectorio,
 } from './application/ports/directorio-seg.port.js';
+export { DirectorioSegTypeOrm } from './infrastructure/typeorm/directorio-seg.typeorm.js';
 export { ConfirmacionRequeridaError } from './domain/errores.js';
 export { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 export { crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';

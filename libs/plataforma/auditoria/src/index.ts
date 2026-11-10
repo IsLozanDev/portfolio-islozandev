@@ -17,6 +17,18 @@ export {
   AccionInvalidaError,
   ActorRequeridoError,
   AuditoriaNoDisponibleError,
+  EventoAuditoriaNoEncontradoError,
+  ExportacionDemasiadoGrandeError,
+  FiltroAuditoriaInvalidoError,
   LongitudExcedidaError,
+  RangoInvalidoError,
+  SinVerificacionesError,
+  SucursalFueraDeAlcanceError,
   TicketRequeridoError,
 } from './domain/errores.js';
+
+// Consulta e integridad (spec 20b).
+export { PERMISOS_AUD } from './domain/permisos-aud.js';
+export { calcularCambios, type Cambio } from './domain/cambios.js';
+export type { FiltroAuditoria, Paginacion, TipoEventoAuditoria } from './domain/filtro-auditoria.js';
+export type { ModoVerificacion, MotivoRotura, Verificacion } from './domain/verificacion.js';
