@@ -6,6 +6,7 @@ export default {
   moduleNameMapper: {
     '^@vitrina/plataforma/kernel$': '<rootDir>/../kernel/src/index.ts',
     '^@vitrina/plataforma/kernel-infra$': '<rootDir>/../kernel-infra/src/index.ts',
+    '^@vitrina/plataforma/eventos$': '<rootDir>/../eventos/src/index.ts',
     '^@vitrina/plataforma/observabilidad-arranque$': '<rootDir>/../observabilidad-arranque/src/index.ts',
   },
   testTimeout: 30_000,

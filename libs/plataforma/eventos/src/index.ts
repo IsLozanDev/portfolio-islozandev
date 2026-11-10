@@ -17,5 +17,7 @@ export { ESTADOS_FALLIDO, type EstadoFallido, type EventoFallido } from './domai
 export { PERMISOS_EVT } from './domain/permisos-evt.js';
 export { EventosModule, type EventosApiOpciones, type EventosWorkerOpciones, type OpcionesRelay } from './eventos.module.js';
 export type { PoliticaReintentos } from './infrastructure/bullmq/politica-reintentos.js';
+export type { EstadoOutbox, LectorEstadoOutbox } from './application/ports/estado-outbox.js';
 export { ENTIDADES_EVT } from './infrastructure/typeorm/entidades.js';
+export { LectorEstadoOutboxTypeOrm } from './infrastructure/typeorm/lector-estado-outbox.typeorm.js';
 export { SuscribirEvento } from './interface/suscribir-evento.decorator.js';

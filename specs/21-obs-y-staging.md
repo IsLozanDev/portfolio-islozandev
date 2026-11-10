@@ -90,12 +90,14 @@ Historias del backlog: **E-03** (4 h) y **E-04** (4 h). Estimado: 8 h. Si se pas
 
 No hay tablas nuevas. Hay una función SQL para las métricas del outbox:
 
-### Migración `db/01e_sync_metricas.sql` (+ `db/rollback/` + `db/tests/01e_sync_metricas.test.sql`)
+### Migración `db/01h_obs_estado_outbox.sql` (+ `db/rollback/` + `db/tests/01h_obs_estado_outbox.test.sql`)
+
+El nombre del borrador (`01e_sync_metricas`) se cambió al implementar: `tools/migrar` ordena alfabéticamente y lo habría corrido antes que `01e_sync_outbox`. Toma el prefijo `01h` de OBS, después de AUD (`01g`).
 
 - `sync.estado_outbox()` `RETURNS TABLE (pendientes bigint, fallidos bigint, edad_pendiente_seg integer)`.
 - `SECURITY DEFINER`, dueño `sync_lector`, `SET search_path = ''` y `EXECUTE` solo para el rol de la app. Es el mismo patrón que `sync.read_events` (spec 11).
 - `pendientes`: filas de `sync.outbox` con `seq` mayor que el cursor de `sync.relay_cursor`.
-- `fallidos`: filas de `sync.evento_fallido` en estado `FALLIDO`.
+- `fallidos`: filas de `sync.evento_fallido` en estado `FALLIDO`. Para contarlas entre tenants, `sync_lector` recibe `SELECT` y la política `evento_fallido_metricas` (`USING (true)`, solo para ese rol).
 - `edad_pendiente_seg`: `now() - created_at` del pendiente más antiguo, o 0 si no hay pendientes.
 - SQL crudo permitido (regla 11): es una función de base de datos que agrega entre tenants.
 - Si al implementar los nombres de columnas del cursor o de `evento_fallido` no coinciden con lo que dice esta sección, se usan los reales y se corrige este texto.
@@ -189,7 +191,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
      - un error 500 llama a `ReportadorErrores` y un 404 no.
    - Verificar: `pnpm nx test observabilidad api kernel-infra seguridad`.
 5. **Métricas del outbox.**
-   - Migración `01e_sync_metricas.sql` con inverso y prueba SQL: pendientes y edad con dos tenants; un rol sin `EXECUTE` no puede llamarla.
+   - Migración `01h_obs_estado_outbox.sql` con inverso y prueba SQL: pendientes y edad con dos tenants; un rol sin `EXECUTE` no puede llamarla.
    - `LectorEstadoOutbox` en `eventos` (adaptador TypeORM que llama a la función) y `registrarMetricasOutbox` en el worker. Medidores `vitrina_outbox_pendientes`, `vitrina_outbox_fallidos` y `vitrina_outbox_edad_pendiente_seg`.
    - Verificar: `pnpm nx test migrar eventos worker`, y `db:up` / `db:down` / `db:up` en CI.
 6. **Imágenes.**
