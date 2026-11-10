@@ -9,7 +9,7 @@ interface Manifiesto {
 }
 
 /** Lo que el spec 18b agrega al manifiesto PLAT 1.8.0. */
-describe('Manifiesto PLAT 1.14.0: exportación de la bitácora (spec 18b)', () => {
+describe('Manifiesto PLAT 1.15.0: exportación de la bitácora (spec 18b)', () => {
   let manifiesto: Manifiesto;
   const exportar = PERMISOS_SEG.seguridadBitacoraExportar;
   const conPermiso = () => manifiesto.roles_predefinidos.filter((rol) => rol.permisos.includes(exportar)).map((rol) => rol.codigo).sort();
@@ -19,7 +19,7 @@ describe('Manifiesto PLAT 1.14.0: exportación de la bitácora (spec 18b)', () =
   });
 
   it('declara plat.seguridad.bitacora_exportar con alcance TENANT y sensible (TR-RN-009, TR-RN-047)', () => {
-    expect(manifiesto.version).toBe('1.14.0');
+    expect(manifiesto.version).toBe('1.15.0');
     expect(manifiesto.permisos.find((permiso) => permiso.codigo === exportar)).toEqual({
       codigo: exportar,
       descripcion: 'Exportar la bitácora de seguridad a Excel',

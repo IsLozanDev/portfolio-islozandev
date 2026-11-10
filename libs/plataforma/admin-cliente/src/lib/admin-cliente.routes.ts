@@ -136,6 +136,16 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     loadComponent: () => import('./pages/soporte-aprobar/soporte-aprobar.page').then((modulo) => modulo.SoporteAprobarPage),
   },
   {
+    path: 'auditoria',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.auditoriaConsultar)],
+    loadComponent: () => import('./pages/auditoria-lista/auditoria-lista.page').then((modulo) => modulo.AuditoriaListaPage),
+  },
+  {
+    path: 'auditoria/:eventoId',
+    canMatch: [permisoGuard(PERMISOS_ADMIN.auditoriaConsultar)],
+    loadComponent: () => import('./pages/auditoria-detalle/auditoria-detalle.page').then((modulo) => modulo.AuditoriaDetallePage),
+  },
+  {
     path: 'catalogos',
     canMatch: [permisoGuard(PERMISOS_CATALOGO_TENANT)],
     loadComponent: () => import('./pages/catalogos-lista/catalogos-lista.page').then((modulo) => modulo.CatalogosListaPage),

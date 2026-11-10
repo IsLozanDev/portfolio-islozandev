@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -16,6 +16,7 @@
     { "codigo": "plat.seguridad.usuarios", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Usuarios", "ruta": "/admin/usuarios", "icono": "person_add", "orden": 4, "permisos": ["plat.usuario.invitar"] },
     { "codigo": "plat.seguridad.bitacora", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Bitácora", "ruta": "/admin/bitacora", "icono": "history", "orden": 5, "permisos": ["plat.seguridad.bitacora"] },
     { "codigo": "plat.seguridad.soporte", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Soporte", "ruta": "/admin/soporte", "icono": "support_agent", "orden": 6, "permisos": ["plat.soporte.autorizar"] },
+    { "codigo": "plat.seguridad.auditoria", "modulo": "seguridad", "padre": "plat.seguridad", "nombre": "Auditoría", "ruta": "/admin/auditoria", "icono": "fact_check", "orden": 7, "permisos": ["plat.auditoria.consultar"] },
     { "codigo": "plat.configuracion", "modulo": "configuracion", "padre": null, "nombre": "Configuración", "icono": "settings", "orden": 2, "permisos": [] },
     { "codigo": "plat.configuracion.parametros", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Parámetros", "ruta": "/admin/parametros", "icono": "tune", "orden": 1, "permisos": ["plat.parametro.leer"] },
     { "codigo": "plat.configuracion.series", "modulo": "configuracion", "padre": "plat.configuracion", "nombre": "Series", "ruta": "/admin/series", "icono": "format_list_numbered", "orden": 2, "permisos": ["plat.serie.gestionar"] },

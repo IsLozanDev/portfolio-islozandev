@@ -17,6 +17,9 @@ export const PARAMETRO_URL_AUDITORIA = {
   personaTitularId: 'persona_titular_id',
 } as const;
 
+/** Clave del `state` de la navegación con la que el detalle vuelve a la lista con sus filtros. */
+export const ESTADO_RETORNO_AUDITORIA = 'retornoAuditoria';
+
 /** Un `tipo` fuera del catálogo y un `usuario` de 1 carácter se ignoran; un rango incompleto toma la última semana. */
 export function filtroAuditoriaDesdeUrl(parametros: ParamMap, ahora: Date): FiltroAuditoria {
   const tipo = parametros.get(PARAMETRO_URL_AUDITORIA.tipo) ?? '';

@@ -11,7 +11,7 @@ interface Manifiesto {
   roles_predefinidos: { codigo: string; permisos: string[] }[];
 }
 
-describe('Manifiesto PLAT 1.14.0: parte de aud (spec 20b)', () => {
+describe('Manifiesto PLAT 1.15.0: parte de aud (spec 20b)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (rol: string) => manifiesto.roles_predefinidos.find((predefinido) => predefinido.codigo === rol)?.permisos ?? [];
 
@@ -19,8 +19,8 @@ describe('Manifiesto PLAT 1.14.0: parte de aud (spec 20b)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.14.0', () => {
-    expect(manifiesto.version).toBe('1.14.0');
+  it('está en la versión 1.15.0', () => {
+    expect(manifiesto.version).toBe('1.15.0');
   });
 
   it('declara PERMISOS_AUD con alcance mínimo SUCURSAL; exportar es sensible (TR-RN-009)', () => {
@@ -36,7 +36,18 @@ describe('Manifiesto PLAT 1.14.0: parte de aud (spec 20b)', () => {
     expect(permisosDe('PLAT_PROPIETARIO')).toEqual(expect.arrayContaining(Object.values(PERMISOS_AUD)));
   });
 
-  it('sin opción de menú de auditoría (la suma el 20c)', () => {
-    expect(manifiesto.opciones.filter((opcion) => opcion.permisos.some((permiso) => permiso.startsWith('plat.auditoria.')))).toEqual([]);
+  it('«Seguridad > Auditoría» abre /admin/auditoria con plat.auditoria.consultar (spec 20c)', () => {
+    expect(manifiesto.opciones.filter((opcion) => opcion.permisos.some((permiso) => permiso.startsWith('plat.auditoria.')))).toEqual([
+      {
+        codigo: 'plat.seguridad.auditoria',
+        modulo: 'seguridad',
+        padre: 'plat.seguridad',
+        nombre: 'Auditoría',
+        ruta: '/admin/auditoria',
+        icono: 'fact_check',
+        orden: 7,
+        permisos: [PERMISOS_AUD.consultar],
+      },
+    ]);
   });
 });
