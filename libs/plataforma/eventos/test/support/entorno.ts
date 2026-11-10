@@ -117,6 +117,9 @@ export function citaCreada(cambios: Partial<EventoEntregado> = {}): EventoEntreg
     payload: { cita_id: 'c-1' },
     schemaVersion: 1,
     occurredAt: new Date().toISOString(),
+    actorId: null,
+    ip: null,
+    traceId: null,
     ...cambios,
   };
 }

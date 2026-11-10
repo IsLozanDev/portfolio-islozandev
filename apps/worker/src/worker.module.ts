@@ -1,5 +1,6 @@
 import { Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
+import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
@@ -45,6 +46,7 @@ export class WorkerModule {
           reintentos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
           concurrencia: config.EVT_CONCURRENCIA,
         }),
+        AuditoriaModule.registrarWorker(),
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
         ImportacionesModule.register({ redisUrl: config.REDIS_URL }),

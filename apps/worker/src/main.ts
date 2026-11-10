@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
+import { ENTIDADES_AUDITORIA } from '@vitrina/plataforma/auditoria';
 import { ENTIDADES_CAT } from '@vitrina/plataforma/catalogos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { ENTIDADES_ORG } from '@vitrina/plataforma/org';
@@ -11,7 +12,7 @@ import { WorkerModule } from './worker.module.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_CFG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE] });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_CFG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA] });
 await dataSource.initialize();
 
 // Sin HTTP: relay del outbox, consumidores, tarea diaria de vencimientos, vencimiento de soporte cada minuto e importaciones de catálogos. SIGTERM detiene el ciclo y espera los trabajos en curso.

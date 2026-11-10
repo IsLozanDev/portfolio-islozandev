@@ -97,6 +97,9 @@ export interface FilaOutbox {
   payload: unknown;
   schemaVersion: number;
   occurredAt: Date;
+  actorId: string | null;
+  ip: string | null;
+  traceId: string | null;
 }
 
 /** Solo lectura: escribe el outbox `OutboxPublisher` de kernel-infra. */
@@ -117,6 +120,9 @@ export const OutboxEntidad = new EntitySchema<FilaOutbox>({
     payload: { type: 'jsonb' },
     schemaVersion: { name: 'schema_version', type: 'smallint' },
     occurredAt: { name: 'occurred_at', type: 'timestamptz' },
+    actorId: { name: 'actor_id', type: 'uuid', nullable: true },
+    ip: { type: 'inet', nullable: true },
+    traceId: { name: 'trace_id', type: 'varchar', length: 32, nullable: true },
   },
 });
 

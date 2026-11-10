@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -78,10 +78,12 @@ const CASOS = [
   { migracion: '01d_seq.sql', esquema: 'seq', prueba: 'tests/01d_seq.test.sql' },
   { migracion: '01e_sync_outbox.sql', esquema: 'sync', prueba: 'tests/01e_sync_outbox.test.sql' },
   { migracion: '01e_sync_relay.sql', esquema: 'sync', prueba: 'tests/01e_sync_relay.test.sql' },
+  { migracion: '01e_sync_traza.sql', esquema: 'sync', prueba: 'tests/01e_sync_traza.test.sql' },
   { migracion: '01f_cat.sql', esquema: 'cat', prueba: 'tests/01f_cat.test.sql' },
   { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
   { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
+  { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -178,6 +180,26 @@ async function inversoTiposIngresoConFilas() {
   }
 }
 
+// Con una fila en aud.evento_auditoria el inverso de 01g_aud se niega (TR-RN-028); la transacción se revierte.
+async function inversoAuditoriaConFilas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(
+      `INSERT INTO aud.evento_auditoria (id, tenant_id, tipo, origen, accion, entidad_tipo, entidad_id, ocurrido_en)
+       VALUES (gen_random_uuid(), gen_random_uuid(), 'OPERACION', 'DIRECTO', 'rest.venta.anular', 'venta', 'V-000981', now())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01g_aud.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
 const estadoMembresia = async (id) =>
   (await ejecutar(urlDb, `SELECT estado FROM seg.membresia WHERE id = '${id}'`)).rows[0]?.estado;
 
@@ -194,6 +216,16 @@ const objetosRelay = async () =>
        ORDER BY 1`,
     )
   ).rows.map((r) => r.o);
+
+// Columnas que agrega 01e_sync_traza a sync.outbox (3 en total).
+const columnasTraza = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name AS c FROM information_schema.columns
+        WHERE table_schema = 'sync' AND table_name = 'outbox' AND column_name IN ('actor_id', 'ip', 'trace_id') ORDER BY 1`,
+    )
+  ).rows.map((r) => r.c);
 
 // Tabla, funciones y marca en cat.subir_version_global() que agrega 01f_cat_importacion (7 en total).
 const objetosImportacion = async () =>
@@ -287,6 +319,14 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01g_aud se niega con filas; sin filas borra aud y se puede reaplicar.
+    expect(await inversoAuditoriaConFilas()).toBe('55006');
+    expect(await existeEsquema('aud')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01g_aud.sql'), 'utf8'));
+    expect(await existeEsquema('aud')).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01g_aud.sql'), 'utf8'));
+    expect(await existeEsquema('aud')).toBe(true);
+
     // El inverso de 01f_cat_items_busqueda deja la búsqueda en código o nombre y se puede reaplicar.
     expect(await buscaEnAtributos()).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_items_busqueda.sql'), 'utf8'));
@@ -317,6 +357,13 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01f_cat_importacion.sql'), 'utf8'));
     expect(await objetosImportacion()).toHaveLength(7);
     expect(await catalogosOficialesNuevos()).toBe(5);
+
+    // El inverso de 01e_sync_traza deja sync.outbox sin actor, IP ni trace (con datos) y se puede reaplicar.
+    expect(await columnasTraza()).toEqual(['actor_id', 'ip', 'trace_id']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01e_sync_traza.sql'), 'utf8'));
+    expect(await columnasTraza()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01e_sync_traza.sql'), 'utf8'));
+    expect(await columnasTraza()).toEqual(['actor_id', 'ip', 'trace_id']);
 
     // El inverso de 01e_sync_relay deja sync como lo dejó 01e_sync_outbox (con datos) y se puede reaplicar.
     // Va primero: evento_fallido referencia seg.usuario.

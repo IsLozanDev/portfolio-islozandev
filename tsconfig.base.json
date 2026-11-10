@@ -42,6 +42,9 @@
       "@vitrina/plataforma/eventos": [
         "./libs/plataforma/eventos/src/index.ts"
       ],
+      "@vitrina/plataforma/auditoria": [
+        "./libs/plataforma/auditoria/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

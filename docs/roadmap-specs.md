@@ -6,7 +6,7 @@ Estado: columna Estado, tomada del encabezado de cada `specs/NN-slug.md` (revisa
 
 Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`). Los specs 03, 04, 06 y 07 originales superaban el tope de 10 h y el alta de tenant dependía de componentes que se construyen después.
 
-## R0 y R1 (sprints 0 a 12): 38 specs
+## R0 y R1 (sprints 0 a 12): 40 specs
 
 | NN | Slug | Cubre | h est. | Depende de | Contexto (`spec-context/NN-*.md`) | Estado |
 |---|---|---|---|---|---|---|
@@ -41,12 +41,14 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 19c | cat-feriados-calendario | D-04, parte de RF 029: `cat.feriado` (GLOBAL/TENANT/SUCURSAL), `CalendarioPort.sumarDiasHabiles`, parámetro `plat.calendario.sabado_habil` y lista paginada de administración de ítems (pendiente del 19a) | 4-5 | 19a, 09 | 19 | Draft |
 | 19d | cat-consola-catalogos-ui | D-06, UI de RF 022, 023 y 028: consola de catálogos e ítems globales con vigencia y atributos (lib `catalogos-ui` compartida), tablas importables en solo lectura manual, importación por pasos y seguimiento global del avance en el shell con toast al terminar | 9 | 19a, 19b, 19c, 15, 15b, 15c, 15d, 17b | 19 | Draft |
 | 19e | cat-admin-propios-feriados-ui | UI de RF 025, 026 y 029 (parte de D-05 sin dueño): lib `feriados` con una página por año en las dos apps (GLOBAL en la consola; TENANT y SUCURSAL en admin) y páginas de propios y ajustes en `admin-cliente` | 8-10 | 19c, 19d, 17c | 19 | Aprobado |
-| 20 | aud-auditoria | E-01 (RF 084-086) | 5 | 07, 11 | 20 | Pendiente |
+| 20a | aud-registro-inmutable | E-01 (RF 084, 085): `aud.evento_auditoria` de solo inserción con hash SHA-256 encadenado por tenant (trigger), `AuditoriaPort` y `@Auditable` en la transacción del caso de uso, actor/IP/trace en `sync.outbox` y consumidor de eventos de ORG y suscripción | 9 | 03, 06, 11, 12 | 20 | Draft |
+| 20b | aud-consulta-integridad | E-01 (RF 086, TR-RNF-112): consulta paginada con alcance (TR-CA-213, 214), detalle, exportación XLSX auditada con aal2, permisos `plat.auditoria.consultar` y `plat.auditoria.exportar`, rol `PLAT_AUDITOR`, `VerificarIntegridad` incremental y tarea diaria en el worker | 6-7 | 06, 11, 18b, 20a | 20 | Draft |
+| 20c | aud-visor-ui | UI de RF 086 en `admin-cliente`: lista de auditoría con filtros y detalle con diferencias antes/después; exportar | 6-7 | 20b, 15, 15b, 15c, 15d, 17c | 20 | Pendiente |
 | 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 | Pendiente |
 | 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — | Pendiente |
 | 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — | Pendiente |
 | 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — | Pendiente |
-| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19a, 19b, 20 | — | Pendiente |
+| 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19a, 19b, 20a | — | Pendiente |
 | 26 | sazonpos-shell | C-07: CC-08 | 7 | 15, 24 | — | Pendiente |
 | 27 | e2e-uat-produccion-r1 | Q-01, Q-03, P-01, Q-04, P-02, P-04 | 29 | todos | — | Pendiente |
 
@@ -55,6 +57,8 @@ Paquetes de contexto nuevos (9, 10, 11, 15, 18, 19, 20, 21): `docs/spec-context/
 Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09 conservan SQL embebido en sus repositorios; migrarlos a TypeORM es un spec de refactor aparte (~6-8 h, sin número ni fecha). Los specs 10 SEQ (`FOR UPDATE`) y 20 AUD (hash encadenado) pueden justificar SQL puntual.
 
 19 se partió en 19a (núcleo), 19b (importador), 19c (feriados y calendario) y 19d (UI): el 19b original tenía 4 áreas y unas 14 h, y el importador creció con el worker, el SSE y el reporte de errores. 19b y 19c se pueden implementar en paralelo; 19d va al final porque consume las rutas de los dos. La UI se partió a su vez en 19d (consola: catálogos, ítems globales, importación y seguimiento) y 19e (feriados en las dos apps, y propios y ajustes del tenant en admin): junta llegaba a 14-16 h.
+
+20 se partió en 20a (registro, inmutabilidad, acceso sensible y consumo de eventos), 20b (consulta, exportación e integridad) y 20c (visor): con captura mixta (puerto en la transacción para productos, outbox para las libs de plataforma, que por PL-10 no importan `comp:aud`), actor en el outbox, exportación XLSX y verificación diaria llegaba a 13-15 h. 20b y 20c van en serie tras 20a.
 
 16 y 17 se partieron en 16a/16b/16c y 17a/17b/17c: el plan contaba solo las horas de front y la capa HTTP del back no existía. Longitud del motivo: se respeta lo implementado (SEG 4-300, ORG 10-500); la UI la recibe por opción en vez de fijarla. Los specs 22 a 25 y 27 superan 10 h. Al llegar a ellos se parten (por ejemplo 19: catálogos propios, tablas SUNAT y feriados; 27: E2E, UAT, producción) antes de redactar.
 
@@ -72,7 +76,7 @@ Persistencia con ORM (regla 11 de CLAUDE.md) desde el spec 10. Los specs 01 a 09
 R2: personas-identidad, archivos, fe-emisor-boleta-factura, fe-notas-contingencia, notificaciones-correo, recordatorios-preferencias, sazonpos-personas-fe, arco-incidentes.
 R3: pagos, reportes, cms, portal-cliente, soporte, obs-negocio-whatsapp.
 
-Total estimado: unos 52 specs (38 en R0 y R1, contando las particiones).
+Total estimado: unos 54 specs (40 en R0 y R1, contando las particiones).
 
 ## Olas de implementación en paralelo (worktrees)
 
@@ -80,7 +84,7 @@ Total estimado: unos 52 specs (38 en R0 y R1, contando las particiones).
 - Ola 2: 03 y 11.
 - Ola 3: 04, luego 05 y 06 en paralelo.
 - Ola 4: 07, luego 08 y 13.
-- Ola 5: 09, 10, 14, 20.
+- Ola 5: 09, 10, 14, 20a; luego 20b; luego 20c.
 - Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c, y 19e tras 19d; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
 - SazónPOS (22 a 26) y 27 al final.
 

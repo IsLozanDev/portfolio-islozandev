@@ -9,7 +9,9 @@ import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const TENANT = 'aaaaaaaa-0000-0000-0000-000000000001';
 const SEDE = 'cccccccc-0000-0000-0000-000000000003';
-const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const ACTOR = 'dddddddd-0000-0000-0000-000000000004';
+const TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736';
+const UUID_V7 =/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 const evento = (parcial: Partial<DomainEvent>): DomainEvent => ({
   eventType: 'venta.registrada',
@@ -97,6 +99,19 @@ describeConDb('OutboxPublisher (PostgreSQL 16)', () => {
     const e = evento({ aggregateId: '0190a8e0-0000-7000-8000-0000000012dd' });
     await tenants.run({ tenantId: TENANT }, () => uow.run(() => publisher.publish(e)));
     expect((await filas(e.aggregateId))[0].sede_id).toBeNull();
+  });
+
+  it('guarda actor, IP y trace del contexto', async () => {
+    const e = evento({ aggregateId: '0190a8e0-0000-7000-8000-0000000012ee' });
+    const alcance = { tenantId: TENANT, actorId: ACTOR, ip: '190.42.10.8', traceId: TRACE_ID };
+    await tenants.run(alcance, () => uow.run(() => publisher.publish(e)));
+    expect((await filas(e.aggregateId))[0]).toMatchObject({ actor_id: ACTOR, ip: '190.42.10.8', trace_id: TRACE_ID });
+  });
+
+  it('sin actor en el contexto deja actor, IP y trace nulos (sistema)', async () => {
+    const e = evento({ aggregateId: '0190a8e0-0000-7000-8000-0000000012ff' });
+    await tenants.run({ tenantId: TENANT }, () => uow.run(() => publisher.publish(e)));
+    expect((await filas(e.aggregateId))[0]).toMatchObject({ actor_id: null, ip: null, trace_id: null });
   });
 
   it('publish fuera de UnitOfWork.run lanza NoActiveTransactionError', async () => {

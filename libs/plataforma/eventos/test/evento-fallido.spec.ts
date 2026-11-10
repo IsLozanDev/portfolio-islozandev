@@ -21,6 +21,9 @@ const CITA_CREADA: EventoEntregado = {
   payload: { paciente: 'no debe copiarse' },
   schemaVersion: 1,
   occurredAt: AHORA.toISOString(),
+  actorId: null,
+  ip: null,
+  traceId: null,
 };
 
 const registrar = (cambios: Partial<DatosFallo> = {}): EventoFallido =>
