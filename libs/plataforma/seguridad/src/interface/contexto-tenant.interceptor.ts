@@ -28,13 +28,12 @@ export class ContextoTenantInterceptor implements NestInterceptor {
 }
 
 function alcanceDeSolicitud({ principal, contexto, ip, headers }: SolicitudConOrigen): TenantScope | null {
-  const tenantId = principal?.tenantId;
-  if (!principal || !tenantId) return null;
+  if (!principal?.tenantId) return null;
   const ipCliente = ipLegible(ip || null);
   const traceparent = headers['traceparent'];
   const traceId = traceIdDeTraceparent(typeof traceparent === 'string' ? traceparent : undefined);
   return {
-    tenantId,
+    tenantId: principal.tenantId,
     actorId: principal.usuarioId,
     ...(contexto ? { branchId: contexto.sucursalId } : {}),
     ...(ipCliente ? { ip: ipCliente } : {}),

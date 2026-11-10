@@ -52,12 +52,12 @@ export class AuditableInterceptor implements NestInterceptor {
     @Inject(AUDITORIA) private readonly auditoria: AuditoriaPort,
   ) {}
 
-  intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const opciones = this.reflector.get<OpcionesAuditable>(METADATO_AUDITABLE, ctx.getHandler());
-    const solicitud = ctx.switchToHttp().getRequest<SolicitudAuditable>();
-    // next.handle() dentro de run: el handler corre en la transacción abierta aquí.
+  intercept(contexto: ExecutionContext, siguiente: CallHandler): Observable<unknown> {
+    const opciones = this.reflector.get<OpcionesAuditable>(METADATO_AUDITABLE, contexto.getHandler());
+    const solicitud = contexto.switchToHttp().getRequest<SolicitudAuditable>();
+    // siguiente.handle() dentro de run: el handler corre en la transacción abierta aquí.
     const ejecucion = this.unidadDeTrabajo.run(async () => {
-      const respuesta = await lastValueFrom(next.handle(), { defaultValue: undefined });
+      const respuesta = await lastValueFrom(siguiente.handle(), { defaultValue: undefined });
       await this.auditoria.registrar({
         accion: opciones.accion,
         entidadTipo: opciones.entidadTipo,

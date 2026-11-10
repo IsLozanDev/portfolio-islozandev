@@ -57,9 +57,9 @@ describeConDb('@Auditable (spec 20a)', () => {
 
   it('200: deja la fila con acción, entidad, después, motivo, usuario, sucursal e IP, y la anulación confirmada', async () => {
     const id = await nuevaVenta();
-    const res = await http().post(`/ventas/${id}/anular`).send({ motivo: 'cliente desistió' });
+    const respuesta = await http().post(`/ventas/${id}/anular`).send({ motivo: 'cliente desistió' });
 
-    expect(res.status).toBe(200);
+    expect(respuesta.status).toBe(200);
     expect(await estadoDe(id)).toBe('ANULADA');
     const [fila] = await filasDe(id);
     expect(fila).toMatchObject({
@@ -85,19 +85,19 @@ describeConDb('@Auditable (spec 20a)', () => {
 
   it('si el handler lanza, no hay fila ni cambio de negocio', async () => {
     const id = await nuevaVenta(VENTA_QUE_FALLA);
-    const res = await http().post(`/ventas/${id}/anular`).send({ motivo: 'x' });
+    const respuesta = await http().post(`/ventas/${id}/anular`).send({ motivo: 'x' });
 
-    expect(res.status).toBe(409);
+    expect(respuesta.status).toBe(409);
     expect(await estadoDe(id)).toBe('EMITIDA');
     expect(await filasDe(id)).toHaveLength(0);
   });
 
   it('si la inserción de auditoría falla: 503 AUDITORIA_NO_DISPONIBLE y la anulación no quedó', async () => {
     const id = await nuevaVenta();
-    const res = await http().post(`/ventas/${id}/anular-sin-auditoria`).send({});
+    const respuesta = await http().post(`/ventas/${id}/anular-sin-auditoria`).send({});
 
-    expect(res.status).toBe(503);
-    expect(res.body.codigo).toBe('AUDITORIA_NO_DISPONIBLE');
+    expect(respuesta.status).toBe(503);
+    expect(respuesta.body.codigo).toBe('AUDITORIA_NO_DISPONIBLE');
     expect(await estadoDe(id)).toBe('EMITIDA');
     expect(await filasDe(id)).toHaveLength(0);
   });
