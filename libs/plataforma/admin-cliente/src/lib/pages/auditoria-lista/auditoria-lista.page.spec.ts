@@ -11,6 +11,7 @@ import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { MENSAJES_AUDITORIA } from '../../models/mensajes-auditoria';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
+import { ESTADO_RETORNO_AUDITORIA } from '../../utils/filtro-url-auditoria';
 import { AuditoriaListaPage } from './auditoria-lista.page';
 
 const URL_EVENTOS = `${API_URL}/aud/eventos`;
@@ -212,6 +213,22 @@ describe('AuditoriaListaPage (spec 20c)', () => {
   it('el detalle se abre desde la fila', async () => {
     await responder(await abrir(OCTUBRE), { items: [anulacionDeRosa(1)], total: 1 });
     expect(elemento().querySelector('tr[mat-row] a')?.getAttribute('href')).toBe('/admin/auditoria/e-1');
+  });
+
+  it('al abrir el detalle lleva la URL de la lista con los filtros aplicados después de entrar', async () => {
+    await responder(await abrir(OCTUBRE), { items: [], total: 0 });
+    const accion = elemento().querySelector<HTMLInputElement>('[data-campo="accion"]');
+    accion!.value = 'rest.venta.anular';
+    accion!.dispatchEvent(new Event('input'));
+    accion!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await estable();
+    await responder(esperarLista(), { items: [anulacionDeRosa(1)], total: 1 });
+
+    elemento().querySelector<HTMLAnchorElement>('tr[mat-row] a')?.click();
+    await estable();
+
+    const router = TestBed.inject(Router);
+    expect(router.lastSuccessfulNavigation()?.extras.state).toEqual({ [ESTADO_RETORNO_AUDITORIA]: `${OCTUBRE}&accion=rest.venta.anular` });
   });
 
   describe('Exportar', () => {

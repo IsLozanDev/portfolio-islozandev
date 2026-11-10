@@ -12,7 +12,8 @@ export const MENSAJES_AUDITORIA = {
   hasta: 'Hasta',
   buscarUsuario: 'Buscar por correo o nombre',
   accion: 'Acción',
-  ejemploAccion: 'producto.recurso.accion',
+  /** La densidad −4 oculta el `mat-label`: el campo se explica con el placeholder, como `vit-filtros`. */
+  placeholderAccion: 'Acción (p. ej. rest.venta.anular)',
   sucursal: 'Sucursal',
   todasLasSucursales: 'Todas',
   tipo: 'Tipo',

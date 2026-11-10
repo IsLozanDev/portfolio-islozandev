@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink, type UrlTree } from '@angular/router';
 import { CargandoComponent, ChipEstadoComponent } from '@vitrina/shared/ui';
 import { aErrorAdmin, CODIGO_NO_ENCONTRADO } from '../../models/error-admin';
-import type { EventoAuditoriaDetalle } from '../../models/evento-auditoria';
+import type { CambioAuditoria, EventoAuditoriaDetalle } from '../../models/evento-auditoria';
 import { ETIQUETAS_FINALIDAD, ETIQUETAS_TIPO_AUDITORIA, MENSAJES_AUDITORIA, TONOS_TIPO_AUDITORIA } from '../../models/mensajes-auditoria';
 import { AuditoriaCliente } from '../../services/auditoria.cliente';
 import { formatearFechaHora } from '../../utils/formato';
@@ -96,7 +96,7 @@ function mensajeDeError(error: unknown): string {
   return noEncontrado ? MENSAJES_AUDITORIA.eventoNoEncontrado : errorAdmin.message;
 }
 
-function cambioLegible(cambio: { campo: string; antes: unknown; despues: unknown }): CambioLegible {
+function cambioLegible(cambio: CambioAuditoria): CambioLegible {
   return { campo: cambio.campo, antes: textoDeValor(cambio.antes), despues: textoDeValor(cambio.despues) };
 }
 
@@ -106,12 +106,12 @@ function jsonLegible(valor: unknown): string {
 
 function datosOpcionales(evento: EventoAuditoriaDetalle | null): DatoOpcional[] {
   if (!evento) return [];
-  const candidatos: [string, string, string | null][] = [
-    ['motivo', MENSAJES_AUDITORIA.motivo, evento.motivo],
-    ['finalidad', MENSAJES_AUDITORIA.finalidad, evento.finalidad ? ETIQUETAS_FINALIDAD[evento.finalidad] : null],
-    ['ticket', MENSAJES_AUDITORIA.ticket, evento.ticket],
-    ['titular', MENSAJES_AUDITORIA.titular, evento.personaTitularId],
-    ['ip', MENSAJES_AUDITORIA.ip, evento.ip],
+  const candidatos: { clave: string; etiqueta: string; valor: string | null }[] = [
+    { clave: 'motivo', etiqueta: MENSAJES_AUDITORIA.motivo, valor: evento.motivo },
+    { clave: 'finalidad', etiqueta: MENSAJES_AUDITORIA.finalidad, valor: evento.finalidad ? ETIQUETAS_FINALIDAD[evento.finalidad] : null },
+    { clave: 'ticket', etiqueta: MENSAJES_AUDITORIA.ticket, valor: evento.ticket },
+    { clave: 'titular', etiqueta: MENSAJES_AUDITORIA.titular, valor: evento.personaTitularId },
+    { clave: 'ip', etiqueta: MENSAJES_AUDITORIA.ip, valor: evento.ip },
   ];
-  return candidatos.filter((candidato): candidato is [string, string, string] => Boolean(candidato[2])).map(([clave, etiqueta, valor]) => ({ clave, etiqueta, valor }));
+  return candidatos.filter((candidato): candidato is DatoOpcional => Boolean(candidato.valor));
 }

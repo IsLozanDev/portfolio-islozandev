@@ -3,8 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
-import { DateAdapter, MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
-import { MatDatepickerIntl, MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -23,15 +22,14 @@ import {
   type ValorFiltros,
 } from '@vitrina/shared/ui';
 import { FranjaIntegridadComponent } from '../../components/franja-integridad/franja-integridad.component';
+import { provideFechaPeru } from '../../config/provide-fecha-peru';
 import { aErrorAdmin, CODIGO_MFA_REQUERIDA, type ErrorAdmin } from '../../models/error-admin';
 import { TIPOS_EVENTO_AUDITORIA, type EventoAuditoria, type FiltroAuditoria, type TipoEventoAuditoria } from '../../models/evento-auditoria';
 import type { Listado } from '../../models/listado';
 import { COLUMNAS_AUDITORIA, ETIQUETAS_TIPO_AUDITORIA, MENSAJES_AUDITORIA, TONOS_TIPO_AUDITORIA } from '../../models/mensajes-auditoria';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import type { EstadoFranja } from '../../models/verificacion-integridad';
-import { AdaptadorFechaPeru } from '../../services/adaptador-fecha-peru.service';
 import { AuditoriaCliente } from '../../services/auditoria.cliente';
-import { CalendarioEnEspanol } from '../../services/calendario-en-espanol.service';
 import { descargarArchivo } from '../../utils/descarga';
 import {
   accionNormalizada,
@@ -43,8 +41,6 @@ import {
 import { LONGITUD_MINIMA_USUARIO } from '../../utils/filtro-url-bitacora';
 import { formatearFechaHora } from '../../utils/formato';
 import { fechaCalendario } from '../../utils/formulario-asignacion';
-
-const LOCALE_PERU = 'es-PE';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaAuditoria {
@@ -92,12 +88,7 @@ const DEFINICION_TIPO: DefinicionFiltro = {
     TablaComponent,
     FranjaIntegridadComponent,
   ],
-  providers: [
-    provideNativeDateAdapter(),
-    { provide: DateAdapter, useClass: AdaptadorFechaPeru },
-    { provide: MAT_DATE_LOCALE, useValue: LOCALE_PERU },
-    { provide: MatDatepickerIntl, useClass: CalendarioEnEspanol },
-  ],
+  providers: [provideFechaPeru()],
   templateUrl: './auditoria-lista.page.html',
 })
 export class AuditoriaListaPage {
@@ -124,7 +115,11 @@ export class AuditoriaListaPage {
   });
   protected readonly accion = new FormControl(this.filtro().accion ?? '', { nonNullable: true });
   protected readonly filtroEntidad = computed(() => textoEntidad(this.filtro()));
-  protected readonly estadoRetorno = computed(() => ({ [ESTADO_RETORNO_AUDITORIA]: this.router.url }));
+  /** La URL de la lista con los filtros vigentes; sale de `filtro` y no de `router.url`, que no es una signal. */
+  protected readonly estadoRetorno = computed(() => {
+    const lista = this.router.createUrlTree([], { relativeTo: this.ruta, queryParams: filtroAuditoriaParaUrl(this.filtro()) });
+    return { [ESTADO_RETORNO_AUDITORIA]: this.router.serializeUrl(lista) };
+  });
   protected readonly listado = signal<Listado<FilaAuditoria>>({ items: [], total: 0 });
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);

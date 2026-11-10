@@ -60,6 +60,7 @@ describe('FranjaIntegridadComponent (spec 20c)', () => {
     expect(franja()?.classList).toContain('vit-destructivo');
     expect(franja()?.textContent).toContain('Cadena rota en el evento N.º 17906');
     expect(franja()?.textContent).toContain('el contenido no coincide con su hash');
+    expect(franja()?.textContent?.trim()).not.toMatch(/\.\.$/);
     expect(franja()?.querySelector('mat-icon')?.textContent).toBe('gpp_bad');
   });
 

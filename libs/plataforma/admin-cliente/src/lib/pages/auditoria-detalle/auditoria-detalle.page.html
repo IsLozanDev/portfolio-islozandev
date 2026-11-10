@@ -102,11 +102,12 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="min-w-0">
             <span class="text-sm text-sobre-superficie-variante">{{ mensajes.antes }}</span>
-            <pre class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="antes">{{ jsonAntes() }}</pre>
+            <!-- tabindex: el bloque se desplaza en horizontal y debe poder recorrerse con el teclado. -->
+            <pre tabindex="0" class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="antes" [attr.aria-label]="mensajes.jsonCompleto + ': ' + mensajes.antes">{{ jsonAntes() }}</pre>
           </div>
           <div class="min-w-0">
             <span class="text-sm text-sobre-superficie-variante">{{ mensajes.despues }}</span>
-            <pre class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="despues">{{ jsonDespues() }}</pre>
+            <pre tabindex="0" class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="despues" [attr.aria-label]="mensajes.jsonCompleto + ': ' + mensajes.despues">{{ jsonDespues() }}</pre>
           </div>
         </div>
       </ng-template>

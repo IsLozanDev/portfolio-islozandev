@@ -25,21 +25,21 @@
       <mat-date-range-picker #calendarioRango />
     </mat-form-field>
 
-    <mat-form-field class="w-full sm:w-64" subscriptSizing="dynamic">
-      <mat-label>{{ mensajes.accion }}</mat-label>
+    <mat-form-field class="w-full sm:w-72" appearance="outline" subscriptSizing="dynamic">
       <input
         matInput
-        class="font-mono"
         data-campo="accion"
         [formControl]="accion"
-        [placeholder]="mensajes.ejemploAccion"
+        [placeholder]="mensajes.placeholderAccion"
+        [attr.aria-label]="mensajes.accion"
         (keydown.enter)="aplicarAccion()"
         (blur)="aplicarAccion()"
       />
     </mat-form-field>
 
+    <!-- Con menos de 32rem libres la búsqueda se aplasta: baja a su propia fila. -->
     <vit-filtros
-      class="min-w-0 flex-1"
+      class="min-w-0 grow basis-[32rem]"
       [definiciones]="filtros"
       [placeholderBusqueda]="mensajes.buscarUsuario"
       [valorInicial]="valorInicialFiltros"
