@@ -40,6 +40,7 @@ const casos = [
   ['observabilidad (comp:obs) no importa de seguridad', `${PLAT}/observabilidad/src/probe.ts`, "import '@vitrina/plataforma/seguridad';", { regla: BOUNDARIES, mensaje: /comp:obs/ }],
   ['observabilidad (comp:obs) no importa de comp:aud', `${PLAT}/observabilidad/src/probe.ts`, "import '@vitrina/plataforma/auditoria';", { regla: BOUNDARIES, mensaje: /comp:obs/ }],
   ['observabilidad (comp:obs) importa de kernel, kernel-infra y eventos', `${PLAT}/observabilidad/src/probe.ts`, "import '@vitrina/plataforma/kernel'; import '@vitrina/plataforma/kernel-infra'; import '@vitrina/plataforma/eventos';", null],
+  ['observabilidad-arranque (comp:obs) no importa de seguridad', `${PLAT}/observabilidad-arranque/src/probe.ts`, "import '@vitrina/plataforma/seguridad';", { regla: BOUNDARIES, mensaje: /comp:obs/ }],
   ['comp:aud importa de comp:evt', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/evt';", null],
   ['componente solo vía index (ruta relativa a otro proyecto)', `${FX}/aud/src/probe.ts`, "import '../../evt/src/index';", { regla: BOUNDARIES, mensaje: /relative or absolute path/ }],
   // capas

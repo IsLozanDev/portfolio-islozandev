@@ -1,3 +1,4 @@
+import { esquemaAmbiente } from '@vitrina/plataforma/observabilidad-arranque';
 import { z } from 'zod';
 
 const AMBIENTES_CON_SECRETOS = ['staging', 'production'];
@@ -7,7 +8,7 @@ const SAL_LOCAL = 'sal-local-no-secreta-solo-desarrollo';
 
 /** Variables de observabilidad que valida cada app con zod; las `OTEL_*` las lee el SDK. */
 export const camposEntornoObservabilidad = {
-  APP_ENV: z.enum(['local', 'test', 'staging', 'production']).default('local'),
+  APP_ENV: esquemaAmbiente,
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   // TR-RNF-111: sal del hash de documentos en logs.
   OBS_SAL_DOCUMENTO: z.string().min(LARGO_MINIMO_SAL).optional(),

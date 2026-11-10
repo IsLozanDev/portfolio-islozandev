@@ -1,5 +1,6 @@
 import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import type { TenantContext, TenantScope } from '@vitrina/plataforma/kernel';
+import { traceIdActivo } from '@vitrina/plataforma/kernel-infra';
 import { from, lastValueFrom, type Observable } from 'rxjs';
 import { ipLegible } from '../infrastructure/origen-peticion.js';
 import type { SolicitudAutenticada } from './decoradores.js';
@@ -31,7 +32,8 @@ function alcanceDeSolicitud({ principal, contexto, ip, headers }: SolicitudConOr
   if (!principal?.tenantId) return null;
   const ipCliente = ipLegible(ip || null);
   const traceparent = headers['traceparent'];
-  const traceId = traceIdDeTraceparent(typeof traceparent === 'string' ? traceparent : undefined);
+  // Con OpenTelemetry activo, el span ya continúa el traceparent o abre uno nuevo; sin SDK queda el encabezado.
+  const traceId = traceIdActivo() ?? traceIdDeTraceparent(typeof traceparent === 'string' ? traceparent : undefined);
   return {
     tenantId: principal.tenantId,
     actorId: principal.usuarioId,

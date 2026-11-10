@@ -1,10 +1,22 @@
 import { Module, type DynamicModule } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { CatalogosModule } from '@vitrina/plataforma/catalogos';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
-import { CLOCK, ID_GENERATOR, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWork, type KernelInfraOptions } from '@vitrina/plataforma/kernel-infra';
+import {
+  CLOCK,
+  HttpExceptionFilter,
+  ID_GENERATOR,
+  KernelInfraModule,
+  REPORTADOR_ERRORES,
+  REPORTADOR_SIN_ENVIO,
+  TENANT_CONTEXT,
+  TypeOrmUnitOfWork,
+  type KernelInfraOptions,
+  type ReportadorErrores,
+} from '@vitrina/plataforma/kernel-infra';
 import { ObservabilidadModule, type ObservabilidadOpciones } from '@vitrina/plataforma/observabilidad';
 import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
@@ -78,6 +90,12 @@ export class AppModule {
         UnidadesController,
       ],
       providers: [
+        // Spec 21: los errores sin filtro propio de su lib responden sin detalle y los 5xx se reportan (Sentry).
+        {
+          provide: APP_FILTER,
+          useFactory: (reportador?: ReportadorErrores) => new HttpExceptionFilter(reportador ?? REPORTADOR_SIN_ENVIO),
+          inject: [{ token: REPORTADOR_ERRORES, optional: true }],
+        },
         {
           provide: ConsolaTenants,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, cambiarEstadoTenant: CambiarEstadoTenant) =>

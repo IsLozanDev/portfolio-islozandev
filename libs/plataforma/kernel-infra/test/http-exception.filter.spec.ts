@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { BadRequestException, type ArgumentsHost } from '@nestjs/common';
+import { BadRequestException, ServiceUnavailableException, type ArgumentsHost } from '@nestjs/common';
 import {
   ConflictError,
   EventSchemaValidationError,
@@ -9,8 +9,9 @@ import {
   ValidationError,
 } from '@vitrina/plataforma/kernel';
 import { HttpExceptionFilter } from '../src/http-exception.filter.js';
+import type { ReportadorErrores } from '../src/reportador-errores.js';
 
-function responder(error: unknown): { status: number; body: unknown } {
+function responder(error: unknown, reportador?: ReportadorErrores): { status: number; body: unknown } {
   const salida = { status: 0, body: undefined as unknown };
   const response = {
     status(code: number) {
@@ -19,7 +20,7 @@ function responder(error: unknown): { status: number; body: unknown } {
     },
   };
   const host = { switchToHttp: () => ({ getResponse: () => response }) } as unknown as ArgumentsHost;
-  new HttpExceptionFilter().catch(error, host);
+  new HttpExceptionFilter(reportador).catch(error, host);
   return salida;
 }
 
@@ -49,5 +50,29 @@ describe('HttpExceptionFilter', () => {
 
   it('una HttpException de Nest conserva su estado', () => {
     expect(responder(new BadRequestException('mal')).status).toBe(400);
+  });
+
+  describe('ReportadorErrores (spec 21)', () => {
+    const reportados = (error: unknown) => {
+      const errores: unknown[] = [];
+      responder(error, { reportar: (reportado) => void errores.push(reportado) });
+      return errores;
+    };
+
+    it('un error no controlado se reporta', () => {
+      const error = new Error('falla');
+      expect(reportados(error)).toEqual([error]);
+    });
+
+    it('una HttpException 5xx se reporta', () => {
+      expect(reportados(new ServiceUnavailableException())).toHaveLength(1);
+    });
+
+    it.each([
+      ['un 4xx de Nest', new BadRequestException('mal')],
+      ['un DomainError mapeado', new NotFoundError('no existe')],
+    ])('%s no se reporta', (_caso, error) => {
+      expect(reportados(error)).toEqual([]);
+    });
   });
 });

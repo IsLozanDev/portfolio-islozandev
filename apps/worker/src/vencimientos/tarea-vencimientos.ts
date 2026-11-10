@@ -1,6 +1,7 @@
 import type { BeforeApplicationShutdown, OnApplicationBootstrap } from '@nestjs/common';
 import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
+import { REPORTADOR_SIN_ENVIO, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import type { Clock } from '@vitrina/plataforma/kernel';
 import { fechaCalendarioDe, ZONA_VENCIMIENTOS, type ResultadoVencimientos, type RevisarVencimientos } from '@vitrina/plataforma/org';
 
@@ -33,6 +34,7 @@ export class TareaVencimientos implements OnApplicationBootstrap, BeforeApplicat
     private readonly reloj: Clock,
     private readonly informar: Informar,
     private readonly avisar: Informar,
+    private readonly reportador: ReportadorErrores = REPORTADOR_SIN_ENVIO,
   ) {
     // maxRetriesPerRequest: null lo exige BullMQ en los Worker.
     this.conexion = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -44,7 +46,10 @@ export class TareaVencimientos implements OnApplicationBootstrap, BeforeApplicat
   async onApplicationBootstrap(): Promise<void> {
     await this.cola.upsertJobScheduler(PROGRAMADOR_VENCIMIENTOS, { pattern: PATRON_VENCIMIENTOS, tz: ZONA_VENCIMIENTOS }, { name: NOMBRE_TRABAJO });
     this.trabajador = new Worker(COLA_VENCIMIENTOS, () => revisarHoy(this.revisar, this.reloj), { connection: this.conexion });
-    this.trabajador.on('failed', (_trabajo, error) => this.avisar('Tarea de vencimientos falló', { error: error.name }));
+    this.trabajador.on('failed', (_trabajo, error) => {
+      this.avisar('Tarea de vencimientos falló', { error: error.name });
+      this.reportador.reportar(error, { cola: COLA_VENCIMIENTOS });
+    });
     this.informar('Tarea de vencimientos programada', { patron: PATRON_VENCIMIENTOS, zona: ZONA_VENCIMIENTOS });
   }
 

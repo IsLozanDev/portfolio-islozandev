@@ -14,6 +14,9 @@ const alias = Object.fromEntries(
 await build({
   entryPoints: {
     main: 'apps/api/dist/tsc/main.js',
+    // Spec 21: se cargan con node --import, en este orden, antes que main.js.
+    'registrar-hooks': 'apps/api/dist/tsc/registrar-hooks.js',
+    instrumentacion: 'apps/api/dist/tsc/instrumentacion.js',
     'cli/aplicar-manifiesto': 'apps/api/dist/tsc/cli/aplicar-manifiesto.js',
     'cli/sembrar-plataforma': 'apps/api/dist/tsc/cli/sembrar-plataforma.js',
   },

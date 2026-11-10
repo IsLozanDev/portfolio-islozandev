@@ -14,8 +14,8 @@ import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
 import { opcionesCors } from './cors.js';
+import { SERVICIO } from './servicio.js';
 
-const SERVICIO = 'vitrina-api';
 const config = cargarConfig();
 const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
 

@@ -1,7 +1,7 @@
 import { Logger, Module, type DynamicModule, type Provider } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
-import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, REPORTADOR_ERRORES, TENANT_CONTEXT, TypeOrmUnitOfWork, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import {
   ProcesarVencimientosTenant,
   RepositorioAvisosTypeOrm,
@@ -55,8 +55,9 @@ export class VencimientosModule {
       ? [
           {
             provide: TareaVencimientos,
-            useFactory: (revisarVencimientos: RevisarVencimientos, reloj: Clock) => new TareaVencimientos(redisUrl, revisarVencimientos, reloj, informar, avisar),
-            inject: [RevisarVencimientos, CLOCK],
+            useFactory: (revisarVencimientos: RevisarVencimientos, reloj: Clock, reportador?: ReportadorErrores) =>
+              new TareaVencimientos(redisUrl, revisarVencimientos, reloj, informar, avisar, reportador),
+            inject: [RevisarVencimientos, CLOCK, { token: REPORTADOR_ERRORES, optional: true }],
           },
         ]
       : [];

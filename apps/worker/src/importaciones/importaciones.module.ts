@@ -2,7 +2,7 @@ import { Logger, Module, type DynamicModule, type OnModuleDestroy } from '@nestj
 import type { Redis } from 'ioredis';
 import { crearProcesarImportacion } from '@vitrina/plataforma/catalogos';
 import type { Clock, EventPublisher, TenantContext } from '@vitrina/plataforma/kernel';
-import { CLOCK, EVENT_PUBLISHER, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { CLOCK, EVENT_PUBLISHER, REPORTADOR_ERRORES, TENANT_CONTEXT, TypeOrmUnitOfWork, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import { crearClienteRedis } from '@vitrina/plataforma/seguridad';
 import { TareaImportaciones } from './tarea-importaciones.js';
 
@@ -33,9 +33,9 @@ export class ImportacionesModule {
         { provide: CierreRedisAvance, useFactory: (redis: Redis) => new CierreRedisAvance(redis), inject: [CLIENTE_REDIS_AVANCE] },
         {
           provide: TareaImportaciones,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, eventos: EventPublisher, redis: Redis) =>
-            new TareaImportaciones(redisUrl, crearProcesarImportacion({ unidadDeTrabajo, contexto, reloj, eventos, redis, avisar }), informar, avisar),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, CLIENTE_REDIS_AVANCE],
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, eventos: EventPublisher, redis: Redis, reportador?: ReportadorErrores) =>
+            new TareaImportaciones(redisUrl, crearProcesarImportacion({ unidadDeTrabajo, contexto, reloj, eventos, redis, avisar }), informar, avisar, reportador),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, CLIENTE_REDIS_AVANCE, { token: REPORTADOR_ERRORES, optional: true }],
         },
       ],
     };

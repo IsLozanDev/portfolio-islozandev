@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { trace } from '@opentelemetry/api';
 import type { Options } from 'pino-http';
 import type { TenantContext, TenantScope } from '@vitrina/plataforma/kernel';
+import { traceIdActivo } from '@vitrina/plataforma/kernel-infra';
 import { rutasRedactadas, valorCensurado } from '../domain/campos-redactados.js';
 
 export interface OpcionesLogger {
@@ -14,6 +16,7 @@ export interface OpcionesLogger {
 /** Campos de contexto del log (TR-RNF-026). Solo identificadores, nunca nombres ni correos. */
 export interface CamposContexto {
   trace_id?: string;
+  span_id?: string;
   tenant_id?: string;
   sucursal_id?: string;
   usuario_id?: string;
@@ -24,7 +27,7 @@ export function opcionesLogger({ servicio, nivel, salDocumento, contexto }: Opci
     level: nivel,
     base: { servicio },
     redact: { paths: rutasRedactadas(), censor: (valor, ruta) => valorCensurado(valor, ruta, salDocumento) },
-    mixin: () => camposContexto(alcanceActual(contexto)),
+    mixin: () => ({ ...camposContexto(alcanceActual(contexto)), ...camposTraza() }),
     serializers: { req: serializarSolicitud, res: serializarRespuesta },
     customAttributeKeys: { responseTime: 'duracion_ms' },
     // Las líneas que se escriben durante la solicitud llevan solo su id, no la solicitud completa.
@@ -49,6 +52,13 @@ export function serializarSolicitud(solicitud: IncomingMessage): { metodo?: stri
 
 function serializarRespuesta(respuesta: ServerResponse): { estado: number } {
   return { estado: respuesta.statusCode };
+}
+
+/** Con OpenTelemetry activo el span manda: cubre también el log de la solicitud, que se escribe fuera del ALS. */
+function camposTraza(): CamposContexto {
+  const traceId = traceIdActivo();
+  if (!traceId) return {};
+  return { trace_id: traceId, span_id: trace.getActiveSpan()?.spanContext().spanId };
 }
 
 // Fuera de una solicitud o tarea con tenant (arranque, relay) no hay alcance, y current() lanza.

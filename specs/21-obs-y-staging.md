@@ -110,16 +110,20 @@ src/
   application/
     ports/                    (vacío: ReportadorErrores vive en kernel-infra)
   infrastructure/
-    telemetria.ts             iniciarTelemetria({ servicio }): NodeSDK (trazas, métricas, logs OTLP) y luego Sentry
+    entorno-observabilidad.ts APP_ENV, LOG_LEVEL, OBS_SAL_DOCUMENTO (campos zod para las apps)
     logger.pino.ts            opcionesLogger(config): nivel, redact, serializadores (ruta sin query), mixin con trace_id/span_id
     reportador-errores.sentry.ts
     metricas-outbox.ts        registrarMetricasOutbox(lector): medidores observables con @opentelemetry/api
   interface/
-    observabilidad.module.ts  ObservabilidadModule.register({ servicio }): LoggerModule de nestjs-pino, interceptor global, REPORTADOR_ERRORES
-    contexto-traza.interceptor.ts  atributos del span: tenant.id, sucursal.id, usuario.id (uuid), sin correo ni nombre
+    observabilidad.module.ts  ObservabilidadModule.register({ servicio, nivel, salDocumento }), global: LoggerModule de nestjs-pino y REPORTADOR_ERRORES
+    usar-logger.ts            usarLoggerDeObservabilidad(app)
   index.ts
 test/
 ```
+
+Lib aparte `libs/plataforma/observabilidad-arranque` (`comp:obs`; ver Decisiones): `infrastructure/telemetria.ts` (`iniciarTelemetria({ servicio })`: NodeSDK con trazas, métricas y logs OTLP, y luego Sentry), `infrastructure/sentry.ts` (`iniciarSentry`, `limpiarEventoSentry`) e `infrastructure/ambiente.ts` (`esquemaAmbiente`). Cada app tiene `src/registrar-hooks.ts`, `src/instrumentacion.ts` y `src/servicio.ts`.
+
+Los atributos `tenant.id`, `sucursal.id` y `usuario.id` del span los pone `AlsTenantContext.run` (`anotarSpanActivo` en `kernel-infra`), sin correo ni nombre.
 
 - El mixin del logger agrega `trace_id`, `span_id`, `tenant_id`, `sucursal_id` y `usuario_id`, leídos del span activo y del `TenantContextPort`, cuando existen.
 - `pino-http` loguea `metodo`, `ruta` (sin query), `estado` y `duracion_ms`. Nunca loguea body ni encabezados redactados.
@@ -274,7 +278,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 
 **Observabilidad en staging:**
 
-- [ ] En Grafana Cloud se ve una traza de una solicitud autenticada de staging, con spans HTTP, Nest y `pg`, y su log correlacionado por `trace_id`.
+- [ ] En Grafana Cloud se ve una traza de una solicitud autenticada de staging, con spans HTTP y `pg`, y su log correlacionado por `trace_id`. Los spans de Nest quedan pendientes de upstream (ver Riesgos).
 - [ ] En Grafana se ven las métricas HTTP y las tres `vitrina_outbox_*`.
 - [ ] Con el worker detenido y un evento publicado, la alerta de outbox atrasado se dispara y llega el correo; al arrancar el worker se resuelve.
 - [ ] Un error 500 forzado en staging aparece en Sentry con `environment = staging`, el `trace_id` y sin body, cookies ni `Authorization`.
@@ -299,6 +303,12 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 - **Sí:** muestreo del 100 % en staging (`parentbased_traceidratio`, `1.0`). Decisión del usuario. Se baja por variable en prod.
 - **Sí:** logs a stdout (Railway los guarda) y a Grafana por el puente OTel de pino, para correlacionar con la traza. Si el puente da problemas, se queda solo stdout (primer recorte).
 - **Sí:** `ReportadorErrores` como puerto en `kernel-infra`, con no-op por defecto, para que `HttpExceptionFilter` no importe Sentry (regla 10).
+- **Sí:** `HttpExceptionFilter` pasa a ser filtro global de la api (`APP_FILTER` en `AppModule`). Decisión del usuario, tomada en el paso 4: antes no estaba registrado y los errores sin filtro propio caían en el de Nest, que escribe el stack completo. Cambia el cuerpo del 500 a `{ code: 'internal_error' }`, y los `DomainError` de controladores sin filtro propio responden su 4xx. Los filtros de cada lib siguen mandando primero.
+- **Sí:** el arranque de OpenTelemetry y Sentry vive en una lib aparte, `libs/plataforma/observabilidad-arranque` (`comp:obs`). Decisión del usuario, tomada en el paso 4. esbuild sube al principio del bundle los imports de todo el `index.ts` de `observabilidad`, que trae Nest y pino; así se cargarían antes que el SDK y quedarían sin instrumentar. La lib de arranque solo importa OTel, Sentry y zod. `observabilidad` toma de ella `esquemaAmbiente`.
+- **Sí:** dos `--import` en cada app: `registrar-hooks.js`, que registra el hook ESM de OTel (`@opentelemetry/instrumentation/hook.mjs`) solo si hay endpoint, y después `instrumentacion.js`. El hook tiene que existir antes de los imports estáticos de `instrumentacion.js`. Lo prueba un proceso real en `observabilidad-arranque/test/instrumentacion.e2e.spec.ts`.
+- **Sí:** `tenant.id`, `sucursal.id` y `usuario.id` se anotan en el span activo dentro de `AlsTenantContext.run` (`anotarSpanActivo` en `kernel-infra`) y no con un interceptor en `observabilidad`. Es el único punto donde nace el alcance, para HTTP y para tareas del worker, y no depende del orden de los interceptores globales.
+- **Sí:** las tareas del worker y los consumidores de eventos reportan solo el intento final de un trabajo que falla: BullMQ avisa `failed` en cada intento.
+- **Sí:** `pg` e `ioredis` se instrumentan con `requireParentSpan: true`: el relay y BullMQ consultan cada segundo sin solicitud de origen y llenarían la cuota.
 - **Sí:** `traceIdActivo()` en `kernel-infra` y no en `observabilidad`: `seguridad` lo necesita, y OBS va después de SEG en PL-10. Usa solo `@opentelemetry/api`, que sin SDK es no-op.
 - **Sí:** las métricas del outbox se leen con una función `SECURITY DEFINER` (`sync.estado_outbox`), por el mismo motivo que `read_events`: `FORCE RLS` impide contar entre tenants con el rol de la app.
 - **Sí:** solo métricas técnicas y una alerta (outbox atrasado). Decisión del usuario. Las reglas de producción son de P-01; TR-RF-106 a 110 (indicadores de negocio, reglas, salud por tenant) son de R3.
@@ -320,6 +330,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 | Riesgo | Mitigación |
 | --- | --- |
 | La autoinstrumentación no engancha `pg` o Nest en ESM y las trazas salen sin spans de base | Se carga con `--import`, con el hook ESM que pida la versión de OTel. La prueba del paso 4 exige el span HTTP; la verificación en staging exige el de `pg`. Si falta, se agrega `import-in-the-middle` según la documentación. |
+| `@opentelemetry/instrumentation-nestjs-core` 0.72 solo admite `@nestjs/core` < 12 (visto al implementar el paso 4): con Nest 12 no hay spans de controlador | Decisión del usuario: queda registrada y se activa sola cuando upstream admita Nest 12. Mientras tanto el span HTTP lleva la ruta, el estado y `tenant.id`. Al subir la versión de la instrumentación se revisa que aparezcan. |
 | TypeORM o el pooler de Supabase generan spans de `pg` muy ruidosos (`SET LOCAL`, `set_config`) | Se acepta en staging. Si molesta, se filtran con `requestHook` o `ignoreSpan` de la instrumentación de `pg`. |
 | El bundle de esbuild rompe la instrumentación de algún paquete | `packages: 'external'` deja `node_modules` fuera. Si un paquete instrumentado entra al bundle por alias, se declara externo. |
 | La cuota gratuita de Grafana Cloud o Sentry se agota con el 100 % de muestreo | Staging tiene poco tráfico. Se revisa el uso al cerrar el spec y se baja `OTEL_TRACES_SAMPLER_ARG` si hace falta. |

@@ -1,6 +1,7 @@
 import { Logger, Module, type DynamicModule, type Provider } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import { AuditoriaModule, VerificarTodosLosTenants } from '@vitrina/plataforma/auditoria';
+import { REPORTADOR_ERRORES, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import { TareaVerificacionIntegridad } from './tarea-verificacion.js';
 
 export interface VerificacionOpciones {
@@ -20,8 +21,9 @@ export class VerificacionModule {
     const avisar = (mensaje: string, datos: Record<string, unknown>) => logger.warn({ mensaje, ...datos });
     const tarea: Provider = {
       provide: TareaVerificacionIntegridad,
-      useFactory: (verificar: VerificarTodosLosTenants) => new TareaVerificacionIntegridad(redisUrl, patron, verificar, informar, avisar),
-      inject: [VerificarTodosLosTenants],
+      useFactory: (verificar: VerificarTodosLosTenants, reportador?: ReportadorErrores) =>
+        new TareaVerificacionIntegridad(redisUrl, patron, verificar, informar, avisar, reportador),
+      inject: [VerificarTodosLosTenants, { token: REPORTADOR_ERRORES, optional: true }],
     };
     return { module: VerificacionModule, imports: [AuditoriaModule.registrarVerificacion(dataSource)], providers: [tarea] };
   }

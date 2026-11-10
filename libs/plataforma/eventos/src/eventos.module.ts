@@ -3,7 +3,7 @@ import { DiscoveryModule, DiscoveryService, MetadataScanner } from '@nestjs/core
 import type { Redis } from 'ioredis';
 import type { DataSource } from 'typeorm';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
-import { CLOCK, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { CLOCK, ID_GENERATOR, REPORTADOR_ERRORES, TENANT_CONTEXT, TypeOrmUnitOfWork, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import { CicloRelay } from './application/ciclo-relay.js';
 import type { DependenciasEntrega } from './application/dependencias-entrega.js';
 import { DespacharLote } from './application/despachar-lote.js';
@@ -116,9 +116,15 @@ export class EventosModule {
         },
         {
           provide: ProcesoWorker,
-          useFactory: (suscripciones: RegistroSuscripcionesNest, unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>
-            crearProcesoWorker(opciones, { unidadDeTrabajo, contexto, ids, reloj, suscripciones }),
-          inject: [RegistroSuscripcionesNest, TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK],
+          useFactory: (
+            suscripciones: RegistroSuscripcionesNest,
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            ids: IdGenerator,
+            reloj: Clock,
+            reportador?: ReportadorErrores,
+          ) => crearProcesoWorker(opciones, { unidadDeTrabajo, contexto, ids, reloj, suscripciones }, reportador),
+          inject: [RegistroSuscripcionesNest, TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, { token: REPORTADOR_ERRORES, optional: true }],
         },
       ],
     };
@@ -133,7 +139,7 @@ function avisarErrorRedis(logger: Logger): (error: Error) => void {
 /** Los repositorios ORM necesitan la UoW de TypeORM, no el puerto. */
 type PiezasDelKernel = Omit<DependenciasEntrega, 'unidadDeTrabajo' | 'procesados' | 'fallidos' | 'avisar'> & { unidadDeTrabajo: TypeOrmUnitOfWork };
 
-function crearProcesoWorker(opciones: EventosWorkerOpciones, kernel: PiezasDelKernel): ProcesoWorker {
+function crearProcesoWorker(opciones: EventosWorkerOpciones, kernel: PiezasDelKernel, reportador?: ReportadorErrores): ProcesoWorker {
   const logger = new Logger(CONTEXTO_LOG);
   const alFallarRedis = avisarErrorRedis(logger);
   const conexionColas = crearConexionColas(opciones.redisUrl, alFallarRedis);
@@ -141,7 +147,7 @@ function crearProcesoWorker(opciones: EventosWorkerOpciones, kernel: PiezasDelKe
   const cola = new ColaEventosBullMQ(conexionProductor, opciones.reintentos, alFallarRedis);
   return new ProcesoWorker({
     suscripciones: kernel.suscripciones,
-    trabajadores: crearTrabajadores(opciones, kernel, conexionColas, logger),
+    trabajadores: crearTrabajadores(opciones, kernel, conexionColas, logger, reportador),
     ciclo: new CicloRelay(crearDespacho(opciones, kernel, cola, logger), opciones.relay.intervaloMs, (mensaje, datos) => logger.error({ mensaje, ...datos })),
     cola,
     conexiones: [conexionColas, conexionProductor],
@@ -163,7 +169,13 @@ function crearDespacho(opciones: EventosWorkerOpciones, kernel: PiezasDelKernel,
   );
 }
 
-function crearTrabajadores(opciones: EventosWorkerOpciones, kernel: PiezasDelKernel, conexion: Redis, logger: Logger): TrabajadoresEventos {
+function crearTrabajadores(
+  opciones: EventosWorkerOpciones,
+  kernel: PiezasDelKernel,
+  conexion: Redis,
+  logger: Logger,
+  reportador?: ReportadorErrores,
+): TrabajadoresEventos {
   const { unidadDeTrabajo, contexto } = kernel;
   const dependencias: DependenciasEntrega = {
     ...kernel,
@@ -172,6 +184,6 @@ function crearTrabajadores(opciones: EventosWorkerOpciones, kernel: PiezasDelKer
     avisar: (mensaje, datos) => logger.warn({ mensaje, ...datos }),
   };
   const entregar = new EntregarEvento(dependencias, new RegistrarFallo(dependencias));
-  return new TrabajadoresEventos({ conexion, concurrencia: opciones.concurrencia, politica: opciones.reintentos }, kernel.suscripciones, entregar);
+  return new TrabajadoresEventos({ conexion, concurrencia: opciones.concurrencia, politica: opciones.reintentos, reportador }, kernel.suscripciones, entregar);
 }
 

@@ -1,5 +1,6 @@
 import { Catch, HttpException, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
+import { REPORTADOR_SIN_ENVIO, type ReportadorErrores } from './reportador-errores.js';
 
 interface HttpResponse {
   status(code: number): { json(body: unknown): unknown };
@@ -12,14 +13,19 @@ const ESTADO_POR_ERROR: ReadonlyArray<readonly [abstract new (...args: never[]) 
   [ForbiddenError, 403],
 ];
 
+const PRIMER_ESTADO_DE_ERROR_DEL_SERVIDOR = 500;
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  constructor(private readonly reportador: ReportadorErrores = REPORTADOR_SIN_ENVIO) {}
 
   catch(error: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<HttpResponse>();
 
     if (error instanceof HttpException) {
+      if (error.getStatus() >= PRIMER_ESTADO_DE_ERROR_DEL_SERVIDOR) this.reportador.reportar(error);
       response.status(error.getStatus()).json(error.getResponse());
       return;
     }
@@ -34,6 +40,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Solo el nombre del error: mensaje y stack pueden traer datos personales (RNF-026).
     this.logger.error(`Error no controlado: ${error instanceof Error ? error.name : typeof error}`);
+    this.reportador.reportar(error);
     response.status(500).json({ statusCode: 500, code: 'internal_error', message: 'Error interno' });
   }
 }

@@ -347,6 +347,9 @@ importers:
       '@nx/web':
         specifier: 23.3.0
         version: 23.3.0(@babel/traverse@7.29.10(supports-color@7.2.0))(@nx/eslint@23.3.0(@babel/traverse@7.29.10(supports-color@7.2.0))(@zkochan/js-yaml@0.0.7)(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(nx@23.3.0)(supports-color@7.2.0))(debug@4.4.3(supports-color@7.2.0))(nx@23.3.0)(supports-color@7.2.0)
+      '@opentelemetry/context-async-hooks':
+        specifier: 3.1.1
+        version: 3.1.1(@opentelemetry/api@1.10.0)
       '@schematics/angular':
         specifier: ~21.2.28
         version: 21.2.28(chokidar@5.0.0)

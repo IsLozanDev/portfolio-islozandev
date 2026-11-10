@@ -10,10 +10,9 @@ import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
+import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
-
-const SERVICIO = 'vitrina-worker';
 
 /** Cierra la base al final: después de que EventosModule esperó los trabajos en curso (beforeApplicationShutdown). */
 class CierreBaseDeDatos implements OnApplicationShutdown {

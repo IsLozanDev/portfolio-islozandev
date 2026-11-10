@@ -15,6 +15,8 @@ describe('Cola de importaciones (spec 19b, Redis 7)', () => {
   let tarea: TareaImportaciones;
   const procesados: TrabajoImportacion[] = [];
   let alProcesar: (() => void) | null = null;
+  const reportados: { error: unknown; contexto?: Record<string, string> }[] = [];
+  const idQueFalla = randomUUID();
 
   const esperarProcesados = (cantidad: number) =>
     new Promise<void>((resolver, rechazar) => {
@@ -34,12 +36,14 @@ describe('Cola de importaciones (spec 19b, Redis 7)', () => {
       REDIS_URL,
       {
         ejecutar: async (trabajo) => {
+          if (trabajo.importacionId === idQueFalla) throw new Error('falla de prueba');
           procesados.push(trabajo);
           alProcesar?.();
         },
       },
       sinLog,
       sinLog,
+      { reportar: (error, contexto) => void reportados.push({ error, contexto }) },
     );
     await tarea.onApplicationBootstrap();
   });
@@ -63,6 +67,15 @@ describe('Cola de importaciones (spec 19b, Redis 7)', () => {
     await esperarProcesados(2);
     await new Promise((resolver) => setTimeout(resolver, 500));
     expect(procesados.filter((procesado) => procesado.importacionId === trabajo.importacionId)).toHaveLength(1);
+  });
+
+  it('un trabajo que falla en todos sus intentos se reporta una vez, con el nombre de la cola (spec 21)', async () => {
+    await abierta.cola.encolar({ ...trabajoDe(), importacionId: idQueFalla });
+    const limite = Date.now() + ESPERA_MAXIMA_MS;
+    while (reportados.length === 0 && Date.now() < limite) await new Promise((resolver) => setTimeout(resolver, 50));
+    // Un posible segundo aviso llegaría enseguida: el segundo intento no tiene espera.
+    await new Promise((resolver) => setTimeout(resolver, 500));
+    expect(reportados).toEqual([{ error: expect.objectContaining({ message: 'falla de prueba' }), contexto: { cola: 'cat-importaciones' } }]);
   });
 
   it('con Redis inaccesible encolar falla enseguida en vez de esperar', async () => {
