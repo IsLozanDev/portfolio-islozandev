@@ -23,11 +23,16 @@ export function rangoPorDefecto(ahora: Date): { desde: string; hasta: string } {
   return { desde: diaEnLima(new Date(ahora.getTime() - (DIAS_RANGO_POR_DEFECTO - 1) * MILISEGUNDOS_POR_DIA)), hasta: diaEnLima(ahora) };
 }
 
-/** Un `tipo` que no es del catálogo se ignora; un rango incompleto o mal escrito toma la última semana. */
-export function filtroBitacoraDesdeUrl(parametros: ParamMap, ahora: Date): FiltroBitacora {
+/** `desde` y `hasta` de la URL; un rango incompleto o mal escrito toma la última semana. La auditoría (spec 20c) lo reutiliza. */
+export function rangoDesdeUrl(parametros: ParamMap, ahora: Date): { desde: string; hasta: string } {
   const desde = parametros.get(PARAMETRO_URL_BITACORA.desde);
   const hasta = parametros.get(PARAMETRO_URL_BITACORA.hasta);
-  const rango = desde && hasta && FECHA.test(desde) && FECHA.test(hasta) ? { desde, hasta } : rangoPorDefecto(ahora);
+  return desde && hasta && FECHA.test(desde) && FECHA.test(hasta) ? { desde, hasta } : rangoPorDefecto(ahora);
+}
+
+/** Un `tipo` que no es del catálogo se ignora; un rango incompleto o mal escrito toma la última semana. */
+export function filtroBitacoraDesdeUrl(parametros: ParamMap, ahora: Date): FiltroBitacora {
+  const rango = rangoDesdeUrl(parametros, ahora);
   const tipo = parametros.get(PARAMETRO_URL_BITACORA.tipo);
   const usuario = parametros.get(PARAMETRO_URL_BITACORA.usuario)?.trim() ?? '';
   return {
