@@ -1,13 +1,12 @@
 import { calcularCambios, type Cambio } from '../domain/cambios.js';
 import { EventoAuditoriaNoEncontradoError } from '../domain/errores.js';
+import { FORMATO_UUID } from '../domain/filtro-auditoria.js';
 import { PERMISOS_AUD } from '../domain/permisos-aud.js';
 import { alcanceDelActor, nombresDe } from './alcance-auditoria.js';
 import { conNombres, type DependenciasConsultaAuditoria, type EventoAuditoriaListado } from './consultar-auditoria.js';
 import type { EventoAuditoriaCompleto } from './ports/lectura-auditoria.port.js';
 
 export type DetalleEventoAuditoria = EventoAuditoriaCompleto & Pick<EventoAuditoriaListado, 'usuario' | 'sucursal'> & { cambios: Cambio[] };
-
-const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Fila completa con `antes`, `despues` y sus diferencias. Fuera del alcance del actor o de otro tenant

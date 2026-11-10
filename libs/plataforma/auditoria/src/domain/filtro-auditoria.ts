@@ -36,7 +36,7 @@ export const LONGITUD_MAXIMA_ENTIDAD_ID = 80;
 
 const MILISEGUNDOS_POR_DIA = 86_400_000;
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
-const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const FORMATO_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Rango obligatorio, en orden y de hasta 92 días; ids uuid y textos dentro de sus topes. Devuelve el filtro sin espacios sobrantes en `usuario`. */
 export function validarFiltroAuditoria(filtro: FiltroAuditoria): FiltroAuditoria {

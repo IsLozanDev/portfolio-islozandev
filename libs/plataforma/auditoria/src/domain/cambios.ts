@@ -30,12 +30,13 @@ export function calcularCambios(antes: unknown, despues: unknown): Cambio[] {
  */
 function aplanar(valor: unknown): Map<string, unknown> {
   const hojas = new Map<string, unknown>();
-  if (valor === null || valor === undefined || typeof valor === 'object') {
-    if (esContenedorConElementos(valor)) recorrer(valor, '', hojas);
-    return hojas;
-  }
-  hojas.set(RUTA_RAIZ, valor);
+  if (esContenedorConElementos(valor)) recorrer(valor, '', hojas);
+  else if (esPrimitivo(valor)) hojas.set(RUTA_RAIZ, valor);
   return hojas;
+}
+
+function esPrimitivo(valor: unknown): boolean {
+  return valor !== null && valor !== undefined && typeof valor !== 'object';
 }
 
 function recorrer(valor: unknown, ruta: string, hojas: Map<string, unknown>): void {

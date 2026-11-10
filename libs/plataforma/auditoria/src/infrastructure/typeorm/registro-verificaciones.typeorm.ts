@@ -1,6 +1,6 @@
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
-import type { DataSource } from 'typeorm';
+import type { DataSource, SelectQueryBuilder } from 'typeorm';
 import type { RegistroVerificaciones, TenantsConEventos } from '../../application/ports/registro-verificaciones.port.js';
 import type { EstadoVerificacion, ModoVerificacion, MotivoRotura, PuntoDeControl, TramoVerificado, Verificacion } from '../../domain/verificacion.js';
 import { VerificacionIntegridadEntidad, type FilaVerificacionIntegridad } from './entidades.js';
@@ -27,12 +27,12 @@ export class RegistroVerificacionesTypeOrm implements RegistroVerificaciones {
   ) {}
 
   async ultimaCorrecta(): Promise<PuntoDeControl | null> {
-    const fila = await this.delTenant().andWhere('verificacion.estado = :estado', { estado: ESTADO_OK }).getOne();
+    const fila = await this.masRecienteDelTenant().andWhere('verificacion.estado = :estado', { estado: ESTADO_OK }).getOne();
     return fila ? { numero: fila.hastaNumero, hash: fila.ultimoHash } : null;
   }
 
   async ultima(): Promise<Verificacion | null> {
-    const fila = await this.delTenant().getOne();
+    const fila = await this.masRecienteDelTenant().getOne();
     return fila ? verificacionDesdeFila(fila) : null;
   }
 
@@ -60,7 +60,7 @@ export class RegistroVerificacionesTypeOrm implements RegistroVerificaciones {
   }
 
   /** Del más reciente al más antiguo, solo el primero. Filtra por tenant además de la RLS (regla 3). */
-  private delTenant() {
+  private masRecienteDelTenant(): SelectQueryBuilder<FilaVerificacionIntegridad> {
     return this.unidadDeTrabajo.manager
       .getRepository(VerificacionIntegridadEntidad)
       .createQueryBuilder('verificacion')
