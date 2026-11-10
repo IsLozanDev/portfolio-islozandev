@@ -17,6 +17,18 @@ type Columna = readonly [string, keyof EventoAuditoriaCompleto];
 /** America/Lima no tiene horario de verano: el día calendario empieza siempre a las 05:00 UTC. */
 const DESFASE_LIMA = '-05:00';
 const MILISEGUNDOS_POR_DIA = 86_400_000;
+/** Lote de la exportación: memoria acotada sin offset. */
+const TAMANO_LOTE_EXPORTACION = 1_000;
+
+/** El cursor lleva la fecha como texto: `Date` pierde los microsegundos y el keyset saltaría filas. */
+interface FilaConCursor extends EventoAuditoriaCompleto {
+  cursorFecha: string;
+}
+
+interface CursorExportacion {
+  fecha: string;
+  id: string;
+}
 
 /** Columnas de la lista: sin antes ni despues, que pueden llegar a 64 KB cada una. */
 const COLUMNAS_RESUMEN: readonly Columna[] = [
@@ -68,6 +80,33 @@ export class LecturaAuditoriaTypeOrm implements LecturaAuditoria {
     const consulta = conAlcance(this.delTenant().andWhere('evento.id = :id', { id }), alcance);
     const fila = await conColumnas(consulta, COLUMNAS_DETALLE).getRawOne<EventoAuditoriaCompleto>();
     return fila ?? null;
+  }
+
+  contar(filtro: FiltroResuelto): Promise<number> {
+    return this.filtrados(filtro).getCount();
+  }
+
+  async recorrer(filtro: FiltroResuelto, alLote: (eventos: EventoAuditoriaCompleto[]) => Promise<void>): Promise<void> {
+    let cursor: CursorExportacion | null = null;
+    for (;;) {
+      const filas = await this.loteExportado(filtro, cursor);
+      if (filas.length === 0) return;
+      await alLote(filas);
+      if (filas.length < TAMANO_LOTE_EXPORTACION) return;
+      const ultima = filas[filas.length - 1];
+      cursor = { fecha: ultima.cursorFecha, id: ultima.id };
+    }
+  }
+
+  private loteExportado(filtro: FiltroResuelto, cursor: CursorExportacion | null): Promise<FilaConCursor[]> {
+    const consulta = conColumnas(this.filtrados(filtro), COLUMNAS_DETALLE).addSelect('CAST(evento.ocurridoEn AS text)', 'cursorFecha');
+    if (cursor) {
+      consulta.andWhere('(evento.ocurridoEn, evento.id) < (CAST(:fechaCursor AS timestamptz), CAST(:idCursor AS uuid))', {
+        fechaCursor: cursor.fecha,
+        idCursor: cursor.id,
+      });
+    }
+    return consulta.orderBy('evento.ocurridoEn', 'DESC').addOrderBy('evento.id', 'DESC').limit(TAMANO_LOTE_EXPORTACION).getRawMany<FilaConCursor>();
   }
 
   private filtrados(filtro: FiltroResuelto): SelectQueryBuilder<FilaEventoAuditoria> {

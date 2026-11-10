@@ -46,4 +46,7 @@ export interface LecturaAuditoria {
   listar(filtro: FiltroResuelto, paginacion: Paginacion): Promise<{ items: EventoAuditoriaResumen[]; total: number }>;
   /** null si no existe en el tenant o queda fuera del alcance. */
   buscar(id: string, alcance: AlcanceLectura): Promise<EventoAuditoriaCompleto | null>;
+  contar(filtro: FiltroResuelto): Promise<number>;
+  /** Todas las filas del filtro en lotes de 1 000, por keyset (ocurrido_en DESC, id DESC): memoria acotada sin offset. */
+  recorrer(filtro: FiltroResuelto, alLote: (eventos: EventoAuditoriaCompleto[]) => Promise<void>): Promise<void>;
 }

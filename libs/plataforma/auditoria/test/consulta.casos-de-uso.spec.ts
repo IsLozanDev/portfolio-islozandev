@@ -50,6 +50,8 @@ function escenario() {
     },
     buscar: async (id: string, alcance: AlcanceLectura) =>
       id === anulacion.id && (!alcance.sucursalForzada || alcance.sucursalForzada === anulacion.sucursalId) ? anulacion : null,
+    contar: async () => 1,
+    recorrer: async (_filtro, alLote) => alLote([anulacion]),
   };
   const busquedas: string[] = [];
   const directorio: DirectorioSeg = {

@@ -4,6 +4,8 @@ import { CLOCK, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina
 import { ALCANCE_ACTOR, DIRECTORIO_SEG, type AlcanceActor, type DirectorioSeg } from '@vitrina/plataforma/seguridad';
 import { AuditarEventoDePlataforma } from './application/auditar-evento-de-plataforma.js';
 import { ConsultarAuditoria, type DependenciasConsultaAuditoria } from './application/consultar-auditoria.js';
+import { ExportarAuditoria } from './application/exportar-auditoria.js';
+import { FABRICA_ESCRITOR_AUDITORIA, type FabricaEscritorAuditoria } from './application/ports/escritor-auditoria.port.js';
 import type { DependenciasRegistro } from './application/dependencias-registro.js';
 import { AUDITORIA, type AuditoriaPort } from './application/ports/auditoria.port.js';
 import { ObtenerEventoAuditoria } from './application/obtener-evento-auditoria.js';
@@ -11,6 +13,7 @@ import { RegistrarAccesoSensible } from './application/registrar-acceso-sensible
 import { RegistrarEvento } from './application/registrar-evento.js';
 import { LecturaAuditoriaTypeOrm } from './infrastructure/typeorm/lectura-auditoria.typeorm.js';
 import { RegistroAuditoriaTypeOrm } from './infrastructure/typeorm/registro-auditoria.typeorm.js';
+import { EscritorAuditoriaXlsx } from './infrastructure/xlsx/escritor-auditoria.xlsx.js';
 import { AuditoriaController } from './interface/auditoria.controller.js';
 import { AuditoriaConsumidor } from './interface/auditoria.consumidor.js';
 
@@ -58,6 +61,15 @@ export class AuditoriaModule {
         },
         deConsulta(ConsultarAuditoria),
         deConsulta(ObtenerEventoAuditoria),
+        {
+          provide: ExportarAuditoria,
+          useFactory: (dependencias: DependenciasConsultaAuditoria, auditoria: AuditoriaPort) => {
+            const logger = new Logger(CONTEXTO_LOG);
+            return new ExportarAuditoria({ ...dependencias, auditoria, avisar: (mensaje, datos) => logger.error({ evento: mensaje, ...datos }) });
+          },
+          inject: [DEPENDENCIAS_CONSULTA, AUDITORIA],
+        },
+        { provide: FABRICA_ESCRITOR_AUDITORIA, useValue: ((destino) => new EscritorAuditoriaXlsx(destino)) satisfies FabricaEscritorAuditoria },
         {
           provide: AUDITORIA,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>

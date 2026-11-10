@@ -70,6 +70,10 @@ export const EsquemaConsultarAuditoria = EsquemaFiltroAuditoria.extend({
   tamano: z.coerce.number().int().min(1).max(TAMANO_PAGINA_MAXIMO).default(TAMANO_PAGINA_DEFECTO),
 });
 
+export function nombreArchivoExportacion(desde: string, hasta: string): string {
+  return `auditoria-${desde.replaceAll('-', '')}-${hasta.replaceAll('-', '')}.xlsx`;
+}
+
 export function filtroDe(consulta: z.infer<typeof EsquemaFiltroAuditoria>): FiltroAuditoria {
   return {
     desde: consulta.desde ?? '',

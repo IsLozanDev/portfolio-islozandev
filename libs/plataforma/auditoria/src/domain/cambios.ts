@@ -59,3 +59,17 @@ function esContenedorConElementos(valor: unknown): valor is Record<string, unkno
 function mismoValor(antes: unknown, despues: unknown): boolean {
   return JSON.stringify(antes) === JSON.stringify(despues);
 }
+
+/** Tope de la columna «Campos cambiados» de la exportación: el JSON no va a la hoja (spec 20b). */
+export const MAXIMO_LARGO_CAMPOS_CAMBIADOS = 500;
+const SEPARADOR_CAMPOS = ', ';
+const PUNTOS_SUSPENSIVOS = '…';
+
+/** Rutas que cambiaron, separadas por coma y cortadas en 500 caracteres con «…» al final si no caben. */
+export function camposCambiados(antes: unknown, despues: unknown): string {
+  const texto = calcularCambios(antes, despues)
+    .map((cambio) => cambio.campo)
+    .join(SEPARADOR_CAMPOS);
+  if (texto.length <= MAXIMO_LARGO_CAMPOS_CAMBIADOS) return texto;
+  return texto.slice(0, MAXIMO_LARGO_CAMPOS_CAMBIADOS - PUNTOS_SUSPENSIVOS.length) + PUNTOS_SUSPENSIVOS;
+}

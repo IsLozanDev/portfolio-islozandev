@@ -1,4 +1,4 @@
-import { calcularCambios, MAXIMO_CAMBIOS, RUTA_RAIZ } from '../src/domain/cambios.js';
+import { calcularCambios, camposCambiados, MAXIMO_CAMBIOS, MAXIMO_LARGO_CAMPOS_CAMBIADOS, RUTA_RAIZ } from '../src/domain/cambios.js';
 
 describe('calcularCambios (spec 20b)', () => {
   it('devuelve las rutas anidadas cuyo valor difiere, con el valor anterior y el nuevo', () => {
@@ -50,5 +50,20 @@ describe('calcularCambios (spec 20b)', () => {
     expect(cambios).toHaveLength(MAXIMO_CAMBIOS);
     expect(cambios[0].campo).toBe('campo_000');
     expect(cambios.map((cambio) => cambio.campo)).toEqual([...cambios.map((cambio) => cambio.campo)].sort());
+  });
+});
+
+describe('camposCambiados (spec 20b, columna de la exportación)', () => {
+  it('une las rutas que cambiaron con coma', () => {
+    expect(camposCambiados({ estado: 'EMITIDA', items: [{ monto: 10 }] }, { estado: 'ANULADA', items: [{ monto: 0 }] })).toBe('estado, items[0].monto');
+    expect(camposCambiados(null, null)).toBe('');
+  });
+
+  it('corta en 500 caracteres con «…» al final', () => {
+    const despues = Object.fromEntries(Array.from({ length: 100 }, (_, indice) => [`campo_largo_${String(indice).padStart(3, '0')}`, indice]));
+    const texto = camposCambiados({}, despues);
+    expect(texto).toHaveLength(MAXIMO_LARGO_CAMPOS_CAMBIADOS);
+    expect(texto.endsWith('…')).toBe(true);
+    expect(texto.startsWith('campo_largo_000, campo_largo_001')).toBe(true);
   });
 });
