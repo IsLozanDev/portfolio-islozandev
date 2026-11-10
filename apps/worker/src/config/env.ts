@@ -20,6 +20,8 @@ const esquema = z.object({
   EVT_CONCURRENCIA: entero(5),
   // Spec 18: cada cuánto se vencen los accesos de soporte (el corte real es membresia.hasta, al instante).
   SOPORTE_VENCIMIENTO_CADA_MS: entero(60_000),
+  // Spec 20b: verificación diaria de la cadena de auditoría, en America/Lima (cron de 5 campos).
+  AUD_VERIFICACION_CRON: z.string().trim().regex(/^\S+( \S+){4}$/).default('30 3 * * *'),
 });
 
 export type Config = z.infer<typeof esquema>;

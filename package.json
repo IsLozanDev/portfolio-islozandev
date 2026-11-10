@@ -27,6 +27,7 @@
     "soporte:vencer": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-vencimiento-soporte.js",
     "soporte:vencer:remoto": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-vencimiento-soporte.js --remoto",
     "vencimientos:ejecutar:remoto": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-vencimientos.js --remoto",
+    "auditoria:verificar": "nx build worker && node --env-file-if-exists=.env --enable-source-maps apps/worker/dist/cli/ejecutar-auditoria.js",
     "plataforma:sembrar:remoto": "nx build api && node --env-file-if-exists=.env --enable-source-maps apps/api/dist/cli/sembrar-plataforma.js --remoto"
   },
   "devDependencies": {

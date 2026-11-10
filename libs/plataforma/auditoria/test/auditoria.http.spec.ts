@@ -9,14 +9,17 @@ import { PERMISO, PermisoGuard } from '@vitrina/plataforma/seguridad';
 import { ConsultarAuditoria, type EventoAuditoriaListado } from '../src/application/consultar-auditoria.js';
 import { ExportarAuditoria } from '../src/application/exportar-auditoria.js';
 import { ObtenerEventoAuditoria, type DetalleEventoAuditoria } from '../src/application/obtener-evento-auditoria.js';
+import { ObtenerUltimaVerificacion } from '../src/application/obtener-ultima-verificacion.js';
 import { FABRICA_ESCRITOR_AUDITORIA, type EscritorAuditoria } from '../src/application/ports/escritor-auditoria.port.js';
 import {
   AuditoriaNoDisponibleError,
   EventoAuditoriaNoEncontradoError,
   ExportacionDemasiadoGrandeError,
   RangoInvalidoError,
+  SinVerificacionesError,
   SucursalFueraDeAlcanceError,
 } from '../src/domain/errores.js';
+import type { Verificacion } from '../src/domain/verificacion.js';
 import { EscritorAuditoriaXlsx } from '../src/infrastructure/xlsx/escritor-auditoria.xlsx.js';
 import { AuditoriaController } from '../src/interface/auditoria.controller.js';
 
@@ -64,6 +67,21 @@ const detalle: DetalleEventoAuditoria = {
   hash: 'a'.repeat(64),
 };
 
+const verificacion: Verificacion = {
+  id: '0193f3a0-0000-7000-8000-00000000b001',
+  tenantId: TENANT,
+  modo: 'INCREMENTAL',
+  desdeNumero: '120',
+  hastaNumero: '136',
+  ultimoHash: 'c'.repeat(64),
+  filas: 16,
+  estado: 'ROTA',
+  numeroRoto: '137',
+  motivo: 'HASH',
+  iniciadaEn: new Date('2026-11-10T08:30:00Z'),
+  terminadaEn: new Date('2026-11-10T08:30:02Z'),
+};
+
 /** Hace lo que deja AutenticacionGuard: el principal del token. `x-prueba-aal` simula un token sin MFA. */
 class PrincipalDePrueba implements CanActivate {
   canActivate(contexto: ExecutionContext): boolean {
@@ -103,6 +121,7 @@ describe('HTTP /v1/aud/eventos (spec 20b)', () => {
   const detalles: string[] = [];
   const exportaciones: unknown[] = [];
   let falloExportacion: Error | null;
+  let falloIntegridad: Error | null;
   const http = () => request(app.getHttpServer());
   const listar = (query: Record<string, string>) => http().get('/v1/aud/eventos').query(query).set('X-Sucursal-Id', SURCO);
   const obtener = (id: string) => http().get(`/v1/aud/eventos/${id}`).set('X-Sucursal-Id', SURCO);
@@ -136,6 +155,15 @@ describe('HTTP /v1/aud/eventos (spec 20b)', () => {
         },
         { provide: FABRICA_ESCRITOR_AUDITORIA, useValue: (destino: NodeJS.WritableStream) => new EscritorAuditoriaXlsx(destino) },
         {
+          provide: ObtenerUltimaVerificacion,
+          useValue: {
+            ejecutar: async () => {
+              if (falloIntegridad) throw falloIntegridad;
+              return verificacion;
+            },
+          },
+        },
+        {
           provide: ObtenerEventoAuditoria,
           useValue: {
             ejecutar: async (id: string) => {
@@ -164,6 +192,7 @@ describe('HTTP /v1/aud/eventos (spec 20b)', () => {
     permisosDelActor = [CONSULTAR, EXPORTAR];
     fallo = null;
     falloExportacion = null;
+    falloIntegridad = null;
     consultas.length = 0;
     detalles.length = 0;
     exportaciones.length = 0;
@@ -286,10 +315,44 @@ describe('HTTP /v1/aud/eventos (spec 20b)', () => {
     });
   });
 
+  describe('GET /v1/aud/integridad', () => {
+    const integridad = () => http().get('/v1/aud/integridad').set('X-Sucursal-Id', SURCO);
+
+    it('devuelve el último resultado del tenant', async () => {
+      const respuesta = await integridad();
+      expect([respuesta.status, respuesta.body]).toEqual([
+        200,
+        {
+          id: verificacion.id,
+          modo: 'INCREMENTAL',
+          desde_numero: '120',
+          hasta_numero: '136',
+          filas: 16,
+          estado: 'ROTA',
+          numero_roto: '137',
+          motivo: 'HASH',
+          iniciada_en: '2026-11-10T08:30:00.000Z',
+          terminada_en: '2026-11-10T08:30:02.000Z',
+        },
+      ]);
+    });
+
+    it('sin alcance TENANT es 403, sin verificaciones 404 y sin permiso 403 SIN_PERMISO', async () => {
+      falloIntegridad = new SucursalFueraDeAlcanceError();
+      expect((await integridad()).body.codigo).toBe('SUCURSAL_FUERA_DE_ALCANCE');
+      falloIntegridad = new SinVerificacionesError();
+      const sinVerificaciones = await integridad();
+      expect([sinVerificaciones.status, sinVerificaciones.body.codigo]).toEqual([404, 'SIN_VERIFICACIONES']);
+      permisosDelActor = [EXPORTAR];
+      const sinPermiso = await integridad();
+      expect([sinPermiso.status, sinPermiso.body.codigo]).toEqual([403, 'SIN_PERMISO']);
+    });
+  });
+
   it('cada ruta exige su permiso', () => {
     const reflector = new Reflector();
-    const permisoDe = (metodo: 'listar' | 'consultar' | 'exportar') => reflector.get(PERMISO, AuditoriaController.prototype[metodo]);
-    expect([permisoDe('listar'), permisoDe('consultar'), permisoDe('exportar')]).toEqual([CONSULTAR, CONSULTAR, EXPORTAR]);
+    const permisoDe = (metodo: 'listar' | 'consultar' | 'exportar' | 'integridad') => reflector.get(PERMISO, AuditoriaController.prototype[metodo]);
+    expect([permisoDe('listar'), permisoDe('consultar'), permisoDe('exportar'), permisoDe('integridad')]).toEqual([CONSULTAR, CONSULTAR, EXPORTAR, CONSULTAR]);
   });
 
   it('las rutas están en OpenAPI con sus códigos de error', () => {
@@ -298,5 +361,7 @@ describe('HTTP /v1/aud/eventos (spec 20b)', () => {
     expect(codigos('/v1/aud/eventos')).toEqual(['200', '400', '401', '403']);
     expect(codigos('/v1/aud/eventos/{id}')).toEqual(['200', '401', '403', '404']);
     expect(codigos('/v1/aud/eventos/exportar')).toEqual(['200', '400', '401', '403', '422', '503']);
+    expect(codigos('/v1/aud/integridad')).toEqual(['200', '401', '403', '404']);
+    expect(Object.keys(documento.paths).sort()).toEqual(['/v1/aud/eventos', '/v1/aud/eventos/exportar', '/v1/aud/eventos/{id}', '/v1/aud/integridad']);
   });
 });

@@ -17,6 +17,7 @@ import { Permiso } from '@vitrina/plataforma/seguridad';
 import { ConsultarAuditoria } from '../application/consultar-auditoria.js';
 import { ExportarAuditoria } from '../application/exportar-auditoria.js';
 import { ObtenerEventoAuditoria } from '../application/obtener-evento-auditoria.js';
+import { ObtenerUltimaVerificacion } from '../application/obtener-ultima-verificacion.js';
 import { FABRICA_ESCRITOR_AUDITORIA, type EscritorAuditoria, type FabricaEscritorAuditoria } from '../application/ports/escritor-auditoria.port.js';
 import { MAXIMO_DIAS_RANGO, MAXIMO_FILAS_EXPORTACION, TAMANO_PAGINA_DEFECTO, TAMANO_PAGINA_MAXIMO, TIPOS_EVENTO_AUDITORIA } from '../domain/filtro-auditoria.js';
 import { PERMISOS_AUD } from '../domain/permisos-aud.js';
@@ -31,6 +32,8 @@ import {
   listadoAuditoriaDto,
   nombreArchivoExportacion,
   validar,
+  VerificacionDto,
+  verificacionDto,
 } from './auditoria.http.js';
 
 const TIPO_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -75,6 +78,7 @@ export class AuditoriaController {
     @Inject(ObtenerEventoAuditoria) private readonly obtenerEvento: ObtenerEventoAuditoria,
     @Inject(ExportarAuditoria) private readonly exportarAuditoria: ExportarAuditoria,
     @Inject(FABRICA_ESCRITOR_AUDITORIA) private readonly crearEscritor: FabricaEscritorAuditoria,
+    @Inject(ObtenerUltimaVerificacion) private readonly obtenerUltimaVerificacion: ObtenerUltimaVerificacion,
   ) {}
 
   private readonly logger = new Logger('Auditoria');
@@ -126,6 +130,14 @@ export class AuditoriaController {
       escribir: (eventos) => escritor.escribir(eventos),
       terminar: () => escritor.terminar(),
     };
+  }
+
+  @Get('integridad')
+  @Permiso(PERMISOS_AUD.consultar)
+  @ApiOkResponse({ type: VerificacionDto, description: 'Último resultado de la verificación diaria de la cadena de hash del tenant' })
+  @ApiNotFoundResponse({ description: 'SIN_VERIFICACIONES: todavía no se verificó la cadena del tenant' })
+  async integridad(): Promise<VerificacionDto> {
+    return verificacionDto(await this.obtenerUltimaVerificacion.ejecutar());
   }
 
   @Get('eventos/:id')

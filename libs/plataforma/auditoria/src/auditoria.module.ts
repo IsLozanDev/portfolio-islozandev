@@ -1,6 +1,7 @@
 import { Logger, Module, type DynamicModule } from '@nestjs/common';
-import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
-import { CLOCK, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import type { DataSource } from 'typeorm';
+import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
+import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { ALCANCE_ACTOR, DIRECTORIO_SEG, type AlcanceActor, type DirectorioSeg } from '@vitrina/plataforma/seguridad';
 import { AuditarEventoDePlataforma } from './application/auditar-evento-de-plataforma.js';
 import { ConsultarAuditoria, type DependenciasConsultaAuditoria } from './application/consultar-auditoria.js';
@@ -9,10 +10,14 @@ import { FABRICA_ESCRITOR_AUDITORIA, type FabricaEscritorAuditoria } from './app
 import type { DependenciasRegistro } from './application/dependencias-registro.js';
 import { AUDITORIA, type AuditoriaPort } from './application/ports/auditoria.port.js';
 import { ObtenerEventoAuditoria } from './application/obtener-evento-auditoria.js';
+import { ObtenerUltimaVerificacion } from './application/obtener-ultima-verificacion.js';
+import { VerificarIntegridad } from './application/verificar-integridad.js';
+import { VerificarTodosLosTenants } from './application/verificar-todos-los-tenants.js';
 import { RegistrarAccesoSensible } from './application/registrar-acceso-sensible.js';
 import { RegistrarEvento } from './application/registrar-evento.js';
 import { LecturaAuditoriaTypeOrm } from './infrastructure/typeorm/lectura-auditoria.typeorm.js';
 import { RegistroAuditoriaTypeOrm } from './infrastructure/typeorm/registro-auditoria.typeorm.js';
+import { RegistroVerificacionesTypeOrm, TenantsConEventosTypeOrm } from './infrastructure/typeorm/registro-verificaciones.typeorm.js';
 import { EscritorAuditoriaXlsx } from './infrastructure/xlsx/escritor-auditoria.xlsx.js';
 import { AuditoriaController } from './interface/auditoria.controller.js';
 import { AuditoriaConsumidor } from './interface/auditoria.consumidor.js';
@@ -71,6 +76,12 @@ export class AuditoriaModule {
         },
         { provide: FABRICA_ESCRITOR_AUDITORIA, useValue: ((destino) => new EscritorAuditoriaXlsx(destino)) satisfies FabricaEscritorAuditoria },
         {
+          provide: ObtenerUltimaVerificacion,
+          useFactory: (dependencias: DependenciasConsultaAuditoria, unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ObtenerUltimaVerificacion({ ...dependencias, registro: new RegistroVerificacionesTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [DEPENDENCIAS_CONSULTA, TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        {
           provide: AUDITORIA,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>
             crearAuditoria({ contexto, ids, reloj, registro: crearRegistro(unidadDeTrabajo) }),
@@ -78,6 +89,46 @@ export class AuditoriaModule {
         },
       ],
       exports: [AUDITORIA],
+    };
+  }
+
+  /**
+   * Verificación de la cadena de hash (spec 20b) para apps/worker y su CLI. `dataSource` lee la lista de
+   * tenants con eventos fuera de toda transacción de tenant. El validador de eventos necesita registrarEsquemasAud.
+   */
+  static registrarVerificacion(dataSource: DataSource): DynamicModule {
+    const logger = new Logger(CONTEXTO_LOG);
+    return {
+      module: AuditoriaModule,
+      providers: [
+        {
+          provide: VerificarIntegridad,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock, eventos: EventPublisher) =>
+            new VerificarIntegridad({
+              unidadDeTrabajo,
+              contexto,
+              ids,
+              reloj,
+              eventos,
+              registro: new RegistroVerificacionesTypeOrm(unidadDeTrabajo, contexto),
+              avisarRotura: (datos) => logger.error(datos),
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER],
+        },
+        {
+          provide: VerificarTodosLosTenants,
+          useFactory: (verificar: VerificarIntegridad, reloj: Clock) =>
+            new VerificarTodosLosTenants({
+              tenants: new TenantsConEventosTypeOrm(dataSource),
+              verificar,
+              reloj,
+              informar: (mensaje, datos) => logger.log({ evento: mensaje, ...datos }),
+              avisar: (mensaje, datos) => logger.warn({ evento: mensaje, ...datos }),
+            }),
+          inject: [VerificarIntegridad, CLOCK],
+        },
+      ],
+      exports: [VerificarIntegridad, VerificarTodosLosTenants],
     };
   }
 

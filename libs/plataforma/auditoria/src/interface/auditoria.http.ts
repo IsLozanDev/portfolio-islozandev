@@ -4,6 +4,7 @@ import { DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vi
 import { z } from 'zod';
 import type { EventoAuditoriaListado, ListadoAuditoria } from '../application/consultar-auditoria.js';
 import type { DetalleEventoAuditoria } from '../application/obtener-evento-auditoria.js';
+import { MODOS_VERIFICACION, MOTIVOS_ROTURA, type Verificacion } from '../domain/verificacion.js';
 import { FINALIDADES } from '../domain/entradas.js';
 import { AuditoriaNoDisponibleError, ExportacionDemasiadoGrandeError } from '../domain/errores.js';
 import {
@@ -197,6 +198,53 @@ export class ListadoAuditoriaDto {
 
   @ApiProperty()
   total!: number;
+}
+
+export class VerificacionDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: MODOS_VERIFICACION })
+  modo!: string;
+
+  @ApiProperty({ description: 'Último número ya verificado al empezar (bigint como texto)' })
+  desde_numero!: string;
+
+  @ApiProperty({ description: 'Último número verificado sin falla' })
+  hasta_numero!: string;
+
+  @ApiProperty({ description: 'Filas recorridas sin falla en la corrida' })
+  filas!: number;
+
+  @ApiProperty({ enum: ['OK', 'ROTA'] })
+  estado!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'Primer número con falla; con HUECO, el que falta' })
+  numero_roto!: string | null;
+
+  @ApiPropertyOptional({ enum: MOTIVOS_ROTURA, nullable: true })
+  motivo!: string | null;
+
+  @ApiProperty({ format: 'date-time' })
+  iniciada_en!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  terminada_en!: string;
+}
+
+export function verificacionDto(verificacion: Verificacion): VerificacionDto {
+  return {
+    id: verificacion.id,
+    modo: verificacion.modo,
+    desde_numero: verificacion.desdeNumero,
+    hasta_numero: verificacion.hastaNumero,
+    filas: verificacion.filas,
+    estado: verificacion.estado,
+    numero_roto: verificacion.numeroRoto,
+    motivo: verificacion.motivo,
+    iniciada_en: verificacion.iniciadaEn.toISOString(),
+    terminada_en: verificacion.terminadaEn.toISOString(),
+  };
 }
 
 export function eventoAuditoriaDto(evento: EventoAuditoriaListado): EventoAuditoriaDto {

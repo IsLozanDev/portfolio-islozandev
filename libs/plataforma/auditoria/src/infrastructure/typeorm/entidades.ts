@@ -49,5 +49,41 @@ export const EventoAuditoriaEntidad = new EntitySchema<FilaEventoAuditoria>({
   },
 });
 
+/** aud.verificacion_integridad (spec 20b, db/01g_aud_integridad.sql): solo inserción. Los bigint viajan como texto. */
+export interface FilaVerificacionIntegridad {
+  id: string;
+  tenantId: string;
+  modo: string;
+  desdeNumero: string;
+  hastaNumero: string;
+  ultimoHash: string;
+  filas: string;
+  estado: string;
+  numeroRoto: string | null;
+  motivo: string | null;
+  iniciadaEn: Date;
+  terminadaEn: Date;
+}
+
+export const VerificacionIntegridadEntidad = new EntitySchema<FilaVerificacionIntegridad>({
+  name: 'VerificacionIntegridad',
+  schema: 'aud',
+  tableName: 'verificacion_integridad',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    modo: { type: 'varchar', length: 12 },
+    desdeNumero: { name: 'desde_numero', type: 'bigint' },
+    hastaNumero: { name: 'hasta_numero', type: 'bigint' },
+    ultimoHash: { name: 'ultimo_hash', type: 'char', length: 64 },
+    filas: { type: 'bigint' },
+    estado: { type: 'varchar', length: 6 },
+    numeroRoto: { name: 'numero_roto', type: 'bigint', nullable: true },
+    motivo: { type: 'varchar', length: 12, nullable: true },
+    iniciadaEn: { name: 'iniciada_en', type: 'timestamptz' },
+    terminadaEn: { name: 'terminada_en', type: 'timestamptz' },
+  },
+});
+
 /** Se registran en el DataSource de quien use la lib (apps/api y apps/worker). */
-export const ENTIDADES_AUDITORIA = [EventoAuditoriaEntidad];
+export const ENTIDADES_AUDITORIA = [EventoAuditoriaEntidad, VerificacionIntegridadEntidad];
