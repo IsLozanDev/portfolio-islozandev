@@ -13,4 +13,7 @@ export const PERMISOS_ADMIN = {
   /** Sensible: exige MFA reciente (spec 18b). */
   seguridadBitacoraExportar: 'plat.seguridad.bitacora_exportar',
   soporteAutorizar: 'plat.soporte.autorizar',
+  auditoriaConsultar: 'plat.auditoria.consultar',
+  /** Sensible: exige MFA reciente (spec 20b). */
+  auditoriaExportar: 'plat.auditoria.exportar',
 } as const;

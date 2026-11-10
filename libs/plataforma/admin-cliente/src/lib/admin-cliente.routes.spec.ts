@@ -28,6 +28,7 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
         import('./pages/perfiles-lista/perfiles-lista.page'),
         import('./pages/empresas-lista/empresas-lista.page'),
         import('./pages/bitacora-lista/bitacora-lista.page'),
+        import('./pages/auditoria-lista/auditoria-lista.page'),
       ]),
     ESPERA_PRECARGA_MS,
   );
@@ -66,6 +67,15 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
     TestBed.resetTestingModule();
     sesion = new DobleSesion().conPermisos(PERMISOS_ADMIN.usuarioInvitar);
     expect((await navegar('/admin/bitacora')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/auditoria abre la auditoría con plat.auditoria.consultar y sin él va a /403 (spec 20c)', async () => {
+    sesion.conPermisos(PERMISOS_ADMIN.auditoriaConsultar);
+    expect((await navegar('/admin/auditoria?desde=2026-10-01&hasta=2026-10-31')).titulo).toBe('Auditoría');
+
+    TestBed.resetTestingModule();
+    sesion = new DobleSesion().conPermisos(PERMISOS_ADMIN.seguridadBitacora);
+    expect((await navegar('/admin/auditoria')).url).toBe(RUTA_PROHIBIDO);
   });
 
   it('/admin/soporte sin plat.soporte.autorizar va a /403 (spec 18)', async () => {

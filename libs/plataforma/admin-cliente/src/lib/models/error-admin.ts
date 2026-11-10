@@ -5,6 +5,8 @@ export const CODIGO_DESCONOCIDO = 'DESCONOCIDO';
 export const CODIGO_NO_ENCONTRADO = 'NO_ENCONTRADO';
 /** `PUT` con una versión vieja (spec 17a, TR-RNF-008). */
 export const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
+/** Un permiso sensible (exportar) sin MFA reciente: la API responde 401 con este código. */
+export const CODIGO_MFA_REQUERIDA = 'MFA_REQUERIDA';
 
 /** Error de la API como `{ codigo, mensaje }`. `mensaje` es texto plano para mostrar. */
 export class ErrorAdmin extends Error {

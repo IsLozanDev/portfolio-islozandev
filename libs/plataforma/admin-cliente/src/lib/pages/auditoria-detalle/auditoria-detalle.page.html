@@ -1,0 +1,132 @@
+<section class="flex flex-col gap-5">
+  <a mat-button class="self-start" data-accion="volver" [routerLink]="volverA">
+    <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    {{ mensajes.volver }}
+  </a>
+
+  @if (cargando()) {
+    <vit-cargando />
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  @if (evento(); as detalle) {
+    <header class="flex flex-col gap-2">
+      <h1 class="text-2xl font-medium">{{ mensajes.tituloDetalle }}</h1>
+      <p class="flex flex-wrap items-center gap-2 text-sm">
+        <vit-chip-estado data-tipo-evento [texto]="etiquetaTipo()" [tono]="tonoTipo()" />
+        <span class="font-mono font-medium" data-dato="accion">{{ detalle.accion }}</span>
+        <span class="tabular-nums text-sobre-superficie-variante">· {{ fecha() }}</span>
+      </p>
+    </header>
+
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+      <dt class="text-sobre-superficie-variante">{{ mensajes.usuario }}</dt>
+      <dd class="break-words" data-dato="usuario">
+        @if (detalle.usuario; as usuario) {
+          <span class="font-medium">{{ usuario.nombre }}</span>
+          <span class="text-sobre-superficie-variante"> · {{ usuario.correo }}</span>
+        } @else {
+          {{ mensajes.sistema }}
+        }
+      </dd>
+      <dt class="text-sobre-superficie-variante">{{ mensajes.sucursal }}</dt>
+      <dd data-dato="sucursal">
+        @if (detalle.sucursal; as sucursal) {
+          {{ sucursal.codigo }} · {{ sucursal.nombre }}
+        } @else {
+          {{ mensajes.todoElTenant }}
+        }
+      </dd>
+      <dt class="text-sobre-superficie-variante">{{ mensajes.entidad }}</dt>
+      <dd class="break-all font-mono" data-dato="entidad">{{ detalle.entidadTipo }} · {{ detalle.entidadId }}</dd>
+      @for (dato of opcionales(); track dato.clave) {
+        <dt class="text-sobre-superficie-variante">{{ dato.etiqueta }}</dt>
+        <dd class="break-words" [class.font-medium]="dato.clave === 'motivo'" [attr.data-dato]="dato.clave">{{ dato.valor }}</dd>
+      }
+    </dl>
+
+    <section class="flex flex-col gap-2" aria-labelledby="titulo-cambios" data-seccion="cambios">
+      <h2 id="titulo-cambios" class="text-lg font-medium">{{ mensajes.cambios }}</h2>
+      @if (cambios().length === 0) {
+        <p class="text-sm text-sobre-superficie-variante">{{ mensajes.sinCambios }}</p>
+      } @else {
+        <div class="overflow-hidden rounded-tarjeta border border-borde bg-superficie">
+          <table class="w-full border-collapse text-sm max-[600px]:hidden" data-cambios="tabla">
+            <thead>
+              <tr class="bg-superficie-contenedor text-left text-sobre-superficie-variante">
+                <th scope="col" class="w-[30%] px-3 py-2.5 font-medium">{{ mensajes.campo }}</th>
+                <th scope="col" class="w-[35%] border-l border-borde px-3 py-2.5 font-medium">{{ mensajes.antes }}</th>
+                <th scope="col" class="w-[35%] border-l border-borde px-3 py-2.5 font-medium">{{ mensajes.despues }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cambio of cambios(); track cambio.campo) {
+                <tr class="border-t border-borde align-top">
+                  <td class="break-all px-3 py-2 font-mono">{{ cambio.campo }}</td>
+                  <td class="break-words border-l border-borde px-3 py-2 text-sobre-superficie-variante" data-lado="antes">{{ cambio.antes }}</td>
+                  <td class="break-words border-l border-borde bg-chip-exito px-3 py-2 font-medium text-sobre-chip-exito" data-lado="despues">{{ cambio.despues }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <ul class="m-0 hidden list-none flex-col p-0 max-[600px]:flex" data-cambios="tarjetas">
+            @for (cambio of cambios(); track cambio.campo) {
+              <li class="flex flex-col gap-1.5 border-t border-borde px-4 py-3 text-sm first:border-t-0">
+                <span class="break-all font-mono font-medium">{{ cambio.campo }}</span>
+                <span class="grid grid-cols-[4rem_1fr] gap-2">
+                  <span class="text-xs text-sobre-superficie-variante">{{ mensajes.antes }}</span>
+                  <span class="break-words text-sobre-superficie-variante">{{ cambio.antes }}</span>
+                </span>
+                <span class="grid grid-cols-[4rem_1fr] gap-2">
+                  <span class="text-xs text-sobre-superficie-variante">{{ mensajes.despues }}</span>
+                  <span class="break-words rounded bg-chip-exito px-1.5 py-0.5 font-medium text-sobre-chip-exito">{{ cambio.despues }}</span>
+                </span>
+              </li>
+            }
+          </ul>
+        </div>
+        @if (cambiosRecortados()) {
+          <p class="text-sm text-sobre-superficie-variante" data-nota="recortados">{{ mensajes.cambiosRecortados }}</p>
+        }
+      }
+    </section>
+
+    <mat-expansion-panel data-seccion="json">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{ mensajes.jsonCompleto }}</mat-panel-title>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="min-w-0">
+            <span class="text-sm text-sobre-superficie-variante">{{ mensajes.antes }}</span>
+            <!-- tabindex: el bloque se desplaza en horizontal y debe poder recorrerse con el teclado. -->
+            <pre tabindex="0" class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="antes" [attr.aria-label]="mensajes.jsonCompleto + ': ' + mensajes.antes">{{ jsonAntes() }}</pre>
+          </div>
+          <div class="min-w-0">
+            <span class="text-sm text-sobre-superficie-variante">{{ mensajes.despues }}</span>
+            <pre tabindex="0" class="mt-1 overflow-x-auto rounded-lg bg-superficie-contenedor p-3 font-mono text-xs" data-json="despues" [attr.aria-label]="mensajes.jsonCompleto + ': ' + mensajes.despues">{{ jsonDespues() }}</pre>
+          </div>
+        </div>
+      </ng-template>
+    </mat-expansion-panel>
+
+    <section class="flex flex-col gap-2" aria-labelledby="titulo-tecnicos" data-seccion="tecnicos">
+      <h2 id="titulo-tecnicos" class="text-lg font-medium">{{ mensajes.datosTecnicos }}</h2>
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-2 rounded-tarjeta border border-borde bg-superficie p-4 text-sm sm:grid-cols-[max-content_1fr]">
+        <dt class="text-sobre-superficie-variante">{{ mensajes.numeroEnCadena }}</dt>
+        <dd class="break-all font-mono" data-dato="numero">{{ detalle.numero }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.hashAnterior }}</dt>
+        <dd class="break-all font-mono" data-dato="hash-anterior">{{ detalle.hashAnterior }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.hash }}</dt>
+        <dd class="break-all font-mono" data-dato="hash">{{ detalle.hash }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.traceId }}</dt>
+        <dd class="break-all font-mono" data-dato="trace-id">{{ detalle.traceId ?? mensajes.sinDato }}</dd>
+        <dt class="text-sobre-superficie-variante">{{ mensajes.eventId }}</dt>
+        <dd class="break-all font-mono" data-dato="event-id">{{ detalle.eventId ?? mensajes.sinDato }}</dd>
+      </dl>
+    </section>
+  }
+</section>

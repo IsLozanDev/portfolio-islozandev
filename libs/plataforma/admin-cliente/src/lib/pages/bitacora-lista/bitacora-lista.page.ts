@@ -21,7 +21,7 @@ import {
   type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
-import { aErrorAdmin, type ErrorAdmin } from '../../models/error-admin';
+import { aErrorAdmin, CODIGO_MFA_REQUERIDA, type ErrorAdmin } from '../../models/error-admin';
 import { TIPOS_EVENTO, type EventoSeguridad, type FiltroBitacora, type TipoEvento } from '../../models/evento-seguridad';
 import type { Listado } from '../../models/listado';
 import { COLUMNAS_BITACORA, ETIQUETAS_TIPO_EVENTO, MENSAJES_BITACORA, TONOS_TIPO_EVENTO } from '../../models/mensajes-bitacora';
@@ -36,8 +36,6 @@ import { formatearFechaHora } from '../../utils/formato';
 import { fechaCalendario } from '../../utils/formulario-asignacion';
 
 const LOCALE_PERU = 'es-PE';
-/** `plat.seguridad.bitacora_exportar` es sensible: sin MFA reciente la API responde 401 con este código. */
-const CODIGO_MFA_REQUERIDA = 'MFA_REQUERIDA';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaEvento {

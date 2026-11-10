@@ -1,0 +1,25 @@
+@if (vista(); as franja) {
+  @switch (franja.estado) {
+    @case ('ok') {
+      <p class="m-0 flex items-start gap-3 rounded-tarjeta bg-chip-exito px-4 py-3 text-sm text-sobre-chip-exito" data-franja="ok">
+        <mat-icon aria-hidden="true" class="shrink-0">{{ franja.icono }}</mat-icon>
+        <span>{{ mensajes.cadenaVerificada }} <span class="font-medium tabular-nums">{{ franja.fecha }}</span> · <span class="tabular-nums">{{ franja.verificacion?.hastaNumero }}</span> {{ mensajes.eventos }}</span>
+      </p>
+    }
+    @case ('rota') {
+      <p role="alert" class="vit-destructivo m-0 flex items-start gap-3 rounded-tarjeta bg-contenedor-error px-4 py-3 text-sm text-sobre-contenedor-error" data-franja="rota">
+        <mat-icon aria-hidden="true" class="shrink-0">{{ franja.icono }}</mat-icon>
+        <span>
+          <span class="font-medium">{{ mensajes.cadenaRota }} <span class="tabular-nums">{{ franja.verificacion?.numeroRoto }}</span>:</span>
+          {{ franja.motivo }}. {{ mensajes.verificadaEl }} <span class="tabular-nums">{{ franja.fecha }}</span>
+        </span>
+      </p>
+    }
+    @case ('sin-verificar') {
+      <p class="m-0 flex items-start gap-3 rounded-tarjeta bg-chip-neutro px-4 py-3 text-sm text-sobre-chip-neutro" data-franja="sin-verificar">
+        <mat-icon aria-hidden="true" class="shrink-0">{{ franja.icono }}</mat-icon>
+        <span>{{ mensajes.sinVerificar }}</span>
+      </p>
+    }
+  }
+}

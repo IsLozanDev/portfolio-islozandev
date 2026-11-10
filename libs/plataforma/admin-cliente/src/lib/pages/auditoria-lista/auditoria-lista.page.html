@@ -1,0 +1,96 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <div *siPermiso="permisos.auditoriaExportar" class="flex items-center gap-3">
+      @if (exportando()) {
+        <vit-cargando [texto]="mensajes.exportando" />
+      }
+      <button mat-button type="button" data-accion="exportar" [disabled]="exportando()" (click)="exportar()">
+        <mat-icon aria-hidden="true">download</mat-icon>
+        {{ mensajes.exportar }}
+      </button>
+    </div>
+  </header>
+
+  <vit-franja-integridad [estado]="franja()" />
+
+  <div class="flex flex-wrap items-start gap-3">
+    <mat-form-field class="w-full sm:w-72" subscriptSizing="dynamic">
+      <mat-label>{{ mensajes.rango }}</mat-label>
+      <mat-date-range-input [formGroup]="rango" [rangePicker]="calendarioRango">
+        <input matStartDate formControlName="desde" [placeholder]="mensajes.desde" data-campo="desde" />
+        <input matEndDate formControlName="hasta" [placeholder]="mensajes.hasta" data-campo="hasta" (dateChange)="cambiarRango()" />
+      </mat-date-range-input>
+      <mat-datepicker-toggle matIconSuffix [for]="calendarioRango" />
+      <mat-date-range-picker #calendarioRango />
+    </mat-form-field>
+
+    <mat-form-field class="w-full sm:w-72" appearance="outline" subscriptSizing="dynamic">
+      <input
+        matInput
+        data-campo="accion"
+        [formControl]="accion"
+        [placeholder]="mensajes.placeholderAccion"
+        [attr.aria-label]="mensajes.accion"
+        (keydown.enter)="aplicarAccion()"
+        (blur)="aplicarAccion()"
+      />
+    </mat-form-field>
+
+    <!-- Con menos de 32rem libres la búsqueda se aplasta: baja a su propia fila. -->
+    <vit-filtros
+      class="min-w-0 grow basis-[32rem]"
+      [definiciones]="filtros"
+      [placeholderBusqueda]="mensajes.buscarUsuario"
+      [valorInicial]="valorInicialFiltros"
+      (cambio)="filtrar($event)"
+    />
+  </div>
+
+  @if (filtroEntidad() || filtro().personaTitularId) {
+    <mat-chip-set>
+      @if (filtroEntidad(); as entidad) {
+        <mat-chip data-chip="entidad" (removed)="quitarFiltroEntidad()">
+          {{ mensajes.filtroEntidad }}: <span class="font-mono">{{ entidad }}</span>
+          <button matChipRemove type="button" [attr.aria-label]="mensajes.quitarFiltroEntidad">
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        </mat-chip>
+      }
+      @if (filtro().personaTitularId; as titular) {
+        <mat-chip data-chip="titular" (removed)="quitarFiltroTitular()">
+          {{ mensajes.filtroTitular }}: <span class="font-mono">{{ titular }}</span>
+          <button matChipRemove type="button" [attr.aria-label]="mensajes.quitarFiltroTitular">
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        </mat-chip>
+      }
+    </mat-chip-set>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="mensajes.sinEventos"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-evento>
+      <a
+        mat-icon-button
+        [routerLink]="evento.id"
+        [state]="estadoRetorno()"
+        [attr.aria-label]="mensajes.verDetalle + ': ' + evento.accion + ', ' + evento.fecha"
+      >
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>
