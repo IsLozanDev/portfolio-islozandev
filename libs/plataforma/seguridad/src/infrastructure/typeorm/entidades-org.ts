@@ -57,3 +57,23 @@ export const TenantCodigoEntidad = new EntitySchema<FilaTenantCodigo>({
     codigo: { type: 'varchar' },
   },
 });
+
+/** Código y nombre de la sucursal para componentes que guardan solo su id (spec 20b, `DirectorioSeg`). */
+export interface FilaSucursalDirectorio {
+  id: string;
+  tenantId: string;
+  codigo: string;
+  nombre: string;
+}
+
+export const SucursalDirectorioEntidad = new EntitySchema<FilaSucursalDirectorio>({
+  name: 'SegSucursalDirectorio',
+  schema: 'org',
+  tableName: 'sucursal',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    codigo: { type: 'varchar' },
+    nombre: { type: 'varchar' },
+  },
+});

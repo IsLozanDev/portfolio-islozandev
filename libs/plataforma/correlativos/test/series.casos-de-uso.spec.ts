@@ -85,6 +85,7 @@ function escenario(opciones: { actorCubre?: (destino: DestinoAlcance) => boolean
         destinos.push(destino);
         return (opciones.actorCubre ?? (() => true))(destino);
       },
+      alcanzaTenant: async () => true,
     },
   };
   return { dependencias, series, publicados, destinos };

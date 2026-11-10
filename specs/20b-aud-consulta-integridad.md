@@ -1,6 +1,6 @@
 # SPEC 20b — Auditoría: consulta paginada con alcance, detalle con diferencias, exportación XLSX auditada y verificación diaria de integridad
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 06, SPEC 11, SPEC 18b, SPEC 20a
 > **Date:** 2026-11-09
 > **Objective:** Exponer bajo `/v1/aud` la consulta paginada de `aud.evento_auditoria` con el alcance del actor, su detalle con diferencias calculadas y la exportación XLSX auditada con aal2, y verificar cada día la cadena de hash de cada tenant de forma incremental, con un registro de resultados, un evento `aud.integridad.rota` y la consulta del último resultado.

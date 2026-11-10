@@ -95,7 +95,7 @@ function escenario(opciones: { definiciones?: DefinicionParametro[]; actorCubre?
     definiciones: { buscar: async (codigo) => definiciones.get(codigo) ?? null },
     valores,
     resolucion: { valor: async () => opciones.efectivo ?? { valor: 10, origen: 'TENANT' }, versiones: async () => ({ vt: 1, vd: 1 }) },
-    alcanceActor: { cubre: async (_usuarioId, destino) => (opciones.actorCubre ?? (() => true))(destino) },
+    alcanceActor: { cubre: async (_usuarioId, destino) => (opciones.actorCubre ?? (() => true))(destino), alcanzaTenant: async () => true },
     esquemas,
   };
   return { dependencias, valores, publicados, enTransaccion };

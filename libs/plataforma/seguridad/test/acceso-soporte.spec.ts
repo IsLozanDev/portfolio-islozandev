@@ -319,4 +319,8 @@ describe('PERMISOS_VETADOS_SOPORTE', () => {
     );
     expect(PERMISOS_VETADOS_SOPORTE).not.toContain(PERMISOS_SEG.seguridadBitacora);
   });
+
+  it('el agente no exporta la auditoría del cliente (spec 20b)', () => {
+    expect(PERMISOS_VETADOS_SOPORTE).toContain('plat.auditoria.exportar');
+  });
 });

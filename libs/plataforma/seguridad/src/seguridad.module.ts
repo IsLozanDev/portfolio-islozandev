@@ -63,6 +63,8 @@ import { SoporteController } from './interface/soporte.controller.js';
 import { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
 import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
+import { DIRECTORIO_SEG, type DirectorioSeg } from './application/ports/directorio-seg.port.js';
+import { DirectorioSegTypeOrm } from './infrastructure/typeorm/directorio-seg.typeorm.js';
 import { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from './application/rol.casos-de-uso.js';
 import { ConsultarCatalogo, ConsultarRol, ListarProductosDisponibles, ListarRoles, type DependenciasLecturaRoles } from './application/lecturas-roles.js';
@@ -238,6 +240,12 @@ export class SeguridadModule {
         },
         // Para cfg y los demás componentes que dependen de seg (spec 09).
         { provide: ALCANCE_ACTOR, useFactory: (repositorios: ReposMembresias): AlcanceActor => new AlcanceActorSeg(repositorios), inject: [REPOS_MEMBRESIAS] },
+        // Nombres de personas y sucursales para auditoría (spec 20b).
+        {
+          provide: DIRECTORIO_SEG,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): DirectorioSeg => new DirectorioSegTypeOrm(unidadDeTrabajo, contexto),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
         {
           provide: PRODUCTOS_CONTRATADOS,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): ProductosContratados => new ProductosContratadosTypeOrm(unidadDeTrabajo, contexto),
@@ -568,7 +576,7 @@ export class SeguridadModule {
           inject: [Reflector, ResolverAccesoSoporteVigente, UNIT_OF_WORK, TENANT_CONTEXT, REPOS_MEMBRESIAS],
         },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, DIRECTORIO_SEG, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
     };
   }
 }

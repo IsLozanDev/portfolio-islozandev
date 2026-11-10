@@ -1,6 +1,6 @@
 # SPEC 20a — Auditoría: registro inmutable con hash encadenado, acceso a datos sensibles y consumo de eventos de plataforma
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 06, SPEC 11, SPEC 12
 > **Date:** 2026-11-09
 > **Objective:** Crear `libs/plataforma/auditoria` (TR-AUD) con `aud.evento_auditoria` de solo inserción y hash SHA-256 encadenado por tenant calculado en la base, `AuditoriaPort` (`registrar`, `registrarAccesoSensible`) y `@Auditable` en la misma transacción del caso de uso, y un consumidor del outbox que audita los eventos de ORG y suscripción con el actor, la IP y el trace que ahora viajan en `sync.outbox`.

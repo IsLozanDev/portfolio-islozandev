@@ -114,6 +114,13 @@ export { FinalizarMembresia, ReactivarMembresia, RevocarAsignacion, SuspenderMem
 // Para componentes que dependen de seg (spec 09).
 export { ALCANCE_ACTOR, type AlcanceActor, type DestinoAlcance } from './application/ports/alcance-actor.port.js';
 export { AlcanceActorSeg } from './application/alcance-actor.js';
+// Para auditoría (spec 20b).
+export {
+  DIRECTORIO_SEG,
+  type DirectorioSeg,
+  type SucursalDirectorio,
+  type UsuarioDirectorio,
+} from './application/ports/directorio-seg.port.js';
 export { ConfirmacionRequeridaError } from './domain/errores.js';
 export { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 export { crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';
