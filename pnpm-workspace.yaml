@@ -12,6 +12,8 @@ allowBuilds:
   esbuild: false
   msgpackr-extract: false
   lmdb: false
+  # Solo regenera código para exportadores gRPC/proto; los OTLP de observabilidad usan HTTP/JSON.
+  protobufjs: false
 
 minimumReleaseAgeExclude:
   - "@nestjs/common@12.2.0"

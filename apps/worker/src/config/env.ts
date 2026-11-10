@@ -1,3 +1,4 @@
+import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { z } from 'zod';
 
 const entero = (defecto: number) => z.coerce.number().int().positive().default(defecto);
@@ -22,7 +23,9 @@ const esquema = z.object({
   SOPORTE_VENCIMIENTO_CADA_MS: entero(60_000),
   // Spec 20b: verificación diaria de la cadena de auditoría, en America/Lima (cron de 5 campos).
   AUD_VERIFICACION_CRON: z.string().trim().regex(/^\S+( \S+){4}$/).default('30 3 * * *'),
-});
+  // Spec 21: logs, sal de documentos y ambiente (TR-RNF-026, TR-RNF-111).
+  ...camposEntornoObservabilidad,
+}).superRefine(exigirSalFueraDeLocal);
 
 export type Config = z.infer<typeof esquema>;
 
