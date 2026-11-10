@@ -23,13 +23,11 @@ import {
   UsuarioLecturaEntidad,
   type FilaEventoSeguridad,
 } from './entidades-lectura.js';
+import { patronDeBusqueda } from './patron-busqueda.js';
 
 /** America/Lima no tiene horario de verano: el día calendario empieza siempre a las 05:00 UTC. */
 const DESFASE_LIMA = '-05:00';
 const MILISEGUNDOS_POR_DIA = 86_400_000;
-
-// `\` es el escape por defecto de LIKE en PostgreSQL: lo que escribe el usuario se busca literal.
-const COMODINES_DE_LIKE = /[\\%_]/g;
 
 /** Qué clave del detalle resume cada tipo en la lista; las asignaciones se resumen con rol y destinatario. */
 const CLAVE_DE_RESUMEN: Readonly<Partial<Record<TipoEventoSeguridad, string>>> = {
@@ -190,10 +188,6 @@ function inicioDelDia(fecha: Fecha): Date {
 
 function inicioDelDiaSiguiente(fecha: Fecha): Date {
   return new Date(inicioDelDia(fecha).getTime() + MILISEGUNDOS_POR_DIA);
-}
-
-function patronDeBusqueda(texto: string): string {
-  return `%${texto.replace(COMODINES_DE_LIKE, (comodin) => `\\${comodin}`)}%`;
 }
 
 function persona(id: string | null, nombre: string | null, correo: string | null): UsuarioDelEvento | null {

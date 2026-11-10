@@ -43,7 +43,10 @@ export async function crearEntornoSeries(opciones: { conexiones?: number } = {})
   const validador = new InMemoryEventSchemaValidator();
   registrarEsquemasSeq(validador);
   const negar = { sucursales: new Set<string>() };
-  const alcanceActor: AlcanceActor = { cubre: async (_usuarioId, destino) => !negar.sucursales.has(destino.sucursalId ?? '') };
+  const alcanceActor: AlcanceActor = {
+    cubre: async (_usuarioId, destino) => !negar.sucursales.has(destino.sucursalId ?? ''),
+    alcanzaTenant: async () => true,
+  };
 
   const dependencias: DependenciasSeries = {
     unidadDeTrabajo,

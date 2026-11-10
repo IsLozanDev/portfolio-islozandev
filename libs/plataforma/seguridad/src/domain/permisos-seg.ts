@@ -14,9 +14,12 @@ export const PERMISOS_SEG = {
   soporteSolicitar: 'plat.soporte.solicitar',
 } as const;
 
+/** Permisos de auditoría (spec 20b); la lib auditoria los declara en sus `PERMISOS_AUD`. */
+const AUDITORIA_EXPORTAR = 'plat.auditoria.exportar';
+
 /**
  * Lo que una sesión de soporte nunca puede usar, aunque el rol aprobado lo tenga (spec 18). El agente
- * tampoco saca la bitácora del cliente en un archivo (spec 18b).
+ * tampoco saca la bitácora del cliente ni la auditoría en un archivo (specs 18b y 20b).
  */
 export const PERMISOS_VETADOS_SOPORTE: readonly string[] = [
   PERMISOS_SEG.soporteAutorizar,
@@ -27,4 +30,5 @@ export const PERMISOS_VETADOS_SOPORTE: readonly string[] = [
   PERMISOS_SEG.rolGestionar,
   PERMISOS_SEG.perfilGestionar,
   PERMISOS_SEG.seguridadBitacoraExportar,
+  AUDITORIA_EXPORTAR,
 ];

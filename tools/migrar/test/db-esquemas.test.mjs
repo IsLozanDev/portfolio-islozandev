@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -84,6 +84,7 @@ const CASOS = [
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
   { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
   { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
+  { migracion: '01g_aud_integridad.sql', esquema: 'aud', prueba: 'tests/01g_aud_integridad.test.sql' },
 ];
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
@@ -199,6 +200,44 @@ async function inversoAuditoriaConFilas() {
     await c.end();
   }
 }
+
+// Con una fila en aud.verificacion_integridad el inverso de 01g_aud_integridad se niega; la transacción se revierte.
+async function inversoIntegridadConFilas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '0a000000-0000-0000-0000-0000000000f1';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO aud.verificacion_integridad (id, tenant_id, modo, desde_numero, hasta_numero, ultimo_hash, filas, estado,
+                                               iniciada_en, terminada_en)
+       VALUES (gen_random_uuid(), '${tenantId}', 'COMPLETA', 0, 0, repeat('0', 64), 0, 'OK', now(), now())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01g_aud_integridad.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Índices, tabla, funciones y política que agrega 01g_aud_integridad (8 en total).
+const objetosIntegridad = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT indexname AS o FROM pg_indexes WHERE schemaname = 'aud' AND indexname IN
+              ('evento_auditoria_sucursal_fecha_ix', 'evento_auditoria_accion_fecha_ix', 'evento_auditoria_entidad_ix')
+       UNION ALL SELECT 'aud.verificacion_integridad' WHERE to_regclass('aud.verificacion_integridad') IS NOT NULL
+       UNION ALL SELECT 'aud.' || proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'aud' AND proname IN ('verificar_cadena', 'maximo_numero', 'tenants_con_eventos')
+       UNION ALL SELECT policyname FROM pg_policies WHERE schemaname = 'aud' AND policyname = 'evento_auditoria_lector'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
 
 const estadoMembresia = async (id) =>
   (await ejecutar(urlDb, `SELECT estado FROM seg.membresia WHERE id = '${id}'`)).rows[0]?.estado;
@@ -319,13 +358,26 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01g_aud_integridad se niega con verificaciones; sin ellas deja aud como lo dejó 01g_aud
+    // y se puede reaplicar. Va antes que el de 01g_aud.
+    expect(await inversoIntegridadConFilas()).toBe('55006');
+    expect(await objetosIntegridad()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01g_aud_integridad.sql'), 'utf8'));
+    expect(await objetosIntegridad()).toEqual([]);
+    expect(await existeEsquema('aud')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01g_aud_integridad.sql'), 'utf8'));
+    expect(await objetosIntegridad()).toHaveLength(8);
+
     // El inverso de 01g_aud se niega con filas; sin filas borra aud y se puede reaplicar.
     expect(await inversoAuditoriaConFilas()).toBe('55006');
     expect(await existeEsquema('aud')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01g_aud_integridad.sql'), 'utf8'));
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01g_aud.sql'), 'utf8'));
     expect(await existeEsquema('aud')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01g_aud.sql'), 'utf8'));
+    await ejecutar(urlDb, await readFile(rutaDb('01g_aud_integridad.sql'), 'utf8'));
     expect(await existeEsquema('aud')).toBe(true);
+    expect(await objetosIntegridad()).toHaveLength(8);
 
     // El inverso de 01f_cat_items_busqueda deja la búsqueda en código o nombre y se puede reaplicar.
     expect(await buscaEnAtributos()).toBe(true);

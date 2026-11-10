@@ -8,6 +8,7 @@ import { InMemoryEventSchemaValidator, KernelInfraModule, TENANT_CONTEXT, uuidV7
 import { ContextoTenantInterceptor, type SolicitudAutenticada } from '@vitrina/plataforma/seguridad';
 import { AuditoriaModule } from '../src/auditoria.module.js';
 import { crearEntornoAuditoria, type EntornoAuditoria } from './support/entorno.js';
+import { SeguridadDePruebaModule } from './support/seguridad-de-prueba.js';
 import { describeConDb } from './support/temp-db.js';
 import { CREAR_TABLA_VENTAS, VENTA_QUE_FALLA, VentasPruebaController } from './support/ventas-prueba.controller.js';
 
@@ -27,6 +28,7 @@ describeConDb('@Auditable (spec 20a)', () => {
     const modulo = await Test.createTestingModule({
       imports: [
         KernelInfraModule.register({ dataSource: entorno.dataSource, validator: new InMemoryEventSchemaValidator() }),
+        SeguridadDePruebaModule,
         AuditoriaModule.registrarApi(),
       ],
       controllers: [VentasPruebaController],

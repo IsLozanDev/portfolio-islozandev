@@ -45,7 +45,10 @@ export async function crearEntornoValores(): Promise<EntornoValores> {
   const validador = new InMemoryEventSchemaValidator();
   registrarEsquemasCfg(validador);
   const negar = { alcances: new Set<string>() };
-  const alcanceActor: AlcanceActor = { cubre: async (_usuarioId, destino) => !negar.alcances.has(destino.alcance) };
+  const alcanceActor: AlcanceActor = {
+    cubre: async (_usuarioId, destino) => !negar.alcances.has(destino.alcance),
+    alcanzaTenant: async () => true,
+  };
 
   const dependencias: DependenciasValores = {
     unidadDeTrabajo,

@@ -17,4 +17,9 @@ export interface AlcanceActor {
    * NotFoundError si la empresa o sucursal no existe en el tenant del contexto.
    */
   cubre(usuarioId: string, destino: DestinoAlcance, ahora: Date): Promise<boolean>;
+  /**
+   * true si el actor es propietario o tiene una asignación vigente de alcance TENANT cuyo rol o perfil
+   * incluye el permiso (spec 20b): una asignación TENANT de otro rol no abre lo que pide ese permiso.
+   */
+  alcanzaTenant(usuarioId: string, permiso: string, ahora: Date): Promise<boolean>;
 }

@@ -8,8 +8,8 @@ interface Manifiesto {
   roles_predefinidos: { codigo: string; permisos: string[] }[];
 }
 
-/** Lo que el spec 18 agregó al manifiesto PLAT 1.7.0; sigue en 1.13.0 (spec 19e). */
-describe('Manifiesto PLAT 1.13.0: bitácora y soporte (spec 18)', () => {
+/** Lo que el spec 18 agregó al manifiesto PLAT 1.7.0; sigue en 1.14.0 (spec 20b). */
+describe('Manifiesto PLAT 1.14.0: bitácora y soporte (spec 18)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (codigo: string) => manifiesto.roles_predefinidos.find((rol) => rol.codigo === codigo)?.permisos ?? [];
   const permiso = (codigo: string) => manifiesto.permisos.find((declarado) => declarado.codigo === codigo);
@@ -20,7 +20,7 @@ describe('Manifiesto PLAT 1.13.0: bitácora y soporte (spec 18)', () => {
   });
 
   it('declara los tres permisos con alcance TENANT; solo autorizar es sensible (TR-RN-009)', () => {
-    expect(manifiesto.version).toBe('1.13.0');
+    expect(manifiesto.version).toBe('1.14.0');
     const declarados = [PERMISOS_SEG.seguridadBitacora, PERMISOS_SEG.soporteAutorizar, PERMISOS_SEG.soporteSolicitar].map((codigo) => [
       codigo,
       permiso(codigo)?.alcance_minimo,
