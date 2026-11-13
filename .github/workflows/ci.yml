@@ -60,6 +60,24 @@ jobs:
       - uses: nrwl/nx-set-shas@v5
       - run: pnpm nx affected -t lint test build
 
+  # TR-RNF-113 (spec 21): en un PR, solo sus commits; en main, todo el historial. Reglas y excepción en .gitleaks.toml.
+  secretos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # Imagen oficial y no gitleaks-action: la acción pide licencia en repos de organización.
+      # GIT_CONFIG_*: el repo montado es de otro usuario y git lo rechazaría por «dubious ownership».
+      - name: gitleaks
+        env:
+          RANGO: ${{ github.event_name == 'pull_request' && format('--log-opts={0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || '' }}
+        run: >-
+          docker run --rm -v "$PWD:/repo"
+          -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*'
+          ghcr.io/gitleaks/gitleaks:v8.30.1
+          git /repo --config /repo/.gitleaks.toml --redact --no-banner ${RANGO:+"$RANGO"}
+
   migraciones:
     runs-on: ubuntu-latest
     services:

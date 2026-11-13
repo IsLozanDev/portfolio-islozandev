@@ -321,6 +321,10 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 - **Sí:** GitHub Actions controla el orden (imágenes, migraciones, deploy, humo). Decisión del usuario. Así ninguna versión nueva arranca antes de su migración. Railway y Vercel no hacen autodeploy desde Git.
 - **Sí:** el pipeline corre `manifiesto:aplicar:remoto` y `plataforma:sembrar:remoto`, que son idempotentes. Decisión del usuario. El correo del administrador va en la variable `STAGING_ADMIN_CORREO` del Environment.
 - **Sí:** se despliega después de que el CI pasa (`workflow_run`), no en paralelo con él.
+- **Sí:** los frontends se suben como sitio estático: `nx build <app> -c staging`, se copia `vercel.json` en `dist/apps/<app>/browser` y `vercel deploy <carpeta> --prod`. Vercel no construye nada; solo sirve los archivos y aplica los rewrites. Reemplaza el `vercel pull`/`build`/`deploy --prebuilt` del plan, que en un monorepo Nx habría vuelto a instalar y construir dentro de Vercel.
+- **Sí:** mientras falten datos de staging, `environment.staging.ts` y `vercel.json` llevan el marcador `PENDIENTE`, y el primer job de `deploy-staging.yml` (`revisar`) se detiene si lo encuentra. Así no se despliega una configuración a medias.
+- **Sí:** en `migrar`, primero `db/` y luego `supabase/migrations`, como dice `docs/ops/supabase-ambientes.md` (el plan los nombraba al revés).
+- **Sí:** Railway sigue la etiqueta mutable `:staging` y el pipeline hace `railway redeploy --service <servicio> --yes` con un token de proyecto, que vuelve a bajar la etiqueta (documentación de Railway, consultada en el paso 8). La etiqueta `sha` queda para revertir. Los paquetes de GHCR son públicos: Railway solo baja imágenes privadas en el plan Pro, el repo es público y la imagen no lleva secretos.
 - **Sí:** gitleaks para TR-RNF-113. No requiere cuenta y corre en el runner.
 - **No:** `deploy-prod.yml`, Supabase Pro, respaldos ni runbook de producción. Son de P-01.
 - **No:** copia anonimizada de SazónPOS en staging. Va con el ensayo de migración (CC-10).
@@ -333,6 +337,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 | --- | --- |
 | La autoinstrumentación no engancha `pg` o Nest en ESM y las trazas salen sin spans de base | Se carga con `--import`, con el hook ESM que pida la versión de OTel. La prueba del paso 4 exige el span HTTP; la verificación en staging exige el de `pg`. Si falta, se agrega `import-in-the-middle` según la documentación. |
 | `@opentelemetry/instrumentation-nestjs-core` 0.72 solo admite `@nestjs/core` < 12 (visto al implementar el paso 4): con Nest 12 no hay spans de controlador | Decisión del usuario: queda registrada y se activa sola cuando upstream admita Nest 12. Mientras tanto el span HTTP lleva la ruta, el estado y `tenant.id`. Al subir la versión de la instrumentación se revisa que aparezcan. |
+| Imágenes de unos 612 MB (visto en el paso 6): el `package.json` de la raíz lleva también las dependencias del frontend y `pnpm install --prod` las instala | Se acepta para staging. Achicarla (dependencias por app con `pnpm deploy` o un `package.json` por app) es un spec aparte. |
 | TypeORM o el pooler de Supabase generan spans de `pg` muy ruidosos (`SET LOCAL`, `set_config`) | Se acepta en staging. Si molesta, se filtran con `requestHook` o `ignoreSpan` de la instrumentación de `pg`. |
 | El bundle de esbuild rompe la instrumentación de algún paquete | `packages: 'external'` deja `node_modules` fuera. Si un paquete instrumentado entra al bundle por alias, se declara externo. |
 | La cuota gratuita de Grafana Cloud o Sentry se agota con el 100 % de muestreo | Staging tiene poco tráfico. Se revisa el uso al cerrar el spec y se baja `OTEL_TRACES_SAMPLER_ARG` si hace falta. |

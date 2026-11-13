@@ -1,0 +1,175 @@
+# Despliegue a staging (spec 21 · E-04). Corre cuando el CI termina en verde sobre main, o a mano.
+# Orden: imágenes → migraciones y siembra → api, worker y frontends → humo. Si migrar falla, no se despliega nada.
+# Secretos y variables: Environment `staging` (docs/ops/staging.md). Ninguno se imprime.
+name: Deploy staging
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un despliegue a la vez y sin cancelar el que está en curso (podría quedar a media migración).
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  # El commit que pasó el CI; a mano, el de main.
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  RAILWAY_CLI: '@railway/cli@5.71.0'
+  VERCEL_CLI: 'vercel@65.12.1'
+
+jobs:
+  revisar:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - name: Sin datos de staging pendientes
+        run: |
+          if grep -n PENDIENTE apps/plataforma-*/src/environments/environment.staging.ts apps/plataforma-*/vercel.json; then
+            echo "::error::Faltan datos de staging (PENDIENTE). Ver docs/ops/staging.md."
+            exit 1
+          fi
+
+  imagenes:
+    needs: revisar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        app: [api, worker]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - name: Nombre del registro en minúsculas
+        run: echo "REGISTRO=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          # sha para volver atrás; staging es la etiqueta que sigue Railway.
+          tags: |
+            ${{ env.REGISTRO }}/${{ matrix.app }}:${{ env.SHA }}
+            ${{ env.REGISTRO }}/${{ matrix.app }}:staging
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
+
+  migrar:
+    needs: imagenes
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SEG_URL_INVITACION: ${{ vars.SEG_URL_INVITACION }}
+      ORG_OPERADOR_RUC: ${{ vars.ORG_OPERADOR_RUC }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - run: corepack enable
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Primero db/ y luego supabase/migrations (docs/ops/supabase-ambientes.md).
+      - name: Migraciones de plataforma
+        run: pnpm db:up:remoto
+      - name: Migraciones de Supabase
+        run: pnpm db:up:supabase:remoto
+      # Idempotentes: no cambian nada si ya están aplicados.
+      - name: Manifiesto PLAT
+        run: pnpm manifiesto:aplicar:remoto libs/plataforma/seguridad/manifiesto/plat.manifiesto.json
+      - name: Tenant operador y administrador
+        run: pnpm plataforma:sembrar:remoto "${{ vars.STAGING_ADMIN_CORREO }}"
+
+  desplegar:
+    needs: migrar
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      # Railway vuelve a bajar la etiqueta staging (docs.railway.com, private-container-registry).
+      - name: Redeploy de api y worker
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          npx -y "$RAILWAY_CLI" redeploy --service api --yes
+          npx -y "$RAILWAY_CLI" redeploy --service worker --yes
+
+  frontends:
+    needs: migrar
+    runs-on: ubuntu-latest
+    environment: staging
+    strategy:
+      matrix:
+        include:
+          - app: plataforma-admin
+            proyecto: VERCEL_PROJECT_ID_ADMIN
+          - app: plataforma-consola
+            proyecto: VERCEL_PROJECT_ID_CONSOLA
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - run: corepack enable
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm nx build ${{ matrix.app }} -c staging
+      # Estático: Vercel no construye nada, solo sirve los archivos y aplica los rewrites de vercel.json.
+      - name: Desplegar en Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars[matrix.proyecto] }}
+        run: |
+          SALIDA=dist/apps/${{ matrix.app }}/browser
+          cp apps/${{ matrix.app }}/vercel.json "$SALIDA/vercel.json"
+          npx -y "$VERCEL_CLI" deploy "$SALIDA" --prod --yes --token "$VERCEL_TOKEN"
+
+  humo:
+    needs: [desplegar, frontends]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      URL_API: ${{ vars.URL_API_STAGING }}
+      URL_ADMIN: ${{ vars.URL_ADMIN_STAGING }}
+      URL_CONSOLA: ${{ vars.URL_CONSOLA_STAGING }}
+    steps:
+      # Railway tarda en reemplazar el contenedor: hasta 2 min de reintentos.
+      - name: api responde
+        run: curl -fsS --retry 24 --retry-delay 5 --retry-all-errors "$URL_API/v1/salud"
+      - name: rewrite /v1 de Vercel llega a la api
+        run: curl -fsS --retry 6 --retry-delay 5 --retry-all-errors "$URL_ADMIN/v1/salud"
+      - name: frontends sirven HTML
+        run: |
+          for url in "$URL_ADMIN" "$URL_CONSOLA"; do
+            tipo=$(curl -fsS -o /dev/null -w '%{content_type}' --retry 6 --retry-delay 5 --retry-all-errors "$url/")
+            echo "$url → $tipo"
+            [[ "$tipo" == text/html* ]]
+          done

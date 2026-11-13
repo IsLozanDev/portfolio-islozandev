@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const SOPORTE = fileURLToPath(new URL('./support/', import.meta.url));
 const TRACE_ID = '4bf92f3577b34da6a3ce929d0e0e4736';
 const TRACEPARENT = `00-${TRACE_ID}-00f067aa0ba902b7-01`;
-const ESPERA_MAXIMA_MS = 15_000;
+// Con otras suites en paralelo (nx affected en CI) el proceso hijo puede tardar en cargar el SDK y los hooks ESM.
+const ESPERA_MAXIMA_MS = 60_000;
 const PAUSA_MS = 100;
 
 interface SpanOtlp {

@@ -22,7 +22,9 @@ const app = await NestFactory.createApplicationContext(WorkerModule.register(dat
 usarLoggerDeObservabilidad(app);
 // Spec 21: las métricas del outbox solo se leen si OpenTelemetry está activo.
 const loggerMetricas = new Logger('MetricasOutbox');
-registrarMetricasOutbox(new LectorEstadoOutboxTypeOrm(dataSource), (error) =>
-  loggerMetricas.warn({ mensaje: 'No se pudo leer el estado del outbox', error: error instanceof Error ? error.name : typeof error }),
-);
+registrarMetricasOutbox(new LectorEstadoOutboxTypeOrm(dataSource), avisarLecturaFallida);
 app.enableShutdownHooks();
+
+function avisarLecturaFallida(error: unknown): void {
+  loggerMetricas.warn({ mensaje: 'No se pudo leer el estado del outbox', error: error instanceof Error ? error.name : typeof error });
+}

@@ -1,0 +1,15 @@
+# Spec 21: el contexto de las imágenes de api y worker. Nunca secretos ni artefactos locales.
+.env*
+.git
+.nx
+.angular
+.playwright-mcp
+.claude
+.agents
+.vscode
+**/node_modules
+**/dist
+**/coverage
+tmp
+docs
+specs
