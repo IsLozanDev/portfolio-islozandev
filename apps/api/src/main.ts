@@ -6,6 +6,7 @@ import { ENTIDADES_CAT, registrarEsquemasCat } from '@vitrina/plataforma/catalog
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
+import { salDocumento, usarLoggerDeObservabilidad } from '@vitrina/plataforma/observabilidad';
 import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
 import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
@@ -13,6 +14,7 @@ import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
 import { opcionesCors } from './cors.js';
+import { SERVICIO } from './servicio.js';
 
 const config = cargarConfig();
 const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
@@ -42,8 +44,11 @@ const app = await NestFactory.create(
     invitaciones: { supabaseSecretKey: config.SUPABASE_SECRET_KEY, url: config.SEG_URL_INVITACION, horas: config.SEG_INVITACION_HORAS },
     reintentosEventos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
     tenantOperador: config.ORG_TENANT_OPERADOR,
+    observabilidad: { servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumento(config) },
   }),
+  { bufferLogs: true },
 );
+usarLoggerDeObservabilidad(app);
 configurarApp(app);
 if (cors) app.enableCors(cors);
 await app.listen(config.PORT);

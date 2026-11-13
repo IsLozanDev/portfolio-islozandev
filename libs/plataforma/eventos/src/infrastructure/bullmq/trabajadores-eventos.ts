@@ -1,5 +1,6 @@
 import { Worker, type Job } from 'bullmq';
 import type { Redis } from 'ioredis';
+import type { ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import type { EntregarEvento } from '../../application/entregar-evento.js';
 import type { RegistroSuscripciones } from '../../application/ports/suscripciones.js';
 import type { EventoEntregado } from '../../domain/evento-entregado.js';
@@ -15,6 +16,8 @@ export interface OpcionesTrabajadores {
   conexion: Redis;
   concurrencia: number;
   politica: PoliticaReintentos;
+  /** Spec 21: el último intento fallido de una entrega (la que queda en la cola de fallidos). */
+  reportador?: ReportadorErrores;
 }
 
 /** Un `Worker` de BullMQ por consumidor, sobre su cola `evt-<consumidor>`. */
@@ -38,12 +41,18 @@ export class TrabajadoresEventos {
   }
 
   private crearTrabajador(consumidor: string): Worker<EventoEntregado> {
-    const { conexion, concurrencia, politica } = this.opciones;
-    return new Worker<EventoEntregado>(NombreConsumidor.de(consumidor).cola, (trabajo) => this.procesar(consumidor, trabajo), {
+    const { conexion, concurrencia, politica, reportador } = this.opciones;
+    const trabajador = new Worker<EventoEntregado>(NombreConsumidor.de(consumidor).cola, (trabajo) => this.procesar(consumidor, trabajo), {
       connection: conexion,
       concurrency: concurrencia,
       settings: { backoffStrategy: (intentosHechos, tipo) => esperaSegunTipo(politica, intentosHechos, tipo) },
     });
+    if (reportador) {
+      trabajador.on('failed', (trabajo, error) => {
+        if (trabajo && agotoIntentos(trabajo)) reportador.reportar(error, { consumidor, tipo_evento: trabajo.data.eventType });
+      });
+    }
+    return trabajador;
   }
 
   /** `attemptsMade` cuenta los intentos fallidos anteriores a este. */
@@ -55,6 +64,11 @@ export class TrabajadoresEventos {
       intentosMaximos: trabajo.opts.attempts ?? INTENTOS_SIN_CONFIGURAR,
     });
   }
+}
+
+/** BullMQ avisa `failed` en cada intento; solo el último es definitivo. */
+function agotoIntentos(trabajo: Job<EventoEntregado>): boolean {
+  return trabajo.attemptsMade >= (trabajo.opts.attempts ?? INTENTOS_SIN_CONFIGURAR);
 }
 
 function esperaSegunTipo(politica: PoliticaReintentos, intentosHechos: number, tipo?: string): number {

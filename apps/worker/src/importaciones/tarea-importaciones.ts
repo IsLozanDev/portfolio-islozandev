@@ -1,11 +1,13 @@
 import type { BeforeApplicationShutdown, OnApplicationBootstrap } from '@nestjs/common';
-import { Worker } from 'bullmq';
+import { Worker, type Job } from 'bullmq';
 import { Redis } from 'ioredis';
+import { REPORTADOR_SIN_ENVIO, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import { NOMBRE_COLA_IMPORTACIONES, type ProcesarImportacion, type TrabajoImportacion } from '@vitrina/plataforma/catalogos';
 
 type Informar = (mensaje: string, datos: Record<string, unknown>) => void;
 /** Una a la vez: cada importación bloquea su catálogo y CIE-10 pesa megas. */
 const CONCURRENCIA = 1;
+const INTENTOS_SIN_CONFIGURAR = 1;
 
 /**
  * Procesa la cola de importaciones de catálogos (spec 19b). Los reintentos son de BullMQ (`attempts: 2`
@@ -20,6 +22,7 @@ export class TareaImportaciones implements OnApplicationBootstrap, BeforeApplica
     private readonly procesar: Pick<ProcesarImportacion, 'ejecutar'>,
     private readonly informar: Informar,
     private readonly avisar: Informar,
+    private readonly reportador: ReportadorErrores = REPORTADOR_SIN_ENVIO,
   ) {
     // maxRetriesPerRequest: null lo exige BullMQ en los Worker.
     this.conexion = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -32,7 +35,10 @@ export class TareaImportaciones implements OnApplicationBootstrap, BeforeApplica
       connection: this.conexion,
       concurrency: CONCURRENCIA,
     });
-    this.trabajador.on('failed', (trabajo, error) => this.avisar('Trabajo de importación falló', { importacionId: trabajo?.id, error: error.name }));
+    this.trabajador.on('failed', (trabajo, error) => {
+      this.avisar('Trabajo de importación falló', { importacionId: trabajo?.id, error: error.name });
+      if (esFalloDefinitivo(trabajo)) this.reportador.reportar(error, { cola: NOMBRE_COLA_IMPORTACIONES });
+    });
     this.informar('Cola de importaciones lista', { cola: NOMBRE_COLA_IMPORTACIONES });
   }
 
@@ -40,4 +46,9 @@ export class TareaImportaciones implements OnApplicationBootstrap, BeforeApplica
     await this.trabajador?.close();
     this.conexion.disconnect();
   }
+}
+
+/** BullMQ avisa `failed` en cada intento; solo el último es definitivo. Sin trabajo no hay intentos que esperar. */
+function esFalloDefinitivo(trabajo: Job<TrabajoImportacion> | undefined): boolean {
+  return trabajo === undefined || trabajo.attemptsMade >= (trabajo.opts.attempts ?? INTENTOS_SIN_CONFIGURAR);
 }

@@ -1,3 +1,4 @@
+import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { z } from 'zod';
 
 const esquema = z.object({
@@ -24,7 +25,9 @@ const esquema = z.object({
   ORG_TENANT_OPERADOR: z.string().min(3).max(30).default('plataforma'),
   // Orígenes del navegador con CORS (U-06); ver cors.ts. Sin valor, CORS apagado.
   ORIGENES_PERMITIDOS: z.string().optional(),
-});
+  // Spec 21: logs, sal de documentos y ambiente (TR-RNF-026, TR-RNF-111).
+  ...camposEntornoObservabilidad,
+}).superRefine(exigirSalFueraDeLocal);
 
 export type Config = z.infer<typeof esquema>;
 

@@ -13,7 +13,7 @@
     "serve": {
       "executor": "nx:run-commands",
       "dependsOn": ["build"],
-      "options": { "command": "node --env-file-if-exists=.env --enable-source-maps apps/api/dist/main.js", "cwd": "{workspaceRoot}" }
+      "options": { "command": "node --env-file-if-exists=.env --enable-source-maps --import ./apps/api/dist/registrar-hooks.js --import ./apps/api/dist/instrumentacion.js apps/api/dist/main.js", "cwd": "{workspaceRoot}" }
     },
     "test": {
       "executor": "nx:run-commands",

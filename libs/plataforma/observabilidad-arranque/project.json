@@ -1,0 +1,19 @@
+{
+  "name": "observabilidad-arranque",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plataforma/observabilidad-arranque/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:obs"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -b libs/plataforma/observabilidad-arranque/tsconfig.json", "cwd": "{workspaceRoot}" },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": { "command": "node --experimental-vm-modules node_modules/jest/bin/jest.js -c libs/plataforma/observabilidad-arranque/jest.config.mjs", "cwd": "{workspaceRoot}" }
+    }
+  }
+}

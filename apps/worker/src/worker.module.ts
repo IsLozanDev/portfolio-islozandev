@@ -4,11 +4,13 @@ import { AuditoriaModule, registrarEsquemasAud } from '@vitrina/plataforma/audit
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
+import { ObservabilidadModule, salDocumento } from '@vitrina/plataforma/observabilidad';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
+import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
 
@@ -35,6 +37,7 @@ export class WorkerModule {
       module: WorkerModule,
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
+        ObservabilidadModule.register({ servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumento(config) }),
         EventosModule.registrarWorker({
           dataSource,
           redisUrl: config.REDIS_URL,

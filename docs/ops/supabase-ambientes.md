@@ -1,12 +1,13 @@
 # Supabase: ambientes y checklist (SPEC 02 · F-04)
 
-Un proyecto Supabase por ambiente. Solo `dev` y `prod`; `staging` entra con el spec 21. Este documento guarda datos no secretos y la evidencia de cada paso manual. **Ninguna clave, contraseña ni API key va aquí ni en el repo** (regla 9 de `CLAUDE.md`); viven en `.env` (local) y en el panel de Supabase.
+Un proyecto Supabase por ambiente: `dev`, `staging` (spec 21, ver `docs/ops/staging.md`) y `prod`. Este documento guarda datos no secretos y la evidencia de cada paso manual. **Ninguna clave, contraseña ni API key va aquí ni en el repo** (regla 9 de `CLAUDE.md`); viven en `.env` (local) y en el panel de Supabase.
 
 ## Ambientes
 
 | Ambiente | `project_ref` | URL | Estado |
 | --- | --- | --- | --- |
 | dev | `ebkwqvuynccawujsaedh` | `https://ebkwqvuynccawujsaedh.supabase.co` | Creado |
+| staging | `cswftpxqkuxgtzfmqhzl` | `https://cswftpxqkuxgtzfmqhzl.supabase.co` | Creado (Free; spec 21) |
 | prod | _(pendiente)_ | _(pendiente)_ | Por crear (plan Pro y respaldos: P-01, sprint 11) |
 
 ## Conexiones (dev)

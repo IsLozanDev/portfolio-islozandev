@@ -1,7 +1,7 @@
 import { Logger, Module, type DynamicModule, type Provider } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import type { Clock, EventPublisher, TenantContext } from '@vitrina/plataforma/kernel';
-import { CLOCK, EVENT_PUBLISHER, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { CLOCK, EVENT_PUBLISHER, REPORTADOR_ERRORES, TENANT_CONTEXT, TypeOrmUnitOfWork, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import { crearVencerAccesosSoporte, VencerAccesosSoporte } from '@vitrina/plataforma/seguridad';
 import { TareaVencimientoSoporte } from './tarea-vencimiento-soporte.js';
 
@@ -32,8 +32,9 @@ export class SoporteModule {
       ? [
           {
             provide: TareaVencimientoSoporte,
-            useFactory: (vencerAccesos: VencerAccesosSoporte) => new TareaVencimientoSoporte(redisUrl, cadaMs, vencerAccesos, informar, avisar),
-            inject: [VencerAccesosSoporte],
+            useFactory: (vencerAccesos: VencerAccesosSoporte, reportador?: ReportadorErrores) =>
+              new TareaVencimientoSoporte(redisUrl, cadaMs, vencerAccesos, informar, avisar, reportador),
+            inject: [VencerAccesosSoporte, { token: REPORTADOR_ERRORES, optional: true }],
           },
         ]
       : [];

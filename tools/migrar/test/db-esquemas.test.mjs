@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -85,7 +85,11 @@ const CASOS = [
   { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
   { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
   { migracion: '01g_aud_integridad.sql', esquema: 'aud', prueba: 'tests/01g_aud_integridad.test.sql' },
+  { migracion: '01h_obs_estado_outbox.sql', esquema: 'sync', prueba: 'tests/01h_obs_estado_outbox.test.sql' },
 ];
+
+const existeEstadoOutbox = async () =>
+  (await ejecutar(urlDb, `SELECT to_regprocedure('sync.estado_outbox()') IS NOT NULL AS existe`)).rows[0].existe;
 
 const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
 
@@ -357,6 +361,12 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01h_obs_estado_outbox quita la función y la política, y se puede reaplicar (spec 21).
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01h_obs_estado_outbox.sql'), 'utf8'));
+    expect(await existeEstadoOutbox()).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01h_obs_estado_outbox.sql'), 'utf8'));
+    expect(await existeEstadoOutbox()).toBe(true);
 
     // El inverso de 01g_aud_integridad se niega con verificaciones; sin ellas deja aud como lo dejó 01g_aud
     // y se puede reaplicar. Va antes que el de 01g_aud.

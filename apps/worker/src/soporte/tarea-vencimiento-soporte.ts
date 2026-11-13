@@ -1,6 +1,7 @@
 import type { BeforeApplicationShutdown, OnApplicationBootstrap } from '@nestjs/common';
 import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
+import { REPORTADOR_SIN_ENVIO, type ReportadorErrores } from '@vitrina/plataforma/kernel-infra';
 import type { ResultadoVencimientoSoporte, VencerAccesosSoporte } from '@vitrina/plataforma/seguridad';
 
 export const COLA_VENCIMIENTO_SOPORTE = 'seg-soporte-vencimiento';
@@ -24,6 +25,7 @@ export class TareaVencimientoSoporte implements OnApplicationBootstrap, BeforeAp
     private readonly vencer: Pick<VencerAccesosSoporte, 'ejecutar'>,
     private readonly informar: Informar,
     private readonly avisar: Informar,
+    private readonly reportador: ReportadorErrores = REPORTADOR_SIN_ENVIO,
   ) {
     // maxRetriesPerRequest: null lo exige BullMQ en los Worker.
     this.conexion = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -38,7 +40,10 @@ export class TareaVencimientoSoporte implements OnApplicationBootstrap, BeforeAp
     this.trabajador.on('completed', (_trabajo, resultado: ResultadoVencimientoSoporte) => {
       if (resultado.vencidos > 0 || resultado.fallidos > 0) this.informar('Accesos de soporte vencidos', { ...resultado });
     });
-    this.trabajador.on('failed', (_trabajo, error) => this.avisar('Tarea de vencimiento de soporte falló', { error: error.name }));
+    this.trabajador.on('failed', (_trabajo, error) => {
+      this.avisar('Tarea de vencimiento de soporte falló', { error: error.name });
+      this.reportador.reportar(error, { cola: COLA_VENCIMIENTO_SOPORTE });
+    });
     this.informar('Tarea de vencimiento de soporte programada', { cada_ms: this.cadaMs });
   }
 

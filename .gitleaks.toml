@@ -1,0 +1,9 @@
+# Escaneo de secretos en CI (spec 21, TR-RNF-113). Reglas por defecto de gitleaks más una excepción.
+[extend]
+useDefault = true
+
+# La publishable key de Supabase es pública por diseño: va en los frontends (CLAUDE.md). La secret key
+# (sb_secret_...) sigue detectándose.
+[[allowlists]]
+description = "Publishable key de Supabase"
+regexes = ['''^sb_publishable_[A-Za-z0-9_-]+$''']

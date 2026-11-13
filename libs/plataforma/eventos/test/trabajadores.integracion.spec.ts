@@ -24,6 +24,7 @@ describeConDb('TrabajadoresEventos con BullMQ y Redis 7', () => {
   const exitoso = `prueba-ok-${sufijo}`;
   const fallon = `prueba-falla-${sufijo}`;
   const llamadas: string[] = [];
+  const reportados: Record<string, string>[] = [];
 
   beforeAll(async () => {
     entorno = await crearEntornoEntrega();
@@ -34,7 +35,8 @@ describeConDb('TrabajadoresEventos con BullMQ y Redis 7', () => {
     entorno.suscripciones.suscribir(fallon, 'cita.creada', async () => {
       throw new Error('el consumidor sigue caído');
     });
-    trabajadores = new TrabajadoresEventos({ conexion, concurrencia: 2, politica: POLITICA }, entorno.suscripciones, entorno.entregar);
+    const reportador = { reportar: (_error: unknown, contexto?: Record<string, string>) => void reportados.push(contexto ?? {}) };
+    trabajadores = new TrabajadoresEventos({ conexion, concurrencia: 2, politica: POLITICA, reportador }, entorno.suscripciones, entorno.entregar);
     trabajadores.iniciar();
     colas = [exitoso, fallon].map((consumidor) => new Queue(NombreConsumidor.de(consumidor).cola, { connection: conexion }));
   });
@@ -81,5 +83,7 @@ describeConDb('TrabajadoresEventos con BullMQ y Redis 7', () => {
     ]);
     await esperarHasta(async () => (await colas[1].getJobState(evento.eventId)) === 'failed', LIMITE_ESPERA_MS);
     expect(await entorno.procesados(evento.eventId)).toEqual([]);
+    // Spec 21: solo el último intento se reporta.
+    expect(reportados).toEqual([{ consumidor: fallon, tipo_evento: 'cita.creada' }]);
   });
 });

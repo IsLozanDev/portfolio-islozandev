@@ -12,6 +12,8 @@ export {
   type KernelInfraOptions,
 } from './kernel-infra.module.js';
 export { OutboxPublisher } from './outbox.publisher.js';
+export { REPORTADOR_ERRORES, REPORTADOR_SIN_ENVIO, type ReportadorErrores } from './reportador-errores.js';
 export { SystemClock } from './system-clock.js';
+export { anotarSpanActivo, traceIdActivo } from './traza-activa.js';
 export { TypeOrmUnitOfWork } from './typeorm-unit-of-work.js';
 export { uuidV7 } from './uuid-v7.js';

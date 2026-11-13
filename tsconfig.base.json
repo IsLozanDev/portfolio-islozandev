@@ -45,6 +45,12 @@
       "@vitrina/plataforma/auditoria": [
         "./libs/plataforma/auditoria/src/index.ts"
       ],
+      "@vitrina/plataforma/observabilidad": [
+        "./libs/plataforma/observabilidad/src/index.ts"
+      ],
+      "@vitrina/plataforma/observabilidad-arranque": [
+        "./libs/plataforma/observabilidad-arranque/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

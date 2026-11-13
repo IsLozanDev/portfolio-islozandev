@@ -1,10 +1,23 @@
 import { Module, type DynamicModule } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { CatalogosModule } from '@vitrina/plataforma/catalogos';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
-import { CLOCK, ID_GENERATOR, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWork, type KernelInfraOptions } from '@vitrina/plataforma/kernel-infra';
+import {
+  CLOCK,
+  HttpExceptionFilter,
+  ID_GENERATOR,
+  KernelInfraModule,
+  REPORTADOR_ERRORES,
+  REPORTADOR_SIN_ENVIO,
+  TENANT_CONTEXT,
+  TypeOrmUnitOfWork,
+  type KernelInfraOptions,
+  type ReportadorErrores,
+} from '@vitrina/plataforma/kernel-infra';
+import { ObservabilidadModule, type ObservabilidadOpciones } from '@vitrina/plataforma/observabilidad';
 import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
@@ -28,18 +41,21 @@ export type AppOpciones = KernelInfraOptions &
     reintentosEventos: PoliticaReintentos;
     /** Código del tenant operador: el único que da de alta tenants (spec 12). */
     tenantOperador: string;
+    /** Logs JSON (spec 21). Las pruebas lo omiten y siguen con el logger de Nest. */
+    observabilidad?: ObservabilidadOpciones;
   };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     return {
       module: AppModule,
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
+        ...(observabilidad ? [ObservabilidadModule.register(observabilidad)] : []),
         OrgModule,
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         parametros,
@@ -74,6 +90,12 @@ export class AppModule {
         UnidadesController,
       ],
       providers: [
+        // Spec 21: los errores sin filtro propio de su lib responden sin detalle y los 5xx se reportan (Sentry).
+        {
+          provide: APP_FILTER,
+          useFactory: (reportador?: ReportadorErrores) => new HttpExceptionFilter(reportador ?? REPORTADOR_SIN_ENVIO),
+          inject: [{ token: REPORTADOR_ERRORES, optional: true }],
+        },
         {
           provide: ConsolaTenants,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, cambiarEstadoTenant: CambiarEstadoTenant) =>

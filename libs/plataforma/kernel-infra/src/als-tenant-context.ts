@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { MissingTenantContextError, type TenantContext, type TenantScope } from '@vitrina/plataforma/kernel';
+import { anotarSpanActivo } from './traza-activa.js';
 
 export class AlsTenantContext implements TenantContext {
   private readonly storage = new AsyncLocalStorage<TenantScope>();
@@ -11,6 +12,7 @@ export class AlsTenantContext implements TenantContext {
   }
 
   run<T>(scope: TenantScope, fn: () => Promise<T>): Promise<T> {
+    anotarSpanActivo(scope);
     return this.storage.run(scope, fn);
   }
 }
