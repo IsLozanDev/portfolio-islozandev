@@ -1,6 +1,6 @@
 import { trace } from '@opentelemetry/api';
 import { limpiarEventoSentry } from '../src/infrastructure/sentry.js';
-import { iniciarTelemetria } from '../src/infrastructure/telemetria.js';
+import { esEnvioASentry, iniciarTelemetria } from '../src/infrastructure/telemetria.js';
 
 describe('iniciarTelemetria (spec 21)', () => {
   it('sin endpoint ni DSN no inicia nada ni registra un tracer', () => {
@@ -20,6 +20,20 @@ describe('iniciarTelemetria (spec 21)', () => {
     const iniciar = () => iniciarTelemetria({ servicio: 'vitrina-prueba' }, { SENTRY_DSN: dsnInvalido });
     expect(iniciar).toThrow(/SENTRY_DSN/);
     expect(iniciar).not.toThrow(new RegExp(dsnInvalido));
+  });
+});
+
+describe('esEnvioASentry', () => {
+  const HOST_SENTRY = 'o1.ingest.us.sentry.io';
+
+  it('reconoce el host del DSN por hostname o por host con puerto', () => {
+    expect(esEnvioASentry({ hostname: HOST_SENTRY }, HOST_SENTRY)).toBe(true);
+    expect(esEnvioASentry({ host: `${HOST_SENTRY}:443` }, HOST_SENTRY)).toBe(true);
+  });
+
+  it('no ignora otros destinos ni nada si no hay DSN', () => {
+    expect(esEnvioASentry({ hostname: 'cswftpxqkuxgtzfmqhzl.supabase.co' }, HOST_SENTRY)).toBe(false);
+    expect(esEnvioASentry({ hostname: HOST_SENTRY }, undefined)).toBe(false);
   });
 });
 

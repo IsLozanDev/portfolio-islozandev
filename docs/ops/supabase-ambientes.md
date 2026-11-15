@@ -29,22 +29,26 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 
 - [ ] Panel: *Project Settings → JWT Keys*: migrar a claves asimétricas, crear una clave ECC (P-256) y rotar para que sea la activa; revocar la clave heredada cuando no queden sesiones.
 - [x] (dev) `curl {SUPABASE_URL}/auth/v1/.well-known/jwks.json` devuelve una clave con `kty = EC`, `crv = P-256` y `alg = ES256`.
+- [x] (staging) El JWKS de `cswftpxqkuxgtzfmqhzl` devuelve `alg = ES256` (2026-11-15).
 
 ### 2. Data API sin esquemas de plataforma
 
 - [ ] Panel: *Project Settings → Data API → Exposed schemas*: dejar solo `public` (o ninguno). Ni `seg`, `org`, `sync` ni los siguientes.
 - [x] (dev) `curl -H "apikey: {PUBLISHABLE_KEY}" -H "Accept-Profile: sync" {SUPABASE_URL}/rest/v1/outbox?limit=1` responde `406 PGRST106` ("Only the following schemas are exposed: public, graphql_public"). El `GET /rest/v1/` solo admite secret key, por eso no sirve para esta prueba.
+- [x] (staging) `Accept-Profile: sync`, `seg` y `org` responden `PGRST106` ("Only the following schemas are exposed: public"), 2026-11-15.
 - [x] (dev) Tras aplicar la migración: `has_schema_privilege('anon', 'sync', 'USAGE')` y `has_schema_privilege('authenticated', 'sync', 'USAGE')` devuelven `false` (consulta de solo lectura por el MCP).
 
 ### 3. SMTP propio con Resend
 
 - [ ] Panel: *Authentication → Emails → SMTP Settings*: host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = API key de Resend (rotada, nunca la pegada en un chat), remitente y nombre.
 - [ ] Remitente: `onboarding@resend.dev` solo entrega a la dirección de la cuenta propietaria de Resend. Para invitar a otras personas hay que verificar un dominio en Resend y cambiar el remitente.
+- [x] (staging) SMTP de Resend configurado: la invitación del administrador sembrado llegó por Resend (2026-11-15).
 
 ### 4. Plantillas de correo en español
 
 - [ ] Panel: *Authentication → Emails → Templates*: pegar el contenido de `supabase/templates/invite.html`, `recovery.html` y `confirmation.html` con los asuntos de `supabase/config.toml`.
 - [ ] Una invitación enviada desde *Authentication → Users → Invite user* llega por Resend con la plantilla en español.
+- [x] (staging) La invitación llegó con la plantilla en español («Te invitaron a Vitrina») y el enlace a `/auth/invitacion`. El enlace de Supabase vence en 1 h por defecto: *Email OTP Expiration* subido a 86400 s.
 
 ### 5. Migración del outbox
 
@@ -74,6 +78,7 @@ Orden: primero `db/` y luego `supabase/migrations`; para revertir, al revés (`d
 
 - [x] (dev) `pnpm db:up:remoto` aplica `01b_seg.sql` y `pnpm db:up:supabase:remoto` aplica `20261102000000_seg_supabase_auth.sql`.
 - [x] (dev) Panel: *Authentication → Hooks → Custom Access Token*, tipo Postgres, `seg.custom_access_token_hook`, activado.
+- [x] (staging) Hook `seg.custom_access_token_hook` activado; el administrador sembrado ingresa a admin y consola con su `tenant_id`.
 - [x] (dev) Panel: *Authentication → Sign In / Providers*: *Allow new users to sign up* desactivado.
 - [x] (dev) Un usuario creado en el panel aparece en `seg.usuario` con el mismo id y correo en minúsculas.
 - [x] (dev) Su token trae `tipo_usuario` y `tenant_id = null`; con una membresía `ACTIVO` en un tenant `ACTIVO`, trae ese `tenant_id`. Datos de prueba borrados.

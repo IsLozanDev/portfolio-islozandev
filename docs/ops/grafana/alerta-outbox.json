@@ -1,0 +1,94 @@
+{
+  "apiVersion": 1,
+  "groups": [
+    {
+      "orgId": 1,
+      "name": "outbox",
+      "folder": "vitrina",
+      "interval": "1m",
+      "rules": [
+        {
+          "uid": "ag4f078ic8em8b",
+          "title": "Outbox atrasado (staging)",
+          "condition": "C",
+          "data": [
+            {
+              "refId": "A",
+              "relativeTimeRange": {
+                "from": 600,
+                "to": 0
+              },
+              "datasourceUid": "grafanacloud-prom",
+              "model": {
+                "editorMode": "code",
+                "expr": "max(vitrina_outbox_edad_pendiente_seg_seconds{deployment_environment_name=\"staging\"})",
+                "instant": true,
+                "intervalMs": 1000,
+                "legendFormat": "__auto",
+                "maxDataPoints": 43200,
+                "range": false,
+                "refId": "A"
+              }
+            },
+            {
+              "refId": "C",
+              "queryType": "expression",
+              "relativeTimeRange": {
+                "from": 0,
+                "to": 0
+              },
+              "datasourceUid": "__expr__",
+              "model": {
+                "conditions": [
+                  {
+                    "evaluator": {
+                      "params": [
+                        60
+                      ],
+                      "type": "gt"
+                    },
+                    "operator": {
+                      "type": "and"
+                    },
+                    "query": {
+                      "params": [
+                        "C"
+                      ]
+                    },
+                    "reducer": {
+                      "params": [],
+                      "type": "last"
+                    },
+                    "type": "query"
+                  }
+                ],
+                "datasource": {
+                  "type": "__expr__",
+                  "uid": "__expr__"
+                },
+                "expression": "A",
+                "intervalMs": 1000,
+                "maxDataPoints": 43200,
+                "refId": "C",
+                "type": "threshold"
+              }
+            }
+          ],
+          "noDataState": "Alerting",
+          "execErrState": "Error",
+          "for": "5m",
+          "annotations": {
+            "summary": "Outbox de staging atrasado más de 60 s o worker sin reportar."
+          },
+          "labels": {
+            "ambiente": "staging"
+          },
+          "isPaused": false,
+          "notification_settings": {
+            "receiver": "correo-vitrina"
+          }
+        }
+      ]
+    }
+  ]
+}

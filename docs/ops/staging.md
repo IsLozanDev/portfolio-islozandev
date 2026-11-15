@@ -24,7 +24,7 @@ GitHub Actions ──► GHCR (imágenes) ──► Railway        GitHub Enviro
 | **Sentry** | Recibe los errores 500 y los trabajos fallidos | Avisa del error con su contexto, sin buscarlo en los logs. Lo pide el plan (E-03). | Free dentro de la cuota |
 | **GitHub Environment `staging`** | Guarda los secretos que usa el pipeline | Los secretos no van en el repo; Actions los usa sin mostrarlos. | Gratis |
 
-Región: todo lo más cerca posible de Supabase dev, que está en **`us-west-2` (Oregon)**: Supabase staging en *West US (Oregon)*, Railway en *US West*, Grafana en *US*.
+Región: todo lo más cerca posible de Supabase dev, que está en **`us-west-2` (Oregon)**: Supabase staging en *West US (Oregon)*, Railway en *US West*, Grafana en *US*. Supabase staging quedó en **`us-east-2` (Ohio)** (pooler `aws-1-us-east-2`): mover Railway a *US East* baja la latencia api→base. No cambia nada funcional.
 
 ## 1. Supabase staging
 
@@ -180,7 +180,7 @@ Con esos datos reemplazo los `PENDIENTE`. Mientras quede alguno, `deploy-staging
 
 ## 9. Después del primer despliegue (lo hago contigo)
 
-- Alerta de Grafana: `max(vitrina_outbox_edad_pendiente_seg) > 60` durante 5 min, con aviso por correo. Se exporta a `docs/ops/grafana/alerta-outbox.json`.
+- Alerta de Grafana: `max(vitrina_outbox_edad_pendiente_seg_seconds) > 60` (Grafana Cloud agrega `_seconds` por la unidad `s` del gauge) durante 5 min, con aviso por correo. Se exporta a `docs/ops/grafana/alerta-outbox.json`.
 - Verificación del spec 21 (paso 11) y evidencia abajo.
 
 ## Desplegar, revertir y reactivar
@@ -201,9 +201,25 @@ Con esos datos reemplazo los `PENDIENTE`. Mientras quede alguno, `deploy-staging
 | Vercel admin | https://vitrina-admin-staging.vercel.app | Creado |
 | Vercel consola | https://vitrina-consola-staging.vercel.app | Creado |
 | Grafana Cloud | OTLP `https://otlp-gateway-prod-us-west-0.grafana.net/otlp` | Creado |
-| Sentry | — | Por crear |
-| GitHub Environment `staging` | — | Por crear |
+| Sentry | Proyectos `vitrina-api` y `vitrina-worker` | Creado |
+| GitHub Environment `staging` | — | Creado |
 
 ## Evidencia
 
-_(Se llena en el paso 11 del spec: URLs por HTTPS, humo, traza en Grafana, alerta disparada y resuelta, error en Sentry, 2 réplicas, capturas de las apps.)_
+### 2026-11-15: HTTPS, humo y Supabase
+
+- `Deploy staging` run `43750237866`: todos los jobs en verde, `humo` incluido.
+- `GET` api `/v1/salud` 200 `application/json`; admin y consola `/v1/salud` 200 por el rewrite; raíz de admin y consola 200 `text/html`.
+- JWKS de staging: `alg` ES256.
+- Data API: `Accept-Profile: sync`, `seg` y `org` devuelven `PGRST106` (solo `public` expuesto).
+- Ingreso: el administrador sembrado aceptó la invitación (reenviada: el enlace de Supabase vence en 1 h por defecto; *Email OTP Expiration* subido a 86400 s) y entró a `plataforma-admin`, que muestra Seguridad, Configuración y Organización.
+- 2 réplicas de la api (Railway *Replicas* = 2): 50 `GET /v1/salud` → 200 x50; 50 `GET /v1/seg/mi-contexto` con sesión real → 200 x50. Sin errores.
+- Apps en el navegador: `plataforma-consola` (Tenants, Catálogos, Feriados) y `plataforma-admin` (Roles) cargan con sesión; las llamadas `/v1/...` por el rewrite de Vercel responden 200 y la consola del navegador no tiene errores (solo el aviso de una extensión, `content_script_bundle`). Capturas: `consola-inicio.png`, `consola-devtools.png`, `admin-devtools.png`.
+- Grafana Cloud: Tempo recibe trazas de `vitrina-api` (`grafana-trazas.png`); Prometheus muestra `vitrina_outbox_edad_pendiente_seg_seconds`, `vitrina_outbox_fallidos` y `vitrina_outbox_pendientes` del worker en 0 (`grafana-metricas-outbox.png`) y `http_server_request_duration_seconds` de la api, por código 200/401 (`grafana-metricas-http.png`). Sin `http_route`: lo pone la instrumentación de Nest, inactiva con Nest 12 (Riesgos del spec). Se dejan de trazar los envíos de Sentry, que salían como un `POST` suelto por minuto.
+- Traza `543027892022e25544efd861e89ae918` (`GET`, 200, 1.47 s, 13 spans): raíz HTTP de `vitrina-api` con spans `pg-pool.connect`, `pg.query` (SELECT, START, COMMIT) e ioredis `get`/`set` (`grafana-traza-detalle.png`). Cada `pg.query` tarda ~51 ms: es la ida y vuelta Railway → Supabase Ohio; con 22 SELECT, explica casi todo el tiempo.
+- Span raíz (`GET /v1/seg/roles`): lleva `tenant.id`, `sucursal.id` y `usuario.id`; sin correo, nombre ni encabezados de autorización o cookies (`grafana-span-raiz.png`). La instrumentación HTTP agrega por defecto `client.address` (IP) y `user_agent.original`.
+- Log correlacionado: «Logs for this trace» trae en Loki la línea `request completed` de esa solicitud con `trace_id=543027892022e25544efd861e89ae918`, `req_ruta=/v1/seg/roles` y `res_estado=200` (`grafana-log-traza.png`). El `__error_details__` lo agrega el `| logfmt | json` de la consulta que arma Grafana, no el log.
+- Sentry: 500 forzado renombrando `cat.feriado` unos segundos en staging (y devuelto a su nombre). El issue `VITRINA-API-2` (`QueryFailedError: relation "cat.feriado" does not exist`) llega con `environment=staging`, `trace_id=423654195ef84ed79235ccf70b827184` y la solicitud reducida a `GET /v1/feriados`, sin body, cookies ni `Authorization` (`sentry-error-500.png`). La IP que muestra Sentry la infiere su servidor del envío (no es la del usuario); se apaga en *Settings → Security & Privacy → Prevent Storing of IP Addresses*.
+- Alerta «Outbox atrasado (staging)» (`grafana/alerta-outbox.json`): `max(vitrina_outbox_edad_pendiente_seg_seconds{deployment_environment_name="staging"}) > 60`, 5 min, *No data* = *Alerting* (la métrica la publica el worker; Grafana Cloud le agrega `_seconds` por la unidad). Con el worker removido en Railway y un evento publicado, disparó (correo *Firing* 2026-11-15 23:18:50 UTC, `grafana_state_reason=NoData`); al volver el worker, la métrica regresó en 0 y llegó el *Resolved* (A=0); la regla queda en *Normal* (`grafana-alerta-firing.png`, `grafana-alerta-resolved.png`, `grafana-alerta-normal.png`). Probado el camino «worker caído»; el umbral `> 60` con el worker vivo queda solo en la definición. Una primera versión de la regla usaba el nombre sin `_seconds` y siempre veía *No data*.
+
+Capturas en `.playwright-mcp/evidencia-staging/` (local, fuera del repo).
