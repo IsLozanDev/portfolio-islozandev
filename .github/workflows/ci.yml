@@ -58,6 +58,14 @@ jobs:
           restore-keys: |
             nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
       - uses: nrwl/nx-set-shas@v5
+        if: github.event_name == 'push'
+      # En un PR, nx-set-shas tomaba como base la cabeza del propio PR y no corría nada. El checkout es el
+      # merge con la rama base: HEAD^1 es esa rama y el diff es exactamente el del PR.
+      - name: Base del PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "NX_BASE=$(git rev-parse HEAD^1)" >> "$GITHUB_ENV"
+          echo "NX_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - run: pnpm nx affected -t lint test build
 
   # TR-RNF-113 (spec 21): en un PR, solo sus commits; en main, todo el historial. Reglas y excepción en .gitleaks.toml.

@@ -5,7 +5,7 @@ import { crearEntorno, type Entorno } from './support/entorno.js';
 import { describeConDb } from './support/temp-db.js';
 
 /** Raíces del menú que arma seg.menu_usuario con el manifiesto PLAT real aplicado. */
-describeConDb('Menú del manifiesto PLAT 1.9.0 (specs 17a y 18, PostgreSQL 16)', () => {
+describeConDb('Menú del manifiesto PLAT (specs 17a, 18, 19d y 19e, PostgreSQL 16)', () => {
   let e: Entorno;
 
   const idDeRol = async (codigo: string): Promise<string> =>
@@ -31,11 +31,12 @@ describeConDb('Menú del manifiesto PLAT 1.9.0 (specs 17a y 18, PostgreSQL 16)',
 
   afterAll(() => e?.cerrar());
 
-  it('el propietario ve «Organización» con empresas, sucursales y unidades, y no ve «Consola»', async () => {
+  it('el propietario ve «Organización» con empresas, sucursales y unidades, y de «Consola» solo Catálogos y Feriados', async () => {
     const menu = await menuCon('PLAT_PROPIETARIO');
 
     expect(menu).toEqual(expect.arrayContaining(['plat.organizacion', 'plat.organizacion.empresas', 'plat.organizacion.sucursales', 'plat.organizacion.unidades']));
-    expect(menu.filter((codigo) => codigo.startsWith('plat.consola'))).toEqual([]);
+    // Tiene item_gestionar (spec 19d): la consola se lo muestra, pero fuera del operador la API responde 403 OPERADOR_REQUERIDO.
+    expect(menu.filter((codigo) => codigo.startsWith('plat.consola')).sort()).toEqual(['plat.consola', 'plat.consola.catalogos', 'plat.consola.feriados']);
   });
 
   it('el propietario ve «Bitácora» y «Soporte» en Seguridad (spec 18)', async () => {
