@@ -271,23 +271,23 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 
 **Staging (TR-RNF-011):**
 
-- [ ] `docs/ops/supabase-ambientes.md` tiene la fila de staging y su checklist marcado con evidencia: ES256, Data API (`406 PGRST106` sobre `sync`), SMTP y plantillas.
-- [ ] api, admin y consola responden por HTTPS en sus dominios del proveedor. El worker no tiene dominio público.
-- [ ] `GET https://<admin>.vercel.app/v1/salud` responde 200 por el rewrite.
-- [ ] El administrador sembrado recibe la invitación, ingresa a `plataforma-admin` y a `plataforma-consola` de staging (un ingreso en cada una) y ve su menú.
-- [ ] Con la api en 2 réplicas, 50 solicitudes seguidas a `/v1/salud` y a una ruta autenticada responden sin errores.
+- [x] `docs/ops/supabase-ambientes.md` tiene la fila de staging y su checklist marcado con evidencia: ES256, Data API (`406 PGRST106` sobre `sync`), SMTP y plantillas.
+- [x] api, admin y consola responden por HTTPS en sus dominios del proveedor. El worker no tiene dominio público.
+- [x] `GET https://<admin>.vercel.app/v1/salud` responde 200 por el rewrite.
+- [x] El administrador sembrado recibe la invitación, ingresa a `plataforma-admin` y a `plataforma-consola` de staging (un ingreso en cada una) y ve su menú. La invitación se reenvió: el enlace de Supabase vence en 1 h por defecto.
+- [x] Con la api en 2 réplicas, 50 solicitudes seguidas a `/v1/salud` y a una ruta autenticada responden sin errores.
 - [ ] `docs/ops/staging.md` dice cómo desplegar a mano, cómo volver a la imagen anterior, cómo revertir una migración (`db:down:remoto`) y cómo reactivar el proyecto Supabase si se pausó.
 
 **Observabilidad en staging:**
 
-- [ ] En Grafana Cloud se ve una traza de una solicitud autenticada de staging, con spans HTTP y `pg`, y su log correlacionado por `trace_id`. Los spans de Nest quedan pendientes de upstream (ver Riesgos).
-- [ ] En Grafana se ven las métricas HTTP y las tres `vitrina_outbox_*`.
-- [ ] Con el worker detenido y un evento publicado, la alerta de outbox atrasado se dispara y llega el correo; al arrancar el worker se resuelve.
-- [ ] Un error 500 forzado en staging aparece en Sentry con `environment = staging`, el `trace_id` y sin body, cookies ni `Authorization`.
+- [x] En Grafana Cloud se ve una traza de una solicitud autenticada de staging, con spans HTTP y `pg`, y su log correlacionado por `trace_id`. Los spans de Nest quedan pendientes de upstream (ver Riesgos).
+- [x] En Grafana se ven las métricas HTTP y las tres `vitrina_outbox_*`.
+- [x] Con el worker detenido y un evento publicado, la alerta de outbox atrasado se dispara y llega el correo; al arrancar el worker se resuelve. Probado por *No data* (worker removido); el umbral con el worker vivo queda en la definición de la regla.
+- [x] Un error 500 forzado en staging aparece en Sentry con `environment = staging`, el `trace_id` y sin body, cookies ni `Authorization`.
 
 **UI (MCP Playwright):**
 
-- [ ] Las dos apps de staging cargan, el ingreso funciona y la consola del navegador no tiene errores. Hay capturas de las pantallas de inicio de las dos.
+- [x] Las dos apps de staging cargan, el ingreso funciona y la consola del navegador no tiene errores. Hay capturas de las pantallas de inicio de las dos. Verificado a mano en el navegador del usuario (el MCP Playwright no conectaba en esa sesión).
 
 **General:**
 

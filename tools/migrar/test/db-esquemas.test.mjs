@@ -431,10 +431,13 @@ describeConDb('db/ y supabase/migrations', () => {
 
     // El inverso de 01e_sync_relay deja sync como lo dejó 01e_sync_outbox (con datos) y se puede reaplicar.
     // Va primero: evento_fallido referencia seg.usuario.
+    // 01h depende de evento_fallido: se baja antes y se reaplica después, como en la bajada real.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01h_obs_estado_outbox.sql'), 'utf8'));
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01e_sync_relay.sql'), 'utf8'));
     expect(await objetosRelay()).toEqual([]);
     await ejecutar(urlDb, await readFile(rutaDb('01e_sync_relay.sql'), 'utf8'));
     expect(await objetosRelay()).toHaveLength(7);
+    await ejecutar(urlDb, await readFile(rutaDb('01h_obs_estado_outbox.sql'), 'utf8'));
 
     // El inverso de 01d_seq borra seq (con datos) y se puede reaplicar. Va primero: seq depende de org y seg.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01d_seq.sql'), 'utf8'));

@@ -42,7 +42,7 @@ const ATRIBUTO_AMBIENTE = 'deployment.environment.name';
  */
 export function iniciarTelemetria({ servicio }: OpcionesTelemetria, entorno: NodeJS.ProcessEnv = process.env): TelemetriaIniciada {
   const config = leerEntorno(entorno);
-  if (config.OTEL_EXPORTER_OTLP_ENDPOINT) iniciarOpenTelemetry(servicio, config.APP_ENV);
+  if (config.OTEL_EXPORTER_OTLP_ENDPOINT) iniciarOpenTelemetry(servicio, config.APP_ENV, config.SENTRY_DSN);
   if (config.SENTRY_DSN) iniciarSentry(config.SENTRY_DSN, config.APP_ENV);
   return { openTelemetry: Boolean(config.OTEL_EXPORTER_OTLP_ENDPOINT), sentry: Boolean(config.SENTRY_DSN) };
 }
@@ -56,7 +56,8 @@ function leerEntorno(entorno: NodeJS.ProcessEnv): z.infer<typeof esquemaTelemetr
 }
 
 /** Endpoint, cabeceras y muestreo salen de las `OTEL_*` estándar, que leen los exportadores y el SDK. */
-function iniciarOpenTelemetry(servicio: string, ambiente: string): void {
+function iniciarOpenTelemetry(servicio: string, ambiente: string, dsnSentry: string | undefined): void {
+  const hostSentry = dsnSentry ? new URL(dsnSentry).hostname : undefined;
   new NodeSDK({
     serviceName: servicio,
     resource: resourceFromAttributes({ [ATRIBUTO_AMBIENTE]: ambiente }),
@@ -64,7 +65,8 @@ function iniciarOpenTelemetry(servicio: string, ambiente: string): void {
     metricReaders: [new PeriodicExportingMetricReader({ exporter: new OTLPMetricExporter() })],
     logRecordProcessors: [new BatchLogRecordProcessor({ exporter: new OTLPLogExporter() })],
     instrumentations: [
-      new HttpInstrumentation(),
+      // Sentry envía sus sobres por HTTP: sin esto, cada envío sale en Grafana como una traza POST suelta.
+      new HttpInstrumentation({ ignoreOutgoingRequestHook: (solicitud) => esEnvioASentry(solicitud, hostSentry) }),
       // 0.72 solo instrumenta @nestjs/core <12: con Nest 12 queda inactiva hasta que upstream lo admita (spec 21, riesgos).
       new NestInstrumentation(),
       // Sin span padre no se traza: el relay y BullMQ consultan cada segundo y llenarían la cuota.
@@ -74,4 +76,11 @@ function iniciarOpenTelemetry(servicio: string, ambiente: string): void {
       new PinoInstrumentation({ disableLogCorrelation: true }),
     ],
   }).start();
+}
+
+/** Destino de una solicitud saliente de `http`/`https`, comparado con el host del DSN de Sentry. */
+export function esEnvioASentry(solicitud: { hostname?: string | null; host?: string | null }, hostSentry: string | undefined): boolean {
+  if (!hostSentry) return false;
+  const destino = solicitud.hostname ?? solicitud.host?.split(':')[0];
+  return destino === hostSentry;
 }

@@ -134,7 +134,8 @@ describeConDb('Reproceso de fallidos con PostgreSQL 16 y Redis 7 (TR-RF-095)', (
 
     expect(resultado).toEqual({ reprocesados: ids, omitidos: [] });
     await esperarHasta(async () => (await estadosDe(ids)).every((estado) => estado === 'PROCESADO'), LIMITE_ESPERA_MS);
-    expect(llamadas).toHaveLength(12);
+    // Entrega al menos una vez: con el CI cargado, BullMQ puede repetir un trabajo trabado; el consumidor es idempotente por event_id.
+    expect(new Set(llamadas).size).toBe(12);
     expect(await listar(tenantId, { consumidor })).toEqual([]);
     const [auditoria] = await entorno.dataSource.query(`SELECT DISTINCT reprocesado_por FROM sync.evento_fallido WHERE id = ANY($1::uuid[])`, [ids]);
     expect(auditoria.reprocesado_por).toBe(ANA);
