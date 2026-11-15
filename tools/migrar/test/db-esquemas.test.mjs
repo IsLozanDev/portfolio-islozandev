@@ -104,12 +104,14 @@ const triggersAuth = async () =>
     )
   ).rows.map((r) => r.tgname);
 
+// acceso_soporte nace con su version en 01b_seg_soporte, que la prueba vuelve a aplicar antes de revertir 01b_seg_autorizacion.
 const columnasExtra = async () =>
   (
     await ejecutar(
       urlDb,
       `SELECT table_name || '.' || column_name AS c FROM information_schema.columns
-        WHERE table_schema = 'seg' AND column_name IN ('version', 'obsoleto', 'ultima_sucursal_id') ORDER BY 1`,
+        WHERE table_schema = 'seg' AND table_name <> 'acceso_soporte'
+          AND column_name IN ('version', 'obsoleto', 'ultima_sucursal_id') ORDER BY 1`,
     )
   ).rows.map((r) => r.c);
 

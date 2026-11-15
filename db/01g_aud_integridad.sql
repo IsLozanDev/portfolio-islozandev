@@ -117,9 +117,11 @@ $$;
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aud_lector') THEN
+  -- El rol es de todo el cluster: dos bases que migran a la vez (pruebas en paralelo) chocan al crearlo.
+  BEGIN
     CREATE ROLE aud_lector NOLOGIN;
-  END IF;
+  EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL;
+  END;
   -- PostgreSQL 16: ALTER ... OWNER TO exige poder hacer SET ROLE al dueño nuevo.
   EXECUTE format('GRANT aud_lector TO %I', current_user);
 END

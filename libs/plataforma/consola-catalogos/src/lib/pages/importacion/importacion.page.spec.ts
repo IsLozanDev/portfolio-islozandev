@@ -249,8 +249,9 @@ describe('ImportacionPage', () => {
     sesion.contexto.set({ permisos: [PERMISOS_CATALOGOS.leer, PERMISOS_CATALOGOS.importar], mfaVigente: false });
     consola = await abrirConsola('/consola/catalogos/UBIGEO/importar', sesion, avisos, DETALLE_VACIO);
 
+    // La página carga diferida y redirige al iniciar: con el CI cargado, las vueltas fijas de abrirConsola no alcanzan.
+    await vi.waitFor(() => expect(consola.url()).toBe('/auth/mfa?returnUrl=%2Fconsola%2Fcatalogos%2FUBIGEO%2Fimportar'));
     consola.http.expectNone(URL_CATALOGOS);
-    expect(consola.url()).toBe('/auth/mfa?returnUrl=%2Fconsola%2Fcatalogos%2FUBIGEO%2Fimportar');
   });
 
   it('«Cancelar» vuelve al detalle sin llamar a la API', async () => {

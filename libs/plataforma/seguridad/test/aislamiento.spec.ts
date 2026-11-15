@@ -7,6 +7,8 @@ import { AlsTenantContext, InMemoryEventSchemaValidator, KernelInfraModule, Type
 import { REGISTRO_ACCESO } from '../src/application/ports/registro-acceso.port.js';
 import { CachePermisosRedis, crearClienteRedis } from '../src/infrastructure/redis/cache-permisos.redis.js';
 import { AsignacionRepositorioTypeOrm } from '../src/infrastructure/typeorm/asignacion.repositorio.js';
+import { ENTIDADES_SEG_LECTURA } from '../src/infrastructure/typeorm/entidades-lectura.js';
+import { ENTIDADES_SEG_SOPORTE } from '../src/infrastructure/typeorm/entidades-soporte.js';
 import { MembresiasLecturaTypeOrm } from '../src/infrastructure/typeorm/lecturas.js';
 import { PerfilRepositorioTypeOrm } from '../src/infrastructure/typeorm/perfil.repositorio.js';
 import { RolRepositorioTypeOrm } from '../src/infrastructure/typeorm/rol.repositorio.js';
@@ -85,7 +87,13 @@ describeConDb('Aislamiento entre tenants (TR-RNF-010)', () => {
     a = await sembrarTenant();
     b = await sembrarTenant();
 
-    appDs = new DataSource({ type: 'postgres', url: e.db.url, extra: { options: '-c role=seg_test_app' } });
+    // Las mismas entidades que la api: el SoporteInterceptor lee seg.acceso_soporte por ORM en cada petición (spec 18).
+    appDs = new DataSource({
+      type: 'postgres',
+      url: e.db.url,
+      entities: [...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE],
+      extra: { options: '-c role=seg_test_app' },
+    });
     await appDs.initialize();
     contexto = new AlsTenantContext();
     uow = new TypeOrmUnitOfWork(appDs, contexto);

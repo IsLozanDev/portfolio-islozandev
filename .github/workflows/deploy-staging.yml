@@ -123,6 +123,8 @@ jobs:
     needs: migrar
     runs-on: ubuntu-latest
     environment: staging
+    # Un deploy estático tarda segundos; sin tope, un deploy trabado en Vercel deja el job colgado 6 h.
+    timeout-minutes: 15
     strategy:
       matrix:
         include:
@@ -148,7 +150,10 @@ jobs:
           VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ vars[matrix.proyecto] }}
         run: |
-          SALIDA=dist/apps/${{ matrix.app }}/browser
+          # Fuera del repo: sin .git, Vercel no lee el autor del commit ni bloquea el deploy si su correo no es
+          # de una cuenta de GitHub del equipo.
+          SALIDA="$RUNNER_TEMP/${{ matrix.app }}"
+          cp -r dist/apps/${{ matrix.app }}/browser "$SALIDA"
           cp apps/${{ matrix.app }}/vercel.json "$SALIDA/vercel.json"
           npx -y "$VERCEL_CLI" deploy "$SALIDA" --prod --yes --token "$VERCEL_TOKEN"
 

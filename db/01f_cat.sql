@@ -9,9 +9,11 @@ CREATE SCHEMA cat;
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'cat_editor') THEN
+  -- El rol es de todo el cluster: dos bases que migran a la vez (pruebas en paralelo) chocan al crearlo.
+  BEGIN
     CREATE ROLE cat_editor NOLOGIN;
-  END IF;
+  EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL;
+  END;
   -- PostgreSQL 16: ALTER ... OWNER TO exige poder hacer SET ROLE al dueño nuevo.
   EXECUTE format('GRANT cat_editor TO %I', current_user);
 END

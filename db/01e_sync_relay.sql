@@ -8,9 +8,11 @@
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sync_lector') THEN
+  -- El rol es de todo el cluster: dos bases que migran a la vez (pruebas en paralelo) chocan al crearlo.
+  BEGIN
     CREATE ROLE sync_lector NOLOGIN;
-  END IF;
+  EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL;
+  END;
   -- PostgreSQL 16: quien crea un rol solo recibe ADMIN sobre él, y ALTER ... OWNER TO exige poder
   -- hacer SET ROLE al dueño nuevo.
   EXECUTE format('GRANT sync_lector TO %I', current_user);
