@@ -1,0 +1,19 @@
+%% OP-13 — Hoja de ruta de la plataforma de operación
+%%{init: {'gantt': {'leftPadding': 390, 'rightPadding': 40, 'barHeight': 26, 'fontSize': 14, 'sectionFontSize': 14}}}%%
+gantt
+  todayMarker off
+  dateFormat YYYY-MM-DD
+  axisFormat %b %Y
+  section Fase 0 · con SazónPOS
+  OpenTelemetry + logs con trace_id + Sentry      :f0a, 2026-11-02, 7d
+  Collector + Grafana Cloud + alertas técnicas     :f0b, after f0a, 5d
+  Mesa de ayuda existente + botón Ayuda + WhatsApp :f0c, after f0a, 5d
+  section Fase 1 · con PsicoAgenda
+  Servicio de identidad nivel 1 (DNI / RUC)        :f1a, 2027-01-11, 14d
+  Observabilidad de negocio (obs) + tablero salud  :f1b, after f1a, 14d
+  section Fase 2 · 3 productos o 20–30 clientes
+  Centro de Soporte propio (sop) + widget          :f2a, 2027-04-05, 28d
+  Problemas + GitHub + base de conocimiento        :f2b, after f2a, 14d
+  section Fase 3 · demanda comprobada
+  Identidad portable nivel 3 + portal Mis datos    :f3a, 2027-07-05, 28d
+  IA en soporte: clasificación y sugerencias       :f3b, after f3a, 14d

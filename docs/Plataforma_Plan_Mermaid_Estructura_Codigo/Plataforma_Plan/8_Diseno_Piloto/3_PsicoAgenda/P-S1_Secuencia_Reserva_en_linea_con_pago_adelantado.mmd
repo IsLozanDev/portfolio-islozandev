@@ -1,0 +1,30 @@
+%% P-S1 — Secuencia · Reserva en línea con pago adelantado
+sequenceDiagram
+  autonumber
+  actor P as Paciente
+  participant WEB as psi-web (SSR)
+  participant API as api · psi-agenda
+  participant NU as NU-AGE
+  participant R as Redis
+  participant DB as PostgreSQL (psi)
+  participant PAG as Plataforma · Pagos
+  participant NOT as Plataforma · Notificaciones
+  P->>WEB: Elige servicio "Terapia individual", Dra. Rojas, 14/10 10:00
+  WEB->>API: GET /v1/public/psi/disponibilidad
+  API->>NU: disponibilidad(profesional, servicio, semana)
+  NU-->>API: horarios libres
+  WEB->>API: POST /v1/public/psi/reservas/bloqueo
+  API->>R: SET bloqueo:prof:2026-10-14T10:00 NX EX 600
+  API-->>WEB: bloqueo 10 min + OTP enviado al celular
+  P->>WEB: ingresa OTP y datos (DNI, nombre, consentimiento de datos)
+  WEB->>API: POST /v1/public/psi/reservas (Idempotency-Key)
+  API->>DB: Persona/Paciente (si no existe) · Cita PENDIENTE_PAGO (EXCLUDE gist evita cruce)
+  API->>PAG: crear intención de pago S/ 120,00 (origen cita)
+  PAG-->>API: checkout
+  API-->>WEB: redirigir a pago
+  P->>PAG: paga con Yape
+  PAG-->>API: evento pag.pago.confirmado
+  API->>DB: Cita RESERVADA · outbox psi.cita.reservada
+  API->>R: DEL bloqueo
+  API->>NOT: confirmación por WhatsApp y correo (datos administrativos)
+  Note over API,DB: Si no hay pago en el plazo, el trabajo psi.liberar-reservas pasa la cita a CANCELADA y ofrece el horario a la lista de espera

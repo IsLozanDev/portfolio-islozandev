@@ -1,0 +1,29 @@
+%% T-S2 — Secuencia · Inicio de sesión, sucursal activa y autorización
+sequenceDiagram
+  autonumber
+  actor U as Psicóloga
+  participant FE as psi-profesional (shared/auth)
+  participant IDP as IdP (OIDC + MFA)
+  participant API as api · ContextoSucursalGuard
+  participant R as Redis (caché de permisos)
+  participant DB as PostgreSQL (seg)
+  U->>FE: Iniciar sesión
+  FE->>IDP: Authorization Code + PKCE
+  IDP-->>FE: id_token · access_token (sub)
+  FE->>API: GET /v1/seguridad/mi-contexto
+  API->>DB: sucursales_accesibles(usuario)
+  DB-->>API: [Sede Miraflores, Sede San Isidro]
+  API-->>FE: sucursales + productos habilitados
+  U->>FE: Elige Sede Miraflores
+  FE->>API: GET /v1/seguridad/menu · X-Sucursal-Id
+  API->>R: permisos:{usuario}:{sucursal}:v{versión}
+  alt no está en caché
+    API->>DB: permisos_efectivos(usuario, tenant, sucursal)
+    API->>R: guardar (TTL 15 min)
+  end
+  API-->>FE: menú + permisos (psi.historia.ver, …)
+  FE->>API: GET /v1/psi/historias/HP-2026-000123 · @Permiso('psi.historia.ver')
+  API->>API: ¿permiso sensible? → exige MFA reciente (claim amr)
+  API->>DB: SET LOCAL app.tenant_id, app.usuario_id · consulta con RLS
+  API->>DB: aud.registro (acceso a historia)
+  API-->>FE: 200 historia

@@ -1,0 +1,39 @@
+%% A-06 — Frontend de la plataforma transversal
+flowchart TB
+  C["plataforma-consola · SPA<br/>(equipo de plataforma)"]:::app
+  subgraph CF["libs/plataforma/consola-*"]
+    direction LR
+    c1["tenants y suscripciones<br/>alta asistida, planes, estado"]:::trans
+    c2["catálogos globales y<br/>tablas maestras"]:::trans
+    c3["centro de soporte<br/>bandeja, SLA, problemas"]:::trans
+    c4["salud por cliente<br/>alertas · observabilidad de negocio"]:::trans
+    c5["eventos fallidos ·<br/>integridad de auditoría"]:::trans
+  end
+  subgraph EMB["libs/plataforma embebibles (en cada <producto>-backoffice)"]
+    direction LR
+    e1["admin-cliente"]:::trans
+    e2["cms-editor"]:::trans
+    e3["comprobantes · series"]:::trans
+    e4["notificaciones · plantillas"]:::trans
+    e5["soporte-widget"]:::trans
+  end
+  B1["psi-backoffice"]:::psi
+  B2["rest-backoffice"]:::app
+  B3["… otros backoffice"]:::app
+  SH["libs/shared · ui · shell · auth · util"]:::dato
+  API["api /v1 · módulos de plataforma"]:::ext
+  C --> CF
+  B1 & B2 & B3 --> EMB
+  CF & EMB --> SH
+  CF & EMB --> API
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

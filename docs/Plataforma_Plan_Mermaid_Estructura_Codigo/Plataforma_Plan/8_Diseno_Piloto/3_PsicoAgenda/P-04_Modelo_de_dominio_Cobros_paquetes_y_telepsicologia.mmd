@@ -1,0 +1,105 @@
+%% P-04 — Modelo de dominio · Cobros, paquetes y telepsicología
+classDiagram
+  direction LR
+  class Cobro {
+    <<Aggregate>>
+    +uuid id
+    +ConceptoCobro concepto
+    +Dinero total
+    +EstadoCobro estado
+    +registrarPago(medio, monto)
+    +reembolsar(monto, motivo)
+  }
+  class PagoCaja {
+    <<Entity>>
+    +MedioPago medio
+    +Dinero monto
+    +string referencia
+  }
+  class Paquete {
+    <<Aggregate>>
+    +string nombre
+    +int sesiones
+    +Dinero precio
+    +int vigenciaDias
+  }
+  class CompraPaquete {
+    <<Aggregate>>
+    +int compradas
+    +int consumidas
+    +int penalizadas
+    +int reintegradas
+    +date vence
+    +int saldo()
+    +consumir(citaId)
+  }
+  class ConsumoSesion {
+    <<Entity>>
+    +uuid citaId
+    +TipoConsumo tipo
+    +datetime en
+  }
+  class CreditoAFavor {
+    <<Entity>>
+    +Dinero monto
+    +string origen
+  }
+  class ReciboHonorarios {
+    <<Entity>>
+    +string serieNumero
+    +Dinero monto
+    +bool retencion
+    +uuid archivoId
+  }
+  class SalaVirtual {
+    <<Aggregate>>
+    +uuid citaId
+    +string proveedorSalaId
+    +datetime habilitaEn
+    +datetime expiraEn
+  }
+  class EnlaceParticipante {
+    <<Entity>>
+    +RolParticipante rol
+    +string tokenHash
+    +bool usado
+  }
+  class RegistroConexion {
+    <<Entity>>
+    +datetime entro
+    +datetime salio
+    +string calidad
+  }
+  Cobro "0..*" --> "0..1" Cita : por sesión
+  Cobro "0..1" --> "0..1" CompraPaquete : por paquete
+  Cobro "1" *-- "0..*" PagoCaja
+  Cobro "1" ..> "0..*" IntencionPago : pago en línea
+  Cobro "1" ..> "0..*" Comprobante : boleta, factura o nota
+  Cobro "1" --> "0..1" ReciboHonorarios : psicólogo independiente
+  CompraPaquete "0..*" --> "1" Paquete
+  CompraPaquete "0..*" --> "1" Paciente
+  CompraPaquete "1" *-- "0..*" ConsumoSesion
+  ConsumoSesion "0..1" --> "1" Cita
+  Paciente "1" *-- "0..*" CreditoAFavor
+  SalaVirtual "0..1" --> "1" Cita
+  SalaVirtual "1" *-- "2..*" EnlaceParticipante
+  EnlaceParticipante "1" *-- "0..*" RegistroConexion
+  class Cita:::ext
+  class Paciente:::ext
+  class IntencionPago:::ext
+  class Comprobante:::ext
+  class Cobro:::agg
+  class Paquete:::agg
+  class CompraPaquete:::agg
+  class SalaVirtual:::agg
+  class PagoCaja:::ent
+  class ConsumoSesion:::ent
+  class CreditoAFavor:::ent
+  class ReciboHonorarios:::ent
+  class EnlaceParticipante:::ent
+  class RegistroConexion:::ent
+
+  classDef agg fill:#d5f5f0,stroke:#0f766e,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

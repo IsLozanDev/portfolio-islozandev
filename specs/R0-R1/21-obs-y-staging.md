@@ -1,6 +1,6 @@
 # SPEC 21 — Observabilidad base y ambiente staging: logs JSON, trazas OpenTelemetry a Grafana Cloud, Sentry, contenedores en Railway y frontends en Vercel
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 11
 > **Date:** 2026-11-10
 > **Objective:** Crear `libs/plataforma/observabilidad` para que `apps/api` y `apps/worker` emitan logs JSON sin datos personales, trazas y métricas OpenTelemetry a Grafana Cloud y errores a Sentry, y desplegarlas en staging (Railway + proyecto Supabase propio) junto con `plataforma-admin` y `plataforma-consola` en Vercel, mediante `deploy-staging.yml` al integrar a `main`.
@@ -265,7 +265,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 
 - [ ] Las imágenes de api y worker corren sobre distroless con un usuario distinto de root y sin `.env` dentro.
 - [ ] El job `secretos` corre en todo PR y en `main`; con una clave falsa falla.
-- [ ] Un merge a `main` con CI verde dispara `deploy-staging.yml`: imágenes con etiqueta `sha`, migraciones y siembra, deploy de api, worker y los dos frontends, y humo en verde.
+- [x] Un merge a `main` con CI verde dispara `deploy-staging.yml`: imágenes con etiqueta `sha`, migraciones y siembra, deploy de api, worker y los dos frontends, y humo en verde. (2026-11-16: merge de #42, CI 43798034506 y Deploy staging 43798607000 en verde.)
 - [ ] Si `migrar` falla, no se ejecutan `desplegar` ni `frontends`.
 - [ ] Ningún secreto está en el repo ni en los logs del workflow. Los valores viven en el Environment `staging`, Railway y Vercel.
 
@@ -291,7 +291,7 @@ Las `OTEL_*` las lee el SDK directamente. `iniciarTelemetria` valida con zod sol
 
 **General:**
 
-- [ ] `nx affected -t lint test build` en verde; `boundaries-test` en verde (`observabilidad` solo expone `index.ts` y no importa productos).
+- [x] `nx affected -t lint test build` en verde; `boundaries-test` en verde (`observabilidad` solo expone `index.ts` y no importa productos). (2026-11-16: CI de main 43798034506 en verde.)
 - [ ] El código nuevo sigue «Código limpio» de `CLAUDE.md`: nombres en español sin abreviaturas, funciones pequeñas, constantes con nombre, sin código muerto. `code-simplifier` pasado y diff revisado.
 - [ ] Horas reales registradas.
 

@@ -1,0 +1,22 @@
+%% T-S5 — Secuencia · Recordatorio programado con preferencias del paciente
+sequenceDiagram
+  autonumber
+  participant PSI as psi-agenda
+  participant OB as sync.outbox
+  participant W as worker · NotificacionesProcessor
+  participant Q as BullMQ (Redis)
+  participant DB as PostgreSQL
+  participant WA as WhatsApp BSP
+  PSI->>OB: psi.cita.confirmada (fecha 14/10 10:00)
+  OB-->>W: evento
+  W->>Q: programar recordatorio a T-24 h y T-2 h
+  Q-->>W: dispara T-24 h
+  W->>DB: ¿cita sigue confirmada? ¿preferencia WhatsApp aceptada?
+  alt vigente y aceptado
+    W->>WA: plantilla aprobada "recordatorio_cita" (fecha, hora, sede)
+    WA-->>W: aceptado · id de mensaje
+    W->>DB: Mensaje ENVIADO
+    WA-->>W: webhook entregado / leído
+  else cancelada o sin consentimiento
+    W->>DB: Mensaje DESCARTADO (motivo)
+  end

@@ -1,0 +1,34 @@
+%% P-01 — PsicoAgenda: mapa de contextos acotados
+flowchart LR
+  subgraph PSI["PsicoAgenda"]
+    AG["Agenda<br/>servicios · profesionales · horarios ·<br/>citas · reserva en línea · lista de espera"]:::ctx
+    CL["Clínica<br/>pacientes · consentimientos · historia ·<br/>notas · planes · evaluaciones · derivaciones"]:::ctx
+    CO["Cobros<br/>cobros · paquetes · saldo · reembolsos"]:::ctx
+    TE["Telepsicología<br/>salas · enlaces · conexiones"]:::ctx
+    PO["Portal del paciente<br/>citas · pagos · tareas · documentos"]:::ctx
+  end
+  NU["Núcleo Agenda (NU-AGE)<br/>recursos · disponibilidad · reservas"]:::plat
+  subgraph PLAT["Plataforma"]
+    direction TB
+    P1["Organización · Seguridad"]:::plat
+    P2["Personas · Identidad"]:::plat
+    P3["Pagos · Comprobantes"]:::plat
+    P4["Notificaciones · Archivos ·<br/>Auditoría · Eventos"]:::plat
+    P5["CMS · Portal del cliente"]:::plat
+  end
+  IA["Proveedor IA"]:::ext
+  VC["Videollamada"]:::ext
+  AG -- "Customer/Supplier" --> NU
+  AG -- "cita atendida (evento)" --> CL
+  AG -- "cita atendida/inasistencia (evento)" --> CO
+  AG -- "cita virtual" --> TE
+  TE --> VC
+  CL -- "IA con consentimiento (ACL)" --> IA
+  CO -- "ACL" --> P3
+  PO --> AG & CO & CL
+  PO --> P5
+  PSI --> P1 & P2 & P4
+
+  classDef ctx fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef plat fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;

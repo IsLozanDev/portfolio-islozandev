@@ -1,0 +1,130 @@
+%% P-02 — Modelo de dominio · Agenda
+classDiagram
+  direction LR
+  class Profesional {
+    <<Aggregate>>
+    +uuid id
+    +uuid usuarioId
+    +uuid personaId
+    +string colegiaturaCpsp
+    +string[] especialidades
+    +bool publicadoEnSitio
+  }
+  class Servicio {
+    <<Aggregate>>
+    +uuid id
+    +string nombre
+    +Modalidad modalidad
+    +int duracionMin
+    +Dinero precioBase
+    +bool requierePagoAdelantado
+    +string afectacionIgv
+  }
+  class TarifaProfesional {
+    <<Entity>>
+    +Dinero precio
+  }
+  class Horario {
+    <<Entity>>
+    +DiaSemana dia
+    +time inicio
+    +time fin
+    +uuid sucursalId
+    +uuid consultorioId
+  }
+  class Excepcion {
+    <<Entity>>
+    +RangoHorario rango
+    +TipoExcepcion tipo
+    +string motivo
+  }
+  class Cita {
+    <<Aggregate>>
+    +uuid id
+    +string codigo
+    +RangoHorario rango
+    +Modalidad modalidad
+    +EstadoCita estado
+    +Canal canalReserva
+    +Dinero precio
+    +reservar()
+    +confirmar()
+    +reprogramar(rango)
+    +cancelar(motivo, porPaciente)
+    +marcarAtendida()
+    +marcarInasistencia()
+  }
+  class ReservaTemporal {
+    <<Entity>>
+    +RangoHorario rango
+    +datetime expiraEn
+    +string celularVerificado
+  }
+  class ListaEspera {
+    <<Entity>>
+    +date desde
+    +date hasta
+    +int orden
+    +EstadoEspera estado
+  }
+  class PoliticaReserva {
+    <<ValueObject>>
+    +int anticipacionCancelacionH
+    +int bloqueoTemporalMin
+    +int maxReprogramaciones
+  }
+  class RangoHorario {
+    <<ValueObject>>
+    +datetime inicio
+    +datetime fin
+    +bool seCruzaCon(otro)
+  }
+  class EstadoCita {
+    <<Enumeration>>
+    PENDIENTE_PAGO
+    RESERVADA
+    CONFIRMADA
+    EN_CURSO
+    ATENDIDA
+    CANCELADA
+    INASISTENCIA
+    REPROGRAMADA
+  }
+  Profesional "1" *-- "1..*" Horario : atiende
+  Profesional "1" *-- "0..*" Excepcion : vacaciones, bloqueos
+  Profesional "0..*" --> "1..*" Servicio : ofrece
+  Profesional "1" *-- "0..*" TarifaProfesional
+  TarifaProfesional "0..*" --> "1" Servicio
+  Horario "0..*" --> "1" Sucursal : sede
+  Horario "0..*" --> "0..1" UnidadOperativa : consultorio
+  Cita "0..*" --> "1" Profesional
+  Cita "0..*" --> "1" Servicio
+  Cita "0..*" --> "1" Paciente
+  Cita "0..*" --> "0..1" UnidadOperativa : consultorio (presencial)
+  Cita "0..1" <-- "0..1" ReservaTemporal : origina
+  Cita "0..1" --> "0..1" Cita : reprogramada desde
+  ListaEspera "0..*" --> "1" Paciente
+  ListaEspera "0..*" --> "1" Servicio
+  ListaEspera "0..*" --> "0..1" Profesional
+  Servicio *-- PoliticaReserva
+  Cita *-- RangoHorario
+  Cita --> EstadoCita
+  class Paciente:::ext
+  class Sucursal:::ext
+  class UnidadOperativa:::ext
+  class Profesional:::agg
+  class Servicio:::agg
+  class Cita:::agg
+  class TarifaProfesional:::ent
+  class Horario:::ent
+  class Excepcion:::ent
+  class ReservaTemporal:::ent
+  class ListaEspera:::ent
+  class PoliticaReserva:::vo
+  class RangoHorario:::vo
+  class EstadoCita:::vo
+
+  classDef agg fill:#d5f5f0,stroke:#0f766e,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

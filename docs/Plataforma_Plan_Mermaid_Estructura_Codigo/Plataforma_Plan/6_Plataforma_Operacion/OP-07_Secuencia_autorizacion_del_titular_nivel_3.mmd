@@ -1,0 +1,21 @@
+sequenceDiagram
+%% OP-07 — Secuencia: autorización del titular (nivel 3)
+  autonumber
+  actor R as Recepción del gimnasio
+  participant API as Módulo idn
+  participant DB as PostgreSQL (idn)
+  participant N as Notificaciones
+  actor T as Titular (cliente)
+  R->>API: solicitar [nombres, celular] para DNI 45678912 · finalidad "Inscripción como socio"
+  API-->>R: "Si la persona tiene cuenta, recibirá un código" (no se confirma si existe)
+  API->>DB: idn.solicitar_autorizacion (código con hash, vence en 10 min)
+  API->>N: enviar código al celular del titular
+  N->>T: "Gimnasio Fuerza solicita tus nombres y celular para inscripción. Código 482913"
+  T->>R: dicta el código (o aprueba en su portal)
+  R->>API: confirmar(solicitud, 482913)
+  API->>DB: idn.confirmar_autorizacion → APROBADA (vigencia 1 año)
+  R->>API: obtener datos
+  API->>DB: idn.datos_autorizados (registra el acceso)
+  DB-->>R: { nombres, celular } — sin dirección, sin fecha de nacimiento
+  T->>API: revocar (desde "Mis datos")
+  API->>DB: idn.revocar → el gimnasio ya no recibe datos nuevos

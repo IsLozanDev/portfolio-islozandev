@@ -1,0 +1,61 @@
+%% ST-02 — Componentes de observabilidad en api y worker (spec 21 · E-03)
+flowchart TB
+  subgraph ARR["Arranque del proceso: node --import registrar-hooks.js --import instrumentacion.js dist/main.js"]
+    HK["registrar-hooks.ts<br/>hook ESM de OpenTelemetry<br/>solo si hay OTEL_EXPORTER_OTLP_ENDPOINT"]:::infra
+    INS["instrumentacion.ts<br/>iniciarTelemetria({ servicio })"]:::infra
+    HK --> INS
+  end
+
+  subgraph LARR["libs/plataforma/observabilidad-arranque · comp:obs"]
+    TEL["telemetria.ts<br/>NodeSDK: trazas, métricas y logs OTLP<br/>autoinstrumentación http · nestjs-core · pg · ioredis · pino"]:::trans
+    SNT["sentry.ts<br/>iniciarSentry · enableOpenTelemetrySetup: false<br/>limpiarEventoSentry: sin body, cookies ni Authorization"]:::trans
+    AMB["ambiente.ts<br/>esquemaAmbiente (zod)"]:::trans
+  end
+
+  subgraph LOBS["libs/plataforma/observabilidad · comp:obs"]
+    subgraph DOM["domain"]
+      RED["campos-redactados.ts<br/>RUTAS_REDACTADAS"]:::dom
+      HAS["hash-documento.ts<br/>hashDocumento(numero, sal)"]:::dom
+    end
+    subgraph INF["infrastructure"]
+      LOG["logger.pino.ts<br/>redact · ruta sin query<br/>mixin trace_id, span_id, tenant, sucursal, usuario"]:::trans
+      REP["reportador-errores.sentry.ts"]:::trans
+      MET["metricas-outbox.ts<br/>vitrina_outbox_pendientes · fallidos · edad_pendiente_seg"]:::trans
+      ENT["entorno-observabilidad.ts<br/>APP_ENV · LOG_LEVEL · OBS_SAL_DOCUMENTO"]:::trans
+    end
+    subgraph INT["interface"]
+      MOD["ObservabilidadModule.register<br/>LoggerModule nestjs-pino + REPORTADOR_ERRORES"]:::trans
+    end
+  end
+
+  subgraph KI["libs/plataforma/kernel-infra"]
+    PRT["Puerto ReportadorErrores<br/>no-op por defecto"]:::infra
+    FIL["HttpExceptionFilter<br/>5xx: reportar(error)"]:::infra
+    ALS["AlsTenantContext.run<br/>anotarSpanActivo: tenant.id, sucursal.id, usuario.id<br/>traceIdActivo()"]:::infra
+  end
+
+  subgraph APPS["Aplicaciones"]
+    API["apps/api<br/>AppModule"]:::app
+    WRK["apps/worker<br/>WorkerModule · relay · auditoría · importaciones<br/>vencimientos · soporte"]:::app
+  end
+
+  DB[("sync.estado_outbox()<br/>SECURITY DEFINER<br/>db/01h_obs_estado_outbox.sql")]:::dato
+
+  INS --> TEL --> SNT
+  TEL --> AMB
+  ENT -. usa .-> AMB
+  API & WRK --> MOD
+  MOD --> LOG & REP
+  LOG --> RED
+  REP -. implementa .-> PRT
+  FIL --> PRT
+  API --> FIL
+  WRK -->|"Worker BullMQ failed"| REP
+  WRK --> MET --> DB
+  LOG -. lee .-> ALS
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef dom fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;

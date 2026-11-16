@@ -1,0 +1,10 @@
+%% P-06 — Estados de la nota de sesión
+stateDiagram-v2
+  [*] --> BORRADOR : el profesional escribe
+  [*] --> BORRADOR_IA : borrador generado con IA (con consentimiento)
+  BORRADOR_IA --> BORRADOR : el profesional revisa y edita
+  BORRADOR --> ATRASADA : 72 h sin firmar
+  ATRASADA --> FIRMADA : firma tardía (queda marcada)
+  BORRADOR --> FIRMADA : firma con MFA reciente
+  FIRMADA --> FIRMADA : agregar adenda (texto, motivo, autor)
+  FIRMADA --> [*]

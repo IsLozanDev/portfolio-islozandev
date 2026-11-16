@@ -1,0 +1,60 @@
+%% OP-08 — Módulo de identidad en arquitectura hexagonal
+flowchart TB
+  subgraph INT["interface"]
+    direction LR
+    C1["IdentidadController<br/>GET /identidad/:tipo/:numero"]:::prod
+    C2["AutorizacionController<br/>solicitar · confirmar · revocar"]:::prod
+    C3["PortalTitularController<br/>'Mis datos'"]:::prod
+  end
+  subgraph APP["application"]
+    direction LR
+    U1["ConsultarDocumentoUseCase"]:::trans
+    U2["SolicitarAutorizacionUseCase"]:::trans
+    U3["ObtenerDatosAutorizadosUseCase"]:::trans
+    P1["puerto ProveedorIdentidad<br/>consultar(tipo, número)"]:::idn
+    P2["puerto CacheIdentidadRepository"]:::idn
+    P3["puerto EnviadorCodigo"]:::idn
+  end
+  subgraph DOM["domain"]
+    direction LR
+    D1["DocumentoIdentidad<br/>DNI · RUC con dígito verificador · CE"]:::dato
+    D2["Autorizacion<br/>campos · vigencia · revocar()"]:::dato
+    D3["CampoPortable<br/>lista cerrada sin datos sensibles"]:::dato
+  end
+  subgraph INF["infrastructure"]
+    direction LR
+    A1["ReniecConvenioAdapter"]:::ext
+    A2["ProveedorPrivadoAdapter"]:::ext
+    A3["SunatPadronAdapter<br/>carga diaria del padrón"]:::ext
+    A4["ProveedorConRespaldo<br/>decorador: principal → respaldo<br/>circuit breaker"]:::ext
+    A5["TypeOrmCacheIdentidadRepository"]:::ext
+    A6["NotificacionesEnviadorCodigo"]:::ext
+  end
+  C1 --> U1
+  C2 --> U2
+  C3 --> U3
+  U1 --> P1
+  U1 --> P2
+  U2 --> P3
+  U1 & U2 & U3 --> DOM
+  A4 -. implementa .-> P1
+  A4 --> A1
+  A4 --> A2
+  A4 --> A3
+  A5 -. implementa .-> P2
+  A6 -. implementa .-> P3
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

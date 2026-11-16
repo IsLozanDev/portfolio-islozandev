@@ -1,0 +1,96 @@
+%% T-04 — Modelo de dominio · Catálogos, parámetros y correlativos
+classDiagram
+  direction LR
+  class Catalogo {
+    <<Aggregate>>
+    +string codigo
+    +string nombre
+    +AlcanceCatalogo alcance
+    +string fuente
+    +bool editablePorTenant
+    +int version
+  }
+  class CatalogoItem {
+    <<Entity>>
+    +uuid tenantId
+    +string codigo
+    +string codigoExterno
+    +string nombre
+    +json atributos
+    +Vigencia vigencia
+    +bool activo
+  }
+  class AjusteItemTenant {
+    <<Entity>>
+    +uuid tenantId
+    +bool visible
+    +string alias
+    +int orden
+  }
+  class TablaMaestra {
+    <<Entity>>
+    +Ubigeo · CIE10 · Moneda · Feriado
+  }
+  class ParametroDef {
+    <<Aggregate>>
+    +string codigo
+    +string productoCodigo
+    +TipoDato tipo
+    +json valorDefecto
+    +NivelAlcance alcanceMaximo
+  }
+  class ParametroValor {
+    <<Entity>>
+    +uuid tenantId
+    +uuid empresaId
+    +uuid sucursalId
+    +json valor
+  }
+  class SerieCorrelativo {
+    <<Aggregate>>
+    +uuid empresaId
+    +uuid sucursalId
+    +uuid unidadId
+    +string tipo
+    +string serie
+    +long ultimoNumero
+    +Reinicio reinicio
+    +string periodo
+    +siguiente(fechaLocal) long
+  }
+  class Vigencia {
+    <<ValueObject>>
+    +date desde
+    +date hasta
+  }
+  class Reinicio {
+    <<Enumeration>>
+    NUNCA
+    ANUAL
+    DIARIO
+  }
+  Catalogo "1" *-- "1..*" CatalogoItem : ítems
+  CatalogoItem "1" *-- "0..*" AjusteItemTenant : ajustes por tenant
+  CatalogoItem *-- Vigencia
+  ParametroDef "1" *-- "0..*" ParametroValor : valores por nivel
+  ParametroValor "0..*" --> "1" Tenant
+  SerieCorrelativo "0..*" --> "1" Empresa
+  SerieCorrelativo "0..*" --> "0..1" Sucursal
+  SerieCorrelativo --> Reinicio
+  class Tenant:::ext
+  class Empresa:::ext
+  class Sucursal:::ext
+  class Catalogo:::agg
+  class ParametroDef:::agg
+  class SerieCorrelativo:::agg
+  class CatalogoItem:::ent
+  class AjusteItemTenant:::ent
+  class ParametroValor:::ent
+  class TablaMaestra:::ent
+  class Vigencia:::vo
+  class Reinicio:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

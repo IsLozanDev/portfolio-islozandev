@@ -1,0 +1,51 @@
+%% A-02 — Arquitectura backend y stack tecnológico
+flowchart TB
+  subgraph CLI["Clientes"]
+    direction LR
+    B1["psi-backoffice<br/>Angular 19 SPA"]:::app
+    B2["psi-web<br/>Angular 19 SSR"]:::app
+    B3["psi-profesional<br/>Angular 19 PWA"]:::app
+    B4["plataforma-consola<br/>Angular 19 SPA"]:::app
+  end
+  CDN["CDN / hosting de frontends<br/>Vercel · SSR en Node para psi-web"]:::infra
+  subgraph RUN["Contenedores de aplicación (Railway / Render / Fly.io)"]
+    API["api · NestJS 11 · Node 22<br/>monolito modular hexagonal<br/>REST /v1 + OpenAPI · Socket.IO<br/>guard de contexto y permisos"]:::trans
+    WRK["worker · NestJS 11<br/>BullMQ: outbox relay, notificaciones,<br/>recordatorios, comprobantes, IA"]:::trans
+  end
+  subgraph DATA["Datos (Supabase)"]
+    PG[("PostgreSQL 16<br/>esquemas: org · seg · cat · cfg · seq · per · idn ·<br/>fe · pag · not · arc · aud · sync · cms · sop · obs ·<br/>agd · psi<br/>RLS por tenant · pgvector")]:::dato
+    ST[("Supabase Storage<br/>adjuntos clínicos cifrados,<br/>consentimientos, PDF, media del CMS")]:::dato
+    RD[("Redis<br/>colas BullMQ · caché de permisos ·<br/>bloqueos de horario · adaptador Socket.IO")]:::dato
+  end
+  IDP["IdP · Supabase Auth o Keycloak<br/>OIDC · MFA · Google"]:::ext
+  subgraph EXT["Integraciones"]
+    direction LR
+    X1["PSE/OSE"]:::ext
+    X2["Pasarela de pagos"]:::ext
+    X3["WhatsApp BSP · SMS · SMTP"]:::ext
+    X4["Videollamada"]:::ext
+    X5["Proveedor IA"]:::ext
+    X6["RENIEC / SUNAT"]:::ext
+  end
+  OBS["OpenTelemetry Collector →<br/>Grafana Cloud · Sentry"]:::infra
+  CLI --> CDN
+  CLI -- "HTTPS · JWT · X-Sucursal-Id" --> API
+  CLI -. login OIDC .-> IDP
+  API -- valida JWT --> IDP
+  API --> PG & ST & RD
+  WRK --> PG & RD & ST
+  API -- webhooks firmados --> X2
+  WRK --> X1 & X3 & X5
+  API --> X4 & X6
+  API & WRK -. trazas · logs · métricas .-> OBS
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

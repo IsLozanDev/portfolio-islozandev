@@ -1,0 +1,39 @@
+%% OP-04 — ¿Se puede compartir este dato de persona entre sistemas?
+flowchart TB
+  Q0(["Un negocio busca a una persona por su documento"]):::ini
+  Q1{"¿El dato viene de una fuente pública autorizada<br/>RENIEC / SUNAT, vía convenio o proveedor?"}:::dec
+  Q2{"¿Es un dato que registró otro negocio<br/>en la plataforma?"}:::dec
+  Q3{"¿Ese negocio es del mismo cliente (tenant)<br/>y la finalidad está declarada?"}:::dec
+  Q4{"¿La persona autorizó compartirlo<br/>con ESTE negocio y para ESTOS campos?"}:::dec
+  Q5{"¿Es un dato sensible?<br/>salud, biométrico, creencias…"}:::dec
+  N1["NIVEL 1 · permitido<br/>solo identidad mínima: nombres, razón social, estado<br/>caché central + bitácora por tenant"]:::si
+  N2["NIVEL 2 · permitido<br/>persona maestra compartida entre los productos<br/>del mismo tenant"]:::si
+  N3["NIVEL 3 · permitido<br/>solo los campos autorizados, con vigencia<br/>registro de cada lectura · revocable"]:::si
+  X1["NO PERMITIDO<br/>el encargado usaría datos de un cliente para otro<br/>revelar 'está registrado en una clínica' ya es un dato de salud"]:::no
+  X2["NO PERMITIDO<br/>nunca se comparte entre negocios por la plataforma"]:::no
+  Q0 --> Q1
+  Q1 -- "Sí" --> N1
+  Q1 -- "No" --> Q2
+  Q2 -- "Sí" --> Q3
+  Q3 -- "Sí" --> N2
+  Q3 -- "No" --> Q4
+  Q4 -- "No" --> X1
+  Q4 -- "Sí" --> Q5
+  Q5 -- "No" --> N3
+  Q5 -- "Sí" --> X2
+  Q2 -- "No" --> Q4
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

@@ -1,0 +1,170 @@
+%% P-03 — Modelo de dominio · Clínica (historia psicológica)
+classDiagram
+  direction LR
+  class Paciente {
+    <<Aggregate>>
+    +uuid id
+    +uuid personaId
+    +bool esMenor
+    +string ocupacion
+    +EstadoPaciente estado
+  }
+  class Apoderado {
+    <<Entity>>
+    +uuid personaId
+    +string parentesco
+    +bool firmaConsentimientos
+  }
+  class ConsentimientoInformado {
+    <<Entity>>
+    +TipoConsentimiento tipo
+    +int versionPlantilla
+    +datetime firmadoEn
+    +uuid firmadoPorPersonaId
+    +datetime revocadoEn
+    +uuid archivoId
+  }
+  class HistoriaPsicologica {
+    <<Aggregate>>
+    +string numero
+    +uuid profesionalTratanteId
+    +datetime abiertaEn
+    +EstadoHistoria estado
+    +autorizarAcceso(usuario)
+    +accesoEmergencia(motivo)
+  }
+  class Anamnesis {
+    <<Entity>>
+    +string motivoConsulta
+    +string antecedentes
+    +string historiaFamiliar
+  }
+  class ImpresionDiagnostica {
+    <<Entity>>
+    +string cie10
+    +Certeza certeza
+    +date desde
+  }
+  class NotaSesion {
+    <<Aggregate>>
+    +uuid citaId
+    +FormatoNota formato
+    +json contenido
+    +EstadoNota estado
+    +datetime firmadaEn
+    +bool generadaConIa
+    +firmar()
+    +agregarAdenda(texto, motivo)
+  }
+  class Adenda {
+    <<Entity>>
+    +string texto
+    +string motivo
+    +uuid autorId
+  }
+  class PlanTratamiento {
+    <<Aggregate>>
+    +string enfoque
+    +date inicio
+    +EstadoPlan estado
+  }
+  class Objetivo {
+    <<Entity>>
+    +string descripcion
+    +int progreso
+  }
+  class TareaPaciente {
+    <<Entity>>
+    +string instruccion
+    +date vence
+    +EstadoTarea estado
+  }
+  class Evaluacion {
+    <<Aggregate>>
+    +EstadoEvaluacion estado
+    +json puntajes
+    +string interpretacion
+  }
+  class PlantillaTest {
+    <<Aggregate>>
+    +string codigo
+    +int version
+    +json escalas
+  }
+  class ItemTest {
+    <<Entity>>
+    +int orden
+    +string texto
+    +bool critico
+    +int umbralCritico
+  }
+  class Respuesta {
+    <<Entity>>
+    +int valor
+  }
+  class AlertaRiesgo {
+    <<Entity>>
+    +NivelRiesgo nivel
+    +string origen
+    +datetime atendidaEn
+  }
+  class Derivacion {
+    <<Entity>>
+    +TipoDerivacion tipo
+    +string destino
+    +string motivo
+    +uuid consentimientoId
+  }
+  class AccesoHistoria {
+    <<Entity>>
+    +uuid usuarioId
+    +TipoAcceso tipo
+    +datetime hasta
+    +string motivo
+  }
+  Paciente "1" --> "1" Persona : es
+  Paciente "1" *-- "0..*" Apoderado
+  Paciente "1" *-- "1..*" ConsentimientoInformado
+  Paciente "1" -- "0..1" HistoriaPsicologica : por empresa
+  HistoriaPsicologica "1" *-- "0..1" Anamnesis
+  HistoriaPsicologica "1" *-- "0..*" ImpresionDiagnostica
+  HistoriaPsicologica "1" *-- "0..*" NotaSesion
+  HistoriaPsicologica "1" *-- "0..*" PlanTratamiento
+  HistoriaPsicologica "1" *-- "0..*" Evaluacion
+  HistoriaPsicologica "1" *-- "0..*" Derivacion
+  HistoriaPsicologica "1" *-- "0..*" AccesoHistoria : autorizaciones y emergencias
+  HistoriaPsicologica "1" *-- "0..*" AlertaRiesgo
+  NotaSesion "0..1" --> "1" Cita : de la sesión
+  NotaSesion "1" *-- "0..*" Adenda
+  PlanTratamiento "1" *-- "1..*" Objetivo
+  Objetivo "1" *-- "0..*" TareaPaciente
+  Evaluacion "0..*" --> "1" PlantillaTest : versión aplicada
+  PlantillaTest "1" *-- "1..*" ItemTest
+  Evaluacion "1" *-- "0..*" Respuesta
+  Respuesta "0..*" --> "1" ItemTest
+  Evaluacion "0..1" --> "0..*" AlertaRiesgo : ítem crítico
+  class Persona:::ext
+  class Cita:::ext
+  class Paciente:::agg
+  class HistoriaPsicologica:::agg
+  class NotaSesion:::agg
+  class PlanTratamiento:::agg
+  class Evaluacion:::agg
+  class PlantillaTest:::agg
+  class Apoderado:::ent
+  class ConsentimientoInformado:::ent
+  class Anamnesis:::ent
+  class ImpresionDiagnostica:::ent
+  class Adenda:::ent
+  class Objetivo:::ent
+  class TareaPaciente:::ent
+  class ItemTest:::ent
+  class Respuesta:::ent
+  class AlertaRiesgo:::ent
+  class Derivacion:::ent
+  class AccesoHistoria:::ent
+
+  classDef agg fill:#d5f5f0,stroke:#0f766e,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

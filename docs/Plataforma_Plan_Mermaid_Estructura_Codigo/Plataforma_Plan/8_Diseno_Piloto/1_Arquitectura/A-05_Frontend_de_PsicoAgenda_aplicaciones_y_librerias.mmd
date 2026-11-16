@@ -1,0 +1,52 @@
+%% A-05 — Frontend de PsicoAgenda: aplicaciones y librerías
+flowchart TB
+  subgraph APPS["Aplicaciones Angular 19 (Nx)"]
+    direction LR
+    A1["psi-backoffice · SPA<br/>director · recepción · editor<br/>agenda, pacientes, cobros, reportes,<br/>configuración, CMS, seguridad"]:::app
+    A2["psi-web · SSR + hidratación<br/>sitio público (SEO) · reserva en línea ·<br/>portal del paciente/apoderado"]:::app
+    A3["psi-profesional · PWA<br/>mi agenda · historia · notas ·<br/>evaluaciones · sala virtual"]:::app
+  end
+  subgraph FPSI["libs/psi (feature + data-access)"]
+    direction LR
+    F1["psi/feature-agenda"]:::psi
+    F2["psi/feature-pacientes"]:::psi
+    F3["psi/feature-historia"]:::psi
+    F4["psi/feature-cobros"]:::psi
+    F5["psi/feature-reserva-publica"]:::psi
+    F6["psi/feature-portal"]:::psi
+    F7["psi/data-access<br/>cliente OpenAPI generado"]:::psi
+  end
+  subgraph FPLAT["libs/plataforma (embebibles)"]
+    direction LR
+    G1["plataforma/admin-cliente<br/>usuarios · roles · sucursales ·<br/>parámetros · catálogos propios"]:::trans
+    G2["plataforma/cms-editor<br/>páginas · bloques · menús · SEO"]:::trans
+    G3["plataforma/cms-render<br/>componentes de bloques para SSR"]:::trans
+    G4["plataforma/portal-cuenta<br/>registro, acceso, consentimientos"]:::trans
+    G5["plataforma/soporte-widget"]:::trans
+  end
+  subgraph SH["libs/shared"]
+    direction LR
+    S1["shared/ui · sistema de diseño<br/>Angular Material + tokens"]:::dato
+    S2["shared/shell<br/>layout · menú dinámico · selector de sucursal"]:::dato
+    S3["shared/auth<br/>OIDC · interceptor JWT + X-Sucursal-Id ·<br/>directiva *siPermiso · guards de ruta"]:::dato
+    S4["shared/util<br/>formatos es-PE · validadores DNI/RUC"]:::dato
+  end
+  API["api /v1 (NestJS)"]:::ext
+  A1 --> F1 & F2 & F4 & G1 & G2 & G5
+  A2 --> F5 & F6 & G3 & G4
+  A3 --> F1 & F3
+  F1 & F2 & F3 & F4 & F5 & F6 --> F7
+  FPSI & FPLAT --> SH
+  F7 --> API
+  G1 & G2 & G4 --> API
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

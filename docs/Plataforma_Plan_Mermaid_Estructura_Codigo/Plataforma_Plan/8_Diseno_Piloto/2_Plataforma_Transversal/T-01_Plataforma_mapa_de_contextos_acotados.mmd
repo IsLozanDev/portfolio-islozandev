@@ -1,0 +1,50 @@
+%% T-01 — Plataforma: mapa de contextos acotados
+flowchart TB
+  ORG["Organización y suscripciones<br/>tenant · empresa · sucursal · unidad · plan"]:::core
+  SEG["Seguridad<br/>usuario · membresía · rol · permiso · alcance"]:::core
+  subgraph REF["Datos de referencia"]
+    direction LR
+    CAT["Catálogos y maestros"]:::ctx
+    CFG["Parámetros"]:::ctx
+    SEQ["Correlativos"]:::ctx
+  end
+  subgraph IDE["Identidad de terceros"]
+    direction LR
+    PER["Personas"]:::ctx
+    IDN["Identidad DNI/RUC"]:::ctx
+  end
+  subgraph SOP["Servicios de soporte"]
+    direction LR
+    FE["Comprobantes electrónicos"]:::ctx
+    PAG["Pagos"]:::ctx
+    NOT["Notificaciones"]:::ctx
+    ARC["Archivos"]:::ctx
+    CMS["Contenidos web (CMS)"]:::ctx
+    POR["Portal del cliente"]:::ctx
+  end
+  subgraph OPE["Operación"]
+    direction LR
+    AUD["Auditoría"]:::ctx
+    EVT["Eventos (outbox)"]:::ctx
+    OBS["Observabilidad"]:::ctx
+    SPT["Centro de soporte"]:::ctx
+  end
+  PRD["Productos: PsicoAgenda, SazónPOS, …<br/>(consumen por puertos · ACL)"]:::ext
+  ORG -- "U/D: contexto de tenant" --> SEG
+  ORG --> REF & IDE & SOP
+  SEG -- "autoriza" --> SOP
+  PER -- "enriquece" --> IDN
+  FE -- "usa series" --> SEQ
+  FE -- "usa catálogos SUNAT" --> CAT
+  PAG -- "evento pago.confirmado" --> EVT
+  EVT --> FE & NOT & OBS
+  POR -- "usuarios externos" --> SEG
+  POR --> PER
+  SOP & SEG -.-> AUD
+  PRD --> ORG & SEG & REF & IDE & SOP
+  PRD --> EVT
+  OBS --> SPT
+
+  classDef ctx fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef core fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;

@@ -1,0 +1,22 @@
+%% T-S6 — Secuencia · Publicación de contenido y render SSR del sitio
+sequenceDiagram
+  autonumber
+  actor E as Editor de contenidos
+  participant BO as psi-backoffice · cms-editor
+  participant API as api · CmsModule
+  participant DB as PostgreSQL (cms)
+  participant CDN as CDN
+  actor V as Visitante
+  participant SSR as psi-web (SSR)
+  E->>BO: edita página "Terapia de pareja" (bloques, SEO)
+  BO->>API: PUT /v1/cms/paginas/:id/borrador
+  E->>BO: Publicar
+  BO->>API: POST /v1/cms/paginas/:id/publicar · @Permiso('cms.pagina.publicar')
+  API->>DB: VersionPagina n PUBLICADA · outbox cms.pagina.publicada
+  API->>CDN: purgar /terapia-de-pareja
+  V->>CDN: GET centrocalma.pe/terapia-de-pareja
+  CDN->>SSR: cache miss
+  SSR->>API: GET /v1/cms/sitio?host=centrocalma.pe&slug=terapia-de-pareja
+  API-->>SSR: marca, menú, bloques publicados, SEO
+  SSR-->>CDN: HTML renderizado (cache 10 min)
+  CDN-->>V: página

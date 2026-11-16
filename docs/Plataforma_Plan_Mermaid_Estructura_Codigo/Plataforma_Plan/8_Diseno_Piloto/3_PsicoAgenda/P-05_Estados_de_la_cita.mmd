@@ -1,0 +1,18 @@
+%% P-05 — Estados de la cita
+stateDiagram-v2
+  [*] --> PENDIENTE_PAGO : reserva en línea con pago adelantado
+  [*] --> RESERVADA : recepción o reserva sin adelanto
+  PENDIENTE_PAGO --> RESERVADA : pago confirmado (webhook)
+  PENDIENTE_PAGO --> CANCELADA : pago no confirmado en el plazo (liberación automática)
+  RESERVADA --> CONFIRMADA : el paciente confirma (WhatsApp / portal)
+  RESERVADA --> REPROGRAMADA : cambio de horario
+  CONFIRMADA --> REPROGRAMADA : cambio de horario dentro de plazo
+  REPROGRAMADA --> [*] : nace una nueva cita enlazada
+  RESERVADA --> CANCELADA
+  CONFIRMADA --> CANCELADA : dentro de plazo → reembolso o crédito
+  CONFIRMADA --> EN_CURSO : inicio de la sesión / ingreso a la sala
+  EN_CURSO --> ATENDIDA : fin de la sesión → consume paquete
+  CONFIRMADA --> INASISTENCIA : no se presentó → penalidad según política
+  ATENDIDA --> [*]
+  CANCELADA --> [*] : horario ofrecido a la lista de espera
+  INASISTENCIA --> [*]

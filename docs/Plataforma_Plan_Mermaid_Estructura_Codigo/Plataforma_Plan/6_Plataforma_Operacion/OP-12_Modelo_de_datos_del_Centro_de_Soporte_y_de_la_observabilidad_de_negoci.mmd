@@ -1,0 +1,73 @@
+%% OP-12 — Modelo de datos del Centro de Soporte y de la observabilidad de negocio
+erDiagram
+  SUSCRIPCION ||--o{ TICKET : "plan define plazos"
+  POLITICA_SLA ||--o{ TICKET : "aplica"
+  TICKET ||--o{ TICKET_EVENTO : "historial"
+  PROBLEMA ||--o{ TICKET : "agrupa"
+  ALERTA |o--o| TICKET : "origina"
+  REGLA_ALERTA ||--o{ ALERTA : "dispara"
+  INDICADOR_DEF ||--o{ REGLA_ALERTA : "evalúa"
+  INDICADOR_DEF ||--o{ METRICA_MINUTO : "serie"
+  SUSCRIPCION {
+    uuid tenant_id PK
+    varchar producto_codigo PK
+    varchar plan
+  }
+  POLITICA_SLA {
+    varchar plan PK
+    varchar prioridad PK
+    int primera_respuesta_min
+    int resolucion_min
+    varchar horario
+  }
+  TICKET {
+    uuid id PK
+    varchar numero "SOP-000231"
+    uuid tenant_id "RLS"
+    uuid sucursal_id
+    varchar producto_codigo
+    smallint impacto
+    smallint urgencia
+    varchar prioridad "calculada"
+    varchar estado
+    varchar nivel "N1 o N2"
+    jsonb contexto "sin datos personales"
+    timestamptz resolucion_vence
+  }
+  TICKET_EVENTO {
+    bigint id PK
+    varchar tipo
+    boolean visible_cliente
+    boolean es_agente
+  }
+  PROBLEMA {
+    uuid id PK
+    varchar github_issue
+    varchar version_correccion
+  }
+  INDICADOR_DEF {
+    varchar codigo PK
+    varchar producto_codigo
+    varchar agregacion
+  }
+  METRICA_MINUTO {
+    uuid tenant_id PK
+    uuid sucursal_id PK
+    varchar indicador PK
+    timestamptz minuto PK
+    numeric suma
+    int conteo
+  }
+  REGLA_ALERTA {
+    uuid id PK
+    varchar condicion
+    numeric umbral
+    int ventana_min
+    boolean crea_ticket
+  }
+  ALERTA {
+    uuid id PK
+    uuid sucursal_id
+    varchar severidad
+    varchar estado
+  }

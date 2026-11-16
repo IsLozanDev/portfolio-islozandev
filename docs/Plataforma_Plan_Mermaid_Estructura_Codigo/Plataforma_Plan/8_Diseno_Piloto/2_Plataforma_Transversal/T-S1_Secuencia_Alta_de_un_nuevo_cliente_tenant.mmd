@@ -1,0 +1,23 @@
+%% T-S1 — Secuencia · Alta de un nuevo cliente (tenant)
+sequenceDiagram
+  autonumber
+  actor OP as Operador de plataforma
+  participant C as plataforma-consola
+  participant API as api · OrgModule
+  participant IDN as IdentidadService
+  participant DB as PostgreSQL
+  participant SEG as SeguridadService
+  participant IDP as IdP
+  participant NOT as worker · Notificaciones
+  OP->>C: Alta de cliente (RUC, plan, producto PSI, admin@centro.pe)
+  C->>API: POST /v1/plataforma/tenants
+  API->>IDN: consultar RUC 20601234565
+  IDN-->>API: razón social, estado ACTIVO, condición HABIDO
+  API->>DB: BEGIN · tenant · empresa · sucursal principal · suscripción PSI
+  API->>SEG: sembrar roles predefinidos y membresía del administrador (INVITADO)
+  SEG->>DB: seg.membresia · seg.asignacion (alcance TENANT)
+  API->>DB: parámetros por defecto · series HP · outbox org.tenant.creado · COMMIT
+  API->>IDP: crear usuario o invitación (correo)
+  API-->>C: 201 tenant creado
+  DB-->>NOT: outbox relay: org.tenant.creado
+  NOT->>NOT: correo de bienvenida con enlace de activación

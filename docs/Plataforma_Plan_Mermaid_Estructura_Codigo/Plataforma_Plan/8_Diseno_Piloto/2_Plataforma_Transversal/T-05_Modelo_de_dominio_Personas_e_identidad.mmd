@@ -1,0 +1,105 @@
+%% T-05 — Modelo de dominio · Personas e identidad
+classDiagram
+  direction TB
+  class Persona {
+    <<Aggregate>>
+    +uuid id
+    +uuid tenantId
+    +TipoPersona tipo
+    +DocumentoIdentidad documento
+    +bool documentoVerificado
+    +bool activo
+  }
+  class PersonaNatural {
+    <<Entity>>
+    +string nombres
+    +string apellidoPaterno
+    +string apellidoMaterno
+    +date fechaNacimiento
+    +string sexo
+  }
+  class PersonaJuridica {
+    <<Entity>>
+    +string razonSocial
+    +string nombreComercial
+  }
+  class Contacto {
+    <<Entity>>
+    +TipoContacto tipo
+    +string valor
+    +bool principal
+    +bool verificado
+  }
+  class Direccion {
+    <<Entity>>
+    +string via
+    +Ubigeo ubigeo
+    +string referencia
+  }
+  class Consentimiento {
+    <<Entity>>
+    +string finalidad
+    +string versionTexto
+    +datetime otorgadoEn
+    +datetime revocadoEn
+    +string evidencia
+  }
+  class Relacion {
+    <<Entity>>
+    +TipoRelacion tipo
+    +date desde
+  }
+  class DocumentoIdentidad {
+    <<ValueObject>>
+    +string tipoCodigo
+    +string numero
+    +bool valido()
+  }
+  class CacheDocumento {
+    <<Entity>>
+    +string tipoDoc
+    +string numero
+    +json datosMinimos
+    +datetime expiraEn
+  }
+  class Titular {
+    <<Aggregate>>
+    +DocumentoIdentidad documento
+    +string celular
+    +json datosPortables
+  }
+  class Autorizacion {
+    <<Entity>>
+    +uuid tenantId
+    +string[] campos
+    +datetime vigenteHasta
+    +datetime revocadaEn
+  }
+  Persona <|-- PersonaNatural
+  Persona <|-- PersonaJuridica
+  Persona *-- DocumentoIdentidad
+  Persona "1" *-- "0..*" Contacto
+  Persona "1" *-- "0..*" Direccion
+  Persona "1" *-- "0..*" Consentimiento
+  Persona "1" --> "0..*" Relacion : apoderado, tutor, representante
+  Relacion "0..*" --> "1" Persona : con
+  Persona "0..*" ..> "0..1" CacheDocumento : verificada con
+  Titular "1" *-- "0..*" Autorizacion : otorga
+  Autorizacion "0..*" --> "1" Tenant
+  class Tenant:::ext
+  class Persona:::agg
+  class Titular:::agg
+  class PersonaNatural:::ent
+  class PersonaJuridica:::ent
+  class Contacto:::ent
+  class Direccion:::ent
+  class Consentimiento:::ent
+  class Relacion:::ent
+  class CacheDocumento:::ent
+  class Autorizacion:::ent
+  class DocumentoIdentidad:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

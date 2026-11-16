@@ -1,0 +1,16 @@
+%% OP-11 — Ciclo de vida del ticket
+stateDiagram-v2
+  [*] --> NUEVO
+  NUEVO --> EN_ANALISIS : primera respuesta
+  NUEVO --> RESUELTO : resuelto con artículo
+  EN_ANALISIS --> ESPERA_CLIENTE : se pide información (SLA en pausa)
+  ESPERA_CLIENTE --> EN_ANALISIS : el cliente responde
+  ESPERA_CLIENTE --> CERRADO : sin respuesta en 5 días
+  EN_ANALISIS --> ESCALADO_N2 : requiere análisis técnico
+  ESCALADO_N2 --> EN_ANALISIS : vuelve a N1
+  ESCALADO_N2 --> RESUELTO : corrección publicada
+  EN_ANALISIS --> RESUELTO
+  RESUELTO --> CERRADO : el cliente confirma o pasan 3 días
+  RESUELTO --> REABIERTO : el cliente rechaza
+  REABIERTO --> EN_ANALISIS
+  CERRADO --> [*]

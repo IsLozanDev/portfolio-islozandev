@@ -1,0 +1,102 @@
+%% T-06 — Modelo de dominio · Comprobantes electrónicos y pagos
+classDiagram
+  direction LR
+  class IntencionPago {
+    <<Aggregate>>
+    +uuid id
+    +string origenProducto
+    +uuid origenId
+    +Dinero monto
+    +EstadoPago estado
+    +string idempotencyKey
+    +confirmar()
+    +expirar()
+  }
+  class Transaccion {
+    <<Entity>>
+    +MedioPago medio
+    +string referenciaPasarela
+    +Dinero monto
+    +TipoTransaccion tipo
+    +datetime ocurridaEn
+  }
+  class Conciliacion {
+    <<Entity>>
+    +date fecha
+    +Dinero totalPasarela
+    +Dinero totalSistema
+    +EstadoConciliacion estado
+  }
+  class Comprobante {
+    <<Aggregate>>
+    +uuid id
+    +TipoComprobante tipo
+    +string serie
+    +long numero
+    +Adquirente adquirente
+    +Dinero gravado
+    +Dinero igv
+    +Dinero total
+    +EstadoCpe estado
+    +emitir()
+    +anular(motivo)
+  }
+  class ComprobanteItem {
+    <<Entity>>
+    +string descripcion
+    +decimal cantidad
+    +string unidadSunat
+    +Dinero valorUnitario
+    +string afectacionIgv
+  }
+  class EnvioPse {
+    <<Entity>>
+    +int intento
+    +string codigoRespuesta
+    +string cdrRuta
+    +string xmlRuta
+    +datetime enviadoEn
+  }
+  class ResumenDiario {
+    <<Entity>>
+    +date fecha
+    +string ticket
+    +EstadoCpe estado
+  }
+  class Dinero {
+    <<ValueObject>>
+    +decimal monto
+    +string moneda
+  }
+  class Adquirente {
+    <<ValueObject>>
+    +DocumentoIdentidad documento
+    +string nombre
+  }
+  IntencionPago "1" *-- "0..*" Transaccion : pagos y reembolsos
+  Transaccion "0..*" --> "0..1" Conciliacion : conciliada en
+  IntencionPago "0..1" ..> "0..*" Comprobante : origina
+  Comprobante "1" *-- "1..*" ComprobanteItem
+  Comprobante "1" *-- "1..*" EnvioPse : intentos
+  Comprobante "0..*" --> "0..1" Comprobante : nota de crédito de
+  Comprobante "0..*" --> "1" Empresa : emisor
+  Comprobante "0..*" --> "1" SerieCorrelativo : numerado por
+  Comprobante "0..*" --> "0..1" ResumenDiario : boletas resumidas
+  Comprobante *-- Adquirente
+  IntencionPago *-- Dinero
+  class Empresa:::ext
+  class SerieCorrelativo:::ext
+  class IntencionPago:::agg
+  class Comprobante:::agg
+  class Transaccion:::ent
+  class Conciliacion:::ent
+  class ComprobanteItem:::ent
+  class EnvioPse:::ent
+  class ResumenDiario:::ent
+  class Dinero:::vo
+  class Adquirente:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

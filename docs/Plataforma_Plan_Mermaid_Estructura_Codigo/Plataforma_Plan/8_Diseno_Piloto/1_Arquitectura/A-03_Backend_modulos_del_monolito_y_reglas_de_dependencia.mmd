@@ -1,0 +1,46 @@
+%% A-03 — Backend: módulos del monolito y reglas de dependencia
+flowchart LR
+  subgraph APPS["apps (deployables)"]
+    direction LR
+    A1["apps/api<br/>main.ts · AppModule<br/>compone módulos"]:::app
+    A2["apps/worker<br/>procesadores BullMQ"]:::app
+  end
+  subgraph PSIM["libs/psi · dominio PsicoAgenda"]
+    direction LR
+    P1["psi-agenda<br/>servicios, horarios, citas,<br/>reserva en línea, lista de espera"]:::psi
+    P2["psi-clinica<br/>pacientes, consentimientos, historia,<br/>notas, planes, evaluaciones, derivaciones"]:::psi
+    P3["psi-cobros<br/>cobros, paquetes, saldo, reembolsos"]:::psi
+    P4["psi-tele<br/>salas virtuales y conexiones"]:::psi
+    P5["psi-portal<br/>API del portal del paciente"]:::psi
+    P6["psi-ia<br/>casos de IA clínica"]:::psi
+  end
+  subgraph NUC["libs/nucleo"]
+    N1["nucleo-agenda (NU-AGE)<br/>recursos, disponibilidad, reservas"]:::trans
+  end
+  subgraph PLAT["libs/plataforma · componentes transversales"]
+    direction LR
+    T1["org · seg · cat · cfg · seq"]:::trans
+    T2["per · idn · arc · aud"]:::trans
+    T3["fe · pag · not"]:::trans
+    T4["evt (outbox) · cms · sop · obs · ia"]:::trans
+  end
+  K["libs/plataforma/kernel<br/>AggregateRoot · DomainEvent · UnitOfWork ·<br/>TenantContext · Clock · IdGenerator"]:::dato
+  A1 --> PSIM & PLAT
+  A2 --> PSIM & PLAT
+  PSIM -- "puertos públicos /<br/>eventos" --> PLAT
+  P1 --> N1
+  PSIM --> K
+  NUC --> K
+  PLAT --> K
+  PLAT -. "prohibido: plataforma → psi" .-x PSIM
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

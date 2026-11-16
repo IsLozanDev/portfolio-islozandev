@@ -1,0 +1,23 @@
+%% P-S6 — Secuencia · Acceso de emergencia a una historia
+sequenceDiagram
+  autonumber
+  actor RE as Psicólogo de reemplazo
+  participant APP as psi-profesional
+  participant API as api · psi-clinica
+  actor DI as Director
+  participant BO as psi-backoffice
+  participant DB as PostgreSQL
+  participant NOT as Notificaciones
+  RE->>APP: abrir historia HP-2026-000124
+  APP->>API: GET /v1/psi/historias/HP-2026-000124
+  API->>DB: ¿tratante o AccesoHistoria vigente?
+  API-->>APP: 403 "Sin autorización sobre esta historia"
+  RE->>DI: solicita acceso por urgencia
+  DI->>BO: Acceso de emergencia (motivo, 4 h)
+  BO->>API: POST /v1/psi/historias/:id/accesos-emergencia · @Permiso('psi.historia.acceso_emergencia') + MFA
+  API->>DB: AccesoHistoria EMERGENCIA (hasta +4 h) · aud.registro
+  API->>NOT: aviso a la psicóloga tratante
+  RE->>APP: reintenta
+  APP->>API: GET /v1/psi/historias/HP-2026-000124
+  API->>DB: acceso vigente ✔ · aud.registro (lectura)
+  API-->>APP: 200 historia (marca "acceso de emergencia")
