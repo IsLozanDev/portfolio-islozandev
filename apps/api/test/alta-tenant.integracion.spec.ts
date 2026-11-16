@@ -103,6 +103,7 @@ describeConDb('AltaTenant contra PostgreSQL 16 (TR-RF-001)', () => {
           invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
           reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
           tenantOperador: 'plataforma',
+          identidad: { proveedor: 'falso', salDocumento: 'sal-de-prueba' },
         }),
       ],
     })

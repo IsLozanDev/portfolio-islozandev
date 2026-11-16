@@ -1,3 +1,4 @@
+import { camposEntornoIdentidad, exigirProveedorReal } from '@vitrina/plataforma/identidad';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { z } from 'zod';
 
@@ -27,7 +28,11 @@ const esquema = z.object({
   ORIGENES_PERMITIDOS: z.string().optional(),
   // Spec 21: logs, sal de documentos y ambiente (TR-RNF-026, TR-RNF-111).
   ...camposEntornoObservabilidad,
-}).superRefine(exigirSalFueraDeLocal);
+  // Spec 28: proveedor de identidad; el falso no se admite en producción.
+  ...camposEntornoIdentidad,
+})
+  .superRefine(exigirSalFueraDeLocal)
+  .superRefine(exigirProveedorReal);
 
 export type Config = z.infer<typeof esquema>;
 

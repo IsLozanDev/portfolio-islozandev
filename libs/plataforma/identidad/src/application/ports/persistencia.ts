@@ -28,8 +28,6 @@ export interface BitacoraConsultas {
   registrar(registro: RegistroConsulta): Promise<void>;
 }
 
-export const HASHER_DOCUMENTO = Symbol('HasherDocumento');
-
 /** TR-RNF-111: el número nunca se guarda en claro. Lo implementa apps/api con la sal de plataforma. */
 export interface HasherDocumento {
   hashear(numero: string): string;

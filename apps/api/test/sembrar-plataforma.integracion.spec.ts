@@ -73,6 +73,7 @@ describeConDb('SembrarPlataforma contra PostgreSQL 16 (spec 12)', () => {
           invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
           reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
           tenantOperador: 'plataforma',
+          identidad: { proveedor: 'falso', salDocumento: 'sal-de-prueba' },
         }),
       ],
     })

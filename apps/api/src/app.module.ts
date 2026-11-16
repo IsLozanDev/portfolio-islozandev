@@ -17,6 +17,7 @@ import {
   type KernelInfraOptions,
   type ReportadorErrores,
 } from '@vitrina/plataforma/kernel-infra';
+import { IdentidadModule, type ProveedorElegido } from '@vitrina/plataforma/identidad';
 import { ObservabilidadModule, type ObservabilidadOpciones } from '@vitrina/plataforma/observabilidad';
 import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
@@ -24,6 +25,7 @@ import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vi
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
+import { HasherDocumentoObservabilidad } from './identidad/hasher-documento.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
 import { ConsolaTenantsController } from './org/consola-tenants.controller.js';
@@ -43,12 +45,14 @@ export type AppOpciones = KernelInfraOptions &
     tenantOperador: string;
     /** Logs JSON (spec 21). Las pruebas lo omiten y siguen con el logger de Nest. */
     observabilidad?: ObservabilidadOpciones;
+    /** Spec 28. `salDocumento` es la misma de los logs (TR-RNF-111). */
+    identidad: { proveedor: ProveedorElegido; decolectaToken?: string; salDocumento: string };
   };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     return {
@@ -77,6 +81,11 @@ export class AppModule {
         }),
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
+        IdentidadModule.register({
+          proveedor: identidad.proveedor,
+          decolectaToken: identidad.decolectaToken,
+          hasher: new HasherDocumentoObservabilidad(identidad.salDocumento),
+        }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).

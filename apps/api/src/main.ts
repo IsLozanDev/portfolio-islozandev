@@ -5,6 +5,7 @@ import { ENTIDADES_AUDITORIA } from '@vitrina/plataforma/auditoria';
 import { ENTIDADES_CAT, registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
+import { ENTIDADES_IDN } from '@vitrina/plataforma/identidad';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { salDocumento, usarLoggerDeObservabilidad } from '@vitrina/plataforma/observabilidad';
 import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
@@ -22,7 +23,7 @@ const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN],
 });
 await dataSource.initialize();
 
@@ -45,6 +46,7 @@ const app = await NestFactory.create(
     reintentosEventos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
     tenantOperador: config.ORG_TENANT_OPERADOR,
     observabilidad: { servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumento(config) },
+    identidad: { proveedor: config.IDN_PROVEEDOR, decolectaToken: config.IDN_DECOLECTA_TOKEN, salDocumento: salDocumento(config) },
   }),
   { bufferLogs: true },
 );
