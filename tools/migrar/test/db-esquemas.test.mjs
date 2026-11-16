@@ -86,6 +86,7 @@ const CASOS = [
   { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
   { migracion: '01g_aud_integridad.sql', esquema: 'aud', prueba: 'tests/01g_aud_integridad.test.sql' },
   { migracion: '01h_obs_estado_outbox.sql', esquema: 'sync', prueba: 'tests/01h_obs_estado_outbox.test.sql' },
+  { migracion: '01i_seg_vigencia_peru.sql', esquema: 'seg', prueba: 'tests/01i_seg_vigencia_peru.test.sql' },
 ];
 
 const existeEstadoOutbox = async () =>

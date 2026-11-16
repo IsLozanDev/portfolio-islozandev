@@ -2,6 +2,7 @@ import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { RepositorioRoles } from '../../application/ports/repositorios.js';
 import { Rol } from '../../domain/rol.js';
+import { HOY_EN_PERU } from './hoy-en-peru.js';
 import { RepositorioBase } from './repositorio-base.js';
 
 interface Fila {
@@ -50,7 +51,7 @@ export class RolRepositorioTypeOrm extends RepositorioBase<Rol> implements Repos
       `SELECT count(DISTINCT a.membresia_id)::int AS n
          FROM seg.asignacion a
         WHERE a.tenant_id = $1
-          AND current_date BETWEEN a.vigente_desde AND COALESCE(a.vigente_hasta, 'infinity'::date)
+          AND ${HOY_EN_PERU} BETWEEN a.vigente_desde AND COALESCE(a.vigente_hasta, 'infinity'::date)
           AND (a.rol_id = $2 OR a.perfil_id IN (SELECT pr.perfil_id FROM seg.perfil_rol pr WHERE pr.rol_id = $2))`,
       [this.tenantId, rolId],
     );
