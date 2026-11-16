@@ -2,6 +2,9 @@
 -- 01b_seg.test.sql, sobre la misma base. Siembra como superusuario y evalúa con seg_test_app
 -- (sin BYPASSRLS), que es como corren las funciones en la aplicación.
 
+-- Siembra con current_date: en la zona de Perú, como la api (fechaLocal) y las funciones (01i).
+SET timezone = 'America/Lima';
+
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'seg_test_app') THEN
     CREATE ROLE seg_test_app NOLOGIN;

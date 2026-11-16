@@ -2,3 +2,4 @@
 ALTER FUNCTION seg.asignaciones_aplicables(uuid, uuid, uuid, uuid) RESET timezone;
 ALTER FUNCTION seg.sucursales_accesibles(uuid, uuid) RESET timezone;
 ALTER FUNCTION seg.permisos_efectivos(uuid, uuid, uuid, uuid) RESET timezone;
+ALTER TABLE seg.asignacion ALTER COLUMN vigente_desde SET DEFAULT current_date;

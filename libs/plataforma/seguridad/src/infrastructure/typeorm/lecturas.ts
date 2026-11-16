@@ -10,6 +10,7 @@ import type {
 import type { Alcance } from '../../domain/alcance.js';
 import type { PermisoCatalogo } from '../../domain/rol.js';
 import { RolLecturaEntidad, RolPermisoLecturaEntidad } from './entidades-lectura.js';
+import { HOY_EN_PERU } from './hoy-en-peru.js';
 import { RepositorioBase } from './repositorio-base.js';
 
 // Lecturas sin agregado propio, en la misma transacción que el caso de uso.
@@ -58,7 +59,7 @@ export class ProductosContratadosTypeOrm extends RepositorioBase implements Prod
   async vigentes(): Promise<string[]> {
     const filas = await this.consultar<{ producto_codigo: string }>(
       `SELECT producto_codigo FROM org.suscripcion
-        WHERE tenant_id = $1 AND estado IN ('PRUEBA', 'ACTIVA') AND (vigente_hasta IS NULL OR vigente_hasta >= current_date)
+        WHERE tenant_id = $1 AND estado IN ('PRUEBA', 'ACTIVA') AND (vigente_hasta IS NULL OR vigente_hasta >= ${HOY_EN_PERU})
         ORDER BY 1`,
       [this.tenantId],
     );

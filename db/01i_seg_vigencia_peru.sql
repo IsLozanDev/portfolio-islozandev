@@ -6,3 +6,6 @@
 ALTER FUNCTION seg.asignaciones_aplicables(uuid, uuid, uuid, uuid) SET timezone = 'America/Lima';
 ALTER FUNCTION seg.sucursales_accesibles(uuid, uuid) SET timezone = 'America/Lima';
 ALTER FUNCTION seg.permisos_efectivos(uuid, uuid, uuid, uuid) SET timezone = 'America/Lima';
+
+-- La fecha por defecto de una asignación nueva, también en Perú.
+ALTER TABLE seg.asignacion ALTER COLUMN vigente_desde SET DEFAULT (now() AT TIME ZONE 'America/Lima')::date;

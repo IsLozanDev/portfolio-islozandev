@@ -10,6 +10,7 @@ import type {
 } from '../../application/ports/repositorios.js';
 import { Invitacion } from '../../domain/invitacion.js';
 import { Membresia, type EstadoMembresia } from '../../domain/membresia.js';
+import { HOY_EN_PERU } from './hoy-en-peru.js';
 import { RepositorioBase } from './repositorio-base.js';
 
 interface FilaMembresia {
@@ -230,7 +231,7 @@ export class LimitesPlanTypeOrm extends RepositorioBase implements LimitesPlan {
     const [f] = await this.consultar<{ limite_usuarios: number | null }>(
       `SELECT limite_usuarios FROM org.suscripcion
         WHERE tenant_id = $1 AND producto_codigo = $2 AND estado IN ('PRUEBA', 'ACTIVA')
-          AND (vigente_hasta IS NULL OR vigente_hasta >= current_date)`,
+          AND (vigente_hasta IS NULL OR vigente_hasta >= ${HOY_EN_PERU})`,
       [this.tenantId, producto],
     );
     return f?.limite_usuarios ?? null;
@@ -249,7 +250,7 @@ export class LimitesPlanTypeOrm extends RepositorioBase implements LimitesPlan {
                       WHERE i.tenant_id = m.tenant_id AND i.membresia_id = m.id
                         AND i.usada_en IS NULL AND i.anulada_en IS NULL AND i.expira_en > $3)))
           AND a.revocada_en IS NULL
-          AND current_date BETWEEN a.vigente_desde AND COALESCE(a.vigente_hasta, 'infinity'::date)
+          AND ${HOY_EN_PERU} BETWEEN a.vigente_desde AND COALESCE(a.vigente_hasta, 'infinity'::date)
           AND EXISTS (
                 SELECT 1 FROM seg.rol r
                  WHERE r.producto_codigo = $2
