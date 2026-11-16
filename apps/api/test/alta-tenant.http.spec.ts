@@ -30,6 +30,7 @@ const alta: TenantDadoDeAlta = {
   expiraEn: new Date('2026-10-28T15:00:00Z'),
   usuarioNuevo: true,
   correoEnviado: true,
+  advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'],
 };
 
 const cuerpoValido = {
@@ -119,6 +120,7 @@ describe('HTTP POST /v1/org/tenants (TR-RF-001)', () => {
       expira_en: '2026-10-28T15:00:00.000Z',
       usuario_nuevo: true,
       correo_enviado: true,
+      advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'],
     });
     expect(JSON.stringify(respuesta.body)).not.toMatch(/rosa\.quispe|20601234565|token/);
     expect(comandos).toEqual([

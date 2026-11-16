@@ -6,6 +6,7 @@ import { Test } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { ENTIDADES_SEQ, registrarEsquemasSeq, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
+import { ENTIDADES_IDN } from '@vitrina/plataforma/identidad';
 import { CLOCK, ID_GENERATOR, InMemoryEventSchemaValidator, TENANT_CONTEXT, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { CrearTenant, fechaCalendarioDe, GestionarSuscripcion, registrarEsquemasOrg, RegistrarEmpresa, sumarDias, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, PARAMETRO_PORT, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
@@ -83,7 +84,7 @@ describeConDb('AltaTenant contra PostgreSQL 16 (TR-RF-001)', () => {
 
   beforeAll(async () => {
     base = await crearBaseTemporal();
-    dataSource = new DataSource({ type: 'postgres', url: base.url, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT] });
+    dataSource = new DataSource({ type: 'postgres', url: base.url, entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_EVT, ...ENTIDADES_IDN] });
     await dataSource.initialize();
     const validator = new InMemoryEventSchemaValidator();
     registrarEsquemasOrg(validator);
@@ -228,6 +229,16 @@ describeConDb('AltaTenant contra PostgreSQL 16 (TR-RF-001)', () => {
     expect(resultado).toMatchObject({ usuarioNuevo: false, correoEnviado: true });
     expect(proveedor.llamadas).toEqual([{ tipo: 'enlace', correo: 'carlos.rojas@outlook.com' }]);
     expect(await contar('SELECT count(*) AS n FROM seg.usuario WHERE email = $1', ['carlos.rojas@outlook.com'])).toBe(1);
+  });
+
+  it('spec 28b: con un RUC NO HABIDO crea el tenant con la razón social del padrón y devuelve la advertencia', async () => {
+    const resultado = await alta().ejecutar(comando({ codigo: 'misti-no-habido', ruc: '20456789120', correoPropietario: 'misti@vitrina.pe' }));
+
+    expect(resultado.advertencias).toEqual(['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar']);
+    expect(await consultar('SELECT razon_social FROM org.empresa WHERE id = $1', [resultado.empresaId])).toEqual([{ razon_social: 'Inversiones Misti S.A.C.' }]);
+    expect(await consultar('SELECT motivo, producto_codigo FROM idn.consulta_log WHERE tenant_id = $1', [resultado.tenantId])).toEqual([
+      { motivo: 'VERIFICACION_IDENTIDAD', producto_codigo: 'PLAT' },
+    ]);
   });
 
   it('ACTIVO deja el tenant ACTIVO y la suscripción ACTIVA con la fecha del comando', async () => {

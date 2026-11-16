@@ -36,6 +36,7 @@ export interface RespuestaAltaTenantCuerpo {
   estado: EstadoTenant;
   usuario_nuevo: boolean;
   correo_enviado: boolean;
+  advertencias: string[];
 }
 
 export interface RespuestaAltaTenant {
@@ -43,6 +44,8 @@ export interface RespuestaAltaTenant {
   estado: EstadoTenant;
   usuarioNuevo: boolean;
   correoEnviado: boolean;
+  /** TR-RN-019: contribuyente no apto según el padrón; el alta se hizo igual (spec 28b). */
+  advertencias: string[];
 }
 
 export function aCuerpoAlta(solicitud: SolicitudAltaTenant): SolicitudAltaTenantCuerpo {
@@ -67,5 +70,6 @@ export function aRespuestaAlta(respuesta: RespuestaAltaTenantCuerpo): RespuestaA
     estado: respuesta.estado,
     usuarioNuevo: respuesta.usuario_nuevo,
     correoEnviado: respuesta.correo_enviado,
+    advertencias: respuesta.advertencias,
   };
 }

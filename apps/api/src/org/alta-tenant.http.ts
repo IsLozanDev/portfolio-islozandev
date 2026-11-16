@@ -88,4 +88,11 @@ export class TenantDadoDeAltaDto {
 
   @ApiProperty({ description: 'false si el enlace a un usuario existente no salió; el alta queda hecha' })
   correo_enviado!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    description: 'TR-RN-019: contribuyente no ACTIVO o no HABIDO según el padrón; el registro se hizo igual. Vacío si no hay.',
+    example: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'],
+  })
+  advertencias!: string[];
 }

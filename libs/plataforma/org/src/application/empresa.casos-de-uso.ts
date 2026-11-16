@@ -1,4 +1,5 @@
 import { ValidationError, type EventPublisher, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
+import { advertenciasDelPadron } from '../domain/advertencias-padron.js';
 import { Empresa, type DatosEmpresa } from '../domain/empresa.js';
 import { Sucursal } from '../domain/sucursal.js';
 import { Ruc } from '../domain/valores.js';
@@ -23,6 +24,13 @@ export interface EditarEmpresaComando extends DatosEmpresa {
   version: number;
 }
 
+export interface EmpresaRegistrada {
+  empresaId: string;
+  sucursalPrincipalId: string;
+  /** TR-RN-019: contribuyente no apto según el padrón; no bloquea el registro. */
+  advertencias: string[];
+}
+
 export interface EmpresaRepos {
   tenants: RepositorioTenants;
   empresas: RepositorioEmpresas;
@@ -41,7 +49,7 @@ export class RegistrarEmpresa {
     private readonly padron: PadronRucPort,
   ) {}
 
-  async ejecutar(comando: RegistrarEmpresaComando): Promise<{ empresaId: string; sucursalPrincipalId: string }> {
+  async ejecutar(comando: RegistrarEmpresaComando): Promise<EmpresaRegistrada> {
     // Fuera de la transacción: el RUC se valida sin tocar la base y el padrón es una llamada externa.
     const ruc = Ruc.de(comando.ruc).valor;
     const padron = await this.padron.consultar(ruc);
@@ -58,7 +66,7 @@ export class RegistrarEmpresa {
       await this.repos.empresas.guardar(empresa);
       await this.repos.sucursales.guardar(principal);
       await publicarEventos(this.eventos, empresa, principal);
-      return { empresaId: empresa.id, sucursalPrincipalId: principal.id };
+      return { empresaId: empresa.id, sucursalPrincipalId: principal.id, advertencias: advertenciasDelPadron(padron) };
     });
   }
 }

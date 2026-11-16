@@ -1,4 +1,4 @@
-import { Module, type Provider } from '@nestjs/common';
+import { Module, type DynamicModule, type ModuleMetadata, type Provider } from '@nestjs/common';
 import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork, UNIT_OF_WORK } from '@vitrina/plataforma/kernel-infra';
 import { CrearTenant } from '../application/crear-tenant.js';
@@ -55,110 +55,128 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
   inject: [...BASE, ID_GENERATOR],
 });
 
+export interface OpcionesOrg {
+  /** Enlace de PADRON_RUC; sin él queda PadronRucNulo. */
+  padronRuc?: Provider;
+  /** Módulos que necesita el proveedor de padronRuc. */
+  imports?: ModuleMetadata['imports'];
+}
+
+const PADRON_RUC_POR_DEFECTO: Provider = { provide: PADRON_RUC, useClass: PadronRucNulo };
+
 // Las clases de application no llevan decoradores: todo se arma con useFactory y los tokens de
 // KernelInfraModule (global), que la app debe importar.
-@Module({
-  providers: [
-    {
-      provide: REPOS,
-      useFactory: (uow: TypeOrmUnitOfWork, contexto: TenantContext): Repos => ({
-        tenants: new TenantRepositorioTypeOrm(uow, contexto),
-        suscripciones: new SuscripcionRepositorioTypeOrm(uow, contexto),
-        empresas: new EmpresaRepositorioTypeOrm(uow, contexto),
-        sucursales: new SucursalRepositorioTypeOrm(uow, contexto),
-        unidades: new UnidadRepositorioTypeOrm(uow, contexto),
-      }),
-      inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
-    },
-    {
-      provide: LECTURA,
-      useFactory: (uow: TypeOrmUnitOfWork, contexto: TenantContext) => new LecturaOrganizacionTypeOrm(uow, contexto),
-      inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
-    },
-    {
-      provide: ListarEmpresas,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarEmpresas({ unidadDeTrabajo: uow, lectura }),
-      inject: [UNIT_OF_WORK, LECTURA],
-    },
-    {
-      provide: ListarSucursales,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm, r: Repos) =>
-        new ListarSucursales({ unidadDeTrabajo: uow, lectura, empresas: r.empresas }),
-      inject: [UNIT_OF_WORK, LECTURA, REPOS],
-    },
-    {
-      provide: ListarUnidades,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarUnidades({ unidadDeTrabajo: uow, lectura }),
-      inject: [UNIT_OF_WORK, LECTURA],
-    },
-    {
-      provide: ConsultarEmpresa,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarEmpresa({ unidadDeTrabajo: uow, lectura }),
-      inject: [UNIT_OF_WORK, LECTURA],
-    },
-    {
-      provide: ConsultarSucursal,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarSucursal({ unidadDeTrabajo: uow, lectura }),
-      inject: [UNIT_OF_WORK, LECTURA],
-    },
-    {
-      provide: ConsultarUnidad,
-      useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarUnidad({ unidadDeTrabajo: uow, lectura }),
-      inject: [UNIT_OF_WORK, LECTURA],
-    },
-    { provide: PADRON_RUC, useClass: PadronRucNulo },
-    { provide: USO_USUARIOS, useClass: UsoUsuariosProvisional },
-    {
-      provide: CrearTenant,
-      useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator) => new CrearTenant(uow, ctx, ids, ev, r.tenants),
-      inject: [...BASE, ID_GENERATOR],
-    },
-    {
-      provide: RegistrarEmpresa,
-      useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, padron: PadronRucPort) =>
-        new RegistrarEmpresa(uow, ctx, ids, ev, r, padron),
-      inject: [...BASE, ID_GENERATOR, PADRON_RUC],
-    },
-    conBase(EditarEmpresa, (uow, ctx, ev, r) => new EditarEmpresa(uow, ctx, ev, r)),
-    conIds(RegistrarSucursal, (uow, ctx, ev, r, ids) => new RegistrarSucursal(uow, ctx, ev, r, ids)),
-    conBase(EditarSucursal, (uow, ctx, ev, r) => new EditarSucursal(uow, ctx, ev, r)),
-    conBase(InactivarSucursal, (uow, ctx, ev, r) => new InactivarSucursal(uow, ctx, ev, r)),
-    conBase(MarcarSucursalPrincipal, (uow, ctx, ev, r) => new MarcarSucursalPrincipal(uow, ctx, ev, r)),
-    conIds(RegistrarUnidad, (uow, ctx, ev, r, ids) => new RegistrarUnidad(uow, ctx, ev, r, ids)),
-    conBase(EditarUnidad, (uow, ctx, ev, r) => new EditarUnidad(uow, ctx, ev, r)),
-    conBase(InactivarUnidad, (uow, ctx, ev, r) => new InactivarUnidad(uow, ctx, ev, r)),
-    {
-      provide: GestionarSuscripcion,
-      useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, uso: UsoUsuariosPort) =>
-        new GestionarSuscripcion(uow, ctx, ids, ev, r, uso),
-      inject: [...BASE, ID_GENERATOR, USO_USUARIOS],
-    },
-    {
-      provide: CambiarEstadoTenant,
-      useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, reloj: Clock) =>
-        new CambiarEstadoTenant(uow, ctx, ids, reloj, ev, r.tenants),
-      inject: [...BASE, ID_GENERATOR, CLOCK],
-    },
-  ],
-  exports: [
-    CrearTenant,
-    RegistrarEmpresa,
-    EditarEmpresa,
-    RegistrarSucursal,
-    EditarSucursal,
-    InactivarSucursal,
-    MarcarSucursalPrincipal,
-    RegistrarUnidad,
-    EditarUnidad,
-    InactivarUnidad,
-    GestionarSuscripcion,
-    CambiarEstadoTenant,
-    ListarEmpresas,
-    ListarSucursales,
-    ListarUnidades,
-    ConsultarEmpresa,
-    ConsultarSucursal,
-    ConsultarUnidad,
-  ],
-})
-export class OrgModule {}
+const PROVEEDORES: Provider[] = [
+  {
+    provide: REPOS,
+    useFactory: (uow: TypeOrmUnitOfWork, contexto: TenantContext): Repos => ({
+      tenants: new TenantRepositorioTypeOrm(uow, contexto),
+      suscripciones: new SuscripcionRepositorioTypeOrm(uow, contexto),
+      empresas: new EmpresaRepositorioTypeOrm(uow, contexto),
+      sucursales: new SucursalRepositorioTypeOrm(uow, contexto),
+      unidades: new UnidadRepositorioTypeOrm(uow, contexto),
+    }),
+    inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+  },
+  {
+    provide: LECTURA,
+    useFactory: (uow: TypeOrmUnitOfWork, contexto: TenantContext) => new LecturaOrganizacionTypeOrm(uow, contexto),
+    inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+  },
+  {
+    provide: ListarEmpresas,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarEmpresas({ unidadDeTrabajo: uow, lectura }),
+    inject: [UNIT_OF_WORK, LECTURA],
+  },
+  {
+    provide: ListarSucursales,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm, r: Repos) =>
+      new ListarSucursales({ unidadDeTrabajo: uow, lectura, empresas: r.empresas }),
+    inject: [UNIT_OF_WORK, LECTURA, REPOS],
+  },
+  {
+    provide: ListarUnidades,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ListarUnidades({ unidadDeTrabajo: uow, lectura }),
+    inject: [UNIT_OF_WORK, LECTURA],
+  },
+  {
+    provide: ConsultarEmpresa,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarEmpresa({ unidadDeTrabajo: uow, lectura }),
+    inject: [UNIT_OF_WORK, LECTURA],
+  },
+  {
+    provide: ConsultarSucursal,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarSucursal({ unidadDeTrabajo: uow, lectura }),
+    inject: [UNIT_OF_WORK, LECTURA],
+  },
+  {
+    provide: ConsultarUnidad,
+    useFactory: (uow: UnitOfWork, lectura: LecturaOrganizacionTypeOrm) => new ConsultarUnidad({ unidadDeTrabajo: uow, lectura }),
+    inject: [UNIT_OF_WORK, LECTURA],
+  },
+  { provide: USO_USUARIOS, useClass: UsoUsuariosProvisional },
+  {
+    provide: CrearTenant,
+    useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator) => new CrearTenant(uow, ctx, ids, ev, r.tenants),
+    inject: [...BASE, ID_GENERATOR],
+  },
+  {
+    provide: RegistrarEmpresa,
+    useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, padron: PadronRucPort) =>
+      new RegistrarEmpresa(uow, ctx, ids, ev, r, padron),
+    inject: [...BASE, ID_GENERATOR, PADRON_RUC],
+  },
+  conBase(EditarEmpresa, (uow, ctx, ev, r) => new EditarEmpresa(uow, ctx, ev, r)),
+  conIds(RegistrarSucursal, (uow, ctx, ev, r, ids) => new RegistrarSucursal(uow, ctx, ev, r, ids)),
+  conBase(EditarSucursal, (uow, ctx, ev, r) => new EditarSucursal(uow, ctx, ev, r)),
+  conBase(InactivarSucursal, (uow, ctx, ev, r) => new InactivarSucursal(uow, ctx, ev, r)),
+  conBase(MarcarSucursalPrincipal, (uow, ctx, ev, r) => new MarcarSucursalPrincipal(uow, ctx, ev, r)),
+  conIds(RegistrarUnidad, (uow, ctx, ev, r, ids) => new RegistrarUnidad(uow, ctx, ev, r, ids)),
+  conBase(EditarUnidad, (uow, ctx, ev, r) => new EditarUnidad(uow, ctx, ev, r)),
+  conBase(InactivarUnidad, (uow, ctx, ev, r) => new InactivarUnidad(uow, ctx, ev, r)),
+  {
+    provide: GestionarSuscripcion,
+    useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, uso: UsoUsuariosPort) =>
+      new GestionarSuscripcion(uow, ctx, ids, ev, r, uso),
+    inject: [...BASE, ID_GENERATOR, USO_USUARIOS],
+  },
+  {
+    provide: CambiarEstadoTenant,
+    useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, ids: IdGenerator, reloj: Clock) =>
+      new CambiarEstadoTenant(uow, ctx, ids, reloj, ev, r.tenants),
+    inject: [...BASE, ID_GENERATOR, CLOCK],
+  },
+];
+
+const CASOS_DE_USO_EXPORTADOS = [
+  CrearTenant,
+  RegistrarEmpresa,
+  EditarEmpresa,
+  RegistrarSucursal,
+  EditarSucursal,
+  InactivarSucursal,
+  MarcarSucursalPrincipal,
+  RegistrarUnidad,
+  EditarUnidad,
+  InactivarUnidad,
+  GestionarSuscripcion,
+  CambiarEstadoTenant,
+  ListarEmpresas,
+  ListarSucursales,
+  ListarUnidades,
+  ConsultarEmpresa,
+  ConsultarSucursal,
+  ConsultarUnidad,
+];
+
+@Module({})
+export class OrgModule {
+  static register(opciones: OpcionesOrg = {}): DynamicModule {
+    return {
+      module: OrgModule,
+      imports: opciones.imports ?? [],
+      providers: [...PROVEEDORES, opciones.padronRuc ?? PADRON_RUC_POR_DEFECTO],
+      exports: CASOS_DE_USO_EXPORTADOS,
+    };
+  }
+}

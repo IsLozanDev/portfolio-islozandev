@@ -1,3 +1,4 @@
+export { advertenciasDelPadron, CONDICION_HABIDO, ESTADO_ACTIVO, type SituacionContribuyente } from './domain/advertencias-padron.js';
 export { DIAS_AVISO, type AvisoVencimiento, type DiasAviso } from './domain/aviso-vencimiento.js';
 export { CodigoTenant } from './domain/codigo-tenant.js';
 export { exigirCupo, topeSucursales, type CupoSucursales } from './domain/cupo-sucursales.js';
@@ -48,6 +49,7 @@ export {
   EditarEmpresa,
   RegistrarEmpresa,
   type EditarEmpresaComando,
+  type EmpresaRegistrada,
   type EmpresaRepos,
   type RegistrarEmpresaComando,
 } from './application/empresa.casos-de-uso.js';
@@ -118,4 +120,4 @@ export { SuscripcionRepositorioTypeOrm } from './infrastructure/typeorm/suscripc
 export { TenantRepositorioTypeOrm } from './infrastructure/typeorm/tenant.repositorio.js';
 export type { UsoUsuariosPort } from './application/ports/uso-usuarios.port.js';
 export { UsoUsuariosProvisional } from './infrastructure/uso-usuarios.provisional.js';
-export { OrgModule, PADRON_RUC, USO_USUARIOS } from './infrastructure/org.module.js';
+export { OrgModule, PADRON_RUC, USO_USUARIOS, type OpcionesOrg } from './infrastructure/org.module.js';

@@ -50,6 +50,8 @@ export const MENSAJES_ALTA = {
   anterior: 'Anterior',
   crear: 'Crear tenant',
   creado: 'Tenant creado',
+  /** Spec 28b: el mismo título que en admin-cliente. */
+  creadoConObservaciones: 'Empresa registrada con observaciones',
   correoNoEnviado: 'El tenant se creó, pero no se pudo enviar el correo al propietario.',
   codigoFormato: 'Use minúsculas, números y guiones, sin espacios.',
   rucInvalido: 'RUC inválido',

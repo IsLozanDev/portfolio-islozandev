@@ -70,7 +70,7 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
     registrarEsquemasOrg(validator);
 
     const modulo = await Test.createTestingModule({
-      imports: [KernelInfraModule.register({ dataSource, validator }), OrgModule],
+      imports: [KernelInfraModule.register({ dataSource, validator }), OrgModule.register()],
       controllers: [EmpresasController, SucursalesController, UnidadesController],
     }).compile();
     app = modulo.createNestApplication({ logger: false });

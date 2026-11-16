@@ -13,6 +13,7 @@ export interface FilaEmpresaRespuesta {
 export interface EmpresaRegistradaRespuesta {
   empresa_id: string;
   sucursal_principal_id: string;
+  advertencias: string[];
 }
 
 export interface Empresa {
@@ -38,6 +39,8 @@ export interface DatosEmpresa {
 export interface EmpresaRegistrada {
   empresaId: string;
   sucursalPrincipalId: string;
+  /** TR-RN-019: contribuyente no apto según el padrón; la empresa quedó registrada igual (spec 28b). */
+  advertencias: string[];
 }
 
 export interface PaginaOrganizacion {

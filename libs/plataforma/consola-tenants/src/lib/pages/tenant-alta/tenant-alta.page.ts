@@ -11,6 +11,7 @@ import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AccionesFormularioComponent, AvisosService } from '@vitrina/shared/ui';
+import type { RespuestaAltaTenant } from '../../models/alta-tenant';
 import { MODALIDADES, PLANES, PRODUCTOS } from '../../models/catalogos';
 import { aErrorConsola, type ErrorConsola } from '../../models/error-consola';
 import { ETIQUETAS_MODALIDAD, MENSAJES_ALTA } from '../../models/mensajes-consola';
@@ -109,7 +110,7 @@ export class TenantAltaPage {
       if (!(await this.accionSensible.exigirMfa())) return;
       const creado = await this.tenants.crear(aSolicitudAlta(this.formulario.getRawValue()));
       this.borrador.limpiar();
-      await this.avisarResultado(creado.correoEnviado);
+      await this.avisarResultado(creado);
       await this.router.navigate(['..', creado.tenantId], { relativeTo: this.ruta });
     } catch (error) {
       this.mostrarError(aErrorConsola(error));
@@ -127,12 +128,15 @@ export class TenantAltaPage {
     this.borrador.guardar({ valor: this.formulario.getRawValue(), paso });
   }
 
-  private async avisarResultado(correoEnviado: boolean): Promise<void> {
-    if (correoEnviado) {
-      this.avisos.toast('exito', MENSAJES_ALTA.creado);
+  /** Con advertencias del padrón, el aviso reemplaza al toast de éxito; el del correo no enviado sigue aparte. */
+  private async avisarResultado({ correoEnviado, advertencias }: RespuestaAltaTenant): Promise<void> {
+    const hayAdvertencias = advertencias.length > 0;
+    if (hayAdvertencias) await this.avisos.advertencia(MENSAJES_ALTA.creadoConObservaciones, advertencias.join('\n'));
+    if (!correoEnviado) {
+      await this.avisos.advertencia(MENSAJES_ALTA.creado, MENSAJES_ALTA.correoNoEnviado);
       return;
     }
-    await this.avisos.advertencia(MENSAJES_ALTA.creado, MENSAJES_ALTA.correoNoEnviado);
+    if (!hayAdvertencias) this.avisos.toast('exito', MENSAJES_ALTA.creado);
   }
 
   private mostrarError(error: ErrorConsola): void {

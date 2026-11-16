@@ -9,6 +9,8 @@ import {
 } from '../src/org/alta-tenant.js';
 import { OperadorRequeridoError } from '../src/org/operador.js';
 
+const ADVERTENCIA_NO_HABIDO = 'Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar';
+
 const OPERADOR = '0193f3a0-0000-7000-8000-0000000000aa';
 const CLIENTE = '0193f3a0-0000-7000-8000-0000000000bb';
 const NUEVO = '0193f3a0-0000-7000-8000-0000000000cc';
@@ -67,7 +69,7 @@ function escenario(): Escenario {
     parametros: { valor: async <T>() => ({ valor: 15 as T, origen: 'DEFECTO' as const }) },
     crearTenant: { ejecutar: async () => (await anotar('crearTenant'), { tenantId: NUEVO }) },
     gestionarSuscripcion: { ejecutar: async () => (await anotar('gestionarSuscripcion'), { suscripcionId: 's-1', nueva: true }) },
-    registrarEmpresa: { ejecutar: async () => (await anotar('registrarEmpresa'), { empresaId: 'e-1', sucursalPrincipalId: 'suc-0000' }) },
+    registrarEmpresa: { ejecutar: async () => (await anotar('registrarEmpresa'), { empresaId: 'e-1', sucursalPrincipalId: 'suc-0000', advertencias: [ADVERTENCIA_NO_HABIDO] }) },
     sembrarSeries: { ejecutar: async () => (await anotar('sembrarSeries'), []) },
     invitarPropietario: {
       prepararIdentidad: async () => (await anotar('prepararIdentidad'), identidad),
@@ -120,6 +122,7 @@ describe('AltaTenant (TR-RF-001)', () => {
       expiraEn: new Date('2026-10-28T15:00:00Z'),
       usuarioNuevo: true,
       correoEnviado: true,
+      advertencias: [ADVERTENCIA_NO_HABIDO],
     });
   });
 

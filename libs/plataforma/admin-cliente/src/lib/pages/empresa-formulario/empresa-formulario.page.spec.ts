@@ -4,15 +4,24 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { CONFIG_AUTH } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
+import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
 import { MENSAJES_EMPRESAS, MENSAJES_ORGANIZACION } from '../../models/mensajes-organizacion';
+import { PERMISO_CONSULTAR_IDENTIDAD } from '../../models/padron';
 import { RecargaContextoService } from '../../services/recarga-contexto.service';
 import { EmpresaFormularioPage } from './empresa-formulario.page';
 
 const URL_EMPRESAS = `${API_URL}/org/empresas`;
+const URL_PADRON = `${API_URL}/identidad/RUC`;
+const RUC_ANDINA = '20512345671';
+const RUC_MISTI = '20456789120';
+const RUC_FUERA_DEL_PADRON = '20601234565';
+const ADVERTENCIA_NO_HABIDO = 'Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar';
+const PADRON_ANDINA = { razon_social: 'Comercial Andina S.A.C.', estado: 'ACTIVO', condicion: 'HABIDO', apto_factura: true };
+const PADRON_MISTI = { razon_social: 'Inversiones Misti S.A.C.', estado: 'ACTIVO', condicion: 'NO HABIDO', apto_factura: false, motivo_no_apto: 'Condición NO HABIDO' };
 const SABORES = {
   id: 'e-sabores',
   ruc: '20512345671',
@@ -30,7 +39,8 @@ class Destino {}
 describe('EmpresaFormularioPage', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;
-  let avisos: { toast: ReturnType<typeof vi.fn> };
+  let avisos: { toast: ReturnType<typeof vi.fn>; advertencia: ReturnType<typeof vi.fn> };
+  let sesion: DobleSesion;
   let recarga: { recargar: ReturnType<typeof vi.fn> };
 
   const elemento = () => harness.routeNativeElement as HTMLElement;
@@ -59,6 +69,7 @@ describe('EmpresaFormularioPage', () => {
         ]),
         { provide: AvisosService, useValue: avisos },
         { provide: RecargaContextoService, useValue: recarga },
+        { provide: SesionService, useValue: sesion },
         { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL } },
       ],
     });
@@ -81,6 +92,14 @@ describe('EmpresaFormularioPage', () => {
     await estable();
   }
 
+  async function salirDelRuc(): Promise<void> {
+    campo('ruc')?.dispatchEvent(new Event('blur'));
+    await estable();
+  }
+
+  const padronDe = (ruc: string) => http.expectOne((solicitud) => solicitud.url === `${URL_PADRON}/${ruc}`);
+  const ayudaRazonSocial = () => elemento().querySelector('[data-ayuda=razon-social]')?.textContent?.trim();
+
   async function enviar(): Promise<void> {
     elemento().querySelector<HTMLFormElement>('form')?.dispatchEvent(new Event('submit'));
     await estable();
@@ -89,7 +108,8 @@ describe('EmpresaFormularioPage', () => {
   const conflicto = (codigo: string, mensaje: string) => ({ body: { codigo, mensaje }, opciones: { status: 409, statusText: 'Conflict' } });
 
   beforeEach(() => {
-    avisos = { toast: vi.fn() };
+    avisos = { toast: vi.fn(), advertencia: vi.fn(async () => undefined) };
+    sesion = new DobleSesion().conPermisos(PERMISO_CONSULTAR_IDENTIDAD);
     recarga = { recargar: vi.fn(async () => undefined) };
   });
 
@@ -104,12 +124,127 @@ describe('EmpresaFormularioPage', () => {
     const peticion = http.expectOne(URL_EMPRESAS);
     expect(peticion.request.method).toBe('POST');
     expect(peticion.request.body).toEqual({ ruc: '20512345671', razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: null, ubigeo: null });
-    peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro' });
+    peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
     await estable();
 
     expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_EMPRESAS.registrada);
     expect(recarga.recargar).toHaveBeenCalled();
     expect(url()).toBe('/admin/sucursales?empresa=e-sabores');
+  });
+
+  describe('padrón RUC (spec 28b)', () => {
+    it('al salir del RUC consulta el padrón con motivo VERIFICACION_IDENTIDAD, prellena la razón social y la deja de solo lectura', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_ANDINA);
+      await salirDelRuc();
+
+      const consulta = padronDe(RUC_ANDINA);
+      expect(consulta.request.params.get('motivo')).toBe('VERIFICACION_IDENTIDAD');
+      consulta.flush(PADRON_ANDINA);
+      await estable();
+
+      expect(campo('razonSocial')?.value).toBe('Comercial Andina S.A.C.');
+      expect(campo('razonSocial')?.disabled).toBe(true);
+      expect(elemento().querySelector('[data-aviso=no-apto]')).toBeNull();
+
+      await enviar();
+      const registro = http.expectOne(URL_EMPRESAS);
+      expect(registro.request.body).toMatchObject({ ruc: RUC_ANDINA, razon_social: 'Comercial Andina S.A.C.' });
+      registro.flush({ empresa_id: 'e-andina', sucursal_principal_id: 's-centro', advertencias: [] });
+      await estable();
+      expect(avisos.advertencia).not.toHaveBeenCalled();
+    });
+
+    it('salir otra vez del campo con el mismo RUC no repite la consulta', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_ANDINA);
+      await salirDelRuc();
+      padronDe(RUC_ANDINA).flush(PADRON_ANDINA);
+      await estable();
+
+      await salirDelRuc();
+      http.expectNone((solicitud) => solicitud.url.startsWith(URL_PADRON));
+    });
+
+    it('un RUC que el padrón no tiene (404) deja la razón social editable con la ayuda', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_FUERA_DEL_PADRON);
+      await salirDelRuc();
+      padronDe(RUC_FUERA_DEL_PADRON).flush({ codigo: 'NO_ENCONTRADO', mensaje: 'El documento no existe en el proveedor' }, { status: 404, statusText: 'Not Found' });
+      await estable();
+
+      expect(campo('razonSocial')?.disabled).toBe(false);
+      expect(ayudaRazonSocial()).toBe(MENSAJES_EMPRESAS.noEnPadron);
+    });
+
+    it('con el proveedor caído (503) también queda editable con la ayuda', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_ANDINA);
+      await salirDelRuc();
+      padronDe(RUC_ANDINA).flush({ codigo: 'PROVEEDOR_NO_DISPONIBLE', mensaje: 'Ningún proveedor de identidad respondió' }, { status: 503, statusText: 'Service Unavailable' });
+      await estable();
+
+      expect(campo('razonSocial')?.disabled).toBe(false);
+      expect(ayudaRazonSocial()).toBe(MENSAJES_EMPRESAS.noEnPadron);
+    });
+
+    it('cambiar el RUC vuelve a habilitar la razón social y quita la ayuda', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_ANDINA);
+      await salirDelRuc();
+      padronDe(RUC_ANDINA).flush(PADRON_ANDINA);
+      await estable();
+
+      await escribir('ruc', '2051234567');
+
+      expect(campo('razonSocial')?.disabled).toBe(false);
+      expect(ayudaRazonSocial()).toBe(MENSAJES_EMPRESAS.ayudaRazonSocial);
+    });
+
+    it('TR-CA-006: con un RUC NO HABIDO muestra el hint antes de registrar y el aviso después', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_MISTI);
+      await salirDelRuc();
+      padronDe(RUC_MISTI).flush(PADRON_MISTI);
+      await estable();
+
+      expect(elemento().querySelector('[data-aviso=no-apto]')?.textContent?.trim()).toBe('Condición NO HABIDO');
+
+      await enviar();
+      http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-misti', sucursal_principal_id: 's-centro', advertencias: [ADVERTENCIA_NO_HABIDO] });
+      await estable();
+
+      expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_EMPRESAS.registradaConObservaciones, ADVERTENCIA_NO_HABIDO);
+      expect(avisos.toast).not.toHaveBeenCalled();
+      expect(url()).toBe('/admin/sucursales?empresa=e-misti');
+    });
+
+    it('sin plat.identidad.consultar no consulta el padrón y registra con la razón social escrita', async () => {
+      sesion.conPermisos();
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', RUC_ANDINA);
+      await salirDelRuc();
+      http.expectNone((solicitud) => solicitud.url.startsWith(URL_PADRON));
+
+      await escribir('razonSocial', 'Sabores del Sur SAC');
+      await enviar();
+      http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
+      await estable();
+      expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_EMPRESAS.registrada);
+    });
+
+    it('un RUC inválido no consulta el padrón', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', '20512345678');
+      await salirDelRuc();
+      http.expectNone((solicitud) => solicitud.url.startsWith(URL_PADRON));
+    });
+
+    it('en la edición no consulta el padrón', async () => {
+      await abrirEdicion();
+      await salirDelRuc();
+      http.expectNone((solicitud) => solicitud.url.startsWith(URL_PADRON));
+    });
   });
 
   it('TR-RN-002: con RUC 20512345678 muestra «RUC inválido» y no envía', async () => {
@@ -146,7 +281,7 @@ describe('EmpresaFormularioPage', () => {
     formulario?.dispatchEvent(new Event('submit'));
     await estable();
 
-    http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro' });
+    http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
     await estable();
   });
 

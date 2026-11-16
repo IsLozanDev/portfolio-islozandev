@@ -36,11 +36,12 @@ describe('Entorno de identidad', () => {
   });
 });
 
-describe('Manifiesto PLAT 1.16.0: parte de idn (spec 28)', () => {
+describe('Manifiesto PLAT 1.17.0: parte de idn (spec 28)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; alcance_minimo: string; sensible: boolean }[];
     opciones: { permisos: string[] }[];
+    roles_predefinidos: { codigo: string; permisos: string[] }[];
   }
   let manifiesto: Manifiesto;
 
@@ -48,13 +49,18 @@ describe('Manifiesto PLAT 1.16.0: parte de idn (spec 28)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.16.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.16.0');
+  it('está en la versión 1.17.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
+    expect(manifiesto.version).toBe('1.17.0');
     const deIdn = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.identidad.'));
     expect(deIdn.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_IDN.validar, 'TENANT', false],
       [PERMISOS_IDN.consultar, 'TENANT', false],
     ]);
+  });
+
+  it('spec 28b: PLAT_PROPIETARIO tiene validar y consultar para el prellenado del RUC', () => {
+    const propietario = manifiesto.roles_predefinidos.find((rol) => rol.codigo === 'PLAT_PROPIETARIO');
+    expect(propietario?.permisos).toEqual(expect.arrayContaining([PERMISOS_IDN.validar, PERMISOS_IDN.consultar]));
   });
 
   it('no agrega opción de menú', () => {

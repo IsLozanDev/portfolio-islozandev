@@ -35,7 +35,7 @@ export class EmpresasCliente {
   /** TR-CA-004: crea la empresa y su sucursal principal 0000. */
   async registrar(ruc: string, datos: DatosEmpresa): Promise<EmpresaRegistrada> {
     const respuesta = await solicitar(this.http.post<EmpresaRegistradaRespuesta>(this.urlEmpresas, { ruc, ...cuerpoDatosEmpresa(datos) }));
-    return { empresaId: respuesta.empresa_id, sucursalPrincipalId: respuesta.sucursal_principal_id };
+    return { empresaId: respuesta.empresa_id, sucursalPrincipalId: respuesta.sucursal_principal_id, advertencias: respuesta.advertencias };
   }
 
   async editar(empresaId: string, version: number, datos: DatosEmpresa): Promise<void> {

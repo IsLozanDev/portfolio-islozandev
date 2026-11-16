@@ -1,17 +1,22 @@
 import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { SesionService } from '@vitrina/shared/auth';
 import { AccionesFormularioComponent, AvisosService, CargandoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
 import type { Empresa } from '../../models/empresa';
 import { aErrorAdmin, CODIGO_NO_ENCONTRADO, CODIGO_VERSION_OBSOLETA } from '../../models/error-admin';
 import { MENSAJES_EMPRESAS, MENSAJES_ORGANIZACION } from '../../models/mensajes-organizacion';
+import { PERMISO_CONSULTAR_IDENTIDAD, type DatosPadronRuc } from '../../models/padron';
 import { EmpresasCliente } from '../../services/empresas.cliente';
+import { PadronCliente } from '../../services/padron.cliente';
 import { RecargaContextoService } from '../../services/recarga-contexto.service';
 import { PARAMETRO_URL_ORGANIZACION } from '../../utils/filtro-url-organizacion';
 import { aDatosEmpresa, cargarEmpresa, crearGrupoEmpresa, rucDe } from '../../utils/formulario-empresa';
+import { validarRuc } from '../../utils/ruc';
 import { mensajeDeErrorOrganizacion } from '../../utils/validadores-organizacion';
 
 const PARAMETRO_EMPRESA_ID = 'empresaId';
@@ -27,6 +32,8 @@ const RUTA_SUCURSALES = 'sucursales';
 })
 export class EmpresaFormularioPage {
   private readonly empresas = inject(EmpresasCliente);
+  private readonly padron = inject(PadronCliente);
+  private readonly sesion = inject(SesionService);
   private readonly recargaContexto = inject(RecargaContextoService);
   private readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
@@ -46,9 +53,32 @@ export class EmpresaFormularioPage {
   protected readonly versionObsoleta = signal(false);
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly consultandoPadron = signal(false);
+  protected readonly noEstaEnPadron = signal(false);
+  /** TR-RN-019: se avisa antes de registrar; no bloquea. */
+  protected readonly motivoNoApto = signal<string | null>(null);
+  /** Evita repetir la consulta al salir otra vez del campo con el mismo RUC. */
+  private rucConsultado: string | null = null;
 
   constructor() {
     if (this.empresaId) void this.cargar(this.empresaId);
+    this.grupo.controls.ruc.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.olvidarPadron());
+  }
+
+  /** Spec 28b: solo en el alta, con RUC válido y permiso de consulta, prellena la razón social del padrón. */
+  protected async alSalirDelRuc(): Promise<void> {
+    const ruc = rucDe(this.grupo);
+    if (this.empresaId || ruc === this.rucConsultado || !validarRuc(ruc) || !this.sesion.tiene(PERMISO_CONSULTAR_IDENTIDAD)) return;
+
+    this.rucConsultado = ruc;
+    this.consultandoPadron.set(true);
+    try {
+      // Cualquier fallo de la consulta deja el registro manual, como sin padrón (TR-RNF-007).
+      const datos = await this.padron.consultarRuc(ruc).catch(() => null);
+      if (rucDe(this.grupo) === ruc) this.aplicarPadron(datos);
+    } finally {
+      this.consultandoPadron.set(false);
+    }
   }
 
   /** TR-RNF-008: trae lo que guardó el otro usuario y descarta lo editado aquí. */
@@ -79,6 +109,26 @@ export class EmpresaFormularioPage {
     void this.router.navigate([RUTA_EMPRESAS], { relativeTo: this.rutaMontaje });
   }
 
+  private aplicarPadron(datos: DatosPadronRuc | null): void {
+    const razonSocial = this.grupo.controls.razonSocial;
+    if (!datos) {
+      razonSocial.enable();
+      this.noEstaEnPadron.set(true);
+      return;
+    }
+    razonSocial.setValue(datos.razonSocial);
+    razonSocial.disable();
+    this.motivoNoApto.set(datos.aptoFactura ? null : datos.motivoNoApto);
+  }
+
+  /** Un RUC nuevo vuelve a habilitar la razón social y pide otra consulta. */
+  private olvidarPadron(): void {
+    this.rucConsultado = null;
+    this.grupo.controls.razonSocial.enable({ emitEvent: false });
+    this.noEstaEnPadron.set(false);
+    this.motivoNoApto.set(null);
+  }
+
   private async enviar(): Promise<void> {
     const empresa = this.empresa();
     if (empresa) {
@@ -88,8 +138,9 @@ export class EmpresaFormularioPage {
       return;
     }
 
-    const { empresaId } = await this.empresas.registrar(rucDe(this.grupo), aDatosEmpresa(this.grupo));
-    this.avisos.toast('exito', MENSAJES_EMPRESAS.registrada);
+    const { empresaId, advertencias } = await this.empresas.registrar(rucDe(this.grupo), aDatosEmpresa(this.grupo));
+    if (advertencias.length > 0) await this.avisos.advertencia(MENSAJES_EMPRESAS.registradaConObservaciones, advertencias.join('\n'));
+    else this.avisos.toast('exito', MENSAJES_EMPRESAS.registrada);
     // La principal nueva entra al selector de sucursales del shell.
     await this.recargaContexto.recargar();
     await this.router.navigate([RUTA_SUCURSALES], { relativeTo: this.rutaMontaje, queryParams: { [PARAMETRO_URL_ORGANIZACION.empresa]: empresaId } });
