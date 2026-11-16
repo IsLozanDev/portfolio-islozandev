@@ -17,8 +17,16 @@ export {
   type RespuestaConsulta,
 } from './application/ports/identidad.port.js';
 export type { HasherDocumento } from './application/ports/persistencia.js';
-export type { ConfiguracionCuota, PlanDelTenant } from './application/ports/cuotas.js';
+export type { ConfiguracionCuota, PlanDelTenant, TenantsActivos, VerificadorOperador } from './application/ports/cuotas.js';
+export { AbrirPeriodoCuotas, type ResultadoAperturaCuotas } from './application/abrir-periodo-cuotas.js';
+export { esPeriodoValido, periodoDe, ZONA_CUOTA, type Periodo } from './domain/periodo.js';
 export { ESQUEMAS_IDN, registrarEsquemasIdn } from './infrastructure/event-schemas.js';
 export { ENTIDADES_IDN } from './infrastructure/typeorm/entidades.js';
 export { camposEntornoIdentidad, exigirProveedorReal, type ProveedorElegido } from './interface/entorno-identidad.js';
-export { IdentidadModule, type FabricaDe, type IdentidadOpciones } from './identidad.module.js';
+export {
+  IdentidadModule,
+  type CuotaOpciones,
+  type CuotasWorkerOpciones,
+  type FabricaDe,
+  type IdentidadOpciones,
+} from './identidad.module.js';

@@ -3,12 +3,14 @@ import type { DataSource } from 'typeorm';
 import { AuditoriaModule, registrarEsquemasAud } from '@vitrina/plataforma/auditoria';
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
+import { registrarEsquemasIdn } from '@vitrina/plataforma/identidad';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import { ObservabilidadModule, salDocumento } from '@vitrina/plataforma/observabilidad';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
+import { CuotasModule } from './cuotas/cuotas.module.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
 import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
@@ -33,6 +35,7 @@ export class WorkerModule {
     registrarEsquemasSeg(validator);
     registrarEsquemasCat(validator);
     registrarEsquemasAud(validator);
+    registrarEsquemasIdn(validator);
     return {
       module: WorkerModule,
       imports: [
@@ -53,6 +56,7 @@ export class WorkerModule {
         }),
         AuditoriaModule.registrarWorker(),
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
+        CuotasModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
         ImportacionesModule.register({ redisUrl: config.REDIS_URL }),
         VerificacionModule.register({ dataSource, redisUrl: config.REDIS_URL, patron: config.AUD_VERIFICACION_CRON }),

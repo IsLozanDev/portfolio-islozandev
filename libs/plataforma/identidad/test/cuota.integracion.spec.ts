@@ -1,5 +1,6 @@
 import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
+import { AjustarCuota } from '../src/application/ajustar-cuota.js';
 import { ConsultarDocumento } from '../src/application/consultar-documento.js';
 import { ControlCuota } from '../src/application/control-cuota.js';
 import type { ConsultorProveedores } from '../src/application/ports/proveedores.js';
@@ -12,6 +13,7 @@ import { CacheIdentidadRepositorioTypeOrm } from '../src/infrastructure/typeorm/
 import { ConfiguracionProveedoresTypeOrm } from '../src/infrastructure/typeorm/configuracion-proveedores.repositorio.js';
 import { RepositorioCuotasTypeOrm } from '../src/infrastructure/typeorm/cuota.repositorio.js';
 import { ENTIDADES_IDN } from '../src/infrastructure/typeorm/entidades.js';
+import { LecturaCuotasConsolaTypeOrm } from '../src/infrastructure/typeorm/lectura-cuotas-consola.js';
 import { ConfiguracionCuotaFija, PlanFijo } from './support/cuotas.js';
 import { ConsultorEspia, HasherPrueba, RelojFalso } from './support/dobles.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
@@ -34,6 +36,7 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
   let consultor: ConsultorEspia;
   let consultarDocumento: ConsultarDocumento;
   let consultarSinProveedores: ConsultarDocumento;
+  let ajustarCuota: AjustarCuota;
 
   const reservarComo = (tenantId: string) =>
     contexto.run({ tenantId }, () => unidadDeTrabajo.run(() => control.reservar(tenantId)));
@@ -88,6 +91,15 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
     };
     consultarDocumento = new ConsultarDocumento(dependencias);
     consultarSinProveedores = new ConsultarDocumento({ ...dependencias, consultor: proveedoresCaidos });
+    ajustarCuota = new AjustarCuota({
+      unidadDeTrabajo,
+      contexto,
+      reloj,
+      verificador: { exigir: async () => undefined },
+      repositorio: new RepositorioCuotasTypeOrm(unidadDeTrabajo),
+      control,
+      publicador: new OutboxPublisher(unidadDeTrabajo, contexto, validador, { next: uuidV7 }),
+    });
   });
 
   afterAll(async () => {
@@ -197,6 +209,73 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
 
       expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 42 });
       expect(await resultadosEnBitacora(tenantId)).toEqual(['PROVEEDOR_NO_DISPONIBLE']);
+    });
+  });
+
+  describe('Consola del operador', () => {
+    const operador = uuidV7();
+    const actor = uuidV7();
+    const nuevoTenant = async (nombre: string) => {
+      const tenantId = uuidV7();
+      await dataSource.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ($1, $2, $3, 'ACTIVO', 1)`, [
+        tenantId,
+        `cuota-${tenantId.slice(-12)}`,
+        nombre,
+      ]);
+      return tenantId;
+    };
+    const comoOperador = <T>(trabajo: () => Promise<T>) => contexto.run({ tenantId: operador, actorId: actor }, trabajo);
+    const lectura = () => new LecturaCuotasConsolaTypeOrm(unidadDeTrabajo);
+
+    it('lista todos los tenants del periodo desde el contexto del operador, de mayor a menor consumo', async () => {
+      const poco = await nuevoTenant('Consola Poco Uso');
+      const mucho = await nuevoTenant('Consola Mucho Uso');
+      await sembrar(poco, 500, 10);
+      await sembrar(mucho, 500, 490);
+
+      const pagina = await comoOperador(() => unidadDeTrabajo.run(() => lectura().delPeriodo({ periodo: OCTUBRE, q: 'consola', limite: 10, desplazamiento: 0 })));
+
+      expect(pagina.total).toBe(2);
+      expect(pagina.filas.map((fila) => [fila.tenantNombre, fila.consumidas])).toEqual([
+        ['Consola Mucho Uso', 490],
+        ['Consola Poco Uso', 10],
+      ]);
+    });
+
+    it('el detalle trae las consultas del periodo por resultado', async () => {
+      const tenantId = await nuevoTenant('Consola Detalle');
+      await sembrar(tenantId, 500, 0);
+      await consultarComo(tenantId, DNI_JUANA);
+
+      const detalle = await comoOperador(() => unidadDeTrabajo.run(() => lectura().detalle(tenantId, OCTUBRE)));
+
+      expect(detalle).toMatchObject({ tenantNombre: 'Consola Detalle', consumidas: expect.any(Number) });
+      expect(Object.keys(detalle?.consultasPorResultado ?? {}).sort()).toEqual(
+        ['CACHE', 'CUOTA_AGOTADA', 'INVALIDO', 'NO_ENCONTRADO', 'PROVEEDOR', 'PROVEEDOR_NO_DISPONIBLE'],
+      );
+      const total = Object.values(detalle?.consultasPorResultado ?? {}).reduce((suma, cantidad) => suma + cantidad, 0);
+      expect(total).toBe(1);
+      expect(await comoOperador(() => unidadDeTrabajo.run(() => lectura().detalle(tenantId, '2026-09')))).toBeNull();
+    });
+
+    it('el ajuste cambia las incluidas y deja cuota.ajustada en el outbox del tenant de la cuota, con el operador como actor', async () => {
+      const tenantId = await nuevoTenant('Consola Ajuste');
+      await sembrar(tenantId, 500, 450);
+
+      await comoOperador(() => ajustarCuota.ejecutar({ tenantId, periodo: OCTUBRE, incluidas: 800, version: 1, actorId: actor }));
+
+      expect(await cuotaDe(tenantId)).toMatchObject({ incluidas: 800, version: 2 });
+      const eventos = await dataSource.query(`SELECT tenant_id, actor_id, event_type, payload FROM sync.outbox WHERE event_type = 'cuota.ajustada' AND tenant_id = $1`, [
+        tenantId,
+      ]);
+      expect(eventos).toEqual([
+        {
+          tenant_id: tenantId,
+          actor_id: actor,
+          event_type: 'cuota.ajustada',
+          payload: { tenant_id: tenantId, periodo: OCTUBRE, incluidas_anteriores: 500, incluidas: 800, actor_id: actor },
+        },
+      ]);
     });
   });
 });

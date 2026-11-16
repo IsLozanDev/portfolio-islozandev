@@ -43,14 +43,16 @@ describe('Manifiesto PLAT 1.17.0: parte de org (specs 12 y 17a)', () => {
     expect(permiso(PERMISOS_ORG.suscripcionGestionar)).toBeUndefined();
   });
 
-  it('PLAT_ADMIN_TENANTS trae los tres permisos de tenants y plat.sesion.contexto', () => {
-    expect([...permisosDe('PLAT_ADMIN_TENANTS')].sort()).toEqual([...PERMISOS_TENANTS, 'plat.sesion.contexto'].sort());
+  it('PLAT_ADMIN_TENANTS trae los tres permisos de tenants, plat.sesion.contexto y la consola de identidad (spec 29)', () => {
+    const consolaIdentidad = ['plat.identidad.cuota_gestionar', 'plat.identidad.proveedor'];
+    expect([...permisosDe('PLAT_ADMIN_TENANTS')].sort()).toEqual([...PERMISOS_TENANTS, 'plat.sesion.contexto', ...consolaIdentidad].sort());
   });
 
   it('PLAT_PROPIETARIO junta los tres administradores, los permisos de organización y autorizar soporte, sin ninguno de tenants', () => {
     // plat.soporte.autorizar es del cliente (spec 18): solo lo tiene el propietario. Los dos sensibles de
     // catálogos también (spec 19a), y el de importar tablas oficiales (spec 19b); solo sirven en el tenant operador.
-    // También lo del auditor de datos personales (spec 20b) y el padrón RUC del registro de empresa (spec 28b).
+    // También lo del auditor de datos personales (spec 20b), el padrón RUC del registro de empresa (spec 28b)
+    // y ver la cuota propia de consultas de identidad (spec 29).
     const soloPropietario = [
       'plat.soporte.autorizar',
       'plat.catalogo.gestionar',
@@ -58,6 +60,7 @@ describe('Manifiesto PLAT 1.17.0: parte de org (specs 12 y 17a)', () => {
       'plat.catalogo.importar',
       'plat.identidad.validar',
       'plat.identidad.consultar',
+      'plat.identidad.cuota',
     ];
     const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...permisosDe('PLAT_AUDITOR'), ...PERMISOS_ORGANIZACION, ...soloPropietario]);
     expect(new Set(permisosDe('PLAT_PROPIETARIO'))).toEqual(esperados);

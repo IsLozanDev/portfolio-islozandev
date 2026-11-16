@@ -19,6 +19,7 @@ await build({
     'cli/ejecutar-vencimientos': 'apps/worker/dist/tsc/cli/ejecutar-vencimientos.js',
     'cli/ejecutar-vencimiento-soporte': 'apps/worker/dist/tsc/cli/ejecutar-vencimiento-soporte.js',
     'cli/ejecutar-auditoria': 'apps/worker/dist/tsc/cli/ejecutar-auditoria.js',
+    'cli/ejecutar-cuotas': 'apps/worker/dist/tsc/cli/ejecutar-cuotas.js',
   },
   outdir: 'apps/worker/dist',
   bundle: true,

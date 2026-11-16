@@ -38,6 +38,7 @@ import { ConfiguracionCuotaParametros } from './identidad/configuracion-cuota.pa
 import { HasherDocumentoObservabilidad } from './identidad/hasher-documento.js';
 import { PadronRucIdentidad } from './identidad/padron-ruc.identidad.js';
 import { PlanDelTenantOrg } from './identidad/plan-del-tenant.org.js';
+import { VerificadorOperadorIdentidad } from './identidad/verificador-operador.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
 import { ConsolaTenantsController } from './org/consola-tenants.controller.js';
@@ -89,6 +90,14 @@ export class AppModule {
             avisar: (mensaje, datos) => registroCuota.warn({ mensaje, ...datos }),
           }),
         inject: [PARAMETRO_PORT],
+      },
+      verificadorOperador: {
+        useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+          new VerificadorOperadorIdentidad(
+            new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
+            contexto,
+          ),
+        inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
       },
     });
     return {

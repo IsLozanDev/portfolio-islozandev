@@ -49,13 +49,23 @@ describe('Manifiesto PLAT 1.17.0: parte de idn (spec 28)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.17.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
+  it('está en la versión 1.17.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
     expect(manifiesto.version).toBe('1.17.0');
     const deIdn = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.identidad.'));
     expect(deIdn.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_IDN.validar, 'TENANT', false],
       [PERMISOS_IDN.consultar, 'TENANT', false],
+      [PERMISOS_IDN.cuota, 'TENANT', false],
+      [PERMISOS_IDN.cuotaGestionar, 'TENANT', true],
+      [PERMISOS_IDN.proveedor, 'TENANT', true],
     ]);
+  });
+
+  it('spec 29: PLAT_PROPIETARIO ve su cuota y PLAT_ADMIN_TENANTS gestiona cuotas y proveedores', () => {
+    const rol = (codigo: string) => manifiesto.roles_predefinidos.find((candidato) => candidato.codigo === codigo)?.permisos ?? [];
+    expect(rol('PLAT_PROPIETARIO')).toContain(PERMISOS_IDN.cuota);
+    expect(rol('PLAT_PROPIETARIO')).not.toEqual(expect.arrayContaining([PERMISOS_IDN.cuotaGestionar]));
+    expect(rol('PLAT_ADMIN_TENANTS')).toEqual(expect.arrayContaining([PERMISOS_IDN.cuotaGestionar, PERMISOS_IDN.proveedor]));
   });
 
   it('spec 28b: PLAT_PROPIETARIO tiene validar y consultar para el prellenado del RUC', () => {

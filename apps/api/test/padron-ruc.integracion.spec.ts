@@ -65,6 +65,7 @@ describeConDb('POST /v1/org/empresas con el padrón RUC de IDN (spec 28b)', () =
       configuracionCuota: {
         useFactory: () => ({ incluidasPorPlan: async () => INCLUIDAS_POR_PLAN, umbralAvisoPorcentaje: async () => UMBRAL_AVISO }),
       },
+      verificadorOperador: { useFactory: () => ({ exigir: async () => undefined }) },
     });
     const modulo = await Test.createTestingModule({
       imports: [

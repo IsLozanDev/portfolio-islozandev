@@ -69,7 +69,10 @@
     { "codigo": "plat.auditoria.consultar", "descripcion": "Consultar la auditoría y su integridad", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.auditoria.exportar", "descripcion": "Exportar la auditoría a Excel", "alcance_minimo": "SUCURSAL", "sensible": true },
     { "codigo": "plat.identidad.validar", "descripcion": "Validar el formato de un DNI, RUC, carné de extranjería o pasaporte", "alcance_minimo": "TENANT", "sensible": false },
-    { "codigo": "plat.identidad.consultar", "descripcion": "Consultar los datos de un DNI o RUC en el proveedor de identidad", "alcance_minimo": "TENANT", "sensible": false }
+    { "codigo": "plat.identidad.consultar", "descripcion": "Consultar los datos de un DNI o RUC en el proveedor de identidad", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.identidad.cuota", "descripcion": "Ver la cuota mensual de consultas DNI/RUC del propio tenant", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.identidad.cuota_gestionar", "descripcion": "Ver y ajustar las cuotas de consultas de todos los tenants (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.identidad.proveedor", "descripcion": "Ver y editar la prioridad, el TTL, el timeout y el estado de los proveedores de identidad (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true }
   ],
   "roles_predefinidos": [
     {
@@ -93,7 +96,7 @@
     {
       "codigo": "PLAT_ADMIN_TENANTS",
       "nombre": "Administrador de tenants",
-      "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto"]
+      "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto", "plat.identidad.cuota_gestionar", "plat.identidad.proveedor"]
     },
     {
       "codigo": "PLAT_AGENTE_SOPORTE",
@@ -115,7 +118,7 @@
         "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar",
         "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
         "plat.catalogo.item_propio", "plat.catalogo.importar", "plat.feriado.gestionar", "plat.auditoria.consultar",
-        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar"
+        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar", "plat.identidad.cuota"
       ]
     }
   ],
