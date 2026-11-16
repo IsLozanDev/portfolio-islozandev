@@ -1,6 +1,6 @@
 # SPEC 28 — Identidad: validación de DNI/RUC y consulta con caché central, proveedor con respaldo y bitácora
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 21
 > **Date:** 2026-11-16
 > **Objective:** Crear `libs/plataforma/identidad` (TR-IDN) con la validación de formato de DNI, RUC, CE y pasaporte en `shared/util` y la consulta de DNI y RUC por `GET /v1/identidad`, resuelta desde una caché central con campos mínimos o desde Decolecta con timeout de 3 s, respaldo y circuit breaker, dejando cada consulta en una bitácora por tenant con el número hasheado.

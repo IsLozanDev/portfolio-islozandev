@@ -88,7 +88,7 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
         { provide: ConsultarEmpresa, useValue: caso('ConsultarEmpresa', empresa) },
         { provide: ConsultarSucursal, useValue: caso('ConsultarSucursal', sucursal) },
         { provide: ConsultarUnidad, useValue: caso('ConsultarUnidad', unidad) },
-        { provide: RegistrarEmpresa, useValue: caso('RegistrarEmpresa', { empresaId: EMPRESA, sucursalPrincipalId: SUCURSAL }) },
+        { provide: RegistrarEmpresa, useValue: caso('RegistrarEmpresa', { empresaId: EMPRESA, sucursalPrincipalId: SUCURSAL, advertencias: [] }) },
         { provide: EditarEmpresa, useValue: caso('EditarEmpresa') },
         { provide: ListarSucursales, useValue: caso('ListarSucursales', { items: [], total: 0 }) },
         { provide: RegistrarSucursal, useValue: caso('RegistrarSucursal', { sucursalId: SUCURSAL }) },
@@ -207,7 +207,7 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
     const respuesta = await conCabeceras(servidor().post('/v1/org/empresas')).send({ ruc: '20512345671', razon_social: 'Sabores del Sur SAC' });
 
     expect(respuesta.status).toBe(201);
-    expect(respuesta.body).toEqual({ empresa_id: EMPRESA, sucursal_principal_id: SUCURSAL });
+    expect(respuesta.body).toEqual({ empresa_id: EMPRESA, sucursal_principal_id: SUCURSAL, advertencias: [] });
     expect(llamadas[0].argumentos).toEqual([{ ruc: '20512345671', razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null }]);
   });
 

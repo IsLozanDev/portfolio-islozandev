@@ -9,10 +9,11 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { CALENDARIO_PORT } from '@vitrina/plataforma/catalogos';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
-import { RegistrarEmpresa } from '@vitrina/plataforma/org';
+import { PADRON_RUC, RegistrarEmpresa } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule } from '@vitrina/plataforma/parametros';
 import { REGISTRO_ACCESO } from '@vitrina/plataforma/seguridad';
 import { AppModule } from '../src/app.module.js';
+import { PadronRucIdentidad } from '../src/identidad/padron-ruc.identidad.js';
 import { AltaTenant } from '../src/org/alta-tenant.js';
 import { configurarApp } from '../src/app.setup.js';
 import { cargarConfig } from '../src/config/env.js';
@@ -130,6 +131,18 @@ describe('api', () => {
 
   it('OrgModule queda cableado: los casos de uso de org se resuelven', () => {
     expect(app.get(RegistrarEmpresa)).toBeInstanceOf(RegistrarEmpresa);
+  });
+
+  it('spec 28b: ORG consulta el padrón RUC por IDN y no por el nulo', () => {
+    expect(app.get(PADRON_RUC, { strict: false })).toBeInstanceOf(PadronRucIdentidad);
+  });
+
+  it('spec 28b: OpenAPI documenta advertencias en EmpresaRegistradaDto y TenantDadoDeAltaDto', async () => {
+    const { components } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    for (const esquema of ['EmpresaRegistradaDto', 'TenantDadoDeAltaDto']) {
+      expect(components.schemas[esquema].properties.advertencias).toMatchObject({ type: 'array', items: { type: 'string' } });
+      expect(components.schemas[esquema].required).toContain('advertencias');
+    }
   });
 
   it('GET /v1/docs-json publica POST /v1/org/tenants (spec 12) con bearer auth y sus códigos de error', async () => {

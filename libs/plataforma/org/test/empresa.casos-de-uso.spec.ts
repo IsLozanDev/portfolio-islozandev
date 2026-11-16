@@ -104,12 +104,31 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       );
     });
 
-    it('con datos del padrón usa su razón social', async () => {
+    const padronCon = (estado: string, condicion: string): PadronRucPort => ({
+      consultar: async () => ({ razonSocial: 'SABORES DEL SUR S.A.C.', estado, condicion }),
+    });
+
+    it('TR-CA-004: con padrón ACTIVO y HABIDO manda su razón social aunque el comando traiga otra, sin advertencias', async () => {
       const tenantId = await nuevoTenant('con-padron');
-      const padron: PadronRucPort = { consultar: async () => ({ razonSocial: 'SABORES DEL SUR S.A.C.', estado: 'ACTIVO', condicion: 'HABIDO' }) };
-      const { empresaId } = await e.en(tenantId, () => registrar(padron).ejecutar({ ...COMANDO, razonSocial: null }));
+      const { empresaId, sucursalPrincipalId, advertencias } = await e.en(tenantId, () => registrar(padronCon('ACTIVO', 'HABIDO')).ejecutar(COMANDO));
       const [{ razon_social }] = await e.dataSource.query('SELECT razon_social FROM org.empresa WHERE id = $1', [empresaId]);
+      const [{ codigo_establecimiento_sunat }] = await e.dataSource.query('SELECT codigo_establecimiento_sunat FROM org.sucursal WHERE id = $1', [sucursalPrincipalId]);
       expect(razon_social).toBe('SABORES DEL SUR S.A.C.');
+      expect(codigo_establecimiento_sunat).toBe('0000');
+      expect(advertencias).toEqual([]);
+    });
+
+    it('TR-CA-006: con padrón NO HABIDO registra igual y devuelve la advertencia', async () => {
+      const tenantId = await nuevoTenant('padron-no-habido');
+      const { empresaId, advertencias } = await e.en(tenantId, () => registrar(padronCon('ACTIVO', 'NO HABIDO')).ejecutar({ ...COMANDO, razonSocial: null }));
+      expect(await contar('empresa', tenantId)).toBe(1);
+      expect(empresaId).toBeTruthy();
+      expect(advertencias).toEqual(['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar']);
+    });
+
+    it('sin padrón no hay advertencias', async () => {
+      const tenantId = await nuevoTenant('sin-padron-advertencias');
+      await expect(e.en(tenantId, () => registrar().ejecutar(COMANDO))).resolves.toHaveProperty('advertencias', []);
     });
 
     it('falla si el tenant está SUSPENDIDO', async () => {

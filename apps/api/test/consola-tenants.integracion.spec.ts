@@ -54,7 +54,7 @@ describeConDb('Consola de tenants contra PostgreSQL 16 (TR-RF-006)', () => {
     await dataSource.initialize();
     const validator = new InMemoryEventSchemaValidator();
     registrarEsquemasOrg(validator);
-    const modulo = await Test.createTestingModule({ imports: [KernelInfraModule.register({ dataSource, validator }), OrgModule] }).compile();
+    const modulo = await Test.createTestingModule({ imports: [KernelInfraModule.register({ dataSource, validator }), OrgModule.register()] }).compile();
     app = modulo.createNestApplication({ logger: false });
     await app.init();
 

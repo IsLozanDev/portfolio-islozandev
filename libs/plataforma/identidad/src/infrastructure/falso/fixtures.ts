@@ -21,6 +21,14 @@ export const RUCS_FALSOS: Readonly<Record<string, DatosRuc>> = {
     direccionFiscal: 'Calle Mercaderes 410, Arequipa',
     ubigeo: '040101',
   },
+  // Spec 28b: TR-CA-006 (advertencia NO HABIDO al registrar la empresa).
+  '20456789120': {
+    razonSocial: 'Inversiones Misti S.A.C.',
+    estado: 'ACTIVO',
+    condicion: 'NO HABIDO',
+    direccionFiscal: 'Calle Santa Catalina 210, Arequipa',
+    ubigeo: '040101',
+  },
   '20100070970': {
     razonSocial: 'Supermercados Peruanos S.A.',
     estado: 'ACTIVO',

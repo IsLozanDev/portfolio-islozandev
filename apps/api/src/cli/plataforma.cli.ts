@@ -108,7 +108,7 @@ class SiembraModule {
       module: SiembraModule,
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
-        OrgModule,
+        OrgModule.register(),
         SeguridadModule.register({
           dataSource,
           supabaseUrl: entorno.SUPABASE_URL,

@@ -65,6 +65,8 @@ export interface TenantDadoDeAlta {
   expiraEn: Date;
   usuarioNuevo: boolean;
   correoEnviado: boolean;
+  /** Del padrón, vía RegistrarEmpresa (TR-RN-019). */
+  advertencias: string[];
 }
 
 /** Id del tenant con ese código, o null. Busca entre tenants, por `org.tenant_por_codigo`. */
@@ -138,7 +140,7 @@ export class AltaTenant {
           limiteUsuarios: null,
           vigenteHasta,
         });
-        const { empresaId, sucursalPrincipalId } = await registrarEmpresa.ejecutar({
+        const { empresaId, sucursalPrincipalId, advertencias } = await registrarEmpresa.ejecutar({
           ruc: comando.ruc,
           razonSocial: comando.razonSocial,
           nombreComercial: comando.nombreComercial ?? null,
@@ -147,7 +149,7 @@ export class AltaTenant {
         });
         await sembrarSeries.ejecutar({ empresaId, sucursalId: sucursalPrincipalId, creadoPor: comando.actor.usuarioId });
         const propietario = await invitarPropietario.registrar(identidad, comando.actor.usuarioId);
-        return { tenantId, estado: comando.modalidad, suscripcionId, vigenteHasta, empresaId, sucursalId: sucursalPrincipalId, ...propietario };
+        return { tenantId, estado: comando.modalidad, suscripcionId, vigenteHasta, empresaId, sucursalId: sucursalPrincipalId, advertencias, ...propietario };
       });
     } catch (error) {
       // Carrera con otra alta del mismo código entre la consulta y el INSERT: la transacción ya revirtió.

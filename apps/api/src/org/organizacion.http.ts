@@ -246,6 +246,13 @@ export class EmpresaRegistradaDto {
 
   @ApiProperty({ format: 'uuid', description: 'Sucursal principal, establecimiento 0000' })
   sucursal_principal_id!: string;
+
+  @ApiProperty({
+    type: [String],
+    description: 'TR-RN-019: contribuyente no ACTIVO o no HABIDO según el padrón; el registro se hizo igual. Vacío si no hay.',
+    example: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'],
+  })
+  advertencias!: string[];
 }
 
 export class RegistrarSucursalDto {

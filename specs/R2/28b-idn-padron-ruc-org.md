@@ -1,6 +1,6 @@
 # SPEC 28b — Identidad: padrón RUC real en ORG, prellenado de razón social y advertencia de contribuyente no apto
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 03, SPEC 12, SPEC 17a, SPEC 17b, SPEC 17c, SPEC 28
 > **Date:** 2026-11-16
 > **Objective:** Reemplazar `PadronRucNulo` por un adaptador de `PadronRucPort` sobre `IdentidadPort` para que registrar una empresa (y el alta de tenant) tome la razón social del padrón y devuelva una advertencia cuando el contribuyente no está ACTIVO o está NO HABIDO, mostrada en `admin-cliente` y en la consola de tenants.
@@ -123,8 +123,8 @@ Ninguno nuevo. `empresa.creada` no cambia.
 
 - [ ] **TR-CA-004:** con el padrón respondiendo, `RegistrarEmpresa` con un RUC ACTIVO y HABIDO guarda la razón social del padrón aunque el comando traiga otra, crea la sucursal principal `0000` y devuelve `advertencias = []`.
 - [ ] **TR-CA-006:** con un RUC NO HABIDO, la empresa se registra y la respuesta trae «Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar».
-- [ ] RUC 20498765432 (BAJA DE OFICIO) se registra con «Contribuyente en estado BAJA DE OFICIO: no podrá emitir comprobantes hasta regularizar».
-- [ ] Con el proveedor caído o el RUC no encontrado, la empresa se registra con la razón social del comando y sin advertencias; sin razón social en el comando responde 422 como hoy.
+- [ ] RUC 20498765433 (BAJA DE OFICIO) se registra con «Contribuyente en estado BAJA DE OFICIO: no podrá emitir comprobantes hasta regularizar».
+- [ ] Con el proveedor caído o el RUC no encontrado, la empresa se registra con la razón social del comando y sin advertencias; sin razón social en el comando responde 400 como hoy.
 - [ ] El alta de tenant desde la consola con un RUC NO HABIDO devuelve el tenant creado y la advertencia en `advertencias`.
 - [ ] La consulta al padrón deja una fila en `idn.consulta_log` del tenant con motivo `VERIFICACION_IDENTIDAD` y producto `PLAT`.
 - [ ] Sin `OrgModule.register({ padronRuc })`, ORG sigue con `PadronRucNulo` y sus pruebas pasan sin cambios.
@@ -154,6 +154,10 @@ Ninguno nuevo. `empresa.creada` no cambia.
 - **No:** guardar estado y condición en `org.empresa`. Decisión del usuario. FE consulta IDN al emitir (`apto_factura`); una foto vieja no aporta.
 - **Sí:** proveedor caído o RUC no encontrado → `null`, razón social manual (TR-RNF-007).
 - **Sí:** motivo `VERIFICACION_IDENTIDAD` y producto `PLAT` en la bitácora del padrón.
+- **Sí (al implementar):** el proveedor falso del 28 suma el RUC 20456789120, ACTIVO y NO HABIDO (`Inversiones Misti S.A.C.`), para TR-CA-006, el alta de tenant y Playwright. Decisión del usuario.
+- **Sí (al implementar):** el RUC de BAJA DE OFICIO del criterio pasa de 20498765432 a 20498765433, el del fixture del 28; el original no pasaba el módulo 11. Decisión del usuario.
+- **Sí (al implementar):** sin razón social, `POST /v1/org/empresas` responde 400 `SOLICITUD_INVALIDA` (lo valida el esquema HTTP antes de consultar el padrón), no 422: el criterio decía «422 como hoy», pero hoy es 400.
+- **Sí (al implementar):** `advertenciasDelPadron` recibe `SituacionContribuyente { estado, condicion }` en vez de `DatosPadron`: el dominio no importa del puerto de aplicación. `DatosPadron` la cumple sin cambios.
 
 ## Riesgos
 

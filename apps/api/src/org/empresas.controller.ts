@@ -83,14 +83,14 @@ export class EmpresasController {
   @ApiConflictResponse({ description: 'CONFLICTO («La empresa ya está registrada en este tenant», tope de sucursales o tenant no operativo)' })
   async registrar(@Body() cuerpo: unknown): Promise<EmpresaRegistradaDto> {
     const datos = validar(EsquemaRegistrarEmpresa, cuerpo);
-    const { empresaId, sucursalPrincipalId } = await this.registrarEmpresa.ejecutar({
+    const { empresaId, sucursalPrincipalId, advertencias } = await this.registrarEmpresa.ejecutar({
       ruc: datos.ruc,
       razonSocial: datos.razon_social,
       nombreComercial: datos.nombre_comercial ?? null,
       direccionFiscal: datos.direccion_fiscal ?? null,
       ubigeo: datos.ubigeo ?? null,
     });
-    return { empresa_id: empresaId, sucursal_principal_id: sucursalPrincipalId };
+    return { empresa_id: empresaId, sucursal_principal_id: sucursalPrincipalId, advertencias };
   }
 
   @Put(':id')

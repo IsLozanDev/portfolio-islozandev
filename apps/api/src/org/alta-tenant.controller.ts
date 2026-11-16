@@ -70,5 +70,6 @@ function tenantDadoDeAltaDto(alta: TenantDadoDeAlta): TenantDadoDeAltaDto {
     expira_en: alta.expiraEn.toISOString(),
     usuario_nuevo: alta.usuarioNuevo,
     correo_enviado: alta.correoEnviado,
+    advertencias: alta.advertencias,
   };
 }
