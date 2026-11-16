@@ -98,6 +98,9 @@
       ],
       "@vitrina/plataforma/catalogos-ui": [
         "./libs/plataforma/catalogos-ui/src/index.ts"
+      ],
+      "@vitrina/plataforma/consola-identidad": [
+        "./libs/plataforma/consola-identidad/src/index.ts"
       ]
     }
   }

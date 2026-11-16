@@ -28,6 +28,11 @@ export const appRoutes: Route[] = [
         loadChildren: () => import('@vitrina/plataforma/consola-catalogos').then((modulo) => modulo.CONSOLA_CATALOGOS_ROUTES),
       },
       {
+        path: 'consola/identidad',
+        canActivate: [aal2Guard],
+        loadChildren: () => import('@vitrina/plataforma/consola-identidad').then((modulo) => modulo.CONSOLA_IDENTIDAD_ROUTES),
+      },
+      {
         path: 'consola/feriados',
         canActivate: [aal2Guard],
         canMatch: [permisoGuard(PERMISO_FERIADOS)],
