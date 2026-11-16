@@ -64,9 +64,13 @@ describe('EmpresasCliente', () => {
     const peticion = http.expectOne(`${API_URL}/org/empresas`);
     expect(peticion.request.method).toBe('POST');
     expect(peticion.request.body).toEqual({ ruc: '20512345671', ...CUERPO_DATOS });
-    peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro' });
+    peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'] });
 
-    await expect(respuesta).resolves.toEqual({ empresaId: 'e-sabores', sucursalPrincipalId: 's-centro' });
+    await expect(respuesta).resolves.toEqual({
+      empresaId: 'e-sabores',
+      sucursalPrincipalId: 's-centro',
+      advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'],
+    });
   });
 
   it('editar envía PUT con la versión y sin RUC', async () => {

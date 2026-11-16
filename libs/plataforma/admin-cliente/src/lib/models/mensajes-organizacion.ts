@@ -21,6 +21,10 @@ export const MENSAJES_EMPRESAS = {
   direccionFiscal: 'Dirección fiscal',
   ubigeo: 'Ubigeo',
   ayudaRazonSocial: 'Escríbala como figura en SUNAT.',
+  /** Spec 28b: el padrón no respondió o no tiene el RUC. */
+  noEnPadron: 'No se encontró en el padrón; ingrésela manualmente',
+  consultandoPadron: 'Consultando el padrón…',
+  registradaConObservaciones: 'Empresa registrada con observaciones',
   registrar: 'Registrar empresa',
   /** TR-CA-004: la API crea también la sucursal principal. */
   registrada: 'Empresa registrada con su sucursal principal 0000',

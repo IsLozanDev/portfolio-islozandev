@@ -22,13 +22,18 @@
       <div class="grid gap-x-4 sm:grid-cols-2">
         <mat-form-field appearance="outline">
           <mat-label>{{ mensajes.ruc }}</mat-label>
-          <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required />
+          <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required (blur)="alSalirDelRuc()" />
+          @if (consultandoPadron()) {
+            <mat-hint><vit-cargando [texto]="mensajes.consultandoPadron" /></mat-hint>
+          } @else if (motivoNoApto(); as motivo) {
+            <mat-hint data-aviso="no-apto">{{ motivo }}</mat-hint>
+          }
           <mat-error>{{ mensajeDeError(grupo.controls.ruc.errors) }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ mensajes.razonSocial }}</mat-label>
           <input matInput formControlName="razonSocial" data-campo="razonSocial" autocomplete="off" required />
-          <mat-hint>{{ mensajes.ayudaRazonSocial }}</mat-hint>
+          <mat-hint data-ayuda="razon-social">{{ noEstaEnPadron() ? mensajes.noEnPadron : mensajes.ayudaRazonSocial }}</mat-hint>
           <mat-error>{{ mensajeDeError(grupo.controls.razonSocial.errors) }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
