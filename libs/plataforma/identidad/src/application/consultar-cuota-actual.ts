@@ -27,20 +27,21 @@ export class ConsultarCuotaActual {
   constructor(private readonly dependencias: DependenciasCuotaActual) {}
 
   ejecutar(): Promise<CuotaActual> {
-    const { unidadDeTrabajo, contexto, reloj, configuracion } = this.dependencias;
+    const { unidadDeTrabajo, contexto, reloj, repositorio, configuracion } = this.dependencias;
     const periodo = periodoDe(reloj.now());
     const { tenantId } = contexto.current();
 
     return unidadDeTrabajo.run(async () => {
-      const { plan, incluidas, consumidas } = (await this.dependencias.repositorio.buscar(tenantId, periodo)) ?? (await this.cuotaSinAbrir());
+      const { plan, incluidas, consumidas } = (await repositorio.buscar(tenantId, periodo)) ?? (await this.cuotaSinAbrir());
       const umbralAviso = await configuracion.umbralAvisoPorcentaje();
       return { periodo, plan, incluidas, consumidas, porcentaje: porcentajeConsumo({ incluidas, consumidas }), umbralAviso };
     });
   }
 
   private async cuotaSinAbrir(): Promise<Pick<CuotaActual, 'plan' | 'incluidas' | 'consumidas'>> {
-    const plan = await this.dependencias.planDelTenant.planVigente();
-    const incluidas = incluidasDe(plan, await this.dependencias.configuracion.incluidasPorPlan());
+    const { planDelTenant, configuracion } = this.dependencias;
+    const plan = await planDelTenant.planVigente();
+    const incluidas = incluidasDe(plan, await configuracion.incluidasPorPlan());
     return { plan, incluidas, consumidas: 0 };
   }
 }

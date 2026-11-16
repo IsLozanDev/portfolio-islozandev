@@ -2,12 +2,14 @@ import { Logger, Module, type DynamicModule, type InjectionToken, type ModuleMet
 import type { Clock, EventPublisher, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { AbrirPeriodoCuotas } from './application/abrir-periodo-cuotas.js';
+import { ActualizarProveedor } from './application/actualizar-proveedor.js';
 import { AjustarCuota } from './application/ajustar-cuota.js';
 import { ConsultarCuotaActual } from './application/consultar-cuota-actual.js';
 import { ConsultarDocumento } from './application/consultar-documento.js';
 import { ControlCuota } from './application/control-cuota.js';
 import { DetalleDeCuota } from './application/detalle-cuota.js';
 import { ListarCuotas } from './application/listar-cuotas.js';
+import { ListarProveedores } from './application/listar-proveedores.js';
 import type { ConfiguracionCuota, PlanDelTenant, TenantsActivos, VerificadorOperador } from './application/ports/cuotas.js';
 import { IDENTIDAD, type IdentidadPort } from './application/ports/identidad.port.js';
 import type { HasherDocumento } from './application/ports/persistencia.js';
@@ -21,9 +23,11 @@ import { CacheIdentidadRepositorioTypeOrm } from './infrastructure/typeorm/cache
 import { ConfiguracionProveedoresTypeOrm } from './infrastructure/typeorm/configuracion-proveedores.repositorio.js';
 import { RepositorioCuotasTypeOrm } from './infrastructure/typeorm/cuota.repositorio.js';
 import { LecturaCuotasConsolaTypeOrm } from './infrastructure/typeorm/lectura-cuotas-consola.js';
+import { RepositorioProveedoresTypeOrm } from './infrastructure/typeorm/proveedores.repositorio.js';
 import { CuotasController } from './interface/cuotas.controller.js';
 import type { ProveedorElegido } from './interface/entorno-identidad.js';
 import { IdentidadController } from './interface/identidad.controller.js';
+import { ProveedoresController } from './interface/proveedores.controller.js';
 
 const PLAN_DEL_TENANT = Symbol('PlanDelTenant');
 const CONFIGURACION_CUOTA = Symbol('ConfiguracionCuota');
@@ -74,9 +78,8 @@ function desdeFabrica<T>(token: InjectionToken, fabrica: FabricaDe<T>): Provider
 }
 
 /** Cuota propia y consola del operador (spec 29). */
-function proveedoresConsolaCuotas(opciones: IdentidadOpciones): Provider[] {
+function proveedoresConsolaCuotas(): Provider[] {
   return [
-    desdeFabrica(VERIFICADOR_OPERADOR, opciones.verificadorOperador),
     {
       provide: ConsultarCuotaActual,
       useFactory: (
@@ -125,6 +128,24 @@ function proveedoresConsolaCuotas(opciones: IdentidadOpciones): Provider[] {
   ];
 }
 
+/** Consola de proveedores del operador (spec 29). */
+function proveedoresConsolaProveedores(): Provider[] {
+  return [
+    {
+      provide: ListarProveedores,
+      useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, verificador: VerificadorOperador) =>
+        new ListarProveedores({ unidadDeTrabajo, verificador, repositorio: new RepositorioProveedoresTypeOrm(unidadDeTrabajo) }),
+      inject: [TypeOrmUnitOfWork, VERIFICADOR_OPERADOR],
+    },
+    {
+      provide: ActualizarProveedor,
+      useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, reloj: Clock, verificador: VerificadorOperador, publicador: EventPublisher) =>
+        new ActualizarProveedor({ unidadDeTrabajo, reloj, verificador, repositorio: new RepositorioProveedoresTypeOrm(unidadDeTrabajo), publicador }),
+      inject: [TypeOrmUnitOfWork, CLOCK, VERIFICADOR_OPERADOR, EVENT_PUBLISHER],
+    },
+  ];
+}
+
 function proveedoresCuota(opciones: CuotaOpciones): Provider[] {
   return [
     desdeFabrica(PLAN_DEL_TENANT, opciones.planDelTenant),
@@ -152,10 +173,12 @@ export class IdentidadModule {
     return {
       module: IdentidadModule,
       imports: opciones.imports ?? [],
-      controllers: [IdentidadController, CuotasController],
+      controllers: [IdentidadController, CuotasController, ProveedoresController],
       providers: [
         ...proveedoresCuota(opciones),
-        ...proveedoresConsolaCuotas(opciones),
+        desdeFabrica(VERIFICADOR_OPERADOR, opciones.verificadorOperador),
+        ...proveedoresConsolaCuotas(),
+        ...proveedoresConsolaProveedores(),
         {
           provide: ConsultarDocumento,
           // Un solo ProveedorConRespaldo por instancia: sus circuit breakers viven en memoria.

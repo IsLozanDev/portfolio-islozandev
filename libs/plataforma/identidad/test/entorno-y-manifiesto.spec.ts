@@ -36,7 +36,7 @@ describe('Entorno de identidad', () => {
   });
 });
 
-describe('Manifiesto PLAT 1.17.0: parte de idn (spec 28)', () => {
+describe('Manifiesto PLAT 1.18.0: parte de idn (specs 28 y 29)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; alcance_minimo: string; sensible: boolean }[];
@@ -49,8 +49,8 @@ describe('Manifiesto PLAT 1.17.0: parte de idn (spec 28)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.17.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
-    expect(manifiesto.version).toBe('1.17.0');
+  it('está en la versión 1.18.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
+    expect(manifiesto.version).toBe('1.18.0');
     const deIdn = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.identidad.'));
     expect(deIdn.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_IDN.validar, 'TENANT', false],

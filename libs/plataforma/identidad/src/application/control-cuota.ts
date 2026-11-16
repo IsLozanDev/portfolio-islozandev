@@ -54,9 +54,9 @@ export class ControlCuota implements CuotaPort {
   }
 
   private async publicarAvisos(cuota: EstadoCuota): Promise<void> {
-    const { configuracion, repositorio, publicador } = this.dependencias;
+    const { configuracion, repositorio, publicador, reloj } = this.dependencias;
     const umbral = await configuracion.umbralAvisoPorcentaje();
-    const ahora = this.dependencias.reloj.now();
+    const ahora = reloj.now();
     for (const aviso of avisosPendientes(cuota, umbral)) {
       const marcado = await repositorio.marcarAviso(cuota.tenantId, cuota.periodo, aviso, ahora);
       if (marcado) await publicador.publish(eventoDeAviso(aviso, cuota, umbral, ahora));

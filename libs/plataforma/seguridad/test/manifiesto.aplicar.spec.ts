@@ -45,7 +45,7 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
 
     const primera = await aplicar.ejecutar(plat);
-    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.17.0', yaAplicado: false });
+    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.18.0', yaAplicado: false });
     // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10), 2 de evt (spec 11), 1 de org (spec 12), 6 de org (spec 17a), 3 de seg (spec 18)
     // 1 de seg (spec 18b), 5 de cat (spec 19a), 1 de cat (spec 19b), 1 de feriados (spec 19c) y 2 de aud (spec 20b).
     expect(primera.cambios.permisos.insertados).toBe(35);
