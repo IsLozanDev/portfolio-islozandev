@@ -3,6 +3,7 @@ import { validarDocumento, type TipoDocumento } from '@vitrina/shared/util';
 import { esTipoConsultable } from '../domain/datos-identidad.js';
 import { crearEntradaCache, estaVigente, type EntradaCache } from '../domain/entrada-cache.js';
 import {
+  CuotaAgotadaError,
   DocumentoInvalidoError,
   DocumentoNoEncontradoError,
   ProveedorNoDisponibleError,
@@ -60,8 +61,8 @@ export class ConsultarDocumento {
 
     const preparacion = await this.prepararConsulta(consulta);
     if (preparacion.paso === 'RESPONDIDA_DESDE_CACHE') return respuestaDesdeEntrada(preparacion.entrada, 'CACHE');
-    // Sin cuota el cliente sigue con el registro manual, como sin proveedor (TR-RNF-007).
-    if (preparacion.paso === 'CUOTA_AGOTADA') throw new ProveedorNoDisponibleError();
+    // Sin cuota el cliente sigue con el registro manual (TR-RNF-007); el proveedor no se llama.
+    if (preparacion.paso === 'CUOTA_AGOTADA') throw new CuotaAgotadaError();
 
     const respuesta = await this.dependencias.consultor.consultar(tipo, consulta.numero, preparacion.configurados);
     return this.cerrarConsulta(consulta, respuesta);

@@ -123,7 +123,24 @@
     { "codigo": "plat.sesion.minutos_inactividad", "descripcion": "Minutos de inactividad antes de cerrar la sesión", "tipo": "NUMERO", "valor_defecto": 30, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_gracia", "descripcion": "Días tras el vencimiento antes de suspender el tenant", "tipo": "NUMERO", "valor_defecto": 5, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" },
-    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" }
+    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" },
+    {
+      "codigo": "plat.identidad.cuota_incluidas",
+      "descripcion": "Consultas DNI/RUC incluidas por mes según el plan (solo vale el valor por defecto)",
+      "tipo": "JSON",
+      "valor_defecto": { "BASICO": 200, "PRO": 500, "EMPRESA": 2000 },
+      "alcance_maximo": "TENANT",
+      "esquema": {
+        "type": "object",
+        "properties": {
+          "BASICO": { "type": "integer", "minimum": 0 },
+          "PRO": { "type": "integer", "minimum": 0 },
+          "EMPRESA": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["BASICO", "PRO", "EMPRESA"]
+      }
+    },
+    { "codigo": "plat.identidad.cuota_umbral_aviso", "descripcion": "Porcentaje de la cuota DNI/RUC que dispara el aviso", "tipo": "NUMERO", "valor_defecto": 80, "alcance_maximo": "TENANT" }
   ],
   "indicadores": [],
   "reportes": []

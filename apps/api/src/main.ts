@@ -5,7 +5,7 @@ import { ENTIDADES_AUDITORIA } from '@vitrina/plataforma/auditoria';
 import { ENTIDADES_CAT, registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
-import { ENTIDADES_IDN } from '@vitrina/plataforma/identidad';
+import { ENTIDADES_IDN, registrarEsquemasIdn } from '@vitrina/plataforma/identidad';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { salDocumento, usarLoggerDeObservabilidad } from '@vitrina/plataforma/observabilidad';
 import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
@@ -35,6 +35,7 @@ registrarEsquemasSeg(validator);
 registrarEsquemasCfg(validator);
 registrarEsquemasSeq(validator);
 registrarEsquemasCat(validator);
+registrarEsquemasIdn(validator);
 
 const app = await NestFactory.create(
   AppModule.register({

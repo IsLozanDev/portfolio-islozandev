@@ -1,19 +1,29 @@
-import type { EventSchemaValidator } from '@vitrina/plataforma/kernel';
-import { AlsTenantContext, OutboxPublisher, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
+import { AlsTenantContext, InMemoryEventSchemaValidator, OutboxPublisher, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
+import { ConsultarDocumento } from '../src/application/consultar-documento.js';
 import { ControlCuota } from '../src/application/control-cuota.js';
-import { ENTIDADES_IDN } from '../src/infrastructure/typeorm/entidades.js';
+import type { ConsultorProveedores } from '../src/application/ports/proveedores.js';
+import { CuotaAgotadaError, DocumentoInvalidoError, ProveedorNoDisponibleError } from '../src/domain/errores.js';
+import { registrarEsquemasIdn } from '../src/infrastructure/event-schemas.js';
+import { ProveedorFalso } from '../src/infrastructure/falso/proveedor.falso.js';
+import { ProveedorConRespaldo } from '../src/infrastructure/respaldo/proveedor-con-respaldo.js';
+import { BitacoraConsultasTypeOrm } from '../src/infrastructure/typeorm/bitacora-consultas.repositorio.js';
+import { CacheIdentidadRepositorioTypeOrm } from '../src/infrastructure/typeorm/cache-identidad.repositorio.js';
+import { ConfiguracionProveedoresTypeOrm } from '../src/infrastructure/typeorm/configuracion-proveedores.repositorio.js';
 import { RepositorioCuotasTypeOrm } from '../src/infrastructure/typeorm/cuota.repositorio.js';
+import { ENTIDADES_IDN } from '../src/infrastructure/typeorm/entidades.js';
 import { ConfiguracionCuotaFija, PlanFijo } from './support/cuotas.js';
-import { RelojFalso } from './support/dobles.js';
+import { ConsultorEspia, HasherPrueba, RelojFalso } from './support/dobles.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const OCTUBRE = '2026-10';
 const RESERVAS_EN_PARALELO = 50;
 const CONSULTAS_RESTANTES = 10;
-
-// Los esquemas de los eventos se registran en las apps (paso 4): aquí se prueba solo la escritura en el outbox.
-const validadorPermisivo: EventSchemaValidator = { validate: () => undefined };
+const DNI_JUANA = '45781236';
+const DNI_LUIS = '10293847';
+const DNI_VALIDO_CUALQUIERA = '70707070';
+const consultaDni = (numero: string) => ({ tipo: 'DNI' as const, numero, motivo: 'REGISTRO_CLIENTE' as const });
+const proveedoresCaidos: ConsultorProveedores = { consultar: async () => ({ resultado: 'NO_DISPONIBLE' }) };
 
 describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
   let baseTemporal: TempDb;
@@ -21,6 +31,9 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
   let contexto: AlsTenantContext;
   let unidadDeTrabajo: TypeOrmUnitOfWork;
   let control: ControlCuota;
+  let consultor: ConsultorEspia;
+  let consultarDocumento: ConsultarDocumento;
+  let consultarSinProveedores: ConsultarDocumento;
 
   const reservarComo = (tenantId: string) =>
     contexto.run({ tenantId }, () => unidadDeTrabajo.run(() => control.reservar(tenantId)));
@@ -35,6 +48,12 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
     ]);
   const cuotaDe = async (tenantId: string) =>
     (await dataSource.query(`SELECT * FROM idn.cuota WHERE tenant_id = $1 AND periodo = $2`, [tenantId, OCTUBRE]))[0];
+  const consultarComo = (tenantId: string, numero: string, casoDeUso = consultarDocumento) =>
+    contexto.run({ tenantId }, () => casoDeUso.ejecutar(consultaDni(numero)));
+  const resultadosEnBitacora = async (tenantId: string): Promise<string[]> =>
+    (await dataSource.query(`SELECT resultado FROM idn.consulta_log WHERE tenant_id = $1 ORDER BY id`, [tenantId])).map(
+      (fila: { resultado: string }) => fila.resultado,
+    );
   const eventosDe = async (tenantId: string): Promise<{ event_type: string; payload: Record<string, unknown> }[]> =>
     dataSource.query(`SELECT event_type, payload FROM sync.outbox WHERE tenant_id = $1 ORDER BY seq`, [tenantId]);
 
@@ -45,13 +64,30 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
     await dataSource.initialize();
     contexto = new AlsTenantContext();
     unidadDeTrabajo = new TypeOrmUnitOfWork(dataSource, contexto);
+    const validador = new InMemoryEventSchemaValidator();
+    registrarEsquemasIdn(validador);
+    const reloj = new RelojFalso(new Date('2026-10-16T12:00:00-05:00'));
     control = new ControlCuota({
       repositorio: new RepositorioCuotasTypeOrm(unidadDeTrabajo),
       planDelTenant: new PlanFijo('PRO'),
       configuracion: new ConfiguracionCuotaFija(),
-      publicador: new OutboxPublisher(unidadDeTrabajo, contexto, validadorPermisivo, { next: uuidV7 }),
-      reloj: new RelojFalso(new Date('2026-10-16T12:00:00-05:00')),
+      publicador: new OutboxPublisher(unidadDeTrabajo, contexto, validador, { next: uuidV7 }),
+      reloj,
     });
+    consultor = new ConsultorEspia(new ProveedorConRespaldo([new ProveedorFalso()], reloj));
+    const dependencias = {
+      unidadDeTrabajo,
+      contexto,
+      reloj,
+      cache: new CacheIdentidadRepositorioTypeOrm(unidadDeTrabajo),
+      bitacora: new BitacoraConsultasTypeOrm(unidadDeTrabajo),
+      configuracion: new ConfiguracionProveedoresTypeOrm(unidadDeTrabajo),
+      consultor,
+      cuota: control,
+      hasher: new HasherPrueba(),
+    };
+    consultarDocumento = new ConsultarDocumento(dependencias);
+    consultarSinProveedores = new ConsultarDocumento({ ...dependencias, consultor: proveedoresCaidos });
   });
 
   afterAll(async () => {
@@ -115,5 +151,52 @@ describeConDb('ControlCuota con TypeORM (TR-RF-047, PostgreSQL 16)', () => {
     await liberarComo(tenantId);
 
     expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 0 });
+  });
+
+  describe('ConsultarDocumento con la cuota real', () => {
+    it('TR-CA-121: 500 de 500 y DNI fuera de caché → CuotaAgotadaError, bitácora CUOTA_AGOTADA y el proveedor no se llama', async () => {
+      const tenantId = uuidV7();
+      await sembrar(tenantId, 500, 500);
+      const llamadasAntes = consultor.llamadas;
+
+      await expect(consultarComo(tenantId, DNI_JUANA)).rejects.toThrow(CuotaAgotadaError);
+
+      expect(consultor.llamadas).toBe(llamadasAntes);
+      expect(await resultadosEnBitacora(tenantId)).toEqual(['CUOTA_AGOTADA']);
+      expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 500 });
+    });
+
+    it('TR-CA-122: cuota agotada y DNI vigente en caché → responde CACHE y consumidas no cambia', async () => {
+      const otroTenant = uuidV7();
+      await sembrar(otroTenant, 500, 0);
+      await consultarComo(otroTenant, DNI_LUIS);
+      const tenantId = uuidV7();
+      await sembrar(tenantId, 500, 500);
+
+      const respuesta = await consultarComo(tenantId, DNI_LUIS);
+
+      expect(respuesta.fuente).toBe('CACHE');
+      expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 500 });
+      expect(await cuotaDe(otroTenant)).toMatchObject({ consumidas: 1 });
+    });
+
+    it('TR-RN-031: un documento inválido no consume cuota', async () => {
+      const tenantId = uuidV7();
+      await sembrar(tenantId, 500, 10);
+
+      await expect(consultarComo(tenantId, '1234')).rejects.toThrow(DocumentoInvalidoError);
+
+      expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 10 });
+    });
+
+    it('si fallan todos los proveedores, consumidas vuelve al valor previo a la reserva', async () => {
+      const tenantId = uuidV7();
+      await sembrar(tenantId, 500, 42);
+
+      await expect(consultarComo(tenantId, DNI_VALIDO_CUALQUIERA, consultarSinProveedores)).rejects.toThrow(ProveedorNoDisponibleError);
+
+      expect(await cuotaDe(tenantId)).toMatchObject({ consumidas: 42 });
+      expect(await resultadosEnBitacora(tenantId)).toEqual(['PROVEEDOR_NO_DISPONIBLE']);
+    });
   });
 });

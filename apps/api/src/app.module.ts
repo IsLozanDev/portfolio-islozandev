@@ -1,4 +1,4 @@
-import { Module, type DynamicModule } from '@nestjs/common';
+import { Logger, Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { CatalogosModule } from '@vitrina/plataforma/catalogos';
@@ -19,14 +19,25 @@ import {
 } from '@vitrina/plataforma/kernel-infra';
 import { IDENTIDAD, IdentidadModule, type IdentidadPort, type ProveedorElegido } from '@vitrina/plataforma/identidad';
 import { ObservabilidadModule, type ObservabilidadOpciones } from '@vitrina/plataforma/observabilidad';
-import { CambiarEstadoTenant, CrearTenant, GestionarSuscripcion, OrgModule, PADRON_RUC, RegistrarEmpresa, TenantRepositorioTypeOrm } from '@vitrina/plataforma/org';
-import { PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
+import {
+  CambiarEstadoTenant,
+  CrearTenant,
+  GestionarSuscripcion,
+  OrgModule,
+  PADRON_RUC,
+  RegistrarEmpresa,
+  SuscripcionRepositorioTypeOrm,
+  TenantRepositorioTypeOrm,
+} from '@vitrina/plataforma/org';
+import { DefinicionesRepositorioTypeOrm, PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
+import { ConfiguracionCuotaParametros } from './identidad/configuracion-cuota.parametros.js';
 import { HasherDocumentoObservabilidad } from './identidad/hasher-documento.js';
 import { PadronRucIdentidad } from './identidad/padron-ruc.identidad.js';
+import { PlanDelTenantOrg } from './identidad/plan-del-tenant.org.js';
 import { AltaTenant } from './org/alta-tenant.js';
 import { AltaTenantController } from './org/alta-tenant.controller.js';
 import { ConsolaTenantsController } from './org/consola-tenants.controller.js';
@@ -38,6 +49,8 @@ import { SucursalesController } from './org/sucursales.controller.js';
 import { TenantsPorCodigoTypeOrm } from './org/tenants-por-codigo.typeorm.js';
 import { UnidadesController } from './org/unidades.controller.js';
 import { SaludController } from './salud/salud.controller.js';
+
+const CONTEXTO_LOG_CUOTA = 'CuotaIdentidad';
 
 export type AppOpciones = KernelInfraOptions &
   Omit<SeguridadOpciones, 'dataSource'> & {
@@ -56,11 +69,27 @@ export class AppModule {
   static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
+    const registroCuota = new Logger(CONTEXTO_LOG_CUOTA);
     // La misma referencia en AppModule y OrgModule: una sola instancia de IdentidadModule (sus circuit breakers).
     const identidadModulo = IdentidadModule.register({
       proveedor: identidad.proveedor,
       decolectaToken: identidad.decolectaToken,
       hasher: new HasherDocumentoObservabilidad(identidad.salDocumento),
+      imports: [parametros],
+      planDelTenant: {
+        useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+          new PlanDelTenantOrg(new SuscripcionRepositorioTypeOrm(unidadDeTrabajo, contexto)),
+        inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+      },
+      configuracionCuota: {
+        useFactory: (parametroPort: ParametroPort) =>
+          new ConfiguracionCuotaParametros({
+            parametros: parametroPort,
+            definiciones: new DefinicionesRepositorioTypeOrm(dataSource),
+            avisar: (mensaje, datos) => registroCuota.warn({ mensaje, ...datos }),
+          }),
+        inject: [PARAMETRO_PORT],
+      },
     });
     return {
       module: AppModule,

@@ -150,6 +150,15 @@ describe('HTTP /v1/identidad con el proveedor falso (TR-RF-044 a 046)', () => {
       expect(dobles.bitacora.registros[0]).toMatchObject({ resultado: 'PROVEEDOR_NO_DISPONIBLE' });
     });
 
+    it('TR-CA-121: 429 CUOTA_AGOTADA sin Retry-After si el tenant agotó su cuota', async () => {
+      dobles.cuota.disponible = false;
+      const respuesta = await get('/v1/identidad/DNI/45781236?motivo=OTRO');
+      dobles.cuota.disponible = true;
+      expect([respuesta.status, respuesta.body.codigo]).toEqual([429, 'CUOTA_AGOTADA']);
+      expect(respuesta.headers['retry-after']).toBeUndefined();
+      expect(dobles.bitacora.registros[0]).toMatchObject({ resultado: 'CUOTA_AGOTADA' });
+    });
+
     it.each([
       ['sin motivo', '/v1/identidad/DNI/45781236', ['motivo']],
       ['motivo fuera de la lista', '/v1/identidad/DNI/45781236?motivo=MARKETING', ['motivo']],
@@ -188,6 +197,6 @@ describe('HTTP /v1/identidad con el proveedor falso (TR-RF-044 a 046)', () => {
     expect(Object.keys(rutas).sort()).toEqual(['/v1/identidad/{tipo}/{numero}', '/v1/identidad/{tipo}/{numero}/validez']);
     const codigos = (ruta: string) => Object.keys(rutas[ruta].get?.responses ?? {}).sort();
     expect(codigos('/v1/identidad/{tipo}/{numero}/validez')).toEqual(['200', '400', '401', '403']);
-    expect(codigos('/v1/identidad/{tipo}/{numero}')).toEqual(['200', '400', '401', '403', '404', '422', '503']);
+    expect(codigos('/v1/identidad/{tipo}/{numero}')).toEqual(['200', '400', '401', '403', '404', '422', '429', '503']);
   });
 });

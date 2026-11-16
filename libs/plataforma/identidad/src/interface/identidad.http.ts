@@ -1,7 +1,7 @@
 import { Catch, HttpException, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { DomainError, NotFoundError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
-import { DocumentoInvalidoError, ProveedorNoDisponibleError, TipoNoConsultableError } from '../domain/errores.js';
+import { CuotaAgotadaError, DocumentoInvalidoError, ProveedorNoDisponibleError, TipoNoConsultableError } from '../domain/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
@@ -13,6 +13,8 @@ const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => 
   [NotFoundError, HttpStatus.NOT_FOUND],
   // TR-RNF-007: el cliente sigue con el registro manual.
   [ProveedorNoDisponibleError, HttpStatus.SERVICE_UNAVAILABLE],
+  // Sin Retry-After: la cuota no vuelve hasta el mes siguiente y el cliente pasa a ingreso manual.
+  [CuotaAgotadaError, HttpStatus.TOO_MANY_REQUESTS],
 ];
 
 function cuerpoDeError(error: DomainError): Record<string, string> {
