@@ -20,7 +20,7 @@ describe('CONSOLA_IDENTIDAD_ROUTES', () => {
 
   beforeAll(() => import('./pages/cuotas-lista/cuotas-lista.page'), ESPERA_PRECARGA_MS);
 
-  async function navegar(url: string): Promise<{ url: string; titulo: string }> {
+  async function navegar(url: string): Promise<{ url: string; pagina: string }> {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([
@@ -34,7 +34,7 @@ describe('CONSOLA_IDENTIDAD_ROUTES', () => {
       ],
     });
     const harness = await RouterTestingHarness.create(url);
-    return { url: TestBed.inject(Router).url, titulo: harness.routeNativeElement?.querySelector('h1')?.textContent?.trim() ?? '' };
+    return { url: TestBed.inject(Router).url, pagina: harness.routeNativeElement?.tagName.toLowerCase() ?? '' };
   }
 
   beforeEach(() => {
@@ -44,19 +44,19 @@ describe('CONSOLA_IDENTIDAD_ROUTES', () => {
   it('cuotas abre la lista con plat.identidad.cuota_gestionar', async () => {
     sesion.conPermisos(PERMISOS_CONSOLA_IDENTIDAD.cuotaGestionar);
 
-    expect(await navegar('/consola/identidad/cuotas')).toEqual({ url: '/consola/identidad/cuotas', titulo: 'Cuotas DNI/RUC' });
+    expect(await navegar('/consola/identidad/cuotas')).toEqual({ url: '/consola/identidad/cuotas', pagina: 'vit-cuotas-lista' });
   });
 
   it('cuotas/:tenantId/:periodo abre el detalle con plat.identidad.cuota_gestionar', async () => {
     sesion.conPermisos(PERMISOS_CONSOLA_IDENTIDAD.cuotaGestionar);
 
-    expect((await navegar('/consola/identidad/cuotas/t-1/2026-11')).titulo).toBe('Detalle de cuota');
+    expect((await navegar('/consola/identidad/cuotas/t-1/2026-11')).pagina).toBe('vit-cuota-detalle');
   });
 
   it('proveedores abre la lista con plat.identidad.proveedor', async () => {
     sesion.conPermisos(PERMISOS_CONSOLA_IDENTIDAD.proveedor);
 
-    expect((await navegar('/consola/identidad/proveedores')).titulo).toBe('Proveedores DNI/RUC');
+    expect((await navegar('/consola/identidad/proveedores')).pagina).toBe('vit-proveedores-lista');
   });
 
   it('cuotas sin su permiso va a /403 aunque tenga el de proveedores', async () => {

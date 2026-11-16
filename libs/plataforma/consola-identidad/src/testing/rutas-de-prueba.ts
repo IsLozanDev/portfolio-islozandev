@@ -1,7 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { ApplicationRef, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
@@ -55,14 +56,17 @@ export async function abrirConsola(ruta: string, sesion: DobleSesion, avisos: Do
       { provide: SesionService, useValue: sesion },
       { provide: AvisosService, useValue: avisos },
       { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL, rutas: { prohibido: '/403' } } },
+      { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
     ],
   });
   const http = TestBed.inject(HttpTestingController);
   const harness = await RouterTestingHarness.create(ruta);
+  /** También la de la app: el panel lateral se pinta fuera del componente de la ruta. */
   const estable = async () => {
     for (let vuelta = 0; vuelta < VUELTAS_DE_ESPERA; vuelta++) {
       await new Promise((resolver) => setTimeout(resolver));
       await harness.fixture.whenStable();
+      await TestBed.inject(ApplicationRef).whenStable();
     }
   };
   await estable();

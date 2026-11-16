@@ -18,15 +18,13 @@ import {
 } from '@vitrina/shared/ui';
 import { BarraConsumoComponent } from '../../components/barra-consumo/barra-consumo.component';
 import type { FilaCuota } from '../../models/cuota';
-import { aErrorIdentidad, type ErrorIdentidad } from '../../models/error-identidad';
+import { aErrorIdentidad, CODIGO_OPERADOR_REQUERIDO, type ErrorIdentidad } from '../../models/error-identidad';
 import { COLUMNAS_CUOTAS, ETIQUETAS_ESTADO_CUOTA, MENSAJES_CUOTAS, MENSAJES_POR_CODIGO, textoSinCuotas } from '../../models/mensajes-identidad';
 import { TONOS_ESTADO_CUOTA } from '../../models/tonos';
 import { CuotasCliente, TAMANO_PAGINA_CUOTAS } from '../../services/cuotas.cliente';
 import { estadoDeFila } from '../../utils/estado-cuota';
 import { filtroCuotasDesdeUrl, parametrosUrlCuotas, PRIMERA_PAGINA, valorFiltrosCuotas, type FiltroCuotas } from '../../utils/filtro-url';
 import { etiquetaPeriodo, periodosSeleccionables } from '../../utils/periodo';
-
-export const CODIGO_OPERADOR_REQUERIDO = 'OPERADOR_REQUERIDO';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaCuotaVista {

@@ -1,3 +1,19 @@
 <section class="flex flex-col gap-4">
-  <h1 class="text-2xl font-medium">Proveedores DNI/RUC</h1>
+  <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+
+  @if (soloOperador()) {
+    <vit-estado-vacio icono="lock" [titulo]="mensajeSoloOperador" />
+  } @else {
+    @if (error(); as fallo) {
+      <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ fallo.message }}</p>
+    }
+
+    <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="filas().length" [cargando]="cargando()" [tamanosPagina]="tamanosPagina" [textoVacio]="mensajes.sinProveedores">
+      <ng-template vitAccionesFila let-proveedor>
+        <button mat-icon-button type="button" [attr.aria-label]="mensajes.editar + ': ' + proveedor.codigo" [attr.data-editar]="proveedor.codigo" (click)="editar(proveedor.codigo)">
+          <mat-icon aria-hidden="true">edit</mat-icon>
+        </button>
+      </ng-template>
+    </vit-tabla>
+  }
 </section>

@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MENSAJE_ERROR_DESCONOCIDO, MENSAJES_POR_CODIGO } from './mensajes-identidad';
 
 export const CODIGO_DESCONOCIDO = 'DESCONOCIDO';
+/** 403 de las pantallas de consola abiertas desde un tenant cliente: se muestra como estado vacío. */
+export const CODIGO_OPERADOR_REQUERIDO = 'OPERADOR_REQUERIDO';
 
 /** Error de la API como `{ codigo, mensaje }`; el mensaje propio de la pantalla gana al de la API. */
 export class ErrorIdentidad extends Error {

@@ -27,6 +27,89 @@ export function textoSinCuotas(etiquetaMes: string): string {
   return `No hay cuotas en ${etiquetaMes}`;
 }
 
+export const MENSAJES_DETALLE_CUOTA = {
+  titulo: 'Detalle de cuota',
+  volver: 'Volver a cuotas',
+  plan: 'Plan',
+  avisoUmbral: 'Aviso de umbral',
+  avisoAgotada: 'Aviso de agotada',
+  sinAviso: 'Sin aviso',
+  consultasDelMes: 'Consultas del mes',
+  resultado: 'Resultado',
+  cantidad: 'Consultas',
+  total: 'Total',
+  ajustarIncluidas: 'Ajustar incluidas',
+  cuotaAjustada: 'Cuota ajustada',
+} as const;
+
+/** «120 de 500 (24 %)». */
+export function textoConsumo(consumidas: number, incluidas: number, porcentaje: number): string {
+  return `${consumidas} de ${incluidas} (${porcentaje} %)`;
+}
+
+/** «Enviado el 10/11/26, 10:00 a. m.». */
+export function textoAvisoEnviado(fechaHora: string): string {
+  return `Enviado el ${fechaHora}`;
+}
+
+/** «Este tenant no tiene cuota en octubre 2026». */
+export function textoSinCuotaDelTenant(etiquetaMes: string): string {
+  return `Este tenant no tiene cuota en ${etiquetaMes}`;
+}
+
+export const MENSAJES_AJUSTE_CUOTA = {
+  titulo: 'Ajustar incluidas',
+  incluidas: 'Consultas incluidas',
+  enteroRequerido: 'Ingrese un número entero.',
+  versionObsoleta: 'La cuota cambió mientras la editabas. Se recargaron los datos; revise el valor y vuelva a guardar.',
+} as const;
+
+/** «Ya se consumieron 120: el mínimo es 120.» */
+export function textoMinimoConsumidas(consumidas: number): string {
+  return `Ya se consumieron ${consumidas}: el mínimo es ${consumidas}.`;
+}
+
+/** «Pollería Doña Rosa · noviembre 2026». */
+export function textoContextoAjuste(tenantNombre: string, etiquetaMes: string): string {
+  return `${tenantNombre} · ${etiquetaMes}`;
+}
+
+export const MENSAJES_PROVEEDORES = {
+  titulo: 'Proveedores DNI/RUC',
+  sinProveedores: 'No hay proveedores configurados',
+  editar: 'Editar',
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+  proveedorActualizado: 'Proveedor actualizado',
+} as const;
+
+export const COLUMNAS_PROVEEDORES = {
+  prioridad: 'Prioridad',
+  codigo: 'Código',
+  tiposDoc: 'Tipos de documento',
+  ttlDias: 'TTL (días)',
+  timeoutMs: 'Timeout (ms)',
+  estado: 'Estado',
+} as const;
+
+export const MENSAJES_PANEL_PROVEEDOR = {
+  titulo: 'Editar proveedor',
+  prioridad: 'Prioridad',
+  ayudaPrioridad: 'Menor número, primero en el orden de respaldo',
+  ttlDias: 'TTL de la caché (días)',
+  timeoutMs: 'Timeout (ms)',
+  activo: 'Activo',
+  enteroRequerido: 'Ingrese un número entero.',
+  tituloDesactivar: '¿Desactivar el proveedor?',
+  desactivar: 'Desactivar',
+  versionObsoleta: 'El proveedor cambió mientras lo editabas. Se recargaron los datos; revise los valores y vuelva a guardar.',
+} as const;
+
+/** «Las consultas dejarán de usar DECOLECTA». */
+export function textoConfirmarDesactivar(codigo: string): string {
+  return `Las consultas dejarán de usar ${codigo}`;
+}
+
 export const COLUMNAS_CUOTAS = {
   tenant: 'Tenant',
   plan: 'Plan',
