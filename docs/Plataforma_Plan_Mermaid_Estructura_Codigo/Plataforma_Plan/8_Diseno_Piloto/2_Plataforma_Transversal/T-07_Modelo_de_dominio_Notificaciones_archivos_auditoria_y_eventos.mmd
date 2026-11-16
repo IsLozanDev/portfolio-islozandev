@@ -1,0 +1,93 @@
+%% T-07 — Modelo de dominio · Notificaciones, archivos, auditoría y eventos
+classDiagram
+  direction LR
+  class Plantilla {
+    <<Aggregate>>
+    +string codigo
+    +Canal canal
+    +string asunto
+    +string cuerpo
+    +string[] variables
+    +string idPlantillaProveedor
+  }
+  class Mensaje {
+    <<Aggregate>>
+    +uuid id
+    +Canal canal
+    +string destino
+    +json datos
+    +datetime programadoPara
+    +EstadoMensaje estado
+  }
+  class IntentoEntrega {
+    <<Entity>>
+    +int numero
+    +string respuestaProveedor
+    +datetime en
+  }
+  class Preferencia {
+    <<Entity>>
+    +uuid personaId
+    +Canal canal
+    +string finalidad
+    +bool aceptado
+  }
+  class Archivo {
+    <<Aggregate>>
+    +uuid id
+    +string nombre
+    +string tipoMime
+    +Clasificacion clasificacion
+    +string propietarioTipo
+    +uuid propietarioId
+  }
+  class VersionArchivo {
+    <<Entity>>
+    +int version
+    +string sha256
+    +long bytes
+    +string rutaStorage
+  }
+  class RegistroAuditoria {
+    <<Entity>>
+    +uuid tenantId
+    +uuid usuarioId
+    +string accion
+    +string entidad
+    +uuid entidadId
+    +json antes
+    +json despues
+  }
+  class EventoOutbox {
+    <<Entity>>
+    +long seq
+    +uuid eventId
+    +string aggregateType
+    +string eventType
+    +long version
+    +json payload
+  }
+  class Suscriptor {
+    <<Entity>>
+    +string nombre
+    +long ultimoSeqConfirmado
+  }
+  Plantilla "1" --> "0..*" Mensaje : genera
+  Mensaje "1" *-- "1..*" IntentoEntrega
+  Mensaje "0..*" ..> "0..1" Preferencia : verifica
+  Archivo "1" *-- "1..*" VersionArchivo
+  Suscriptor "0..*" ..> "0..*" EventoOutbox : consume desde seq
+  class Plantilla:::agg
+  class Mensaje:::agg
+  class Archivo:::agg
+  class IntentoEntrega:::ent
+  class Preferencia:::ent
+  class VersionArchivo:::ent
+  class RegistroAuditoria:::ent
+  class EventoOutbox:::ent
+  class Suscriptor:::ent
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

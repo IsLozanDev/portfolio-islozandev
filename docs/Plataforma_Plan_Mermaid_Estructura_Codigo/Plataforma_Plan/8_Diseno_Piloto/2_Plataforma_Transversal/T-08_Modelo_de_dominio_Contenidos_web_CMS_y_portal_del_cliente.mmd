@@ -1,0 +1,103 @@
+%% T-08 — Modelo de dominio · Contenidos web (CMS) y portal del cliente
+classDiagram
+  direction LR
+  class Sitio {
+    <<Aggregate>>
+    +uuid id
+    +uuid tenantId
+    +string productoCodigo
+    +Marca marca
+    +string idioma
+    +EstadoSitio estado
+  }
+  class Dominio {
+    <<Entity>>
+    +string host
+    +bool principal
+    +EstadoDominio verificacion
+  }
+  class Pagina {
+    <<Aggregate>>
+    +uuid id
+    +string slug
+    +string titulo
+    +Seo seo
+    +datetime publicarEn
+  }
+  class VersionPagina {
+    <<Entity>>
+    +int numero
+    +EstadoContenido estado
+    +uuid autorId
+  }
+  class Bloque {
+    <<Entity>>
+    +string tipo
+    +int orden
+    +json propiedades
+  }
+  class Menu {
+    <<Entity>>
+    +string ubicacion
+    +json items
+  }
+  class Articulo {
+    <<Aggregate>>
+    +string slug
+    +string titulo
+    +string resumen
+    +EstadoContenido estado
+  }
+  class Medio {
+    <<Entity>>
+    +uuid archivoId
+    +string textoAlternativo
+  }
+  class Marca {
+    <<ValueObject>>
+    +string logoUrl
+    +string colorPrimario
+    +string colorSecundario
+  }
+  class Seo {
+    <<ValueObject>>
+    +string metaTitulo
+    +string metaDescripcion
+    +string urlCanonica
+  }
+  class CuentaCliente {
+    <<Aggregate>>
+    +uuid usuarioId
+    +uuid personaId
+    +datetime registradoEn
+  }
+  Sitio "1" *-- "1..*" Dominio
+  Sitio "1" *-- "0..*" Pagina
+  Sitio "1" *-- "0..*" Menu
+  Sitio "1" *-- "0..*" Articulo
+  Sitio "1" *-- "0..*" Medio
+  Sitio *-- Marca
+  Pagina "1" *-- "1..*" VersionPagina
+  VersionPagina "1" *-- "0..*" Bloque : compuesta por
+  Pagina *-- Seo
+  CuentaCliente "0..*" --> "1" Sitio : se registra en
+  CuentaCliente "1" --> "1" Usuario : usuario externo
+  CuentaCliente "1" --> "1" Persona : del tenant
+  class Usuario:::ext
+  class Persona:::ext
+  class Sitio:::agg
+  class Pagina:::agg
+  class Articulo:::agg
+  class CuentaCliente:::agg
+  class Dominio:::ent
+  class VersionPagina:::ent
+  class Bloque:::ent
+  class Menu:::ent
+  class Medio:::ent
+  class Marca:::vo
+  class Seo:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

@@ -1,0 +1,88 @@
+%% T-02 — Modelo de dominio · Organización y suscripciones
+classDiagram
+  direction LR
+  class Tenant {
+    <<Aggregate>>
+    +uuid id
+    +string codigo
+    +string nombre
+    +EstadoTenant estado
+    +suspender()
+    +reactivar()
+  }
+  class Suscripcion {
+    <<Entity>>
+    +string productoCodigo
+    +string plan
+    +string edicion
+    +EstadoSuscripcion estado
+    +int limiteSucursales
+    +int limiteUsuarios
+    +date vigenteHasta
+  }
+  class Plan {
+    <<Entity>>
+    +string codigo
+    +string productoCodigo
+    +Dinero precioMensual
+    +json caracteristicas
+  }
+  class Empresa {
+    <<Aggregate>>
+    +uuid id
+    +Ruc ruc
+    +string razonSocial
+    +string nombreComercial
+    +Direccion domicilioFiscal
+  }
+  class Sucursal {
+    <<Entity>>
+    +uuid id
+    +string codigo
+    +string nombre
+    +char4 codigoEstablecimientoSunat
+    +string zonaHoraria
+    +bool esPrincipal
+  }
+  class UnidadOperativa {
+    <<Entity>>
+    +uuid id
+    +TipoUnidad tipo
+    +string codigo
+    +json atributos
+  }
+  class Ruc {
+    <<ValueObject>>
+    +char11 valor
+    +bool digitoVerificadorValido()
+  }
+  class TipoUnidad {
+    <<Enumeration>>
+    ALMACEN
+    CAJA
+    CONSULTORIO
+    VENTANILLA
+    OFICINA
+  }
+  Tenant "1" *-- "1..*" Empresa : agrupa
+  Tenant "1" *-- "1..*" Suscripcion : contrata
+  Suscripcion "0..*" --> "1" Plan : según
+  Empresa "1" *-- "1..*" Sucursal : establecimientos
+  Empresa *-- Ruc
+  Sucursal "1" *-- "0..*" UnidadOperativa : contiene
+  Empresa "1" o-- "0..*" UnidadOperativa : almacén central (sin sucursal)
+  UnidadOperativa "0..1" --> "0..*" UnidadOperativa : padre de
+  UnidadOperativa --> TipoUnidad
+  class Tenant:::agg
+  class Empresa:::agg
+  class Suscripcion:::ent
+  class Plan:::ent
+  class Sucursal:::ent
+  class UnidadOperativa:::ent
+  class Ruc:::vo
+  class TipoUnidad:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

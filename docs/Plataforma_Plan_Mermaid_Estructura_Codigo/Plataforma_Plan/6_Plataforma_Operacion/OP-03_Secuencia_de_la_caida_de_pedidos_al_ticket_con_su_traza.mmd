@@ -1,0 +1,25 @@
+sequenceDiagram
+%% OP-03 — Secuencia: de la caída de pedidos al ticket con su traza
+  autonumber
+  participant P as SazónPOS (API)
+  participant OB as Outbox
+  participant AG as Consumidor obs
+  participant EV as Evaluador (cada minuto)
+  participant S as Centro de Soporte
+  participant N as Notificaciones
+  participant AGT as Agente de soporte
+  participant GR as Grafana (trazas)
+  P->>OB: rest.pedido.registrado (tenant, sucursal)
+  OB->>AG: lote de eventos
+  AG->>AG: obs.registrar(rest.pedidos, minuto)
+  Note over P: 13:00 — falla el cobro con tarjeta<br/>los pedidos caen de 20 a 3 por tramo
+  EV->>EV: valor 3 vs línea base 20 → caída 85 %
+  EV->>S: alerta CRÍTICA (Miraflores)
+  S->>S: sop.crear_desde_alerta → ticket P1
+  S->>N: aviso al equipo y al administrador del local
+  AGT->>S: abre el ticket SOP-000231
+  S-->>AGT: contexto: sucursal, versión, indicador
+  AGT->>GR: busca trazas con error por plataforma.sucursal_id
+  GR-->>AGT: span pag.cobrar → timeout de la pasarela
+  AGT->>S: nota interna + problema → GitHub #214
+  Note over EV: al normalizarse los pedidos<br/>la alerta se resuelve sola

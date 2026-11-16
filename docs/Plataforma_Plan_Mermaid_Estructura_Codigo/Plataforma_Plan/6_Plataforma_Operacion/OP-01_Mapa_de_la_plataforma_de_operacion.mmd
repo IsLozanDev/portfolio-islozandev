@@ -1,0 +1,49 @@
+%% OP-01 — Mapa de la plataforma de operación
+flowchart TB
+  P["9 productos<br/>NestJS + Angular · servidor local (edge)"]:::prod
+  subgraph OBS["Observabilidad"]
+    O1["Instrumentación<br/>OpenTelemetry"]:::obs
+    O2["Collector<br/>enmascara · muestrea"]:::obs
+    O4["Observabilidad de negocio<br/>schema obs · propio"]:::obs
+  end
+  O3["Grafana Cloud / SigNoz<br/>logs · trazas · métricas"]:::ext
+  SE["Sentry<br/>errores del frontend"]:::ext
+  subgraph IDN["Identidad e interoperabilidad"]
+    I1["Nivel 1 · consulta DNI/RUC<br/>caché + bitácora"]:::idn
+    I3["Nivel 3 · identidad portable<br/>consentimiento del titular"]:::idn
+  end
+  FU["RENIEC / SUNAT<br/>vía convenio o proveedor"]:::ext
+  subgraph SOP["Centro de Soporte"]
+    S1["Widget en el shell Angular<br/>contexto automático"]:::sop
+    S2["Tickets · SLA por plan<br/>problemas · base de conocimiento"]:::sop
+  end
+  GH["GitHub Issues / Projects<br/>backlog de ingeniería"]:::ext
+  WA["WhatsApp Business · correo"]:::ext
+  BASE["Cimientos transversales<br/>organización · seguridad · eventos (outbox)"]:::trans
+  P --> O1 --> O2 --> O3
+  P --> SE
+  P -- "eventos de dominio" --> O4
+  P -- "DNI / RUC" --> I1 --> FU
+  I1 -.-> I3
+  P --> S1 --> S2
+  WA --> S2
+  O4 -- "alerta" --> S2
+  S2 -- "trace_id" --> O3
+  S2 -- "problema" --> GH
+  O3 ~~~ BASE
+  I3 ~~~ BASE
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

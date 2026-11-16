@@ -56,6 +56,7 @@ export default [
             comp('cat', 'kernel', 'seg'),
             comp('aud', 'kernel', 'seg', 'evt'),
             comp('obs', 'kernel', 'evt'),
+            comp('idn', 'kernel', 'seg'),
           ],
         },
       ],

@@ -1,0 +1,50 @@
+%% OP-10 — Proceso de atención de incidencias
+flowchart TB
+  subgraph L1["Cliente"]
+    a1(["Detecta un problema<br/>o tiene una consulta"]):::ini
+    a2["Reporta desde el botón<br/>'Ayuda' o por WhatsApp"]:::tarea
+    a3["Responde lo que se le pide"]:::tarea
+    a4["Confirma la solución"]:::tarea
+    a5(["Ticket cerrado<br/>encuesta de 1 clic"]):::fin
+  end
+  subgraph L2["Plataforma"]
+    s1["Adjunta contexto: tenant, sucursal,<br/>producto, versión, ruta, trace_id"]:::sis
+    s2["Sugiere artículos de la base<br/>de conocimiento (IA)"]:::sis
+    s3["Calcula prioridad y plazos<br/>según plan y horario"]:::sis
+    s0["Alerta de observabilidad<br/>crea ticket automático"]:::sis
+  end
+  subgraph L3["Soporte N1 · funcional"]
+    n1["Clasifica y responde<br/>dentro del plazo"]:::tarea
+    d1{"¿Se resuelve<br/>con configuración<br/>o capacitación?"}:::dec
+    n2["Resuelve y documenta<br/>en la base de conocimiento"]:::tarea
+  end
+  subgraph L4["Soporte N2 · técnico"]
+    t1["Analiza la traza<br/>y los logs"]:::tarea
+    d2{"¿Es un defecto<br/>del producto?"}:::dec
+    t2["Agrupa en un problema<br/>y crea el issue en GitHub"]:::tarea
+    t3["Publica la corrección<br/>resuelve los tickets enlazados"]:::tarea
+    t4["Corrige datos o<br/>configuración del cliente"]:::tarea
+  end
+  a1 --> a2 --> s1 --> s2 --> s3 --> n1 --> d1
+  s0 --> s3
+  d1 -- "Sí" --> n2 --> a4
+  d1 -- "No" --> t1 --> d2
+  n1 -. "falta información" .-> a3 -.-> n1
+  d2 -- "Sí" --> t2 --> t3 --> a4
+  d2 -- "No" --> t4 --> a4
+  a4 --> a5
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

@@ -1,0 +1,25 @@
+%% P-S4 — Secuencia · Venta de paquete en caja y comprobante
+sequenceDiagram
+  autonumber
+  actor RC as Recepcionista
+  participant BO as psi-backoffice
+  participant API as api · psi-cobros
+  participant DB as PostgreSQL
+  participant OB as sync.outbox
+  participant FE as worker · Comprobantes
+  RC->>BO: Vender paquete "8 sesiones" a paciente 74512369
+  BO->>API: POST /v1/psi/paquetes/compras · @Permiso('psi.paquete.vender')
+  API->>DB: CompraPaquete (8 sesiones, vence 90 días) · Cobro S/ 800,00 PENDIENTE
+  RC->>BO: Registrar pago: Yape S/ 500 + efectivo S/ 300
+  BO->>API: POST /v1/psi/cobros/:id/pagos
+  API->>DB: PagoCaja ×2 · Cobro PAGADO
+  API->>OB: psi.cobro.registrado (adquirente, ítems, afectación)
+  alt centro con RUC
+    OB-->>FE: emitir boleta B001
+    FE-->>OB: fe.comprobante.aceptado
+    OB-->>API: enlazar comprobante al cobro
+  else psicólogo independiente
+    RC->>BO: registrar recibo por honorarios E001-58 (PDF)
+    BO->>API: POST /v1/psi/cobros/:id/recibo-honorarios
+  end
+  API-->>BO: estado de cuenta actualizado (saldo 8 sesiones)

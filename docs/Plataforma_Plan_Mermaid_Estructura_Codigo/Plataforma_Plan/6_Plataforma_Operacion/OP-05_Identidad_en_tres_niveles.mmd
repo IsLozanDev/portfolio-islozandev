@@ -1,0 +1,35 @@
+%% OP-05 — Identidad en tres niveles
+flowchart TB
+  subgraph TEN["Negocios clientes (cada tenant aislado; no hay conexión directa entre ellos)"]
+    C1["Tenant A · ClínicaNet<br/>persona maestra propia<br/>con historia clínica"]:::prod
+    G1["Tenant B · GymControl<br/>persona maestra propia"]:::prod
+    PM["Tenant C · SazónPOS + LibroPOS<br/>persona maestra compartida<br/>entre sus productos (nivel 2)"]:::dato
+  end
+  subgraph IDN["Servicio de identidad de la plataforma"]
+    N1["Nivel 1 · idn.consultar<br/>caché de fuente pública<br/>DNI → nombres · RUC → razón social y estado"]:::idn
+    N3["Nivel 3 · idn.titular + idn.autorizacion<br/>la persona decide qué comparte y con quién"]:::idn
+  end
+  F["RENIEC (convenio) · proveedor autorizado<br/>padrón RUC de SUNAT"]:::ext
+  TIT(["Titular<br/>portal 'Mis datos' · código por SMS/WhatsApp"]):::sop
+  C1 -- "DNI" --> N1
+  G1 -- "DNI" --> N1
+  PM -- "DNI / RUC" --> N1
+  N1 --> F
+  G1 -- "solicita campos" --> N3
+  N3 -- "solo campos autorizados" --> G1
+  TIT -- "autoriza / revoca" --> N3
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

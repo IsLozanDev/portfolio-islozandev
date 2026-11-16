@@ -1,0 +1,23 @@
+%% A-07 — ¿Monorepo o microfrontends?
+flowchart TB
+  Q1{"¿Hay varios equipos que necesitan<br/>desplegar partes de UNA misma pantalla<br/>con ciclos de versión distintos?"}:::dec
+  Q2{"¿Una aplicación crece a un tamaño<br/>que hace lenta la compilación<br/>aun con caché de Nx?"}:::dec
+  R1["Monorepo Nx con aplicaciones independientes<br/>+ librerías compartidas (RECOMENDADO HOY)<br/>· cada app se compila y despliega sola<br/>· el código común se comparte en compilación<br/>· nx affected solo construye lo que cambió"]:::si
+  R2["Microfrontends con Module Federation /<br/>Native Federation (Nx lo soporta)<br/>· remotos cargados en tiempo de ejecución<br/>· versionado y contratos entre remotos<br/>· más complejidad de despliegue y pruebas"]:::no
+  R3["Partir en lazy loading y librerías buildables;<br/>evaluar federación solo si persiste"]:::dec
+  Q1 -- "No (equipo de 1–2)" --> Q2
+  Q1 -- "Sí" --> R2
+  Q2 -- "No" --> R1
+  Q2 -- "Sí" --> R3
+  R3 -.-> R2
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

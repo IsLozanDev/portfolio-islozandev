@@ -1,0 +1,32 @@
+%% P-S2 — Secuencia · Admisión y apertura de historia psicológica
+sequenceDiagram
+  autonumber
+  actor RC as Recepcionista
+  participant BO as psi-backoffice
+  participant API as api · psi-clinica
+  participant IDN as Plataforma · Identidad
+  participant PER as Plataforma · Personas
+  participant ARC as Plataforma · Archivos
+  participant SEQ as Plataforma · Correlativos
+  participant DB as PostgreSQL
+  actor PR as Psicóloga tratante
+  RC->>BO: Registrar paciente DNI 74512369
+  BO->>API: POST /v1/psi/pacientes
+  API->>IDN: consultar DNI (motivo REGISTRO_PACIENTE)
+  IDN-->>API: nombres y apellidos
+  API->>PER: crear o vincular Persona del tenant
+  API->>DB: Paciente (esMenor = false)
+  RC->>BO: Firma de consentimientos (tablet)
+  BO->>API: POST /v1/psi/pacientes/:id/consentimientos (atención, datos sensibles, telepsicología)
+  API->>ARC: guardar PDF firmado con hash
+  API->>DB: ConsentimientoInformado ×3 (versión de plantilla)
+  PR->>API: POST /v1/psi/historias (paciente) · @Permiso('psi.historia.crear')
+  API->>DB: ¿consentimiento de atención y datos sensibles vigentes?
+  alt vigentes
+    API->>SEQ: siguiente(empresa, HISTORIA, HP-2026)
+    SEQ-->>API: 000124
+    API->>DB: HistoriaPsicologica HP-2026-000124 · tratante = Psicóloga · aud.registro
+    API-->>PR: historia abierta
+  else falta consentimiento
+    API-->>PR: 422 "Falta consentimiento de tratamiento de datos sensibles"
+  end

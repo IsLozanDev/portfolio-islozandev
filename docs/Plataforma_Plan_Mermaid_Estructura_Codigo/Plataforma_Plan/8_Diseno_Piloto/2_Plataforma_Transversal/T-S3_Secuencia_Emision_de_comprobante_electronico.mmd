@@ -1,0 +1,29 @@
+%% T-S3 — Secuencia · Emisión de comprobante electrónico
+sequenceDiagram
+  autonumber
+  participant PSI as psi-cobros
+  participant OB as sync.outbox
+  participant W as worker · FacturacionProcessor
+  participant SEQ as SeqService
+  participant CFG as ParametrosService
+  participant PSE as PSE/OSE (adaptador)
+  participant ARC as Archivos
+  participant NOT as Notificaciones
+  PSI->>OB: psi.cobro.registrado (monto, adquirente, ítems)
+  OB-->>W: evento (relay)
+  W->>W: idempotencia por event_id
+  W->>SEQ: siguiente(empresa, BOLETA, B001)
+  SEQ-->>W: 000245
+  W->>CFG: plat.igv.tasa (empresa) · afectación del servicio
+  W->>W: arma UBL 2.1 con catálogos 01/03/06/07
+  W->>PSE: enviar B001-000245
+  alt aceptado
+    PSE-->>W: CDR aceptado
+    W->>ARC: guardar XML, CDR y PDF
+    W->>OB: fe.comprobante.aceptado
+    W->>NOT: enviar PDF al correo del paciente
+  else rechazado o sin respuesta
+    PSE-->>W: error / timeout
+    W->>W: reintento con backoff (máx. 5) · luego alerta
+    W->>OB: fe.comprobante.rechazado
+  end

@@ -1,0 +1,21 @@
+%% T-S7 — Secuencia · Relay del outbox hacia los consumidores
+sequenceDiagram
+  autonumber
+  participant UC as Caso de uso (api)
+  participant DB as PostgreSQL
+  participant RL as worker · OutboxRelay
+  participant Q as BullMQ
+  participant C1 as Consumidor FE
+  participant C2 as Consumidor notificaciones
+  participant C3 as Observabilidad de negocio
+  UC->>DB: BEGIN · UPDATE cita · INSERT sync.outbox · COMMIT
+  loop cada 500 ms
+    RL->>DB: read_events(cursor, límite 200, margen 5 s)
+    DB-->>RL: eventos seq 1201..1240
+    RL->>Q: encolar por tipo de evento y consumidor
+    RL->>DB: avanzar cursor a 1240
+  end
+  Q-->>C1: pag.pago.confirmado
+  Q-->>C2: psi.cita.confirmada
+  Q-->>C3: todos (indicadores por minuto)
+  C1->>C1: ¿event_id procesado? → omitir

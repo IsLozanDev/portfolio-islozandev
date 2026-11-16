@@ -1,0 +1,65 @@
+%% OP-09 — Modelo de datos del servicio de identidad (schema idn)
+erDiagram
+  PROVEEDOR ||--o{ CACHE_DOCUMENTO : "alimenta"
+  PROVEEDOR {
+    varchar codigo PK
+    varchar_arr tipos_doc
+    int prioridad
+    int ttl_dias
+  }
+  CACHE_DOCUMENTO {
+    varchar tipo_doc PK
+    varchar numero PK
+    jsonb datos "solo identidad mínima"
+    timestamptz expira_en
+  }
+  CONSULTA_LOG {
+    bigint id PK
+    uuid tenant_id "RLS"
+    uuid usuario_id
+    char numero_hash "SHA-256 con sal"
+    varchar resultado
+    varchar motivo
+  }
+  CUOTA {
+    uuid tenant_id PK
+    char periodo PK
+    int incluidas
+    int consumidas
+  }
+  TITULAR ||--o{ SOLICITUD_AUTORIZACION : "recibe"
+  TITULAR ||--o{ AUTORIZACION : "otorga"
+  SOLICITUD_AUTORIZACION ||--o| AUTORIZACION : "genera"
+  AUTORIZACION ||--o{ ACCESO_TITULAR : "registra"
+  CAMPO_PORTABLE ||--o{ AUTORIZACION : "limita"
+  TITULAR {
+    uuid id PK
+    varchar tipo_doc
+    varchar numero
+    varchar celular
+    jsonb datos_portables "sin datos sensibles"
+  }
+  SOLICITUD_AUTORIZACION {
+    uuid id PK
+    uuid tenant_id "RLS"
+    varchar_arr campos
+    varchar finalidad
+    char codigo_hash
+    int intentos
+    varchar estado
+  }
+  AUTORIZACION {
+    uuid id PK
+    uuid tenant_id "RLS"
+    varchar_arr campos
+    timestamptz vigente_hasta
+    timestamptz revocada_en
+  }
+  ACCESO_TITULAR {
+    bigint id PK
+    uuid usuario_id
+    timestamptz creado_en
+  }
+  CAMPO_PORTABLE {
+    varchar codigo PK
+  }

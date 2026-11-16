@@ -1,0 +1,23 @@
+%% T-S4 — Secuencia · Pago en línea con confirmación por webhook
+sequenceDiagram
+  autonumber
+  actor P as Paciente
+  participant WEB as psi-web
+  participant API as api · PagosModule
+  participant PG as Pasarela
+  participant DB as PostgreSQL (pag)
+  participant OB as sync.outbox
+  WEB->>API: POST /v1/pagos/intenciones (cita C-889, S/ 120,00, Idempotency-Key)
+  API->>DB: IntencionPago PENDIENTE (expira en 10 min)
+  API->>PG: crear checkout
+  PG-->>API: url / token de pago
+  API-->>WEB: datos de checkout
+  P->>PG: paga con tarjeta o Yape
+  PG-->>WEB: redirección "pago en proceso"
+  PG->>API: POST /v1/pagos/webhook (firma HMAC)
+  API->>API: verifica firma y que el evento no esté procesado
+  API->>DB: Transaccion APROBADA · IntencionPago CONFIRMADA
+  API->>OB: pag.pago.confirmado (origen PSI, cita C-889)
+  API-->>PG: 200
+  WEB->>API: GET estado de la intención (sondeo o Socket.IO)
+  API-->>WEB: CONFIRMADA

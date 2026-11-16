@@ -1,0 +1,89 @@
+%% T-09 — Modelo de dominio · Centro de soporte y observabilidad
+classDiagram
+  direction LR
+  class Ticket {
+    <<Aggregate>>
+    +string numero
+    +TipoTicket tipo
+    +Prioridad prioridad
+    +EstadoTicket estado
+    +Nivel nivel
+    +json contexto
+    +datetime resolucionVence
+    +cambiarEstado(nuevo)
+  }
+  class EventoTicket {
+    <<Entity>>
+    +TipoEvento tipo
+    +bool visibleCliente
+    +string texto
+  }
+  class Problema {
+    <<Aggregate>>
+    +string githubIssue
+    +string versionCorreccion
+    +EstadoProblema estado
+  }
+  class PoliticaSla {
+    <<Entity>>
+    +string plan
+    +Prioridad prioridad
+    +int primeraRespuestaMin
+    +int resolucionMin
+    +Horario horario
+  }
+  class ArticuloKb {
+    <<Entity>>
+    +string titulo
+    +bool publicado
+  }
+  class IndicadorDef {
+    <<Entity>>
+    +string codigo
+    +Agregacion agregacion
+  }
+  class MetricaMinuto {
+    <<Entity>>
+    +datetime minuto
+    +decimal suma
+    +int conteo
+  }
+  class ReglaAlerta {
+    <<Aggregate>>
+    +CondicionAlerta condicion
+    +decimal umbral
+    +int ventanaMin
+    +bool creaTicket
+  }
+  class Alerta {
+    <<Entity>>
+    +Severidad severidad
+    +EstadoAlerta estado
+    +decimal valor
+    +decimal referencia
+  }
+  Ticket "1" *-- "1..*" EventoTicket
+  Ticket "0..*" --> "0..1" Problema : agrupado en
+  Ticket "0..*" --> "1" PoliticaSla : plazos según plan
+  Ticket "0..1" --> "0..1" Alerta : originado por
+  Ticket "0..*" --> "1" Tenant
+  IndicadorDef "1" *-- "0..*" MetricaMinuto : serie por sucursal
+  IndicadorDef "1" --> "0..*" ReglaAlerta
+  ReglaAlerta "1" --> "0..*" Alerta : dispara
+  Alerta "0..*" --> "1" Sucursal
+  class Tenant:::ext
+  class Sucursal:::ext
+  class Ticket:::agg
+  class Problema:::agg
+  class ReglaAlerta:::agg
+  class EventoTicket:::ent
+  class PoliticaSla:::ent
+  class ArticuloKb:::ent
+  class IndicadorDef:::ent
+  class MetricaMinuto:::ent
+  class Alerta:::ent
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

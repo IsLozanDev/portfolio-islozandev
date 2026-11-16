@@ -1,0 +1,29 @@
+%% P-S3 — Secuencia · Sesión virtual, nota y firma
+sequenceDiagram
+  autonumber
+  actor PR as Psicóloga
+  participant APP as psi-profesional
+  participant API as api · psi-tele / psi-clinica
+  participant VC as Servicio de videollamada
+  actor PA as Paciente
+  participant OB as sync.outbox
+  Note over API: T-15 min: trabajo habilita la sala y envía el enlace del paciente
+  API->>VC: crear sala (cita C-889, expira +60 min)
+  VC-->>API: sala y tokens
+  PA->>API: abre enlace único (token de un solo uso)
+  API->>API: ¿consentimiento de telepsicología vigente?
+  API-->>PA: sala de espera
+  PR->>APP: Iniciar sesión C-889
+  APP->>API: POST /v1/psi/citas/C-889/iniciar
+  API->>VC: admitir paciente · RegistroConexion
+  PR->>APP: Finalizar
+  APP->>API: POST /v1/psi/citas/C-889/finalizar
+  API->>OB: psi.cita.atendida
+  OB-->>API: psi-cobros consume sesión del paquete (saldo 7 → 6)
+  PR->>APP: escribe nota SOAP
+  APP->>API: PUT /v1/psi/notas/:id (borrador)
+  PR->>APP: Firmar
+  APP->>API: POST /v1/psi/notas/:id/firmar · @Permiso('psi.nota.firmar') (sensible)
+  API->>API: ¿MFA en los últimos 15 min? (claim amr/auth_time)
+  API->>API: NotaSesion.firmar() → FIRMADA, hash del contenido
+  API-->>APP: nota firmada e inmutable

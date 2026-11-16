@@ -1,0 +1,32 @@
+%% A-08 — Reglas de dependencia entre proyectos del monorepo
+flowchart LR
+  subgraph TIPO["type:*"]
+    direction TB
+    t1["type:app"]:::app --> t2["type:feature"]:::psi
+    t2 --> t3["type:ui"]:::dato
+    t2 --> t4["type:data-access"]:::trans
+    t3 --> t5["type:util"]:::infra
+    t4 --> t5
+    t2 --> t6["type:domain (backend)"]:::dato
+    t4 --> t6
+  end
+  subgraph SCOPE["scope:*"]
+    direction TB
+    s1["scope:psi"]:::psi --> s2["scope:nucleo"]:::trans
+    s1 --> s3["scope:plataforma"]:::trans
+    s2 --> s4["scope:shared"]:::dato
+    s3 --> s4
+    s1 --> s4
+    s3 -. prohibido .-x s1
+  end
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef psi fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef infra fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef actor fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;

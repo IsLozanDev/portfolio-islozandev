@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -87,6 +87,7 @@ const CASOS = [
   { migracion: '01g_aud_integridad.sql', esquema: 'aud', prueba: 'tests/01g_aud_integridad.test.sql' },
   { migracion: '01h_obs_estado_outbox.sql', esquema: 'sync', prueba: 'tests/01h_obs_estado_outbox.test.sql' },
   { migracion: '01i_seg_vigencia_peru.sql', esquema: 'seg', prueba: 'tests/01i_seg_vigencia_peru.test.sql' },
+  { migracion: '01j_idn.sql', esquema: 'idn', prueba: 'tests/01j_idn.test.sql' },
 ];
 
 const existeEstadoOutbox = async () =>

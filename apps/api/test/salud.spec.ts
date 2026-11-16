@@ -61,6 +61,7 @@ describe('api', () => {
       invitaciones: { supabaseSecretKey: 'sb_secret_prueba', url: 'https://app.vitrina.pe/auth/invitacion' },
       reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
       tenantOperador: 'plataforma',
+      identidad: { proveedor: 'falso' as const, salDocumento: 'sal-de-prueba' },
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
       .overrideProvider(REGISTRO_ACCESO)
@@ -225,5 +226,24 @@ describe('api', () => {
     expect(() => cargarConfig(sinUrl)).toThrow(/SEG_URL_INVITACION/);
     expect(() => cargarConfig({ ...ENV_MINIMO, SEG_URL_INVITACION: 'ftp://x/invitacion' })).toThrow(/SEG_URL_INVITACION/);
     expect(cargarConfig(ENV_MINIMO).SEG_INVITACION_HORAS).toBe(72);
+  });
+
+  it('cargarConfig no arranca en producción con el proveedor de identidad falso o sin token, y no repite el token (spec 28)', () => {
+    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32) };
+    expect(cargarConfig(ENV_MINIMO).IDN_PROVEEDOR).toBe('falso');
+    expect(() => cargarConfig(produccion)).toThrow(/IDN_PROVEEDOR/);
+    expect(() => cargarConfig({ ...produccion, IDN_PROVEEDOR: 'falso', IDN_DECOLECTA_TOKEN: 'token-secreto' })).toThrow(/IDN_PROVEEDOR/);
+    expect(() => cargarConfig({ ...produccion, IDN_PROVEEDOR: 'decolecta' })).toThrow(/IDN_DECOLECTA_TOKEN/);
+    expect(() => cargarConfig({ ...produccion, IDN_PROVEEDOR: 'falso', IDN_DECOLECTA_TOKEN: 'token-secreto' })).not.toThrow(/token-secreto/);
+    expect(cargarConfig({ ...produccion, IDN_PROVEEDOR: 'decolecta', IDN_DECOLECTA_TOKEN: 'token-secreto' }).IDN_PROVEEDOR).toBe('decolecta');
+    expect(cargarConfig({ ...ENV_MINIMO, APP_ENV: 'staging', OBS_SAL_DOCUMENTO: 's'.repeat(32) }).IDN_PROVEEDOR).toBe('falso');
+  });
+
+  it('IdentidadModule queda cableado: /v1/identidad pide token y está en OpenAPI con bearer auth (spec 28)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/identidad/DNI/45781236?motivo=OTRO');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    expect(paths['/v1/identidad/{tipo}/{numero}'].get.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/identidad/{tipo}/{numero}/validez'].get.security).toEqual([{ bearer: [] }]);
   });
 });

@@ -1,0 +1,47 @@
+%% OP-02 — Arquitectura de observabilidad: comprar el motor, construir la capa de negocio
+flowchart TB
+  subgraph FUENTES["Fuentes"]
+    A1["API NestJS<br/>auto-instrumentación<br/>http · pg · redis · bullmq"]:::prod
+    A2["Workers BullMQ"]:::prod
+    A3["Servidor local (edge)<br/>colas · restaurante · gym"]:::prod
+    A4["Frontend Angular"]:::prod
+  end
+  subgraph TEC["Telemetría técnica (existente)"]
+    C["OpenTelemetry Collector<br/>borra headers y parámetros SQL<br/>enmascara DNI, correos, tarjetas<br/>tail sampling: errores + lentas + 10 %"]:::obs
+    B["Backend OTLP<br/>Grafana Cloud · o Loki + Tempo + Prometheus<br/>· o SigNoz"]:::ext
+    G["Grafana<br/>tableros técnicos · exploración de trazas"]:::ext
+    SN["Sentry<br/>errores de Angular con reproducción"]:::ext
+  end
+  subgraph NEG["Observabilidad de negocio (propia)"]
+    OB["sync.outbox<br/>eventos de dominio"]:::dato
+    AG["Consumidor de eventos<br/>obs.registrar por minuto"]:::obs
+    MM["obs.metrica_minuto<br/>por tenant y sucursal"]:::dato
+    EV["Evaluador cada minuto<br/>umbral · sin datos · caída vs línea base"]:::obs
+    AL["obs.alerta<br/>deduplicada"]:::dato
+    SA["Tablero de salud por cliente<br/>semáforo por sucursal"]:::obs
+  end
+  SOP["Centro de Soporte<br/>ticket automático"]:::sop
+  WA["Aviso por WhatsApp / correo<br/>al equipo y al cliente"]:::ext
+  A1 & A2 & A3 --> C
+  A4 --> SN
+  C --> B --> G
+  A1 --> OB --> AG --> MM --> EV --> AL
+  MM --> SA
+  AL --> SA
+  AL --> SOP
+  AL --> WA
+
+  classDef prod fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef trans fill:#ede7f6,stroke:#5e35b1,color:#123;
+  classDef obs fill:#d5f5f0,stroke:#0f766e,color:#123;
+  classDef idn fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef sop fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;
+  classDef no fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef si fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef dec fill:#fff4d6,stroke:#b8860b,color:#123;
+  classDef ini fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef fin fill:#f8d7da,stroke:#a3303b,color:#123;
+  classDef tarea fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef sis fill:#ede7f6,stroke:#5e35b1,color:#123;

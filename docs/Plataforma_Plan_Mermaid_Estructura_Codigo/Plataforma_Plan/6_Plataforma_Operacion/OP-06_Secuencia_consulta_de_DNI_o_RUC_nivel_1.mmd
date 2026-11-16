@@ -1,0 +1,28 @@
+sequenceDiagram
+%% OP-06 — Secuencia: consulta de DNI o RUC (nivel 1)
+  autonumber
+  actor U as Recepción (GymControl)
+  participant API as Módulo idn (NestJS)
+  participant DB as PostgreSQL (schema idn)
+  participant P1 as Proveedor principal
+  participant P2 as Proveedor de respaldo
+  U->>API: GET /identidad/DNI/45678912?motivo=REGISTRO_CLIENTE
+  API->>DB: idn.consultar(tenant, usuario, GYM, DNI, número)
+  alt formato inválido
+    DB-->>API: INVALIDO (no consume cuota)
+  else en caché y vigente
+    DB-->>API: CACHE + datos mínimos
+  else cuota agotada
+    DB-->>API: CUOTA_AGOTADA → registro manual
+  else hay que consultar
+    DB-->>API: CONSULTAR_PROVEEDOR (cuota reservada)
+    API->>P1: consulta (timeout 3 s, circuit breaker)
+    alt responde
+      P1-->>API: nombres y apellidos
+    else falla o no responde
+      API->>P2: consulta de respaldo
+      P2-->>API: nombres y apellidos
+    end
+    API->>DB: idn.guardar_resultado (caché + bitácora)
+  end
+  API-->>U: nombres (el usuario completa el resto)

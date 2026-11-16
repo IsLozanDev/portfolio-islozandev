@@ -1,0 +1,43 @@
+%% ST-01 — Despliegue de staging (spec 21 · E-04)
+flowchart LR
+  U["Navegador<br/>usuario de staging"]:::app
+
+  subgraph VER["Vercel · Hobby"]
+    ADM["vitrina-admin-staging<br/>plataforma-admin · Angular 21<br/>vercel.json: /v1/* a la api + fallback SPA"]:::app
+    CON["vitrina-consola-staging<br/>plataforma-consola · Angular 21<br/>vercel.json: /v1/* a la api + fallback SPA"]:::app
+  end
+
+  subgraph RWY["Railway · proyecto vitrina-staging"]
+    API["Servicio api<br/>imagen GHCR api:staging · distroless Node 24<br/>puerto 3000 · healthcheck /v1/salud · 2 réplicas"]:::rest
+    WRK["Servicio worker<br/>imagen GHCR worker:staging<br/>sin dominio público"]:::rest
+    RDS[("Redis<br/>caché de permisos · BullMQ<br/>bloqueo de ingreso")]:::dato
+  end
+
+  subgraph SUP["Supabase staging · us-east-2"]
+    PG[("PostgreSQL 16<br/>org · seg · cfg · seq · sync · cat · aud<br/>pooler transaccional 6543")]:::dato
+    AUTH["Supabase Auth<br/>JWT ES256 · JWKS · hook de token<br/>Data API solo public"]:::ext
+  end
+
+  subgraph OBS["Observabilidad"]
+    GRA["Grafana Cloud · US<br/>Tempo · Prometheus · Loki<br/>alerta outbox atrasado"]:::ext
+    SEN["Sentry<br/>vitrina-api · vitrina-worker"]:::ext
+  end
+
+  RES["Resend · SMTP<br/>invitaciones y recuperación"]:::ext
+
+  U -->|HTTPS| ADM & CON
+  U -->|login · MFA| AUTH
+  ADM & CON -->|"rewrite /v1 · mismo origen, sin CORS"| API
+  API -->|"SQL · SET LOCAL app.tenant_id"| PG
+  API -->|JWKS| AUTH
+  API --> RDS
+  WRK -->|"relay outbox · tareas"| PG
+  WRK --> RDS
+  AUTH -->|correo| RES
+  API & WRK -->|"OTLP: trazas, métricas, logs"| GRA
+  API & WRK -->|"errores 5xx y trabajos fallidos"| SEN
+
+  classDef app fill:#e8eef9,stroke:#3c5a99,color:#123;
+  classDef rest fill:#fde8d7,stroke:#c2410c,color:#123;
+  classDef dato fill:#d9f2e3,stroke:#2e7d4f,color:#123;
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3;

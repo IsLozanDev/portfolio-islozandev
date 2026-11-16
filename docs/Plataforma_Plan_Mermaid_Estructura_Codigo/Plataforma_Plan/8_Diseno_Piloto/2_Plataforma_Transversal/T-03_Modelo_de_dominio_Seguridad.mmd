@@ -1,0 +1,117 @@
+%% T-03 — Modelo de dominio · Seguridad
+classDiagram
+  direction LR
+  class Usuario {
+    <<Aggregate>>
+    +uuid id
+    +string idpSub
+    +Email email
+    +string nombre
+    +TipoUsuario tipo
+    +EstadoUsuario estado
+  }
+  class Membresia {
+    <<Aggregate>>
+    +uuid id
+    +EstadoMembresia estado
+    +bool esPropietario
+    +datetime desde
+    +datetime hasta
+    +invitar()
+    +suspender()
+  }
+  class Asignacion {
+    <<Entity>>
+    +Alcance alcance
+    +date vigenteDesde
+    +date vigenteHasta
+    +uuid otorgadoPor
+  }
+  class Rol {
+    <<Aggregate>>
+    +uuid id
+    +string productoCodigo
+    +string codigo
+    +string nombre
+    +bool editable
+  }
+  class Perfil {
+    <<Entity>>
+    +string codigo
+    +string nombre
+  }
+  class Permiso {
+    <<Entity>>
+    +string codigo
+    +string descripcion
+    +NivelAlcance alcanceMinimo
+    +bool sensible
+  }
+  class Producto {
+    <<Entity>>
+    +string codigo
+    +string nombre
+  }
+  class Modulo {
+    <<Entity>>
+    +string codigo
+    +int orden
+  }
+  class Opcion {
+    <<Entity>>
+    +string codigo
+    +string ruta
+    +string icono
+  }
+  class Alcance {
+    <<ValueObject>>
+    +NivelAlcance nivel
+    +uuid empresaId
+    +uuid sucursalId
+    +uuid unidadId
+  }
+  class EventoSeguridad {
+    <<Entity>>
+    +TipoEventoSeg tipo
+    +json detalle
+    +datetime ocurridoEn
+  }
+  class AccesoSoporte {
+    <<Entity>>
+    +uuid ticketId
+    +datetime expiraEn
+    +string motivo
+  }
+  Usuario "1" *-- "0..*" Membresia : pertenece a tenants
+  Membresia "0..*" --> "1" Tenant
+  Membresia "1" *-- "1..*" Asignacion : tiene
+  Asignacion "0..*" --> "0..1" Rol : rol
+  Asignacion "0..*" --> "0..1" Perfil : o perfil
+  Asignacion *-- Alcance
+  Perfil "0..*" o-- "1..*" Rol : agrupa
+  Rol "0..*" --> "1..*" Permiso : concede
+  Rol "0..*" --> "0..1" Tenant : propio del cliente (NULL = predefinido)
+  Producto "1" *-- "1..*" Modulo
+  Modulo "1" *-- "1..*" Opcion
+  Opcion "0..*" --> "1..*" Permiso : requiere
+  Producto "1" *-- "1..*" Permiso : declara
+  Usuario "1" --> "0..*" EventoSeguridad : genera
+  Usuario "1" --> "0..*" AccesoSoporte : soporte temporal
+  class Tenant:::ext
+  class Usuario:::agg
+  class Membresia:::agg
+  class Rol:::agg
+  class Asignacion:::ent
+  class Perfil:::ent
+  class Permiso:::ent
+  class Producto:::ent
+  class Modulo:::ent
+  class Opcion:::ent
+  class EventoSeguridad:::ent
+  class AccesoSoporte:::ent
+  class Alcance:::vo
+
+  classDef agg fill:#ede7f6,stroke:#5e35b1,color:#123
+  classDef ent fill:#e8eef9,stroke:#3c5a99,color:#123
+  classDef vo fill:#d9f2e3,stroke:#2e7d4f,color:#123
+  classDef ext fill:#eeeeee,stroke:#616161,color:#123,stroke-dasharray: 4 3

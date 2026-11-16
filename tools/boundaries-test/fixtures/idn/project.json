@@ -1,0 +1,7 @@
+{
+  "name": "fx-idn",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/boundaries-test/fixtures/idn/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:idn"]
+}

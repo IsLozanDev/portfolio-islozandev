@@ -1,0 +1,23 @@
+%% P-S5 — Secuencia · Evaluación en línea con ítem crítico
+sequenceDiagram
+  autonumber
+  actor PR as Psicóloga
+  participant APP as psi-profesional
+  participant API as api · psi-clinica
+  participant DB as PostgreSQL
+  actor PA as Paciente
+  participant POR as psi-web · portal
+  participant NOT as Notificaciones
+  PR->>APP: Asignar "Escala de depresión (v3)" a paciente
+  APP->>API: POST /v1/psi/evaluaciones (plantilla v3)
+  API->>DB: Evaluacion ASIGNADA
+  API->>NOT: aviso al paciente "tienes un cuestionario pendiente" (sin detalle clínico)
+  PA->>POR: responde el cuestionario
+  POR->>API: POST /v1/portal/psi/evaluaciones/:id/respuestas
+  API->>DB: Respuestas · calcula puntajes con la versión v3
+  alt ítem crítico en el umbral
+    API->>DB: AlertaRiesgo ALTA en la historia
+    API->>NOT: notificación interna push/correo solo a la psicóloga tratante
+  end
+  API-->>POR: "Gracias, tu profesional revisará tus respuestas"
+  PR->>APP: revisa resultado e interpretación
