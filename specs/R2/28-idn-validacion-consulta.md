@@ -213,8 +213,8 @@ Ninguno.
 - [ ] TR-CA-115: DNI 45781236 en caché hace 10 días (TTL 30) consultado por otro tenant devuelve «Juana Quispe Mamani» con `fuente = CACHE`, sin llamar al proveedor ni a `CuotaPort.reservar`.
 - [ ] TR-CA-116: proveedor de prioridad 1 que no responde en 3 s → respuesta del de prioridad 2, `fuente = PROVEEDOR`, bitácora con el código del de prioridad 2.
 - [ ] TR-CA-117: el proveedor devuelve dirección para un DNI y la fila de caché solo tiene `nombres` y `apellidos`; insertar otra clave por SQL viola `ck_cache_campos`.
-- [ ] TR-CA-118: RUC 20512345678 ACTIVO y HABIDO → razón social y `apto_factura = true`.
-- [ ] TR-CA-119: RUC 20498765432 BAJA DE OFICIO → `apto_factura = false`, `motivo_no_apto = 'Estado BAJA DE OFICIO'`.
+- [ ] TR-CA-118: RUC 20512345671 ACTIVO y HABIDO → razón social y `apto_factura = true`.
+- [ ] TR-CA-119: RUC 20498765433 BAJA DE OFICIO → `apto_factura = false`, `motivo_no_apto = 'Estado BAJA DE OFICIO'`.
 - [ ] Ambos proveedores fallan → 503 `PROVEEDOR_NO_DISPONIBLE`, `CuotaPort.liberar` llamado, bitácora `PROVEEDOR_NO_DISPONIBLE`.
 - [ ] Caché vencida → nueva llamada al proveedor y caché actualizada.
 - [ ] NO_ENCONTRADO → 404, bitácora `NO_ENCONTRADO`, sin fila en caché.

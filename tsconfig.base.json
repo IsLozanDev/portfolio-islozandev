@@ -48,6 +48,9 @@
       "@vitrina/plataforma/observabilidad": [
         "./libs/plataforma/observabilidad/src/index.ts"
       ],
+      "@vitrina/plataforma/identidad": [
+        "./libs/plataforma/identidad/src/index.ts"
+      ],
       "@vitrina/plataforma/observabilidad-arranque": [
         "./libs/plataforma/observabilidad-arranque/src/index.ts"
       ],
@@ -62,6 +65,9 @@
       ],
       "@vitrina-fixtures/psi": [
         "./tools/boundaries-test/fixtures/psi/src/index.ts"
+      ],
+      "@vitrina-fixtures/idn": [
+        "./tools/boundaries-test/fixtures/idn/src/index.ts"
       ],
       "@vitrina/shared/auth": [
         "./libs/shared/auth/src/index.ts"
