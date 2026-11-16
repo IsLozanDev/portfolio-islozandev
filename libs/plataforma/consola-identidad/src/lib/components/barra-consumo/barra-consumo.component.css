@@ -1,0 +1,39 @@
+:host {
+  display: block;
+  min-width: 6rem;
+}
+
+.vit-barra-consumo {
+  --mat-progress-bar-track-shape: 9999px;
+  border-radius: 9999px;
+}
+
+.vit-barra-grande {
+  --mat-progress-bar-active-indicator-height: 12px;
+  --mat-progress-bar-track-height: 12px;
+}
+
+.vit-barra-exito {
+  --mat-progress-bar-active-indicator-color: var(--color-primario);
+  --mat-progress-bar-track-color: var(--color-chip-exito);
+}
+
+.vit-barra-advertencia {
+  --mat-progress-bar-active-indicator-color: var(--color-sobre-chip-advertencia);
+  --mat-progress-bar-track-color: var(--color-chip-advertencia);
+}
+
+.vit-barra-error {
+  --mat-progress-bar-active-indicator-color: var(--color-error);
+  --mat-progress-bar-track-color: var(--color-contenedor-error);
+}
+
+.vit-barra-info {
+  --mat-progress-bar-active-indicator-color: var(--color-sobre-chip-info);
+  --mat-progress-bar-track-color: var(--color-chip-info);
+}
+
+.vit-barra-neutro {
+  --mat-progress-bar-active-indicator-color: var(--color-sobre-chip-neutro);
+  --mat-progress-bar-track-color: var(--color-chip-neutro);
+}
