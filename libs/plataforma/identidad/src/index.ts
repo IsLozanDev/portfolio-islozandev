@@ -7,3 +7,10 @@ export {
   ProveedorNoDisponibleError,
   TipoNoConsultableError,
 } from './domain/errores.js';
+export {
+  IDENTIDAD,
+  type ConsultaDocumento,
+  type IdentidadPort,
+  type RespuestaConsulta,
+} from './application/ports/identidad.port.js';
+export { HASHER_DOCUMENTO, type HasherDocumento } from './application/ports/persistencia.js';

@@ -5,6 +5,7 @@ export default {
   resolver: '<rootDir>/jest.resolver.cjs',
   moduleNameMapper: {
     '^@vitrina/plataforma/kernel$': '<rootDir>/../kernel/src/index.ts',
+    '^@vitrina/plataforma/kernel-infra$': '<rootDir>/../kernel-infra/src/index.ts',
     '^@vitrina/shared/util$': '<rootDir>/../../shared/util/src/index.ts',
   },
   testTimeout: 30_000,
