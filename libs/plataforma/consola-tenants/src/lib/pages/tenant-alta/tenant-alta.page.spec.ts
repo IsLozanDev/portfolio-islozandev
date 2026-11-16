@@ -20,7 +20,8 @@ import { TenantAltaPage } from './tenant-alta.page';
 const RUTA_NUEVO = '/consola/tenants/nuevo';
 const URL_TENANTS = `${API_URL}/org/tenants`;
 const RUTA_MFA = '/auth/mfa';
-const CREADO = { tenant_id: 't-polleria', estado: 'PRUEBA', usuario_nuevo: true, correo_enviado: true };
+const CREADO = { tenant_id: 't-polleria', estado: 'PRUEBA', usuario_nuevo: true, correo_enviado: true, advertencias: [] as string[] };
+const ADVERTENCIA_NO_HABIDO = 'Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar';
 
 @Component({ template: '' })
 class Destino {}
@@ -195,6 +196,33 @@ describe('TenantAltaPage', { timeout: ESPERA_PRIMERA_CARGA_MS }, () => {
     await estable();
 
     expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_ALTA.creado, MENSAJES_ALTA.correoNoEnviado);
+  });
+
+  it('spec 28b: con un RUC NO HABIDO avisa las advertencias en lugar del toast y navega al detalle', async () => {
+    await abrir();
+    await llenarPasoTenant();
+    await llenarPasoEmpresa();
+    await pulsar(MENSAJES_ALTA.crear);
+    http.expectOne(URL_TENANTS).flush({ ...CREADO, advertencias: [ADVERTENCIA_NO_HABIDO] });
+    await estable();
+
+    expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_ALTA.creadoConObservaciones, ADVERTENCIA_NO_HABIDO);
+    expect(avisos.toast).not.toHaveBeenCalled();
+    expect(url()).toBe('/consola/tenants/t-polleria');
+  });
+
+  it('spec 28b: con advertencias y correo no enviado muestra los dos avisos', async () => {
+    await abrir();
+    await llenarPasoTenant();
+    await llenarPasoEmpresa();
+    await pulsar(MENSAJES_ALTA.crear);
+    http.expectOne(URL_TENANTS).flush({ ...CREADO, correo_enviado: false, advertencias: [ADVERTENCIA_NO_HABIDO] });
+    await estable();
+
+    expect(avisos.advertencia.mock.calls).toEqual([
+      [MENSAJES_ALTA.creadoConObservaciones, ADVERTENCIA_NO_HABIDO],
+      [MENSAJES_ALTA.creado, MENSAJES_ALTA.correoNoEnviado],
+    ]);
   });
 
   it('TR-RNF-008: un doble clic en «Crear tenant» envía una sola petición', async () => {

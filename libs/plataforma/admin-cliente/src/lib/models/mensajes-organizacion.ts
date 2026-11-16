@@ -23,7 +23,7 @@ export const MENSAJES_EMPRESAS = {
   ayudaRazonSocial: 'Escríbala como figura en SUNAT.',
   /** Spec 28b: el padrón no respondió o no tiene el RUC. */
   noEnPadron: 'No se encontró en el padrón; ingrésela manualmente',
-  consultandoPadron: 'Consultando el padrón…',
+  consultandoPadron: 'Consultando…',
   registradaConObservaciones: 'Empresa registrada con observaciones',
   registrar: 'Registrar empresa',
   /** TR-CA-004: la API crea también la sucursal principal. */

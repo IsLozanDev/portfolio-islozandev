@@ -1,6 +1,6 @@
 # SPEC 28b — Identidad: padrón RUC real en ORG, prellenado de razón social y advertencia de contribuyente no apto
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 03, SPEC 12, SPEC 17a, SPEC 17b, SPEC 17c, SPEC 28
 > **Date:** 2026-11-16
 > **Objective:** Reemplazar `PadronRucNulo` por un adaptador de `PadronRucPort` sobre `IdentidadPort` para que registrar una empresa (y el alta de tenant) tome la razón social del padrón y devuelva una advertencia cuando el contribuyente no está ACTIVO o está NO HABIDO, mostrada en `admin-cliente` y en la consola de tenants.
@@ -121,22 +121,22 @@ Ninguno nuevo. `empresa.creada` no cambia.
 
 ## Criterios de aceptación
 
-- [ ] **TR-CA-004:** con el padrón respondiendo, `RegistrarEmpresa` con un RUC ACTIVO y HABIDO guarda la razón social del padrón aunque el comando traiga otra, crea la sucursal principal `0000` y devuelve `advertencias = []`.
-- [ ] **TR-CA-006:** con un RUC NO HABIDO, la empresa se registra y la respuesta trae «Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar».
-- [ ] RUC 20498765433 (BAJA DE OFICIO) se registra con «Contribuyente en estado BAJA DE OFICIO: no podrá emitir comprobantes hasta regularizar».
-- [ ] Con el proveedor caído o el RUC no encontrado, la empresa se registra con la razón social del comando y sin advertencias; sin razón social en el comando responde 400 como hoy.
-- [ ] El alta de tenant desde la consola con un RUC NO HABIDO devuelve el tenant creado y la advertencia en `advertencias`.
-- [ ] La consulta al padrón deja una fila en `idn.consulta_log` del tenant con motivo `VERIFICACION_IDENTIDAD` y producto `PLAT`.
-- [ ] Sin `OrgModule.register({ padronRuc })`, ORG sigue con `PadronRucNulo` y sus pruebas pasan sin cambios.
-- [ ] `org` no importa `identidad` ni `identidad` importa `org` (prueba de límites sin reglas nuevas).
-- [ ] `EmpresaRegistradaDto` y `TenantDadoDeAltaDto` documentan `advertencias` en OpenAPI.
-- [ ] Un usuario con `PLAT_PROPIETARIO` tiene `plat.identidad.consultar` tras aplicar el manifiesto 1.17.0.
-- [ ] Playwright, `admin-cliente`: al escribir un RUC conocido y salir del campo, la razón social se prellena y queda de solo lectura; con un RUC desconocido queda editable con la ayuda; con un RUC NO HABIDO se ve el hint antes de registrar y el aviso tras registrar.
-- [ ] Playwright, `admin-cliente`: un usuario sin `plat.identidad.consultar` registra la empresa sin prellenado y sin errores.
-- [ ] Playwright, consola: el alta con RUC NO HABIDO muestra el aviso.
-- [ ] Pantallas verificadas en tema claro y oscuro y a 600 px; consola del navegador sin errores.
-- [ ] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md` y la estructura de libs Angular.
-- [ ] `nx affected -t lint test build` verde.
+- [x] **TR-CA-004:** con el padrón respondiendo, `RegistrarEmpresa` con un RUC ACTIVO y HABIDO guarda la razón social del padrón aunque el comando traiga otra, crea la sucursal principal `0000` y devuelve `advertencias = []`.
+- [x] **TR-CA-006:** con un RUC NO HABIDO, la empresa se registra y la respuesta trae «Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar».
+- [x] RUC 20498765433 (BAJA DE OFICIO) se registra con «Contribuyente en estado BAJA DE OFICIO: no podrá emitir comprobantes hasta regularizar».
+- [x] Con el proveedor caído o el RUC no encontrado, la empresa se registra con la razón social del comando y sin advertencias; sin razón social en el comando responde 400 como hoy.
+- [x] El alta de tenant desde la consola con un RUC NO HABIDO devuelve el tenant creado y la advertencia en `advertencias`.
+- [x] La consulta al padrón deja una fila en `idn.consulta_log` del tenant con motivo `VERIFICACION_IDENTIDAD` y producto `PLAT`.
+- [x] Sin `OrgModule.register({ padronRuc })`, ORG sigue con `PadronRucNulo` y sus pruebas pasan sin cambios.
+- [x] `org` no importa `identidad` ni `identidad` importa `org` (prueba de límites sin reglas nuevas).
+- [x] `EmpresaRegistradaDto` y `TenantDadoDeAltaDto` documentan `advertencias` en OpenAPI.
+- [x] Un usuario con `PLAT_PROPIETARIO` tiene `plat.identidad.consultar` tras aplicar el manifiesto 1.17.0.
+- [x] Playwright, `admin-cliente`: al escribir un RUC conocido y salir del campo, la razón social se prellena y queda de solo lectura; con un RUC desconocido queda editable con la ayuda; con un RUC NO HABIDO se ve el hint antes de registrar y el aviso tras registrar.
+- [x] Playwright, `admin-cliente`: un usuario sin `plat.identidad.consultar` registra la empresa sin prellenado y sin errores.
+- [x] Playwright, consola: el alta con RUC NO HABIDO muestra el aviso.
+- [x] Pantallas verificadas en tema claro y oscuro y a 600 px; consola del navegador sin errores.
+- [x] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md` y la estructura de libs Angular.
+- [x] `nx affected -t lint test build` verde.
 
 ## Decisiones
 
@@ -156,6 +156,8 @@ Ninguno nuevo. `empresa.creada` no cambia.
 - **Sí:** motivo `VERIFICACION_IDENTIDAD` y producto `PLAT` en la bitácora del padrón.
 - **Sí (al implementar):** el proveedor falso del 28 suma el RUC 20456789120, ACTIVO y NO HABIDO (`Inversiones Misti S.A.C.`), para TR-CA-006, el alta de tenant y Playwright. Decisión del usuario.
 - **Sí (al implementar):** el RUC de BAJA DE OFICIO del criterio pasa de 20498765432 a 20498765433, el del fixture del 28; el original no pasaba el módulo 11. Decisión del usuario.
+- **Sí (al implementar):** `vit-cargando` va como sufijo del campo RUC con el texto «Consultando…», no en el `mat-hint`: el spinner de 24 px no cabe en los 20 px del hint y pisaba el campo siguiente. Verificado con Playwright: el campo no cambia de alto a 360, 600 y 1280 px.
+- **Sí (al implementar):** con advertencias, el aviso reemplaza al toast de éxito (admin-cliente y consola); en la consola, el aviso de correo no enviado sale después.
 - **Sí (al implementar):** sin razón social, `POST /v1/org/empresas` responde 400 `SOLICITUD_INVALIDA` (lo valida el esquema HTTP antes de consultar el padrón), no 422: el criterio decía «422 como hoy», pero hoy es 400.
 - **Sí (al implementar):** `advertenciasDelPadron` recibe `SituacionContribuyente { estado, condicion }` en vez de `DatosPadron`: el dominio no importa del puerto de aplicación. `DatosPadron` la cumple sin cambios.
 

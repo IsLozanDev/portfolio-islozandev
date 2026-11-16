@@ -124,9 +124,12 @@ describe('TenantsCliente', () => {
       correo_propietario: 'rosa.quispe@gmail.com',
       nombre_propietario: 'Rosa Quispe',
     });
-    peticion.flush({ tenant_id: 't-polleria', estado: 'PRUEBA', usuario_nuevo: true, correo_enviado: false, suscripcion_id: 's-1' }, { status: 201, statusText: 'Created' });
+    peticion.flush(
+      { tenant_id: 't-polleria', estado: 'PRUEBA', usuario_nuevo: true, correo_enviado: false, suscripcion_id: 's-1', advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'] },
+      { status: 201, statusText: 'Created' },
+    );
 
-    await expect(respuesta).resolves.toEqual({ tenantId: 't-polleria', estado: 'PRUEBA', usuarioNuevo: true, correoEnviado: false });
+    await expect(respuesta).resolves.toEqual({ tenantId: 't-polleria', estado: 'PRUEBA', usuarioNuevo: true, correoEnviado: false, advertencias: ['Contribuyente NO HABIDO: no podrá emitir comprobantes hasta regularizar'] });
   });
 
   it('crear en modalidad ACTIVO envía vigente_hasta y el nombre comercial', async () => {
@@ -134,7 +137,7 @@ describe('TenantsCliente', () => {
 
     const peticion = http.expectOne(`${API_URL}/org/tenants`);
     expect(peticion.request.body).toMatchObject({ modalidad: 'ACTIVO', vigente_hasta: '2027-10-28', nombre_comercial: 'Doña Rosa' });
-    peticion.flush({ tenant_id: 't-polleria', estado: 'ACTIVO', usuario_nuevo: false, correo_enviado: true });
+    peticion.flush({ tenant_id: 't-polleria', estado: 'ACTIVO', usuario_nuevo: false, correo_enviado: true, advertencias: [] });
 
     await expect(respuesta).resolves.toMatchObject({ estado: 'ACTIVO', correoEnviado: true });
   });

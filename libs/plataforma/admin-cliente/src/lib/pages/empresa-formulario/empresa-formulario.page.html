@@ -24,7 +24,7 @@
           <mat-label>{{ mensajes.ruc }}</mat-label>
           <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required (blur)="alSalirDelRuc()" />
           @if (consultandoPadron()) {
-            <mat-hint><vit-cargando [texto]="mensajes.consultandoPadron" /></mat-hint>
+            <vit-cargando matSuffix class="flex h-6 items-center overflow-hidden whitespace-nowrap pr-3 text-sm" [texto]="mensajes.consultandoPadron" />
           } @else if (motivoNoApto(); as motivo) {
             <mat-hint data-aviso="no-apto">{{ motivo }}</mat-hint>
           }
