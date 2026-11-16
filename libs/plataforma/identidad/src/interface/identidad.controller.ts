@@ -10,6 +10,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiServiceUnavailableResponse,
+  ApiTooManyRequestsResponse,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
@@ -72,6 +73,7 @@ export class IdentidadController {
   @ApiUnprocessableEntityResponse({ type: ErrorIdentidadDto, description: 'DOCUMENTO_INVALIDO (con motivo) o TIPO_NO_CONSULTABLE (CE y PAS)' })
   @ApiNotFoundResponse({ type: ErrorIdentidadDto, description: 'NO_ENCONTRADO en el proveedor' })
   @ApiServiceUnavailableResponse({ type: ErrorIdentidadDto, description: 'PROVEEDOR_NO_DISPONIBLE: seguir con registro manual' })
+  @ApiTooManyRequestsResponse({ type: ErrorIdentidadDto, description: 'CUOTA_AGOTADA del mes: seguir con registro manual, sin Retry-After' })
   async consultar(@Param() parametros: unknown, @Query() consulta: unknown): Promise<DniDto | RucDto> {
     const { tipo, numero } = validar(EsquemaDocumento, parametros);
     const { motivo, producto } = validar(EsquemaConsulta, consulta);

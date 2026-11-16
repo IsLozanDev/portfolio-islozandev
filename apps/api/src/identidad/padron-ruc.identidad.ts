@@ -1,4 +1,4 @@
-import { DocumentoNoEncontradoError, ProveedorNoDisponibleError, type IdentidadPort } from '@vitrina/plataforma/identidad';
+import { CuotaAgotadaError, DocumentoNoEncontradoError, ProveedorNoDisponibleError, type IdentidadPort } from '@vitrina/plataforma/identidad';
 import type { DatosPadron, PadronRucPort } from '@vitrina/plataforma/org';
 
 const MOTIVO_REGISTRO_EMPRESA = 'VERIFICACION_IDENTIDAD';
@@ -21,7 +21,7 @@ export class PadronRucIdentidad implements PadronRucPort {
   }
 }
 
-/** TR-RNF-007: sin padrón, la razón social sale del comando. */
+/** TR-RNF-007: sin padrón (no existe, proveedor caído o cuota agotada), la razón social sale del comando. */
 function esPadronSinDatos(error: unknown): boolean {
-  return error instanceof DocumentoNoEncontradoError || error instanceof ProveedorNoDisponibleError;
+  return error instanceof DocumentoNoEncontradoError || error instanceof ProveedorNoDisponibleError || error instanceof CuotaAgotadaError;
 }

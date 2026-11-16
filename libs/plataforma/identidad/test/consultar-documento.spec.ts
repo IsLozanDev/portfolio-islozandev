@@ -4,6 +4,7 @@ import type { ProveedorIdentidad } from '../src/application/ports/proveedores.js
 import { ServicioIdentidad } from '../src/application/servicio-identidad.js';
 import { crearEntradaCache } from '../src/domain/entrada-cache.js';
 import {
+  CuotaAgotadaError,
   DocumentoInvalidoError,
   DocumentoNoEncontradoError,
   ProveedorNoDisponibleError,
@@ -131,6 +132,8 @@ describe('ConsultarDocumento', () => {
     });
     expect(dobles.bitacora.registros).toEqual([expect.objectContaining({ tipo: 'RUC', resultado: 'INVALIDO', proveedor: null })]);
     expect(dobles.consultor.llamadas).toBe(0);
+    // TR-RN-031: un documento inválido no consume cuota.
+    expect(dobles.cuota.reservas).toBe(0);
   });
 
   it.each(['CE', 'PAS'] as const)('%s no se consulta y no deja bitácora', async (tipo) => {
@@ -141,12 +144,12 @@ describe('ConsultarDocumento', () => {
     expect(dobles.bitacora.registros).toEqual([]);
   });
 
-  it('sin cuota: bitácora CUOTA_AGOTADA y 503 sin llamar al proveedor', async () => {
+  it('TR-CA-121: sin cuota, bitácora CUOTA_AGOTADA y CuotaAgotadaError sin llamar al proveedor', async () => {
     const dobles = crearDobles();
     dobles.cuota.disponible = false;
 
     await expect(new ConsultarDocumento(dobles.dependencias).ejecutar(consulta('DNI', DNI_JUANA))).rejects.toThrow(
-      ProveedorNoDisponibleError,
+      CuotaAgotadaError,
     );
     expect(dobles.bitacora.registros).toEqual([expect.objectContaining({ resultado: 'CUOTA_AGOTADA' })]);
     expect(dobles.consultor.llamadas).toBe(0);

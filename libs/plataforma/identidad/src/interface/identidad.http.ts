@@ -1,18 +1,26 @@
 import { Catch, HttpException, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
-import { DomainError, NotFoundError } from '@vitrina/plataforma/kernel';
+import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
-import { DocumentoInvalidoError, ProveedorNoDisponibleError, TipoNoConsultableError } from '../domain/errores.js';
+import { CuotaAgotadaError, DocumentoInvalidoError, ProveedorNoDisponibleError, TipoNoConsultableError } from '../domain/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
 }
 
+// Los específicos van antes que su clase base: gana el primero que coincide.
 const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => DomainError, number]> = [
   [DocumentoInvalidoError, HttpStatus.UNPROCESSABLE_ENTITY],
   [TipoNoConsultableError, HttpStatus.UNPROCESSABLE_ENTITY],
+  // Cuotas y proveedores (spec 29): PERIODO_INVALIDO, PERIODO_CERRADO, INCLUIDAS_MENOR_QUE_CONSUMIDAS, ULTIMO_PROVEEDOR_ACTIVO.
+  [ValidationError, HttpStatus.UNPROCESSABLE_ENTITY],
   [NotFoundError, HttpStatus.NOT_FOUND],
+  [ConflictError, HttpStatus.CONFLICT],
+  // OPERADOR_REQUERIDO llega por el puerto VerificadorOperador.
+  [ForbiddenError, HttpStatus.FORBIDDEN],
   // TR-RNF-007: el cliente sigue con el registro manual.
   [ProveedorNoDisponibleError, HttpStatus.SERVICE_UNAVAILABLE],
+  // Sin Retry-After: la cuota no vuelve hasta el mes siguiente y el cliente pasa a ingreso manual.
+  [CuotaAgotadaError, HttpStatus.TOO_MANY_REQUESTS],
 ];
 
 function cuerpoDeError(error: DomainError): Record<string, string> {

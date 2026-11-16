@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -88,6 +88,7 @@ const CASOS = [
   { migracion: '01h_obs_estado_outbox.sql', esquema: 'sync', prueba: 'tests/01h_obs_estado_outbox.test.sql' },
   { migracion: '01i_seg_vigencia_peru.sql', esquema: 'seg', prueba: 'tests/01i_seg_vigencia_peru.test.sql' },
   { migracion: '01j_idn.sql', esquema: 'idn', prueba: 'tests/01j_idn.test.sql' },
+  { migracion: '01k_idn_cuota.sql', esquema: 'idn', prueba: 'tests/01k_idn_cuota.test.sql' },
 ];
 
 const existeEstadoOutbox = async () =>
@@ -352,6 +353,21 @@ const objetosConsola = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Tabla, funciones, políticas y columna version de proveedor que agrega 01k_idn_cuota (6 en total).
+const objetosCuota = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'idn.cuota' AS o WHERE to_regclass('idn.cuota') IS NOT NULL
+       UNION ALL SELECT 'idn.' || proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'idn' AND proname IN ('cuotas_del_periodo', 'cuota_detalle')
+       UNION ALL SELECT policyname FROM pg_policies WHERE policyname IN ('proveedor_update', 'tenant_cuotas')
+       UNION ALL SELECT 'idn.proveedor.version' FROM information_schema.columns
+        WHERE table_schema = 'idn' AND table_name = 'proveedor' AND column_name = 'version'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
 const triggersSuscripcion = async () =>
   (
     await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
@@ -365,6 +381,14 @@ describeConDb('db/ y supabase/migrations', () => {
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
+
+    // El inverso de 01k_idn_cuota deja idn como lo dejó 01j_idn (con el proveedor sembrado) y se puede reaplicar.
+    expect(await objetosCuota()).toHaveLength(6);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01k_idn_cuota.sql'), 'utf8'));
+    expect(await objetosCuota()).toEqual([]);
+    expect(await existeEsquema('idn')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01k_idn_cuota.sql'), 'utf8'));
+    expect(await objetosCuota()).toHaveLength(6);
 
     // El inverso de 01h_obs_estado_outbox quita la función y la política, y se puede reaplicar (spec 21).
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01h_obs_estado_outbox.sql'), 'utf8'));

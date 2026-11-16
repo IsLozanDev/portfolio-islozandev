@@ -3,7 +3,7 @@ import type { CanActivate, ExecutionContext, INestApplication } from '@nestjs/co
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
-import { ENTIDADES_IDN, IDENTIDAD, IdentidadModule, type IdentidadPort } from '@vitrina/plataforma/identidad';
+import { ENTIDADES_IDN, IDENTIDAD, IdentidadModule, registrarEsquemasIdn, type IdentidadPort } from '@vitrina/plataforma/identidad';
 import { InMemoryEventSchemaValidator, KernelInfraModule, TENANT_CONTEXT, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { ENTIDADES_ORG, OrgModule, PADRON_RUC, registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ContextoTenantInterceptor } from '@vitrina/plataforma/seguridad';
@@ -15,7 +15,11 @@ const RUC_ACTIVO_HABIDO = '20512345671';
 const RUC_NO_HABIDO = '20456789120';
 const RUC_BAJA_DE_OFICIO = '20498765433';
 const RUC_FUERA_DEL_PADRON = '20601234565';
+// En el padrón falso y sin consultar en las otras pruebas: no está en la caché.
+const RUC_SIN_CACHE = '20100070970';
 const CABECERA_TENANT = 'x-prueba-tenant';
+const INCLUIDAS_POR_PLAN = { BASICO: 200, PRO: 500, EMPRESA: 2000 };
+const UMBRAL_AVISO = 80;
 
 /** Como en organizacion.integracion.spec.ts: el principal toma el tenant de la cabecera. */
 class TenantDeCabecera implements CanActivate {
@@ -52,8 +56,17 @@ describeConDb('POST /v1/org/empresas con el padrón RUC de IDN (spec 28b)', () =
     await dataSource.initialize();
     const validator = new InMemoryEventSchemaValidator();
     registrarEsquemasOrg(validator);
+    registrarEsquemasIdn(validator);
 
-    const identidadModulo = IdentidadModule.register({ proveedor: 'falso', hasher: { hashear: () => `sha256:${'0'.repeat(64)}` } });
+    const identidadModulo = IdentidadModule.register({
+      proveedor: 'falso',
+      hasher: { hashear: () => `sha256:${'0'.repeat(64)}` },
+      planDelTenant: { useFactory: () => ({ planVigente: async () => 'BASICO' as const }) },
+      configuracionCuota: {
+        useFactory: () => ({ incluidasPorPlan: async () => INCLUIDAS_POR_PLAN, umbralAvisoPorcentaje: async () => UMBRAL_AVISO }),
+      },
+      verificadorOperador: { useFactory: () => ({ exigir: async () => undefined }) },
+    });
     const modulo = await Test.createTestingModule({
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
@@ -107,6 +120,17 @@ describeConDb('POST /v1/org/empresas con el padrón RUC de IDN (spec 28b)', () =
 
     expect(respuesta.status).toBe(201);
     expect(respuesta.body.advertencias).toEqual(['Contribuyente en estado BAJA DE OFICIO: no podrá emitir comprobantes hasta regularizar']);
+  });
+
+  it('cuota de consultas agotada: se registra con la razón social del comando (spec 29)', async () => {
+    const tenantId = await nuevoTenant('padron-sin-cuota');
+    const periodoActual = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit' }).format(new Date());
+    await consultar(`INSERT INTO idn.cuota (tenant_id, periodo, plan, incluidas, consumidas) VALUES ($1, $2, 'BASICO', 0, 0)`, [tenantId, periodoActual]);
+
+    const respuesta = await registrar(tenantId, { ruc: RUC_SIN_CACHE, razon_social: 'Escrita por el usuario' });
+
+    expect(respuesta.status).toBe(201);
+    expect(await razonSocialDe(respuesta.body.empresa_id)).toBe('Escrita por el usuario');
   });
 
   it('RUC fuera del padrón se registra con la razón social del comando y sin advertencias', async () => {

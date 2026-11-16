@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -69,7 +69,10 @@
     { "codigo": "plat.auditoria.consultar", "descripcion": "Consultar la auditoría y su integridad", "alcance_minimo": "SUCURSAL", "sensible": false },
     { "codigo": "plat.auditoria.exportar", "descripcion": "Exportar la auditoría a Excel", "alcance_minimo": "SUCURSAL", "sensible": true },
     { "codigo": "plat.identidad.validar", "descripcion": "Validar el formato de un DNI, RUC, carné de extranjería o pasaporte", "alcance_minimo": "TENANT", "sensible": false },
-    { "codigo": "plat.identidad.consultar", "descripcion": "Consultar los datos de un DNI o RUC en el proveedor de identidad", "alcance_minimo": "TENANT", "sensible": false }
+    { "codigo": "plat.identidad.consultar", "descripcion": "Consultar los datos de un DNI o RUC en el proveedor de identidad", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.identidad.cuota", "descripcion": "Ver la cuota mensual de consultas DNI/RUC del propio tenant", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.identidad.cuota_gestionar", "descripcion": "Ver y ajustar las cuotas de consultas de todos los tenants (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.identidad.proveedor", "descripcion": "Ver y editar la prioridad, el TTL, el timeout y el estado de los proveedores de identidad (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true }
   ],
   "roles_predefinidos": [
     {
@@ -93,7 +96,7 @@
     {
       "codigo": "PLAT_ADMIN_TENANTS",
       "nombre": "Administrador de tenants",
-      "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto"]
+      "permisos": ["plat.tenant.crear", "plat.tenant.consultar", "plat.tenant.cambiar_estado", "plat.sesion.contexto", "plat.identidad.cuota_gestionar", "plat.identidad.proveedor"]
     },
     {
       "codigo": "PLAT_AGENTE_SOPORTE",
@@ -115,7 +118,7 @@
         "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar",
         "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
         "plat.catalogo.item_propio", "plat.catalogo.importar", "plat.feriado.gestionar", "plat.auditoria.consultar",
-        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar"
+        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar", "plat.identidad.cuota"
       ]
     }
   ],
@@ -123,7 +126,24 @@
     { "codigo": "plat.sesion.minutos_inactividad", "descripcion": "Minutos de inactividad antes de cerrar la sesión", "tipo": "NUMERO", "valor_defecto": 30, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_gracia", "descripcion": "Días tras el vencimiento antes de suspender el tenant", "tipo": "NUMERO", "valor_defecto": 5, "alcance_maximo": "TENANT" },
     { "codigo": "plat.suscripcion.dias_prueba", "descripcion": "Días de la prueba gratuita al dar de alta un tenant", "tipo": "NUMERO", "valor_defecto": 15, "alcance_maximo": "TENANT" },
-    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" }
+    { "codigo": "plat.calendario.sabado_habil", "descripcion": "El sábado cuenta como día hábil", "tipo": "BOOLEANO", "valor_defecto": true, "alcance_maximo": "SUCURSAL" },
+    {
+      "codigo": "plat.identidad.cuota_incluidas",
+      "descripcion": "Consultas DNI/RUC incluidas por mes según el plan (solo vale el valor por defecto)",
+      "tipo": "JSON",
+      "valor_defecto": { "BASICO": 200, "PRO": 500, "EMPRESA": 2000 },
+      "alcance_maximo": "TENANT",
+      "esquema": {
+        "type": "object",
+        "properties": {
+          "BASICO": { "type": "integer", "minimum": 0 },
+          "PRO": { "type": "integer", "minimum": 0 },
+          "EMPRESA": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["BASICO", "PRO", "EMPRESA"]
+      }
+    },
+    { "codigo": "plat.identidad.cuota_umbral_aviso", "descripcion": "Porcentaje de la cuota DNI/RUC que dispara el aviso", "tipo": "NUMERO", "valor_defecto": 80, "alcance_maximo": "TENANT" }
   ],
   "indicadores": [],
   "reportes": []

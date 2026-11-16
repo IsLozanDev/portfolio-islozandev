@@ -1,4 +1,5 @@
 import {
+  CuotaAgotadaError,
   DocumentoInvalidoError,
   DocumentoNoEncontradoError,
   ProveedorNoDisponibleError,
@@ -54,6 +55,13 @@ describe('PadronRucIdentidad (spec 28b)', () => {
   it('proveedor caído (503) devuelve null', async () => {
     const { identidad } = identidadQue(async () => {
       throw new ProveedorNoDisponibleError();
+    });
+    await expect(new PadronRucIdentidad(identidad).consultar(RUC_NO_HABIDO)).resolves.toBeNull();
+  });
+
+  it('cuota de consultas agotada (429) devuelve null (spec 29)', async () => {
+    const { identidad } = identidadQue(async () => {
+      throw new CuotaAgotadaError();
     });
     await expect(new PadronRucIdentidad(identidad).consultar(RUC_NO_HABIDO)).resolves.toBeNull();
   });

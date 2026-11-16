@@ -10,6 +10,7 @@ export interface FilaProveedor {
   ttlDias: number;
   timeoutMs: number;
   activo: boolean;
+  version: number;
 }
 
 /** Claves en snake_case: las que admite ck_cache_campos. */
@@ -45,7 +46,19 @@ export interface FilaConsultaLog {
   consultadoEn: Date;
 }
 
-// La app solo lee idn.proveedor.
+export interface FilaCuota {
+  tenantId: string;
+  periodo: string;
+  plan: string;
+  incluidas: number;
+  consumidas: number;
+  avisadoUmbralEn: Date | null;
+  avisadoAgotadaEn: Date | null;
+  creadaEn: Date;
+  version: number;
+}
+
+// La app edita solo prioridad, ttl, timeout y activo de idn.proveedor (con version).
 export const ProveedorEntidad = new EntitySchema<FilaProveedor>({
   name: 'ProveedorIdentidad',
   schema: 'idn',
@@ -57,6 +70,7 @@ export const ProveedorEntidad = new EntitySchema<FilaProveedor>({
     ttlDias: { name: 'ttl_dias', type: 'smallint' },
     timeoutMs: { name: 'timeout_ms', type: 'integer' },
     activo: { type: 'boolean' },
+    version: { type: 'integer' },
   },
 });
 
@@ -92,4 +106,21 @@ export const ConsultaLogEntidad = new EntitySchema<FilaConsultaLog>({
   },
 });
 
-export const ENTIDADES_IDN = [ProveedorEntidad, CacheDocumentoEntidad, ConsultaLogEntidad];
+export const CuotaEntidad = new EntitySchema<FilaCuota>({
+  name: 'CuotaIdentidad',
+  schema: 'idn',
+  tableName: 'cuota',
+  columns: {
+    tenantId: { name: 'tenant_id', type: 'uuid', primary: true },
+    periodo: { type: 'char', length: 7, primary: true },
+    plan: { type: 'varchar', length: 10 },
+    incluidas: { type: 'integer' },
+    consumidas: { type: 'integer' },
+    avisadoUmbralEn: { name: 'avisado_umbral_en', type: 'timestamptz', nullable: true },
+    avisadoAgotadaEn: { name: 'avisado_agotada_en', type: 'timestamptz', nullable: true },
+    creadaEn: { name: 'creada_en', type: 'timestamptz' },
+    version: { type: 'integer' },
+  },
+});
+
+export const ENTIDADES_IDN = [ProveedorEntidad, CacheDocumentoEntidad, ConsultaLogEntidad, CuotaEntidad];
