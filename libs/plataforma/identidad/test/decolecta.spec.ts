@@ -62,6 +62,17 @@ describe('ProveedorDecolecta', () => {
     expect(llamadas[0].url).toBe('https://api.decolecta.com/v1/sunat/ruc?numero=20512345671');
   });
 
+  it('quita los espacios sobrantes que devuelve Decolecta', async () => {
+    const { fetchFalso: fetchRuc } = fetchGrabado(200, { ...RUC_200, razon_social: ' COMERCIAL ANDINA S.A.C. ', direccion: 'CAL. MORELLI NRO 181 INT. P-2 ' });
+    const { fetchFalso: fetchDni } = fetchGrabado(200, { ...DNI_200, first_name: 'JUANA ', first_last_name: 'QUISPE ', second_last_name: ' MAMANI' });
+
+    await expect(proveedorCon(fetchRuc).consultarRuc('20512345671', señal())).resolves.toMatchObject({
+      razonSocial: 'COMERCIAL ANDINA S.A.C.',
+      direccionFiscal: 'CAL. MORELLI NRO 181 INT. P-2',
+    });
+    await expect(proveedorCon(fetchDni).consultarDni('45781236', señal())).resolves.toEqual({ nombres: 'JUANA', apellidos: 'QUISPE MAMANI' });
+  });
+
   it.each([
     [404, {}],
     [422, RUC_422],

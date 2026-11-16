@@ -19,6 +19,8 @@ import { SERVICIO } from './servicio.js';
 
 const config = cargarConfig();
 const cors = opcionesCors(config.ORIGENES_PERMITIDOS);
+// Logs e idn hashean el documento con la misma sal (TR-RNF-111).
+const salDocumentos = salDocumento(config);
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -45,8 +47,8 @@ const app = await NestFactory.create(
     invitaciones: { supabaseSecretKey: config.SUPABASE_SECRET_KEY, url: config.SEG_URL_INVITACION, horas: config.SEG_INVITACION_HORAS },
     reintentosEventos: { intentos: config.EVT_INTENTOS, esperaBaseMs: config.EVT_BACKOFF_MS, esperaMaximaMs: config.EVT_BACKOFF_MAX_MS },
     tenantOperador: config.ORG_TENANT_OPERADOR,
-    observabilidad: { servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumento(config) },
-    identidad: { proveedor: config.IDN_PROVEEDOR, decolectaToken: config.IDN_DECOLECTA_TOKEN, salDocumento: salDocumento(config) },
+    observabilidad: { servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumentos },
+    identidad: { proveedor: config.IDN_PROVEEDOR, decolectaToken: config.IDN_DECOLECTA_TOKEN, salDocumento: salDocumentos },
   }),
   { bufferLogs: true },
 );

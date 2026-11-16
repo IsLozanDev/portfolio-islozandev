@@ -256,6 +256,22 @@ Ninguno.
 - **Sí:** sin eventos ni outbox: la consulta no cambia estado de negocio.
 - **Sí:** sin auditoría en `aud`: la bitácora `idn.consulta_log` es el registro de la consulta.
 
+## Notas de implementación
+
+Decisiones tomadas al implementar (2026-11-16):
+
+- **RUC de TR-CA-118 y 119.** Los números originales (20512345678 y 20498765432) no pasaban el módulo 11; se corrigieron a 20512345671 y 20498765433. Decisión del usuario.
+- **Cuota agotada.** Bitácora `CUOTA_AGOTADA` y `ProveedorNoDisponibleError` (503): el cliente sigue con registro manual. El spec 29 define el error definitivo. Decisión del usuario.
+- **Puerto `ConsultorProveedores`.** `application` no importa `infrastructure`, así que el caso de uso habla con `ProveedorConRespaldo` por este puerto. La lista de proveedores configurados se lee en la transacción inicial (con la caché y la cuota) y se pasa al consultor; la llamada al proveedor queda fuera de toda transacción.
+- **Timeout inyectable.** `ProveedorConRespaldo` usa `AbortSignal.timeout` por defecto; las pruebas inyectan `AbortController` + `setTimeout`, porque los temporizadores falsos de Jest no controlan `AbortSignal.timeout`. Si el proveedor ignora la señal, igual se corta.
+- **Hasher.** `IdentidadModule.register` recibe `hasher` como instancia (un módulo dinámico de la lib no ve proveedores de la app); `apps/api` lo arma con `hashDocumento` y la misma sal de los logs. No hay símbolo `HASHER_DOCUMENTO`.
+- **Token de Decolecta.** Obligatorio siempre que `IDN_PROVEEDOR=decolecta`, no solo en producción.
+- **Manifiesto 1.16.0.** Subir la versión obliga a cambiar la versión esperada en las pruebas de manifiesto de org, auditoria, catalogos y seguridad (6 archivos). Es la única excepción a «las pruebas de ORG pasan sin cambios». Decisión del usuario.
+- **Roles.** Los dos permisos no se agregan a ningún rol predefinido; los asigna TR-PER (spec 31) o el tenant. Decisión del usuario.
+- **Prueba manual con token real de Decolecta (2026-11-16).** RUC 20100070970 respondió ACTIVO/HABIDO en ~570 ms; un RUC inexistente devolvió `null` (404 NO_ENCONTRADO); un DNI respondió nombres y apellidos en ~170 ms, así que el token actual sí tiene DNI. Decolecta devuelve textos con espacios sobrantes: el adaptador los recorta.
+- **Proveedores de respaldo.** Análisis aparte (informe «Proveedores DNI RUC Perú»): apiperu.dev como prioridad 2 (DNI y RUC) y Migo solo RUC; carga diaria del padrón SUNAT en una fase posterior. Queda para un spec nuevo, junto con TTL por tipo de documento, 401 de Decolecta como fallo de configuración y HMAC con clave versionada.
+- **Verificación local.** Sin PostgreSQL local, la migración, su prueba SQL y la integración TypeORM se verificaron en PGlite; PostgreSQL 16 queda para CI.
+
 ## Riesgos
 
 | Riesgo | Mitigación |

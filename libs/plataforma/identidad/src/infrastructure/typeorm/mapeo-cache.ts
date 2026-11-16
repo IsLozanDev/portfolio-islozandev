@@ -2,6 +2,10 @@ import type { DatosDni, DatosRuc } from '../../domain/datos-identidad.js';
 import type { EntradaCache } from '../../domain/entrada-cache.js';
 import type { DatosCacheDni, DatosCacheRuc, FilaCacheDocumento } from './entidades.js';
 
+function datosDniDesdeFila({ nombres, apellidos }: DatosCacheDni): DatosDni {
+  return { nombres, apellidos };
+}
+
 function datosRucDesdeFila(datos: DatosCacheRuc): DatosRuc {
   return {
     razonSocial: datos.razon_social,
@@ -28,7 +32,7 @@ function filaDesdeDatosDni({ nombres, apellidos }: DatosDni): DatosCacheDni {
 
 export function entradaDesdeFila(fila: FilaCacheDocumento): EntradaCache {
   const comunes = { numero: fila.numero, fuente: fila.fuente, consultadoEn: fila.consultadoEn, expiraEn: fila.expiraEn };
-  if (fila.tipoDoc === 'DNI') return { tipo: 'DNI', datos: filaDesdeDatosDni(fila.datos as DatosCacheDni), ...comunes };
+  if (fila.tipoDoc === 'DNI') return { tipo: 'DNI', datos: datosDniDesdeFila(fila.datos as DatosCacheDni), ...comunes };
   return { tipo: 'RUC', datos: datosRucDesdeFila(fila.datos as DatosCacheRuc), ...comunes };
 }
 

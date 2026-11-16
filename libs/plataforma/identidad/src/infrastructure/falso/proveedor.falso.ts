@@ -1,8 +1,9 @@
 import type { DatosDni, DatosRuc } from '../../domain/datos-identidad.js';
 import type { ProveedorIdentidad } from '../../application/ports/proveedores.js';
+import { CODIGO_DECOLECTA } from '../decolecta/proveedor.decolecta.js';
 import { DNIS_FALSOS, RUCS_FALSOS } from './fixtures.js';
 
-export const CODIGO_PROVEEDOR_POR_DEFECTO = 'DECOLECTA';
+export const CODIGO_PROVEEDOR_POR_DEFECTO = CODIGO_DECOLECTA;
 
 export interface OpcionesProveedorFalso {
   /** Código de idn.proveedor bajo el que responde. */

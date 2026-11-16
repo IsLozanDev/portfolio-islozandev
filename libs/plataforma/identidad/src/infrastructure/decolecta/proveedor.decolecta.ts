@@ -9,21 +9,14 @@ const ESTADO_OK = 200;
 // 404 no está documentado; 422 es «ruc no valido». Los dos son «no existe», no una caída.
 const ESTADOS_NO_ENCONTRADO = [404, 422];
 
+const CAMPOS_DNI = ['first_name', 'first_last_name', 'second_last_name'] as const;
+const CAMPOS_RUC = ['razon_social', 'estado', 'condicion', 'direccion', 'ubigeo'] as const;
+
 /** Respuesta de /v1/reniec/dni. Solo los campos que se leen. */
-interface CuerpoDni {
-  first_name: string;
-  first_last_name: string;
-  second_last_name: string;
-}
+type CuerpoDni = Record<(typeof CAMPOS_DNI)[number], string>;
 
 /** Respuesta de /v1/sunat/ruc. Solo los campos que se leen. */
-interface CuerpoRuc {
-  razon_social: string;
-  estado: string;
-  condicion: string;
-  direccion: string;
-  ubigeo: string;
-}
+type CuerpoRuc = Record<(typeof CAMPOS_RUC)[number], string>;
 
 export class RespuestaDecolectaError extends Error {
   constructor(readonly estadoHttp: number) {
@@ -49,23 +42,28 @@ function tieneTextos<T extends string>(cuerpo: unknown, campos: readonly T[]): c
   return campos.every((campo) => typeof (cuerpo as Record<string, unknown>)[campo] === 'string');
 }
 
-const CAMPOS_DNI = ['first_name', 'first_last_name', 'second_last_name'] as const;
-const CAMPOS_RUC = ['razon_social', 'estado', 'condicion', 'direccion', 'ubigeo'] as const;
+// Decolecta devuelve textos con espacios sobrantes (p. ej. "CAL. MORELLI NRO 181 INT. P-2 ").
+function unirSinVacios(...partes: string[]): string {
+  return partes
+    .map((parte) => parte.trim())
+    .filter((parte) => parte !== '')
+    .join(' ');
+}
 
 function mapearDni(cuerpo: CuerpoDni): DatosDni {
   return {
-    nombres: cuerpo.first_name,
-    apellidos: `${cuerpo.first_last_name} ${cuerpo.second_last_name}`.trim(),
+    nombres: cuerpo.first_name.trim(),
+    apellidos: unirSinVacios(cuerpo.first_last_name, cuerpo.second_last_name),
   };
 }
 
 function mapearRuc(cuerpo: CuerpoRuc): DatosRuc {
   return {
-    razonSocial: cuerpo.razon_social,
-    estado: cuerpo.estado,
-    condicion: cuerpo.condicion,
-    direccionFiscal: cuerpo.direccion,
-    ubigeo: cuerpo.ubigeo,
+    razonSocial: cuerpo.razon_social.trim(),
+    estado: cuerpo.estado.trim(),
+    condicion: cuerpo.condicion.trim(),
+    direccionFiscal: cuerpo.direccion.trim(),
+    ubigeo: cuerpo.ubigeo.trim(),
   };
 }
 

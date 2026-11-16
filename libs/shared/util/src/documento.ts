@@ -11,6 +11,7 @@ const PREFIJOS_RUC = ['10', '15', '17', '20'];
 // Módulo 11 de SUNAT (TR-RN-002): pesos sobre los 10 primeros dígitos; el undécimo es el verificador.
 const PESOS_RUC = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
 const POSICION_VERIFICADOR_RUC = 10;
+const MODULO_RUC = 11;
 
 const VALIDO: ValidezDocumento = { valido: true };
 
@@ -26,10 +27,10 @@ function validarDni(numero: string): ValidezDocumento {
 
 function calcularVerificadorRuc(numero: string): number {
   const suma = PESOS_RUC.reduce((total, peso, posicion) => total + peso * Number(numero[posicion]), 0);
-  return (11 - (suma % 11)) % 10;
+  return (MODULO_RUC - (suma % MODULO_RUC)) % 10;
 }
 
-function validarRucConMotivo(numero: string): ValidezDocumento {
+function validarRuc(numero: string): ValidezDocumento {
   if (!SOLO_DIGITOS.test(numero)) return invalido('CARACTERES');
   if (numero.length !== LONGITUD_RUC) return invalido('LONGITUD');
   if (!PREFIJOS_RUC.includes(numero.slice(0, 2))) return invalido('PREFIJO');
@@ -45,7 +46,7 @@ function validarAlfanumerico(numero: string): ValidezDocumento {
 
 const VALIDADORES: Record<TipoDocumento, (numero: string) => ValidezDocumento> = {
   DNI: validarDni,
-  RUC: validarRucConMotivo,
+  RUC: validarRuc,
   CE: validarAlfanumerico,
   PAS: validarAlfanumerico,
 };
