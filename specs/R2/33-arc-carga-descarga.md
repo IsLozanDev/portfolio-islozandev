@@ -1,6 +1,6 @@
 # SPEC 33 — Archivos: carga con URL firmada, análisis en el worker y descarga con URL firmada
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 11, SPEC 20a, SPEC 21
 > **Date:** 2026-11-18
 > **Objective:** Crear `libs/plataforma/archivos` (TR-ARC) para que un archivo se suba directo a un bucket privado de Supabase Storage con una URL firmada emitida por la API, quede DISPONIBLE solo después de que el worker verifique hash, tipo real y antivirus, y se descargue con una URL firmada de 15 minutos como máximo, auditada si la categoría es sensible.

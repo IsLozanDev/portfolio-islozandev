@@ -3,11 +3,17 @@ import { z } from 'zod';
 
 const entero = (defecto: number) => z.coerce.number().int().positive().default(defecto);
 
-// Sin SUPABASE_SECRET_KEY: solo la recibe apps/api (regla 9).
 const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   REDIS_URL: z.url({ protocol: /^rediss?$/ }),
+  // Spec 33: el worker lee y borra objetos del bucket privado de TR-ARC. La secret key solo la reciben
+  // apps/api y apps/worker (regla 9).
+  SUPABASE_URL: z.url({ protocol: /^https?$/ }),
+  SUPABASE_SECRET_KEY: z.string().min(1),
+  ARC_BUCKET: z.string().min(1).default('archivos'),
+  // Limpieza diaria de cargas que nunca se confirmaron, en America/Lima (cron de 5 campos).
+  ARC_LIMPIEZA_CRON: z.string().trim().regex(/^\S+( \S+){4}$/).default('45 3 * * *'),
   EVT_INTERVALO_MS: entero(1000),
   // TR-RN-035: el relay no lee filas más nuevas que el margen.
   EVT_MARGEN_SEG: z.coerce.number().int().nonnegative().default(2),

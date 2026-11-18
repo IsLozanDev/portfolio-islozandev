@@ -124,7 +124,7 @@ describeConDb('HTTP /v1/archivos contra PostgreSQL 16 (TR-CA-199 a 201, 204 y 20
         SeguridadDePrueba,
         AuditoriaModule.registrarApi(),
         ArchivosModule.register({ ...OPCIONES_SUPABASE, redisUrl: 'redis://127.0.0.1:6379' }),
-        ArchivosModule.registrarWorker(OPCIONES_SUPABASE),
+        ArchivosModule.registrarWorker({ ...OPCIONES_SUPABASE, dataSource }),
       ],
     })
       .overrideProvider(ALMACEN_ARCHIVOS)

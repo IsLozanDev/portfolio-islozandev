@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Archivo, ContenidoAnalizado } from '../domain/archivo.js';
 import type { CategoriaArchivo } from '../domain/categoria.js';
 import { CategoriaDesconocidaError } from '../domain/errores.js';
-import { evaluarAnalisis, type ResultadoAnalisis } from '../domain/resultado-analisis.js';
+import { evaluarAnalisis, type HallazgosAnalisis, type ResultadoAnalisis } from '../domain/resultado-analisis.js';
 import { publicarEventosDe, type DependenciasAnalisis } from './dependencias-archivos.js';
 import type { ResultadoAntivirus } from './ports/analizador-antivirus.js';
 import type { TrabajoAnalisis } from './ports/cola-analisis.js';
@@ -86,7 +86,7 @@ function fueRechazado(archivo: Archivo): boolean {
   return archivo.estado === 'RECHAZADO';
 }
 
-function hallazgosDe(medicion: Medicion) {
+function hallazgosDe(medicion: Medicion): HallazgosAnalisis {
   return { bytes: medicion.bytes, mimeReal: medicion.mimeReal, limpio: medicion.antivirus.limpio };
 }
 

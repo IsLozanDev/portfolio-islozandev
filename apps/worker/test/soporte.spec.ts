@@ -2,7 +2,7 @@ import type { ResultadoVencimientoSoporte } from '@vitrina/plataforma/seguridad'
 import { ejecutarVencimientoSoporteCli, type VencedorSoporte } from '../src/cli/soporte.cli.js';
 import { cargarConfig } from '../src/config/env.js';
 
-const ENV_BASE = { DATABASE_URL: 'postgres://nadie:clave-local@127.0.0.1:5432/vitrina', REDIS_URL: 'redis://127.0.0.1:6379' };
+const ENV_BASE = { DATABASE_URL: 'postgres://nadie:clave-local@127.0.0.1:5432/vitrina', REDIS_URL: 'redis://127.0.0.1:6379', SUPABASE_URL: 'https://prueba.supabase.co', SUPABASE_SECRET_KEY: 'sb_secret_prueba' };
 
 describe('Configuración del vencimiento de soporte', () => {
   it('corre cada 60 s por defecto y acepta otro intervalo', () => {

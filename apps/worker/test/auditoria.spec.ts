@@ -4,7 +4,7 @@ import { ejecutarAuditoriaCli, type Verificador } from '../src/cli/auditoria.cli
 import { cargarConfig } from '../src/config/env.js';
 
 const TENANT = '0193f3a0-0000-7000-8000-000000000001';
-const ENV = { DATABASE_URL: 'postgres://nadie:clave-local@127.0.0.1:5432/vitrina' };
+const ENV = { DATABASE_URL: 'postgres://nadie:clave-local@127.0.0.1:5432/vitrina', SUPABASE_URL: 'https://prueba.supabase.co', SUPABASE_SECRET_KEY: 'sb_secret_prueba' };
 const verificacion = (estado: 'OK' | 'ROTA'): Verificacion =>
   ({ id: '0193f3a0-0000-7000-8000-00000000b001', tenantId: TENANT, modo: 'COMPLETA', estado }) as Verificacion;
 

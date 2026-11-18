@@ -25,6 +25,7 @@ export {
 export { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
 export { ESQUEMAS_ARC, registrarEsquemasArc } from './infrastructure/event-schemas.js';
 export { AnalizarArchivo } from './application/analizar-archivo.js';
+export { LimpiarCargasPendientes, type ResultadoLimpieza } from './application/limpiar-cargas-pendientes.js';
 export {
   ALMACEN_ARCHIVOS,
   ArchivosModule,
@@ -46,7 +47,6 @@ export {
   type MotivoUrlRechazada,
 } from './infrastructure/memoria/almacen-archivos.memoria.js';
 export { ENTIDADES_ARC } from './infrastructure/typeorm/entidades.js';
-export { CargasPendientesSql } from './infrastructure/typeorm/cargas-pendientes.sql.js';
 export {
   DISPOSICIONES,
   DISPOSICION_POR_DEFECTO,

@@ -7,6 +7,7 @@ import { ConfirmarCarga } from './application/confirmar-carga.js';
 import { ConsultarEstadoArchivo } from './application/consultar-estado.js';
 import type { DependenciasArchivos } from './application/dependencias-archivos.js';
 import { EmitirUrlDescarga, type DependenciasDescarga } from './application/emitir-url-descarga.js';
+import { LimpiarCargasPendientes } from './application/limpiar-cargas-pendientes.js';
 import { ARCHIVO_PORT, type ArchivoPort } from './application/ports/archivo.port.js';
 import type { AlmacenArchivos } from './application/ports/almacen-archivos.js';
 import { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
@@ -17,6 +18,7 @@ import { abrirColaAnalisis, EVENTO_ERROR_COLA_ANALISIS, type ColaAnalisisAbierta
 import { AlmacenArchivosSupabase, type OpcionesAlmacenSupabase } from './infrastructure/supabase/almacen-archivos.supabase.js';
 import { DetectorTipoFileType } from './infrastructure/tipo/detector-tipo.file-type.js';
 import { RepositorioArchivosTypeOrm } from './infrastructure/typeorm/archivos.repositorio.js';
+import { CargasPendientesSql, type EjecutorSql } from './infrastructure/typeorm/cargas-pendientes.sql.js';
 import { ArchivosController } from './interface/archivos.controller.js';
 
 const DEPENDENCIAS_ARCHIVOS = Symbol('DependenciasArchivos');
@@ -44,6 +46,8 @@ export interface ArchivosOpciones {
 
 /** Lo que necesita el worker: lee y borra objetos con la secret key (regla 9). */
 export interface ArchivosWorkerOpciones {
+  /** Para listar las cargas pendientes de todos los tenants, fuera de toda transacción. */
+  dataSource: EjecutorSql;
   supabase: { url: string; secretKey: string };
   bucket: string;
 }
@@ -153,8 +157,8 @@ export class ArchivosModule {
   }
 
   /**
-   * El análisis de la cola `arc-analisis` para apps/worker. El antivirus es el de firma EICAR hasta el
-   * spec 34. Usa los tokens de KernelInfraModule (global).
+   * El análisis de la cola `arc-analisis` y la limpieza diaria de cargas pendientes, para apps/worker. El
+   * antivirus es el de firma EICAR hasta el spec 34. Usa los tokens de KernelInfraModule (global).
    */
   static registrarWorker(opciones: ArchivosWorkerOpciones): DynamicModule {
     return {
@@ -175,8 +179,21 @@ export class ArchivosModule {
             }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, EVENT_PUBLISHER, ALMACEN_ARCHIVOS],
         },
+        {
+          provide: LimpiarCargasPendientes,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, almacen: AlmacenArchivos) =>
+            new LimpiarCargasPendientes({
+              unidadDeTrabajo,
+              contexto,
+              reloj,
+              archivos: new RepositorioArchivosTypeOrm(unidadDeTrabajo, contexto),
+              almacen,
+              cargasPendientes: new CargasPendientesSql(opciones.dataSource),
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ALMACEN_ARCHIVOS],
+        },
       ],
-      exports: [AnalizarArchivo],
+      exports: [AnalizarArchivo, LimpiarCargasPendientes],
     };
   }
 }
