@@ -4,7 +4,7 @@ import type { AuditarEventoDePlataforma } from '../application/auditar-evento-de
 const CONSUMIDOR = 'auditoria';
 
 /**
- * Eventos de ORG y suscripción que se auditan. Fuera: `suscripcion.por_vencer` (aviso, no operación) y
+ * Eventos de ORG, suscripción y personas que se auditan. Fuera: `suscripcion.por_vencer` (aviso, no operación) y
  * `seq.numero.emitido` (volumen alto, sin valor de auditoría). Idempotente por `sync.evento_procesado`
  * y por `ux_evento_auditoria_evento`.
  */
@@ -23,6 +23,8 @@ export const EVENTOS_AUDITADOS = [
   'unidad.creada',
   'unidad.actualizada',
   'unidad.inactivada',
+  'persona.registrada',
+  'persona.rol_asignado',
 ] as const;
 
 /** Un método por tipo: `@SuscribirEvento` registra un tipo por método. */
@@ -96,6 +98,16 @@ export class AuditoriaConsumidor {
 
   @SuscribirEvento('unidad.inactivada', { consumidor: CONSUMIDOR })
   unidadInactivada(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('persona.registrada', { consumidor: CONSUMIDOR })
+  personaRegistrada(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('persona.rol_asignado', { consumidor: CONSUMIDOR })
+  personaRolAsignado(evento: EventoEntregado): Promise<void> {
     return this.auditarEvento.ejecutar(evento);
   }
 }

@@ -1,6 +1,9 @@
 import { validarDocumento, type TipoDocumento } from '@vitrina/shared/util';
 import { DocumentoInvalidoPersonaError, TipoDocumentoNoAdmitidoError } from './errores.js';
 
+/** Catálogo de TR-CAT donde el tipo debe estar vigente. */
+export const CATALOGO_TIPO_DOCUMENTO = 'TIPO_DOC_IDENTIDAD';
+
 export const TIPOS_DOCUMENTO_PERSONA = ['DNI', 'CE', 'RUC', 'PASAPORTE'] as const;
 export type TipoDocumentoPersona = (typeof TIPOS_DOCUMENTO_PERSONA)[number];
 
