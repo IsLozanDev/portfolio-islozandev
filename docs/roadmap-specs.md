@@ -89,8 +89,8 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 30 | idn-consola-proveedor-cuotas | UI de 047 en la consola | 8 | 29, 17b, 17c | `tr-idn/idn-cuota-y-consola-proveedor.md` | Pendiente |
 | 31 | per-registro-y-roles | R2-01: TR-RF-039, 040 | 9 | 28, 07, 19a, 17a | `tr-per/per-registro-roles-contactos.md` | Pendiente |
 | 32 | per-contactos-direcciones | R2-01: TR-RF-041 | 5 | 31 | `tr-per/per-registro-roles-contactos.md` | Pendiente |
-| 33 | arc-carga-descarga | R2-03: TR-RF-080, 082 | 9 | 07, 11, 20a | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
-| 34 | arc-antivirus | TR-RNF-114 (adaptador real) | 4 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
+| 33 | arc-carga-descarga | R2-03: TR-RF-080, 082 | 9 | 07, 11, 20a | `tr-arc/arc-subida-versiones-url-firmada.md` | Implementado |
+| 34 | arc-antivirus | TR-RNF-114 (adaptador real). Hasta este spec el único antivirus es la firma EICAR del 33: TR-ARC no se habilita en producción | 4 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
 | 35 | arc-versiones | R2-03: TR-RF-081 | 4 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
 | 36 | arc-ui-archivo-carga | `<ui-archivo-carga>` | 7 | 33, 35, 15 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
 | 37 | per-consentimientos | R2-01: TR-RF-043 | 7 | 31, 33, 20a, 11 | `tr-per/per-consentimientos.md` | Pendiente |

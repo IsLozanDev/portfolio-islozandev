@@ -45,10 +45,11 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
 
     const primera = await aplicar.ejecutar(plat);
-    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.20.0', yaAplicado: false });
+    expect(primera).toMatchObject({ producto: 'PLAT', version: '1.21.0', yaAplicado: false });
     // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10), 2 de evt (spec 11), 1 de org (spec 12), 6 de org (spec 17a), 3 de seg (spec 18)
-    // 1 de seg (spec 18b), 5 de cat (spec 19a), 1 de cat (spec 19b), 1 de feriados (spec 19c) y 2 de aud (spec 20b).
-    expect(primera.cambios.permisos.insertados).toBe(35);
+    // 1 de seg (spec 18b), 5 de cat (spec 19a), 1 de cat (spec 19b), 1 de feriados (spec 19c), 2 de aud (spec 20b),
+    // 5 de idn (specs 28 a 30), 3 de per (spec 31) y 2 de arc (spec 33).
+    expect(primera.cambios.permisos.insertados).toBe(45);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);
@@ -62,11 +63,11 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     expect(await uno("SELECT sensible FROM seg.permiso WHERE codigo = 'plat.seguridad.bitacora_exportar'")).toEqual({ sensible: true });
   });
 
-  // Los plat.parametro.* son de cfg, los plat.serie.* de seq, los plat.evento.* de evt, los plat.catalogo.* y plat.feriado.* de cat, los plat.auditoria.* de aud y los de tenants y
-  // organización de org: los verifican sus libs.
+  // Los plat.parametro.* son de cfg, los plat.serie.* de seq, los plat.evento.* de evt, los plat.catalogo.* y plat.feriado.* de cat, los plat.auditoria.* de aud,
+  // los plat.identidad.* de idn, los plat.persona.* de per, los plat.archivo.* de arc y los de tenants y organización de org: los verifican sus libs.
   it('PERMISOS_SEG son exactamente los permisos de seg del manifiesto PLAT', async () => {
     const plat = JSON.parse(await readFile(new URL('../manifiesto/plat.manifiesto.json', import.meta.url), 'utf8'));
-    const deOtrasLibs = ['plat.parametro.', 'plat.serie.', 'plat.evento.', 'plat.catalogo.', 'plat.feriado.', 'plat.auditoria.', 'plat.tenant.', 'plat.organizacion.', 'plat.empresa.', 'plat.sucursal.', 'plat.unidad.'];
+    const deOtrasLibs = ['plat.parametro.', 'plat.serie.', 'plat.evento.', 'plat.catalogo.', 'plat.feriado.', 'plat.auditoria.', 'plat.identidad.', 'plat.persona.', 'plat.archivo.', 'plat.tenant.', 'plat.organizacion.', 'plat.empresa.', 'plat.sucursal.', 'plat.unidad.'];
     const deSeg = plat.permisos.map((p: { codigo: string }) => p.codigo).filter((codigo: string) => !deOtrasLibs.some((prefijo) => codigo.startsWith(prefijo)));
     expect(deSeg.sort()).toEqual(Object.values(PERMISOS_SEG).sort());
   });

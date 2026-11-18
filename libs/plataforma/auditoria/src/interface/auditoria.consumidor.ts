@@ -4,7 +4,7 @@ import type { AuditarEventoDePlataforma } from '../application/auditar-evento-de
 const CONSUMIDOR = 'auditoria';
 
 /**
- * Eventos de ORG, suscripción y personas que se auditan. Fuera: `suscripcion.por_vencer` (aviso, no operación) y
+ * Eventos de ORG, suscripción, personas y archivos que se auditan. Fuera: `suscripcion.por_vencer` (aviso, no operación) y
  * `seq.numero.emitido` (volumen alto, sin valor de auditoría). Idempotente por `sync.evento_procesado`
  * y por `ux_evento_auditoria_evento`.
  */
@@ -25,6 +25,8 @@ export const EVENTOS_AUDITADOS = [
   'unidad.inactivada',
   'persona.registrada',
   'persona.rol_asignado',
+  'archivo.disponible',
+  'archivo.en_cuarentena',
 ] as const;
 
 /** Un método por tipo: `@SuscribirEvento` registra un tipo por método. */
@@ -108,6 +110,16 @@ export class AuditoriaConsumidor {
 
   @SuscribirEvento('persona.rol_asignado', { consumidor: CONSUMIDOR })
   personaRolAsignado(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('archivo.disponible', { consumidor: CONSUMIDOR })
+  archivoDisponible(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('archivo.en_cuarentena', { consumidor: CONSUMIDOR })
+  archivoEnCuarentena(evento: EventoEntregado): Promise<void> {
     return this.auditarEvento.ejecutar(evento);
   }
 }

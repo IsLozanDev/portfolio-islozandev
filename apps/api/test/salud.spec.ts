@@ -63,6 +63,7 @@ describe('api', () => {
       reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
       tenantOperador: 'plataforma',
       identidad: { proveedor: 'falso' as const, salDocumento: 'sal-de-prueba' },
+      archivos: { bucket: 'archivos' },
     };
     const modulo = await Test.createTestingModule({ imports: [AppModule.register(opciones)] })
       .overrideProvider(REGISTRO_ACCESO)
@@ -268,5 +269,15 @@ describe('api', () => {
     expect(paths['/v1/personas'].post.security).toEqual([{ bearer: [] }]);
     expect(paths['/v1/personas/{id}'].get.security).toEqual([{ bearer: [] }]);
     expect(paths['/v1/personas/{id}/roles'].post.security).toEqual([{ bearer: [] }]);
+  });
+
+  it('ArchivosModule queda cableado: /v1/archivos pide token y sus cuatro rutas están en OpenAPI con bearer auth (spec 33)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/archivos/0193f3a0-0000-7000-8000-0000000000a1');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    expect(paths['/v1/archivos/cargas'].post.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/archivos/{id}/confirmar'].post.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/archivos/{id}'].get.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/archivos/{id}/descarga'].get.security).toEqual([{ bearer: [] }]);
   });
 });

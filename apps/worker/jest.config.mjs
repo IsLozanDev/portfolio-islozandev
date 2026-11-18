@@ -8,6 +8,7 @@ export default {
     '^@vitrina/plataforma/kernel$': '<rootDir>/../../libs/plataforma/kernel/src/index.ts',
     '^@vitrina/plataforma/kernel-infra$': '<rootDir>/../../libs/plataforma/kernel-infra/src/index.ts',
     '^@vitrina/plataforma/identidad$': '<rootDir>/../../libs/plataforma/identidad/src/index.ts',
+    '^@vitrina/plataforma/archivos$': '<rootDir>/../../libs/plataforma/archivos/src/index.ts',
     '^@vitrina/plataforma/org$': '<rootDir>/../../libs/plataforma/org/src/index.ts',
     '^@vitrina/plataforma/parametros$': '<rootDir>/../../libs/plataforma/parametros/src/index.ts',
     '^@vitrina/plataforma/seguridad$': '<rootDir>/../../libs/plataforma/seguridad/src/index.ts',

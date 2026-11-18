@@ -1,0 +1,73 @@
+import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
+
+// Ningún mensaje lleva el nombre original, la URL firmada ni el token: los mensajes llegan a logs (TR-RNF-026).
+
+export class CategoriaDesconocidaError extends ValidationError {
+  override readonly code = 'CATEGORIA_DESCONOCIDA';
+
+  constructor() {
+    super('Esa categoría de archivo no existe');
+  }
+}
+
+export class MimeNoPermitidoError extends ValidationError {
+  override readonly code = 'MIME_NO_PERMITIDO';
+
+  constructor() {
+    super('La categoría no admite ese tipo de archivo');
+  }
+}
+
+export class TamanoExcedidoError extends ValidationError {
+  override readonly code = 'TAMANO_EXCEDIDO';
+
+  constructor(readonly tamanoMaxBytes: number) {
+    super(`El archivo supera el máximo de la categoría: ${tamanoMaxBytes} bytes`);
+  }
+}
+
+export class DatosArchivoInvalidosError extends ValidationError {
+  override readonly code = 'DATOS_INVALIDOS';
+}
+
+export class VigenciaInvalidaError extends ValidationError {
+  override readonly code = 'VIGENCIA_INVALIDA';
+
+  constructor(minimaSegundos: number, maximaSegundos: number) {
+    super(`La vigencia va de ${minimaSegundos} a ${maximaSegundos} segundos`);
+  }
+}
+
+/** También para un archivo de otro tenant: no se revela que existe (TR-CA-205). */
+export class ArchivoNoEncontradoError extends NotFoundError {
+  override readonly code = 'NO_ENCONTRADO';
+
+  constructor() {
+    super('No existe ese archivo');
+  }
+}
+
+export class ArchivoNoDisponibleError extends ConflictError {
+  override readonly code = 'ARCHIVO_NO_DISPONIBLE';
+
+  constructor(readonly estado: string) {
+    super(`El archivo no está disponible: ${estado}`);
+  }
+}
+
+export class AccesoEntidadDenegadoError extends ForbiddenError {
+  override readonly code = 'ACCESO_ENTIDAD_DENEGADO';
+
+  constructor() {
+    super('No tienes acceso a la entidad de ese archivo');
+  }
+}
+
+/** Storage o la cola no respondieron: el cliente reintenta. Lleva solo el código del origen. */
+export class AlmacenNoDisponibleError extends DomainError {
+  readonly code = 'ALMACEN_NO_DISPONIBLE';
+
+  constructor(readonly codigoOrigen?: string) {
+    super(codigoOrigen ? `El almacén de archivos no respondió: ${codigoOrigen}` : 'El almacén de archivos no respondió');
+  }
+}

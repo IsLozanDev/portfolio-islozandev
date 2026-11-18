@@ -54,6 +54,9 @@
       "@vitrina/plataforma/personas": [
         "./libs/plataforma/personas/src/index.ts"
       ],
+      "@vitrina/plataforma/archivos": [
+        "./libs/plataforma/archivos/src/index.ts"
+      ],
       "@vitrina/plataforma/observabilidad-arranque": [
         "./libs/plataforma/observabilidad-arranque/src/index.ts"
       ],
@@ -74,6 +77,9 @@
       ],
       "@vitrina-fixtures/per": [
         "./tools/boundaries-test/fixtures/per/src/index.ts"
+      ],
+      "@vitrina-fixtures/arc": [
+        "./tools/boundaries-test/fixtures/arc/src/index.ts"
       ],
       "@vitrina/shared/auth": [
         "./libs/shared/auth/src/index.ts"

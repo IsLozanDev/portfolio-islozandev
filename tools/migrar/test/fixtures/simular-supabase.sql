@@ -19,3 +19,30 @@ CREATE TABLE IF NOT EXISTS auth.users (
 );
 GRANT USAGE ON SCHEMA auth TO supabase_auth_admin;
 GRANT ALL ON auth.users TO supabase_auth_admin;
+
+-- Storage: solo las columnas que usa supabase/migrations, y el trigger que en Supabase bloquea el
+-- DELETE directo (consultado en dev).
+CREATE SCHEMA IF NOT EXISTS storage;
+CREATE TABLE IF NOT EXISTS storage.buckets (
+  id                 text    PRIMARY KEY,
+  name               text    NOT NULL,
+  public             boolean NULL DEFAULT false,
+  file_size_limit    bigint  NULL,
+  allowed_mime_types text[]  NULL
+);
+CREATE TABLE IF NOT EXISTS storage.objects (
+  id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  bucket_id text NULL REFERENCES storage.buckets(id),
+  name      text NULL
+);
+CREATE OR REPLACE FUNCTION storage.protect_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF COALESCE(current_setting('storage.allow_delete_query', true), 'false') != 'true' THEN
+    RAISE EXCEPTION 'Direct deletion from storage tables is not allowed. Use the Storage API instead.'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NULL;
+END $$;
+DROP TRIGGER IF EXISTS protect_buckets_delete ON storage.buckets;
+CREATE TRIGGER protect_buckets_delete BEFORE DELETE ON storage.buckets
+  FOR EACH STATEMENT EXECUTE FUNCTION storage.protect_delete();

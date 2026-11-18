@@ -26,8 +26,8 @@ R0 y R1 (sprints 0 a 12). R2 y R3 solo se especifican cuando toque.
 5. Permisos con formato `producto.recurso.accion`, guard `@Permiso`; los sensibles exigen aal2. Todo endpoint con OpenAPI, bajo `/v1`.
 6. Migraciones reversibles (script inverso por migración) y probadas en CI contra PostgreSQL 16. Las del esquema Supabase van en `supabase/migrations`; las de plataforma en `db/`.
 7. `enforce-module-boundaries`: `scope:plataforma` no importa de productos; `scope:shared` no importa fuera de shared.
-8. Los esquemas de plataforma no se exponen por la Data API de Supabase. Los frontends solo hablan con la API NestJS.
-9. Secretos solo por entorno. La secret key de Supabase solo en `apps/api` y scripts de migración.
+8. Los esquemas de plataforma no se exponen por la Data API de Supabase. Los frontends solo hablan con la API NestJS. Única excepción (TR-ARC, spec 33): el navegador sube y baja archivos directo a Supabase Storage con una URL firmada que emite la API, válida para un solo objeto y de vigencia corta; el bucket es privado y sin políticas para `anon` ni `authenticated`.
+9. Secretos solo por entorno. La secret key de Supabase solo en `apps/api`, `apps/worker` y scripts de migración.
 10. Integraciones externas detrás de puertos y adaptadores.
 11. Persistencia con ORM, desde el spec 10 en adelante (los specs 01 a 09 ya implementados conservan su SQL; migrarlos es un spec aparte, sin fecha). Los repositorios usan TypeORM: entidades en `infrastructure/typeorm`, `manager.getRepository` y `QueryBuilder` sobre el `EntityManager` de la transacción activa. Por defecto no se escribe SQL embebido en `SELECT`/`INSERT`/`UPDATE`/`DELETE`. Se permite SQL crudo solo cuando el ORM no lo expresa bien (funciones de base de datos, `set_config`, `FOR UPDATE` con lógica propia, agregaciones complejas, rendimiento medido), encapsulado en un método del adaptador y con la razón en el spec. Las entidades ORM son distintas del agregado de dominio y se mapean en el adaptador. Bloqueo optimista con la columna `version`. Las migraciones y funciones de base de datos siguen en SQL.
 

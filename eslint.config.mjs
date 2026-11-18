@@ -59,6 +59,8 @@ export default [
             comp('idn', 'kernel', 'seg'),
             // PL-10 dibuja IDN después de PER; PER lo consume para el prellenado (spec 31).
             comp('per', 'kernel', 'seg', 'org', 'cat', 'idn'),
+            // R2: archivos audita las descargas sensibles y publica por outbox (spec 33).
+            comp('arc', 'kernel', 'seg', 'aud', 'evt'),
           ],
         },
       ],

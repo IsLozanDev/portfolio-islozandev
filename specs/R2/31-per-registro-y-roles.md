@@ -1,6 +1,6 @@
 # SPEC 31 — Personas: registro único por documento con prellenado de identidad y rol por producto
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 06, SPEC 17a, SPEC 19a, SPEC 28, SPEC 29
 > **Date:** 2026-11-18
 > **Objective:** Crear `libs/plataforma/personas` (TR-PER) con la persona maestra del tenant, única por tipo y número de documento, una búsqueda por documento que devuelve la persona existente o los datos de TR-IDN para prellenar, el registro con celular y correo principales, y la asignación de un rol por producto suscrito, todo por `/v1/personas` con eventos por outbox.

@@ -1,0 +1,7 @@
+{
+  "name": "fx-arc",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tools/boundaries-test/fixtures/arc/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:arc"]
+}

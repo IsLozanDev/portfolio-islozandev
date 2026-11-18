@@ -1,5 +1,6 @@
 import { Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
+import { registrarEsquemasArc } from '@vitrina/plataforma/archivos';
 import { AuditoriaModule, registrarEsquemasAud } from '@vitrina/plataforma/auditoria';
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
@@ -8,6 +9,7 @@ import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataf
 import { ObservabilidadModule, salDocumento } from '@vitrina/plataforma/observabilidad';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
+import { ArchivosWorkerModule } from './archivos/archivos.module.js';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
 import { CuotasModule } from './cuotas/cuotas.module.js';
@@ -36,6 +38,7 @@ export class WorkerModule {
     registrarEsquemasCat(validator);
     registrarEsquemasAud(validator);
     registrarEsquemasIdn(validator);
+    registrarEsquemasArc(validator);
     return {
       module: WorkerModule,
       imports: [
@@ -60,6 +63,13 @@ export class WorkerModule {
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
         ImportacionesModule.register({ redisUrl: config.REDIS_URL }),
         VerificacionModule.register({ dataSource, redisUrl: config.REDIS_URL, patron: config.AUD_VERIFICACION_CRON }),
+        ArchivosWorkerModule.register({
+          dataSource,
+          redisUrl: config.REDIS_URL,
+          supabase: { url: config.SUPABASE_URL, secretKey: config.SUPABASE_SECRET_KEY },
+          bucket: config.ARC_BUCKET,
+          patronLimpieza: config.ARC_LIMPIEZA_CRON,
+        }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };
