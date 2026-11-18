@@ -9,7 +9,7 @@ import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
 import { CONSOLA_IDENTIDAD_ROUTES } from '../lib/consola-identidad.routes';
-import type { DobleSesion } from './doble-sesion';
+import { RUTA_PROHIBIDO, type DobleSesion } from './doble-sesion';
 import { API_URL } from './http-de-prueba';
 
 /** Rutas diferidas, `import()` dinámicos y promesas encadenadas de las páginas: unas vueltas del bucle bastan. */
@@ -55,7 +55,7 @@ export async function abrirConsola(ruta: string, sesion: DobleSesion, avisos: Do
       ]),
       { provide: SesionService, useValue: sesion },
       { provide: AvisosService, useValue: avisos },
-      { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL, rutas: { prohibido: '/403' } } },
+      { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL, rutas: { prohibido: RUTA_PROHIBIDO } } },
       { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
     ],
   });

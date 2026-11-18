@@ -1,18 +1,17 @@
 import { Component, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators, type ValidationErrors } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators, type ValidationErrors, type ValidatorFn } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { AccionesFormularioComponent, mensajeDeValidacion, PanelLateralComponent } from '@vitrina/shared/ui';
 import type { DetalleCuota } from '../../models/cuota';
-import { aErrorIdentidad, type ErrorIdentidad } from '../../models/error-identidad';
+import { aErrorIdentidad, CODIGO_VERSION_OBSOLETA, type ErrorIdentidad } from '../../models/error-identidad';
 import { MENSAJES_AJUSTE_CUOTA, textoContextoAjuste, textoMinimoConsumidas } from '../../models/mensajes-identidad';
 import { CuotasCliente } from '../../services/cuotas.cliente';
 import { etiquetaPeriodo } from '../../utils/periodo';
 
 /** Error del control con el mensaje de la API (422). */
 const ERROR_API = 'api';
-const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
 const HTTP_ENTIDAD_NO_PROCESABLE = 422;
 const PATRON_ENTERO = /^\d+$/;
 
@@ -101,7 +100,7 @@ export class PanelAjusteCuotaComponent {
     }
   }
 
-  private validadores(consumidas: number) {
+  private validadores(consumidas: number): ValidatorFn[] {
     return [Validators.required, Validators.pattern(PATRON_ENTERO), Validators.min(consumidas)];
   }
 }

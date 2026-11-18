@@ -16,7 +16,7 @@ interface Manifiesto {
   parametros: { codigo: string; tipo: string; valor_defecto: unknown; alcance_maximo: string }[];
 }
 
-describe('Manifiesto PLAT 1.18.0: parte de org (specs 12 y 17a)', () => {
+describe('Manifiesto PLAT 1.19.0: parte de org (specs 12 y 17a)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (codigo: string) => manifiesto.roles_predefinidos.find((rol) => rol.codigo === codigo)?.permisos ?? [];
   const permiso = (codigo: string) => manifiesto.permisos.find((declarado) => declarado.codigo === codigo);
@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.18.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.18.0');
+    expect(manifiesto.version).toBe('1.19.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -90,6 +90,9 @@ describe('Manifiesto PLAT 1.18.0: parte de org (specs 12 y 17a)', () => {
       ['plat.consola.catalogos', 'plat.consola', '/consola/catalogos', ['plat.catalogo.item_gestionar']],
       // De feriados (spec 19e), con el mismo permiso que Catálogos.
       ['plat.consola.feriados', 'plat.consola', '/consola/feriados', ['plat.catalogo.item_gestionar']],
+      // De identidad (spec 30): cada pantalla con su permiso.
+      ['plat.consola.identidad_cuotas', 'plat.consola', '/consola/identidad/cuotas', ['plat.identidad.cuota_gestionar']],
+      ['plat.consola.identidad_proveedores', 'plat.consola', '/consola/identidad/proveedores', ['plat.identidad.proveedor']],
     ]);
   });
 

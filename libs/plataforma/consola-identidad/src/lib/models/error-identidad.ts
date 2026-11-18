@@ -2,6 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { MENSAJE_ERROR_DESCONOCIDO, MENSAJES_POR_CODIGO } from './mensajes-identidad';
 
 export const CODIGO_DESCONOCIDO = 'DESCONOCIDO';
+/** 409 del bloqueo optimista: los paneles avisan y recargan sin cerrarse. */
+export const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
 /** 403 de las pantallas de consola abiertas desde un tenant cliente: se muestra como estado vacío. */
 export const CODIGO_OPERADOR_REQUERIDO = 'OPERADOR_REQUERIDO';
 

@@ -1,16 +1,15 @@
 import { Component, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators, type ValidationErrors } from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators, type ValidationErrors, type ValidatorFn } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { AccionesFormularioComponent, AvisosService, mensajeDeValidacion, PanelLateralComponent } from '@vitrina/shared/ui';
-import { aErrorIdentidad, type ErrorIdentidad } from '../../models/error-identidad';
+import { aErrorIdentidad, CODIGO_VERSION_OBSOLETA, type ErrorIdentidad } from '../../models/error-identidad';
 import { MENSAJES_PANEL_PROVEEDOR, textoConfirmarDesactivar } from '../../models/mensajes-identidad';
 import { RANGOS_PROVEEDOR, type CambiosProveedor, type Proveedor } from '../../models/proveedor';
 import { ProveedoresCliente } from '../../services/proveedores.cliente';
 
-const CODIGO_VERSION_OBSOLETA = 'VERSION_OBSOLETA';
 const CODIGO_ULTIMO_PROVEEDOR_ACTIVO = 'ULTIMO_PROVEEDOR_ACTIVO';
 const PATRON_ENTERO = /^\d+$/;
 
@@ -38,15 +37,9 @@ export class PanelProveedorComponent {
   protected readonly rangos = RANGOS_PROVEEDOR;
   protected readonly proveedor = signal(this.datos.proveedor);
   protected readonly formulario = inject(NonNullableFormBuilder).group({
-    prioridad: [this.datos.proveedor.prioridad, [Validators.required, Validators.pattern(PATRON_ENTERO), Validators.min(RANGOS_PROVEEDOR.prioridad.minimo)]],
-    ttlDias: [
-      this.datos.proveedor.ttlDias,
-      [Validators.required, Validators.pattern(PATRON_ENTERO), Validators.min(RANGOS_PROVEEDOR.ttlDias.minimo), Validators.max(RANGOS_PROVEEDOR.ttlDias.maximo)],
-    ],
-    timeoutMs: [
-      this.datos.proveedor.timeoutMs,
-      [Validators.required, Validators.pattern(PATRON_ENTERO), Validators.min(RANGOS_PROVEEDOR.timeoutMs.minimo), Validators.max(RANGOS_PROVEEDOR.timeoutMs.maximo)],
-    ],
+    prioridad: [this.datos.proveedor.prioridad, validadoresDeEntero(RANGOS_PROVEEDOR.prioridad)],
+    ttlDias: [this.datos.proveedor.ttlDias, validadoresDeEntero(RANGOS_PROVEEDOR.ttlDias)],
+    timeoutMs: [this.datos.proveedor.timeoutMs, validadoresDeEntero(RANGOS_PROVEEDOR.timeoutMs)],
     activo: [this.datos.proveedor.activo],
   });
   protected readonly guardando = signal(false);
@@ -137,6 +130,12 @@ export class PanelProveedorComponent {
   private volverAActivo(): void {
     this.formulario.controls.activo.setValue(true);
   }
+}
+
+function validadoresDeEntero(rango: { minimo: number; maximo?: number }): ValidatorFn[] {
+  const validadores = [Validators.required, Validators.pattern(PATRON_ENTERO), Validators.min(rango.minimo)];
+  if (rango.maximo === undefined) return validadores;
+  return [...validadores, Validators.max(rango.maximo)];
 }
 
 function tieneCambios(cambios: CambiosProveedor): boolean {

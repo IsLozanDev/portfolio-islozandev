@@ -4,8 +4,7 @@ export { ChipEstadoComponent } from './lib/components/chip-estado/chip-estado.co
 export { EstadoVacioComponent } from './lib/components/estado-vacio/estado-vacio.component';
 export { FiltrosComponent } from './lib/components/filtros/filtros.component';
 export { PanelLateralComponent } from './lib/components/panel-lateral/panel-lateral.component';
-export { TablaComponent } from './lib/components/tabla/tabla.component';
-export { AccionesFilaDirective } from './lib/directives/acciones-fila.directive';
+export { TablaComponent } from './lib/components/tabla/tabla.component';export { AccionesFilaDirective } from './lib/directives/acciones-fila.directive';
 export { CeldaTablaDirective } from './lib/directives/celda-tabla.directive';
 export type {
   OpcionesConfirmacion,

@@ -69,7 +69,7 @@ export class ProveedoresListaPage {
   }
 
   protected editar(codigo: string): void {
-    const proveedor = this.lista().find((candidato) => candidato.codigo === codigo);
+    const proveedor = this.buscarProveedor(codigo);
     if (!proveedor) return;
     const datos: DatosPanelProveedor = { proveedor, recargarProveedor: () => this.recargarProveedor(codigo) };
     this.paneles
@@ -96,9 +96,13 @@ export class ProveedoresListaPage {
 
   private async recargarProveedor(codigo: string): Promise<Proveedor> {
     this.lista.set(await this.proveedores.listar());
-    const proveedor = this.lista().find((candidato) => candidato.codigo === codigo);
+    const proveedor = this.buscarProveedor(codigo);
     if (!proveedor) throw new ErrorIdentidad(CODIGO_PROVEEDOR_NO_ENCONTRADO, MENSAJES_POR_CODIGO[CODIGO_PROVEEDOR_NO_ENCONTRADO], HTTP_NO_ENCONTRADO);
     return proveedor;
+  }
+
+  private buscarProveedor(codigo: string): Proveedor | undefined {
+    return this.lista().find((candidato) => candidato.codigo === codigo);
   }
 }
 
