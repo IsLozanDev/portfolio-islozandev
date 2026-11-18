@@ -72,7 +72,7 @@ export class ColaAnalisisBullmq implements ColaAnalisis {
 }
 
 export interface ColaAnalisisAbierta {
-  cola: ColaAnalisisBullmq;
+  cola: ColaAnalisis;
   cerrar(): Promise<void>;
 }
 

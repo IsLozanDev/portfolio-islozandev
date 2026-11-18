@@ -10,7 +10,7 @@ import {
 } from './eventos-arc.js';
 
 export const ESTADOS_ARCHIVO = ['PENDIENTE_CARGA', 'EN_ANALISIS', 'DISPONIBLE', 'CUARENTENA', 'RECHAZADO'] as const;
-export type EstadoArchivo = (typeof ESTADOS_ARCHIVO)[number];
+export type CodigoEstadoArchivo = (typeof ESTADOS_ARCHIVO)[number];
 
 export const MOTIVOS_RECHAZO = ['TIPO_NO_PERMITIDO', 'TAMANO_NO_COINCIDE'] as const;
 export type MotivoRechazo = (typeof MOTIVOS_RECHAZO)[number];
@@ -40,7 +40,7 @@ export interface ArchivoProps {
   entidadTipo: string;
   entidadId: string;
   nombreOriginal: string;
-  estado: EstadoArchivo;
+  estado: CodigoEstadoArchivo;
   motivoRechazo: MotivoRechazo | null;
   versionVigente: number | null;
   creadoPor: string;
@@ -179,7 +179,7 @@ export class Archivo extends AggregateRoot {
     return this.props.nombreOriginal;
   }
 
-  get estado(): EstadoArchivo {
+  get estado(): CodigoEstadoArchivo {
     return this.props.estado;
   }
 

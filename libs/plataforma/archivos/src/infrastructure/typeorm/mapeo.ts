@@ -1,4 +1,4 @@
-import { Archivo, type EstadoArchivo, type MotivoRechazo, type VersionArchivo } from '../../domain/archivo.js';
+import { Archivo, type CodigoEstadoArchivo, type MotivoRechazo, type VersionArchivo } from '../../domain/archivo.js';
 import { CategoriaArchivo } from '../../domain/categoria.js';
 import type { FilaArchivo, FilaCategoria, FilaVersionArchivo } from './entidades.js';
 
@@ -57,7 +57,7 @@ export function archivoDesdeFilas(fila: FilaArchivo, version: FilaVersionArchivo
     entidadTipo: fila.entidadTipo,
     entidadId: fila.entidadId,
     nombreOriginal: fila.nombreOriginal,
-    estado: fila.estado as EstadoArchivo,
+    estado: fila.estado as CodigoEstadoArchivo,
     motivoRechazo: fila.motivoRechazo as MotivoRechazo | null,
     versionVigente: fila.versionVigente,
     creadoPor: fila.creadoPor,

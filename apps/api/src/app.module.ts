@@ -31,6 +31,7 @@ import {
 } from '@vitrina/plataforma/org';
 import { DefinicionesRepositorioTypeOrm, PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { PersonasModule, VerificadorReferenciasPer } from '@vitrina/plataforma/personas';
+import { ArchivosModule } from '@vitrina/plataforma/archivos';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
@@ -63,12 +64,14 @@ export type AppOpciones = KernelInfraOptions &
     observabilidad?: ObservabilidadOpciones;
     /** Spec 28. `salDocumento` es la misma de los logs (TR-RNF-111). */
     identidad: { proveedor: ProveedorElegido; decolectaToken?: string; salDocumento: string };
+    /** Spec 33: bucket privado de TR-ARC. La URL y la secret key de Supabase son las de seguridad. */
+    archivos: { bucket: string };
   };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     const registroCuota = new Logger(CONTEXTO_LOG_CUOTA);
@@ -143,6 +146,13 @@ export class AppModule {
         AuditoriaModule.registrarApi(),
         identidadModulo,
         PersonasModule.register({ imports: [catalogosModulo, identidadModulo] }),
+        // Spec 33: sin autorizadores de entidad todavía; cada producto registra el suyo en su spec.
+        ArchivosModule.register({
+          redisUrl: seguridad.redisUrl,
+          supabase: { url: seguridad.supabaseUrl, secretKey: seguridad.invitaciones.supabaseSecretKey },
+          bucket: archivos.bucket,
+          autorizadores: { useFactory: () => [] },
+        }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).
