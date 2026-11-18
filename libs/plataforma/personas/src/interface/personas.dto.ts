@@ -1,0 +1,193 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PRODUCTOS, type ProductoCodigo } from '@vitrina/plataforma/org';
+import type { MotivoInvalidez } from '@vitrina/shared/util';
+import type { AvisoPrellenado, Prellenado, ResultadoBusqueda } from '../application/buscar-persona.js';
+import type { PersonaDetalle, PersonaResumen } from '../application/ports/persona.port.js';
+import { TIPOS_CONTACTO, type TipoContacto } from '../domain/contacto.js';
+import { TIPOS_DOCUMENTO_PERSONA, type TipoDocumentoPersona } from '../domain/documento-identidad.js';
+import { TIPOS_PERSONA, type DenominacionPersona, type TipoPersona } from '../domain/persona.js';
+import { ROLES_PERSONA, type RolPersona } from '../domain/rol-persona.js';
+
+const MOTIVOS_INVALIDEZ: MotivoInvalidez[] = ['LONGITUD', 'PREFIJO', 'DIGITO_VERIFICADOR', 'CARACTERES'];
+const AVISOS_PRELLENADO: AvisoPrellenado[] = ['IDENTIDAD_NO_DISPONIBLE', 'CUOTA_AGOTADA', 'NO_ENCONTRADO_EN_IDENTIDAD'];
+
+class DenominacionDto {
+  @ApiProperty({ type: String, nullable: true, example: 'Juana' })
+  nombres!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Quispe' })
+  apellido_paterno!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Mamani' })
+  apellido_materno!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Solo en personas jurídicas' })
+  razon_social!: string | null;
+}
+
+export class PersonaDto extends DenominacionDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: TIPOS_PERSONA })
+  tipo_persona!: TipoPersona;
+
+  @ApiProperty({ enum: TIPOS_DOCUMENTO_PERSONA })
+  tipo_documento!: TipoDocumentoPersona;
+
+  @ApiProperty({ example: '45781236' })
+  numero_documento!: string;
+
+  @ApiProperty()
+  activo!: boolean;
+}
+
+export class RolDto {
+  @ApiProperty({ enum: PRODUCTOS })
+  producto_codigo!: ProductoCodigo;
+
+  @ApiProperty({ enum: ROLES_PERSONA })
+  rol!: RolPersona;
+
+  @ApiProperty({ format: 'date', description: 'Fecha de Lima' })
+  desde!: string;
+
+  @ApiProperty({ type: String, format: 'date', nullable: true, description: 'Nula mientras el rol está vigente' })
+  hasta!: string | null;
+}
+
+export class ContactoDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: TIPOS_CONTACTO })
+  tipo!: TipoContacto;
+
+  @ApiProperty({ example: '987654321' })
+  valor!: string;
+
+  @ApiProperty()
+  principal!: boolean;
+}
+
+export class PersonaDetalleDto extends PersonaDto {
+  @ApiProperty({ type: [RolDto] })
+  roles!: RolDto[];
+
+  @ApiProperty({ type: [ContactoDto] })
+  contactos!: ContactoDto[];
+}
+
+export class PrellenadoDto extends DenominacionDto {}
+
+export class BusquedaDto {
+  @ApiProperty()
+  encontrada!: boolean;
+
+  @ApiPropertyOptional({ type: PersonaDto, description: 'Solo si `encontrada` es verdadero' })
+  persona?: PersonaDto;
+
+  @ApiPropertyOptional({
+    type: PrellenadoDto,
+    nullable: true,
+    description: 'Solo si no se encontró. Sugerencia editable de TR-IDN para DNI y RUC; nula si no hay datos',
+  })
+  prellenado?: PrellenadoDto | null;
+
+  @ApiPropertyOptional({ enum: AVISOS_PRELLENADO, description: 'Por qué no hubo prellenado: seguir con registro manual' })
+  aviso?: AvisoPrellenado;
+}
+
+export class RegistrarPersonaDto {
+  @ApiProperty({ enum: TIPOS_PERSONA })
+  tipo_persona!: TipoPersona;
+
+  @ApiProperty({ enum: TIPOS_DOCUMENTO_PERSONA })
+  tipo_documento!: string;
+
+  @ApiProperty({ example: '45781236' })
+  numero_documento!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 100, description: 'Obligatorio en NATURAL' })
+  nombres?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 60, description: 'Obligatorio en NATURAL' })
+  apellido_paterno?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 60 })
+  apellido_materno?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200, description: 'Obligatorio en JURIDICA (RUC 20)' })
+  razon_social?: string | null;
+
+  @ApiProperty({ example: '987654321', description: 'Celular principal: 9 dígitos, inicia con 9' })
+  celular!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, example: 'juana@vitrina.pe', description: 'Correo principal' })
+  correo?: string | null;
+}
+
+export class AsignarRolDto {
+  @ApiProperty({ enum: PRODUCTOS })
+  producto_codigo!: ProductoCodigo;
+
+  @ApiProperty({ enum: ROLES_PERSONA })
+  rol!: RolPersona;
+}
+
+export class RolAsignadoDto {
+  @ApiProperty({ description: 'Falso si la persona ya tenía vigente ese rol en el producto' })
+  asignado!: boolean;
+}
+
+export class ErrorPersonaDto {
+  @ApiProperty({ example: 'PERSONA_DUPLICADA' })
+  codigo!: string;
+
+  @ApiProperty()
+  mensaje!: string;
+
+  @ApiPropertyOptional({ enum: MOTIVOS_INVALIDEZ, description: 'Solo en DOCUMENTO_INVALIDO' })
+  motivo?: MotivoInvalidez;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Solo en PERSONA_DUPLICADA: la persona que ya tiene ese documento' })
+  persona_id?: string;
+}
+
+function denominacionDto(denominacion: DenominacionPersona): DenominacionDto {
+  return {
+    nombres: denominacion.nombres,
+    apellido_paterno: denominacion.apellidoPaterno,
+    apellido_materno: denominacion.apellidoMaterno,
+    razon_social: denominacion.razonSocial,
+  };
+}
+
+export function personaDto(persona: PersonaResumen): PersonaDto {
+  return {
+    id: persona.id,
+    tipo_persona: persona.tipoPersona,
+    tipo_documento: persona.tipoDocumento,
+    numero_documento: persona.numeroDocumento,
+    ...denominacionDto(persona),
+    activo: persona.activo,
+  };
+}
+
+export function personaDetalleDto(persona: PersonaDetalle): PersonaDetalleDto {
+  return {
+    ...personaDto(persona),
+    roles: persona.roles.map(({ productoCodigo, rol, desde, hasta }) => ({ producto_codigo: productoCodigo, rol, desde, hasta })),
+    contactos: persona.contactos.map(({ id, tipo, valor, principal }) => ({ id, tipo, valor, principal })),
+  };
+}
+
+function prellenadoDto(prellenado: Prellenado | null): PrellenadoDto | null {
+  return prellenado === null ? null : denominacionDto(prellenado);
+}
+
+export function busquedaDto(resultado: ResultadoBusqueda): BusquedaDto {
+  if (resultado.encontrada) return { encontrada: true, persona: personaDto(resultado.persona) };
+  const sinPersona = { encontrada: false, prellenado: prellenadoDto(resultado.prellenado) };
+  return resultado.aviso === undefined ? sinPersona : { ...sinPersona, aviso: resultado.aviso };
+}

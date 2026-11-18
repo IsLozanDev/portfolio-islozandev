@@ -82,12 +82,7 @@ export class Persona extends AggregateRoot {
       tipo_persona: datos.tipoPersona,
       tipo_documento: datos.documento.tipo,
     };
-    persona.raise({
-      eventType: EVENTOS_PER.registrada,
-      aggregateType: AGREGADO_PERSONA,
-      schemaVersion: VERSION_ESQUEMA_PER,
-      payload,
-    });
+    persona.publicar(EVENTOS_PER.registrada, payload);
     return persona;
   }
 
@@ -100,12 +95,7 @@ export class Persona extends AggregateRoot {
     if (this.tieneRolVigente(productoCodigo, rol)) return false;
     this.props.roles.push({ productoCodigo, rol, desde, hasta: null });
     const payload: PersonaRolAsignado = { persona_id: this.id, producto_codigo: productoCodigo, rol, desde };
-    this.raise({
-      eventType: EVENTOS_PER.rolAsignado,
-      aggregateType: AGREGADO_PERSONA,
-      schemaVersion: VERSION_ESQUEMA_PER,
-      payload,
-    });
+    this.publicar(EVENTOS_PER.rolAsignado, payload);
     return true;
   }
 
@@ -153,6 +143,10 @@ export class Persona extends AggregateRoot {
     return this.props.roles.some(
       (asignado) => asignado.productoCodigo === productoCodigo && asignado.rol === rol && estaVigente(asignado),
     );
+  }
+
+  private publicar(eventType: string, payload: PersonaRegistrada | PersonaRolAsignado): void {
+    this.raise({ eventType, aggregateType: AGREGADO_PERSONA, schemaVersion: VERSION_ESQUEMA_PER, payload });
   }
 }
 

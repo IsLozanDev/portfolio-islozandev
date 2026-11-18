@@ -81,6 +81,8 @@ RNF-001/002/003 (desempeño), 008 (idempotencia), 010 (aislamiento), 011 (cifrad
 ## Definición de terminado (DoD)
 Estructura hexagonal; pruebas de dominio e integración en CI; criterios GWT aprobados; migración reversible; `@Permiso` y OpenAPI; eventos por outbox; `nx affected` verde; probada en staging; horas reales registradas.
 
+Verificación local al cerrar un spec: solo los proyectos que tocó, con `npx nx run-many -t lint test -p <proyectos>`, y las migraciones pendientes del spec aplicadas en Supabase dev (`pnpm db:up:remoto` para `db/`, `pnpm db:up:supabase:remoto` para `supabase/migrations`). No se corre `nx affected -t lint test build` en local: lo corre el CI del PR y ahí se cumple «`nx affected` verde».
+
 ## Flujo de especificación (SDD)
 - `/spec` y `/spec-impl` (skills en `.agents/skills`). Cada spec es `specs/NN-slug.md`, estado `Draft` hasta que el usuario lo apruebe.
 - Lista y orden de specs: `docs/roadmap-specs.md`. Léelo antes de proponer o numerar un spec.

@@ -14,6 +14,7 @@ export default {
     '^@vitrina/plataforma/eventos$': '<rootDir>/../../libs/plataforma/eventos/src/index.ts',
     '^@vitrina/plataforma/auditoria$': '<rootDir>/../../libs/plataforma/auditoria/src/index.ts',
     '^@vitrina/plataforma/identidad$': '<rootDir>/../../libs/plataforma/identidad/src/index.ts',
+    '^@vitrina/plataforma/personas$': '<rootDir>/../../libs/plataforma/personas/src/index.ts',
     '^@vitrina/plataforma/observabilidad$': '<rootDir>/../../libs/plataforma/observabilidad/src/index.ts',
     '^@vitrina/plataforma/observabilidad-arranque$': '<rootDir>/../../libs/plataforma/observabilidad-arranque/src/index.ts',
     '^@vitrina/shared/util$': '<rootDir>/../../libs/shared/util/src/index.ts',

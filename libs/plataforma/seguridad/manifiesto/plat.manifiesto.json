@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -74,7 +74,10 @@
     { "codigo": "plat.identidad.consultar", "descripcion": "Consultar los datos de un DNI o RUC en el proveedor de identidad", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.identidad.cuota", "descripcion": "Ver la cuota mensual de consultas DNI/RUC del propio tenant", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.identidad.cuota_gestionar", "descripcion": "Ver y ajustar las cuotas de consultas de todos los tenants (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
-    { "codigo": "plat.identidad.proveedor", "descripcion": "Ver y editar la prioridad, el TTL, el timeout y el estado de los proveedores de identidad (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true }
+    { "codigo": "plat.identidad.proveedor", "descripcion": "Ver y editar la prioridad, el TTL, el timeout y el estado de los proveedores de identidad (solo tenant operador)", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.persona.leer", "descripcion": "Buscar y ver personas del tenant", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.persona.registrar", "descripcion": "Registrar personas del tenant, con prellenado de DNI o RUC", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.persona.rol", "descripcion": "Asignar a una persona un rol de un producto suscrito", "alcance_minimo": "TENANT", "sensible": false }
   ],
   "roles_predefinidos": [
     {
