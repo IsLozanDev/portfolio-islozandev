@@ -4,4 +4,9 @@
   @if (sucursalActual(); as sucursal) {
     <p>Sucursal: <strong>{{ sucursal.nombre }}</strong></p>
   }
+  <ng-container *siPermiso="permisoCuotaIdentidad">
+    @if (tarjetaConsumo(); as tarjeta) {
+      <ng-container *ngComponentOutlet="tarjeta" />
+    }
+  </ng-container>
 </section>

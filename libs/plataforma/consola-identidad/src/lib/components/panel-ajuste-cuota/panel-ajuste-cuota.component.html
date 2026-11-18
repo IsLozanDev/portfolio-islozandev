@@ -1,0 +1,18 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="mensajes.titulo">
+    <div class="flex flex-col gap-3">
+      <p class="text-sm text-sobre-superficie-variante" data-contexto>{{ contexto }}</p>
+
+      @if (error(); as mensajeError) {
+        <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="panel">{{ mensajeError }}</p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.incluidas }}</mat-label>
+        <input matInput type="number" inputmode="numeric" step="1" formControlName="incluidas" [min]="detalle().consumidas" data-campo="incluidas" required />
+        <mat-error data-error="incluidas">{{ mensajeDeError(formulario.controls.incluidas.errors) }}</mat-error>
+      </mat-form-field>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

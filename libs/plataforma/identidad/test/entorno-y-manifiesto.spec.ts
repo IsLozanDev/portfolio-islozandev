@@ -36,11 +36,11 @@ describe('Entorno de identidad', () => {
   });
 });
 
-describe('Manifiesto PLAT 1.18.0: parte de idn (specs 28 y 29)', () => {
+describe('Manifiesto PLAT 1.19.0: parte de idn (specs 28, 29 y 30)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; alcance_minimo: string; sensible: boolean }[];
-    opciones: { permisos: string[] }[];
+    opciones: { codigo: string; padre: string | null; nombre: string; ruta?: string; icono: string; orden: number; permisos: string[] }[];
     roles_predefinidos: { codigo: string; permisos: string[] }[];
   }
   let manifiesto: Manifiesto;
@@ -49,8 +49,8 @@ describe('Manifiesto PLAT 1.18.0: parte de idn (specs 28 y 29)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.18.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
-    expect(manifiesto.version).toBe('1.18.0');
+  it('está en la versión 1.19.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
+    expect(manifiesto.version).toBe('1.19.0');
     const deIdn = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.identidad.'));
     expect(deIdn.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_IDN.validar, 'TENANT', false],
@@ -73,7 +73,11 @@ describe('Manifiesto PLAT 1.18.0: parte de idn (specs 28 y 29)', () => {
     expect(propietario?.permisos).toEqual(expect.arrayContaining([PERMISOS_IDN.validar, PERMISOS_IDN.consultar]));
   });
 
-  it('no agrega opción de menú', () => {
-    expect(manifiesto.opciones.flatMap((opcion) => opcion.permisos).filter((codigo) => codigo.startsWith('plat.identidad.'))).toEqual([]);
+  it('spec 30: dos opciones bajo Consola, cada una con su permiso; plat.identidad.cuota no tiene opción (va en el Inicio)', () => {
+    const deIdn = manifiesto.opciones.filter((opcion) => opcion.permisos.some((codigo) => codigo.startsWith('plat.identidad.')));
+    expect(deIdn.map(({ codigo, padre, nombre, ruta, icono, orden, permisos }) => [codigo, padre, nombre, ruta, icono, orden, permisos])).toEqual([
+      ['plat.consola.identidad_cuotas', 'plat.consola', 'Cuotas DNI/RUC', '/consola/identidad/cuotas', 'data_usage', 5, [PERMISOS_IDN.cuotaGestionar]],
+      ['plat.consola.identidad_proveedores', 'plat.consola', 'Proveedores DNI/RUC', '/consola/identidad/proveedores', 'badge', 6, [PERMISOS_IDN.proveedor]],
+    ]);
   });
 });

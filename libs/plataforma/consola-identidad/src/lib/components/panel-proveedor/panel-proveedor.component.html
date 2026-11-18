@@ -1,0 +1,53 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="mensajes.titulo">
+    <div class="flex flex-col gap-3">
+      <p class="text-sm text-sobre-superficie-variante" data-contexto>{{ proveedor().codigo }} · {{ proveedor().tiposDoc.join(', ') }}</p>
+
+      @if (error(); as mensajeError) {
+        <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="panel">{{ mensajeError }}</p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.prioridad }}</mat-label>
+        <input matInput type="number" inputmode="numeric" step="1" formControlName="prioridad" [min]="rangos.prioridad.minimo" data-campo="prioridad" required />
+        <mat-hint>{{ mensajes.ayudaPrioridad }}</mat-hint>
+        <mat-error data-error="prioridad">{{ mensajeDeError(formulario.controls.prioridad.errors) }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.ttlDias }}</mat-label>
+        <input
+          matInput
+          type="number"
+          inputmode="numeric"
+          step="1"
+          formControlName="ttlDias"
+          [min]="rangos.ttlDias.minimo"
+          [max]="rangos.ttlDias.maximo"
+          data-campo="ttlDias"
+          required
+        />
+        <mat-error data-error="ttlDias">{{ mensajeDeError(formulario.controls.ttlDias.errors) }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.timeoutMs }}</mat-label>
+        <input
+          matInput
+          type="number"
+          inputmode="numeric"
+          step="1"
+          formControlName="timeoutMs"
+          [min]="rangos.timeoutMs.minimo"
+          [max]="rangos.timeoutMs.maximo"
+          data-campo="timeoutMs"
+          required
+        />
+        <mat-error data-error="timeoutMs">{{ mensajeDeError(formulario.controls.timeoutMs.errors) }}</mat-error>
+      </mat-form-field>
+
+      <mat-slide-toggle formControlName="activo" data-campo="activo">{{ mensajes.activo }}</mat-slide-toggle>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

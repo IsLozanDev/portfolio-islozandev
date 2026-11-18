@@ -64,7 +64,7 @@ describeConDb('Tarea mensual de cuotas en el worker (PostgreSQL 16 y Redis 7)', 
     conexion = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
     cola = new Queue(COLA_CUOTAS, { connection: conexion });
     await cola.removeJobScheduler(PROGRAMADOR_CUOTAS);
-    // Definiciones del manifiesto PLAT 1.18.0.
+    // Definiciones del manifiesto PLAT 1.19.0.
     await consultar(`INSERT INTO seg.producto (codigo, nombre) VALUES ('PLAT', 'Plataforma') ON CONFLICT DO NOTHING`);
     await consultar(`INSERT INTO cfg.parametro_def (codigo, producto_codigo, descripcion, tipo, valor_defecto, alcance_maximo) VALUES
       ('plat.identidad.cuota_incluidas', 'PLAT', 'Consultas incluidas por plan', 'JSON', '{"BASICO": 200, "PRO": 500, "EMPRESA": 2000}', 'TENANT'),

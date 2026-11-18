@@ -2,7 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { authInterceptor, provideAuth } from '@vitrina/shared/auth';
-import { erroresHttpInterceptor, provideVolverA } from '@vitrina/shared/shell';
+import { erroresHttpInterceptor, provideOverlaysApilados, provideVolverA } from '@vitrina/shared/shell';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 import { iniciarInsigniasSoporte } from './iniciar-insignias-soporte';
@@ -14,6 +14,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, erroresHttpInterceptor])),
     provideAuth(environment.auth),
     provideVolverA(environment.origenesVolverA),
+    provideOverlaysApilados(),
     // Spec 18: solicitudes de soporte pendientes junto a «Soporte» en el menú.
     iniciarInsigniasSoporte(),
   ],

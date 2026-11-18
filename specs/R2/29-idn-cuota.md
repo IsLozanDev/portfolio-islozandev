@@ -1,6 +1,6 @@
 # SPEC 29 — Identidad: cuota mensual de consultas por tenant, aviso al umbral y administración de proveedores
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 09, SPEC 11, SPEC 12, SPEC 17a, SPEC 28
 > **Date:** 2026-11-16
 > **Objective:** Reemplazar `CuotaNula` por una cuota mensual por tenant en `idn.cuota`, reservada de forma atómica antes de cada llamada al proveedor, que responde 429 `CUOTA_AGOTADA` al llegar al 100 %, publica por outbox el aviso al umbral y el de agotada, se abre cada mes desde el worker y se consulta y ajusta por HTTP junto con la configuración de proveedores.

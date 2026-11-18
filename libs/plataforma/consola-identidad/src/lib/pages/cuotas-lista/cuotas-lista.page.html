@@ -1,0 +1,47 @@
+<section class="flex flex-col gap-4">
+  <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+
+  @if (soloOperador()) {
+    <vit-estado-vacio icono="lock" [titulo]="mensajeSoloOperador" />
+  } @else {
+    <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <mat-form-field class="sm:w-48" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ mensajes.mes }}</mat-label>
+        <mat-select data-campo="periodo" [value]="filtro().periodo" (selectionChange)="elegirPeriodo($event.value)">
+          @for (periodo of periodos; track periodo.valor) {
+            <mat-option [value]="periodo.valor">{{ periodo.etiqueta }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <vit-filtros class="min-w-0 flex-1" [placeholderBusqueda]="mensajes.buscarTenant" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+    </div>
+
+    @if (error(); as fallo) {
+      <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ fallo.message }}</p>
+    }
+
+    <vit-tabla
+      [columnas]="columnas"
+      [filas]="listado().filas"
+      [total]="listado().total"
+      [cargando]="cargando()"
+      [indicePagina]="filtro().pagina - 1"
+      [tamanosPagina]="tamanosPagina"
+      [textoVacio]="textoVacio()"
+      (pagina)="paginar($event)"
+    >
+      <ng-template vitCeldaTabla="consumo" let-cuota>
+        <div class="flex items-center gap-3">
+          <vit-barra-consumo class="w-24" [porcentaje]="cuota.porcentaje" [tono]="cuota.tonoEstado" [etiqueta]="mensajes.consumoDe + ' ' + cuota.tenant" />
+          <span class="whitespace-nowrap tabular-nums">{{ cuota.consumo }} · {{ cuota.porcentaje }} %</span>
+        </div>
+      </ng-template>
+      <ng-template vitAccionesFila let-cuota>
+        <a mat-icon-button [routerLink]="[cuota.tenantId, filtro().periodo]" [attr.aria-label]="mensajes.verDetalle + ': ' + cuota.tenant">
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      </ng-template>
+    </vit-tabla>
+  }
+</section>
