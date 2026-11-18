@@ -57,6 +57,8 @@ export default [
             comp('aud', 'kernel', 'seg', 'evt'),
             comp('obs', 'kernel', 'evt'),
             comp('idn', 'kernel', 'seg'),
+            // PL-10 dibuja IDN después de PER; PER lo consume para el prellenado (spec 31).
+            comp('per', 'kernel', 'seg', 'org', 'cat', 'idn'),
           ],
         },
       ],
