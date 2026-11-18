@@ -2,5 +2,5 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": { "outDir": "dist", "rootDir": "src", "composite": true, "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo" },
   "include": ["src/**/*.ts"],
-  "references": [{ "path": "../kernel" }]
+  "references": [{ "path": "../kernel" }, { "path": "../kernel-infra" }]
 }

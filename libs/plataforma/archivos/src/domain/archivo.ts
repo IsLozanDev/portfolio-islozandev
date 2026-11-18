@@ -18,7 +18,7 @@ export type MotivoRechazo = (typeof MOTIVOS_RECHAZO)[number];
 const NOMBRE_MAXIMO = 255;
 const ENTIDAD_ID_MAXIMO = 80;
 const FORMATO_ENTIDAD_TIPO = /^[A-Z][A-Z0-9_]{1,39}$/;
-const NUMERO_PRIMERA_VERSION = 1;
+export const NUMERO_PRIMERA_VERSION = 1;
 /** El archivo nace en versión 1, como el DEFAULT de `arc.archivo.version`: solicitar no publica evento. */
 const VERSION_AL_SOLICITAR = 1;
 

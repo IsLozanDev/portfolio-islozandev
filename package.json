@@ -110,6 +110,7 @@
     "bullmq": "6.3.11",
     "csv-parse": "7.0.3",
     "exceljs": "4.4.0",
+    "file-type": "22.3.0",
     "ioredis": "6.0.0",
     "jose": "6.2.12",
     "nestjs-pino": "5.3.1",
