@@ -260,6 +260,26 @@ describe('Tablas importables en solo lectura manual (spec 19d)', () => {
     expect(actual.publicados).toEqual([]);
   });
 
+  it.each(['TRIBUTO', 'TIPO_NOTA_CREDITO', 'TIPO_NOTA_DEBITO', 'TIPO_PRECIO', 'TIPO_OPERACION', 'LEYENDA'])(
+    'crear, actualizar y borrar un global de %s (spec 48) dan TABLA_SOLO_IMPORTACION',
+    async (tabla) => {
+      const catalogo = await actual.catalogo(tabla, 'GLOBAL');
+      const existente = await actual.itemGlobal(catalogo, '1000');
+      const escrituras = actual.items.escrituras;
+      const guardar = new GuardarItemGlobal(actual.dependencias);
+
+      await expect(guardar.crear({ catalogo: tabla, codigo: '1001', ...contenido(), actorId: ANA })).rejects.toThrow(TablaSoloImportacionError);
+      await expect(guardar.actualizar({ catalogo: tabla, itemId: existente.id, version: 0, ...contenido(), actorId: ANA })).rejects.toThrow(
+        TablaSoloImportacionError,
+      );
+      await expect(
+        new EliminarItemGlobal(actual.dependencias).ejecutar({ catalogo: tabla, itemId: existente.id, version: 0, actorId: ANA }),
+      ).rejects.toThrow(TablaSoloImportacionError);
+      expect(actual.items.escrituras).toBe(escrituras);
+      expect(actual.publicados).toEqual([]);
+    },
+  );
+
   it('el mensaje dice que la tabla cambia solo por importación', () => {
     expect(new TablaSoloImportacionError()).toMatchObject({ code: 'TABLA_SOLO_IMPORTACION', message: 'Esta tabla se actualiza solo por importación' });
   });
