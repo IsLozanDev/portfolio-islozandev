@@ -25,6 +25,7 @@ export const EVENTOS_AUDITADOS = [
   'unidad.inactivada',
   'persona.registrada',
   'persona.rol_asignado',
+  'persona.actualizada',
   'archivo.disponible',
   'archivo.en_cuarentena',
 ] as const;
@@ -110,6 +111,11 @@ export class AuditoriaConsumidor {
 
   @SuscribirEvento('persona.rol_asignado', { consumidor: CONSUMIDOR })
   personaRolAsignado(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('persona.actualizada', { consumidor: CONSUMIDOR })
+  personaActualizada(evento: EventoEntregado): Promise<void> {
     return this.auditarEvento.ejecutar(evento);
   }
 

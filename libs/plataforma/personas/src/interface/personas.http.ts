@@ -8,10 +8,10 @@ interface Respuesta {
 }
 
 const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => DomainError, number]> = [
-  // DOCUMENTO_INVALIDO, TIPO_DOCUMENTO_NO_ADMITIDO, TIPO_PERSONA_INCOHERENTE, CONTACTO_INVALIDO y PRODUCTO_NO_SUSCRITO.
+  // Documento, tipo de persona, contacto, dirección, ubigeo, celular principal y producto no suscrito.
   [ValidationError, HttpStatus.UNPROCESSABLE_ENTITY],
   [NotFoundError, HttpStatus.NOT_FOUND],
-  // PERSONA_DUPLICADA y el conflicto de versión.
+  // PERSONA_DUPLICADA, CONTACTO_DUPLICADO, VERSION_OBSOLETA y la carrera dentro de la transacción.
   [ConflictError, HttpStatus.CONFLICT],
 ];
 

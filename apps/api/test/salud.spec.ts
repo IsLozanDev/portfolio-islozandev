@@ -271,6 +271,22 @@ describe('api', () => {
     expect(paths['/v1/personas/{id}/roles'].post.security).toEqual([{ bearer: [] }]);
   });
 
+  it('las siete rutas de edición de personas están en OpenAPI con bearer auth y piden token (spec 32)', async () => {
+    const sinToken = await request(app.getHttpServer()).post('/v1/personas/0193f3a0-0000-7000-8000-000000000001/contactos').send({});
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    const seguridad = [
+      paths['/v1/personas/{id}'].patch,
+      paths['/v1/personas/{id}/contactos'].post,
+      paths['/v1/personas/{id}/contactos/{contactoId}'].patch,
+      paths['/v1/personas/{id}/contactos/{contactoId}'].delete,
+      paths['/v1/personas/{id}/direcciones'].post,
+      paths['/v1/personas/{id}/direcciones/{direccionId}'].patch,
+      paths['/v1/personas/{id}/direcciones/{direccionId}'].delete,
+    ].map((operacion) => operacion.security);
+    expect(seguridad).toEqual(Array(7).fill([{ bearer: [] }]));
+  });
+
   it('ArchivosModule queda cableado: /v1/archivos pide token y sus cuatro rutas están en OpenAPI con bearer auth (spec 33)', async () => {
     const sinToken = await request(app.getHttpServer()).get('/v1/archivos/0193f3a0-0000-7000-8000-0000000000a1');
     expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);

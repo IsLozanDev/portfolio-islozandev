@@ -4,9 +4,11 @@ import type { MotivoInvalidez } from '@vitrina/shared/util';
 import type { AvisoPrellenado, Prellenado, ResultadoBusqueda } from '../application/buscar-persona.js';
 import type { PersonaDetalle, PersonaResumen } from '../application/ports/persona.port.js';
 import { TIPOS_CONTACTO, type TipoContacto } from '../domain/contacto.js';
+import type { DenominacionPersona } from '../domain/denominacion.js';
 import { TIPOS_DOCUMENTO_PERSONA, type TipoDocumentoPersona } from '../domain/documento-identidad.js';
-import { TIPOS_PERSONA, type DenominacionPersona, type TipoPersona } from '../domain/persona.js';
+import { TIPOS_PERSONA, type TipoPersona } from '../domain/persona.js';
 import { ROLES_PERSONA, type RolPersona } from '../domain/rol-persona.js';
+import { DireccionDto, direccionDto } from './direcciones.dto.js';
 
 const MOTIVOS_INVALIDEZ: MotivoInvalidez[] = ['LONGITUD', 'PREFIJO', 'DIGITO_VERIFICADOR', 'CARACTERES'];
 const AVISOS_PRELLENADO: AvisoPrellenado[] = ['IDENTIDAD_NO_DISPONIBLE', 'CUOTA_AGOTADA', 'NO_ENCONTRADO_EN_IDENTIDAD'];
@@ -71,11 +73,34 @@ export class ContactoDto {
 }
 
 export class PersonaDetalleDto extends PersonaDto {
+  @ApiProperty({ minimum: 1, description: 'Versión de la persona: se envía al editar o borrar' })
+  version!: number;
+
   @ApiProperty({ type: [RolDto] })
   roles!: RolDto[];
 
   @ApiProperty({ type: [ContactoDto] })
   contactos!: ContactoDto[];
+
+  @ApiProperty({ type: [DireccionDto] })
+  direcciones!: DireccionDto[];
+}
+
+export class ActualizarDatosBasicosDto {
+  @ApiProperty({ minimum: 0, description: 'Versión de la persona que se leyó' })
+  version!: number;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 100, description: 'Solo en NATURAL; no admite vacío' })
+  nombres?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 60, description: 'Solo en NATURAL; no admite vacío' })
+  apellido_paterno?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 60, description: 'Solo en NATURAL; nulo lo borra' })
+  apellido_materno?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 200, description: 'Solo en JURIDICA; no admite vacío' })
+  razon_social?: string | null;
 }
 
 export class PrellenadoDto extends DenominacionDto {}
@@ -177,8 +202,10 @@ export function personaDto(persona: PersonaResumen): PersonaDto {
 export function personaDetalleDto(persona: PersonaDetalle): PersonaDetalleDto {
   return {
     ...personaDto(persona),
+    version: persona.version,
     roles: persona.roles.map(({ productoCodigo, rol, desde, hasta }) => ({ producto_codigo: productoCodigo, rol, desde, hasta })),
     contactos: persona.contactos.map(({ id, tipo, valor, principal }) => ({ id, tipo, valor, principal })),
+    direcciones: persona.direcciones.map(direccionDto),
   };
 }
 
