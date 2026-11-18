@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -90,12 +90,33 @@ const CASOS = [
   { migracion: '01j_idn.sql', esquema: 'idn', prueba: 'tests/01j_idn.test.sql' },
   { migracion: '01k_idn_cuota.sql', esquema: 'idn', prueba: 'tests/01k_idn_cuota.test.sql' },
   { migracion: '01l_per.sql', esquema: 'per', prueba: 'tests/01l_per.test.sql' },
+  { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
 ];
 
 const existeEstadoOutbox = async () =>
   (await ejecutar(urlDb, `SELECT to_regprocedure('sync.estado_outbox()') IS NOT NULL AS existe`)).rows[0].existe;
 
-const MIGRACION_SUPABASE = '20261102000000_seg_supabase_auth.sql';
+const MIGRACIONES_SUPABASE = ['20261102000000_seg_supabase_auth.sql', '20261118000000_arc_storage.sql'];
+
+const bucketArchivos = async () =>
+  (await ejecutar(urlDb, `SELECT public, file_size_limit, allowed_mime_types FROM storage.buckets WHERE id = 'archivos'`)).rows[0];
+
+// Con un objeto en el bucket el inverso de arc_storage se niega; la transacción se revierte.
+async function inversoBucketConObjetos() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(`INSERT INTO storage.objects (bucket_id, name) VALUES ('archivos', 'tenant/archivo/1')`);
+    return await c.query(await readFile(rutaSupabase('migrations/rollback/20261118000000_arc_storage.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 const existeEsquema = async (esquema) =>
   (await ejecutar(urlDb, `SELECT 1 FROM pg_namespace WHERE nspname = '${esquema}'`)).rowCount === 1;
@@ -383,6 +404,12 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01m_arc borra arc y se puede reaplicar.
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc.sql'), 'utf8'));
+    expect(await existeEsquema('arc')).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc.sql'), 'utf8'));
+    expect(await existeEsquema('arc')).toBe(true);
+
     // El inverso de 01l_per borra per y se puede reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per.sql'), 'utf8'));
     expect(await existeEsquema('per')).toBe(false);
@@ -529,20 +556,26 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01a_org_alta.sql'), 'utf8'));
     expect(await objetosAlta()).toHaveLength(5);
 
-    // supabase/migrations necesita auth.users y los roles de Supabase.
+    // supabase/migrations necesita auth.users, storage y los roles de Supabase.
     const dirSupabase = rutaSupabase('migrations');
     await ejecutar(urlDb, await readFile(ruta('./fixtures/simular-supabase.sql'), 'utf8'));
-    expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual([MIGRACION_SUPABASE]);
+    expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual(MIGRACIONES_SUPABASE);
     await ejecutar(urlDb, await readFile(rutaSupabase('tests/seg_supabase_auth.test.sql'), 'utf8'));
-    expect(await bajar({ url: urlDb, dir: dirSupabase })).toEqual([MIGRACION_SUPABASE]);
+    // El bucket de TR-ARC nace privado, con 25 MB y los 8 MIME de las categorías; con objetos no se revierte.
+    expect(await bucketArchivos()).toMatchObject({ public: false, file_size_limit: '26214400' });
+    expect((await bucketArchivos()).allowed_mime_types).toHaveLength(8);
+    expect(await inversoBucketConObjetos()).toBe('55006');
+    expect(await bajar({ url: urlDb, dir: dirSupabase })).toEqual([...MIGRACIONES_SUPABASE].reverse());
     expect(await triggersAuth()).toEqual([]);
+    expect(await bucketArchivos()).toBeUndefined();
 
     expect(await bajar({ url: urlDb, dir })).toEqual(expect.arrayContaining(migraciones));
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(false);
 
     expect(await subir({ url: urlDb, dir })).toEqual(expect.arrayContaining(migraciones));
     for (const { esquema } of CASOS) expect(await existeEsquema(esquema)).toBe(true);
-    expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual([MIGRACION_SUPABASE]);
+    expect(await subir({ url: urlDb, dir: dirSupabase })).toEqual(MIGRACIONES_SUPABASE);
     expect(await triggersAuth()).toEqual(['trg_auth_usuario_correo', 'trg_auth_usuario_creado']);
+    expect(await bucketArchivos()).toBeDefined();
   }, TIMEOUT_MS);
 });
