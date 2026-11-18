@@ -1,6 +1,6 @@
 # SPEC 30 — Identidad: consola de cuotas y proveedores DNI/RUC, y tarjeta de consumo en admin
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 29, SPEC 17b, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d
 > **Date:** 2026-11-16
 > **Objective:** Dar en `plataforma-consola` la lista de cuotas DNI/RUC por tenant y mes, su detalle con ajuste de incluidas del mes actual y la edición de proveedores, y en el Inicio de `plataforma-admin` una tarjeta con el consumo del propio tenant.

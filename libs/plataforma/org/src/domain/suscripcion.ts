@@ -3,6 +3,9 @@ import { esDiaDeAviso, type DiasAviso } from './aviso-vencimiento.js';
 import { diasEntre, type FechaCalendario } from './fecha-calendario.js';
 import { textoOpcional } from './texto.js';
 
+// TR-RN-006: la suscripción de un producto en un tenant es única y tiene un estado, un plan, un límite de sucursales y usuarios, y una fecha de vigencia. Se publica evento `suscripcion.cambiada` al crear o cambiar. Se publica `suscripcion.por_vencer` si hoy toca aviso (7, 3 o 1 días antes). Se publica `suscripcion.vencida` si la fecha superó `vigente_hasta`.
+
+// TODO: La lista de productos codigo y/o descripción debería traer de una lista, no deberia estar hardcode, pero por ahora no hay un catálogo de productos en la plataforma. Que pasaria si tengo mas productos en el futuro? Se debería crear un catálogo de productos y traer de ahi. Por ahora se deja hardcodeado.
 export const PRODUCTOS = ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] as const;
 export type ProductoCodigo = (typeof PRODUCTOS)[number];
 

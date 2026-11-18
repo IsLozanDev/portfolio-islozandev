@@ -10,6 +10,7 @@ import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { salDocumento, usarLoggerDeObservabilidad } from '@vitrina/plataforma/observabilidad';
 import { ENTIDADES_ORG, registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/parametros';
+import { ENTIDADES_PER, registrarEsquemasPer } from '@vitrina/plataforma/personas';
 import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
@@ -25,7 +26,7 @@ const salDocumentos = salDocumento(config);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_PER],
 });
 await dataSource.initialize();
 
@@ -36,6 +37,7 @@ registrarEsquemasCfg(validator);
 registrarEsquemasSeq(validator);
 registrarEsquemasCat(validator);
 registrarEsquemasIdn(validator);
+registrarEsquemasPer(validator);
 
 const app = await NestFactory.create(
   AppModule.register({

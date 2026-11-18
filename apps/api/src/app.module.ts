@@ -30,6 +30,7 @@ import {
   TenantRepositorioTypeOrm,
 } from '@vitrina/plataforma/org';
 import { DefinicionesRepositorioTypeOrm, PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
+import { PersonasModule, VerificadorReferenciasPer } from '@vitrina/plataforma/personas';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
@@ -100,6 +101,27 @@ export class AppModule {
         inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
       },
     });
+    // La misma referencia en AppModule y PersonasModule: una sola instancia de CatalogosModule (su Redis y su cola).
+    const catalogosModulo = CatalogosModule.register({
+      redisUrl: seguridad.redisUrl,
+      verificadorOperador: {
+        useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+          new VerificadorOperadorOrg(
+            new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
+          ),
+        inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+      },
+      // Spec 31: un tipo de documento usado por personas no se borra de TIPO_DOC_IDENTIDAD.
+      verificadoresReferencias: {
+        useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) => [new VerificadorReferenciasPer(unidadDeTrabajo, contexto)],
+        inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+      },
+      imports: [parametros],
+      parametrosCalendario: {
+        useFactory: (parametroPort: ParametroPort) => new ParametrosCalendarioCfg(parametroPort),
+        inject: [PARAMETRO_PORT],
+      },
+    });
     return {
       module: AppModule,
       imports: [
@@ -116,24 +138,11 @@ export class AppModule {
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         parametros,
         CorrelativosModule.register(),
-        CatalogosModule.register({
-          redisUrl: seguridad.redisUrl,
-          verificadorOperador: {
-            useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
-              new VerificadorOperadorOrg(
-                new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
-              ),
-            inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
-          },
-          imports: [parametros],
-          parametrosCalendario: {
-            useFactory: (parametroPort: ParametroPort) => new ParametrosCalendarioCfg(parametroPort),
-            inject: [PARAMETRO_PORT],
-          },
-        }),
+        catalogosModulo,
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
         identidadModulo,
+        PersonasModule.register({ imports: [catalogosModulo, identidadModulo] }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).

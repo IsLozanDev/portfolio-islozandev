@@ -259,4 +259,14 @@ describe('api', () => {
     expect(paths['/v1/identidad/{tipo}/{numero}'].get.security).toEqual([{ bearer: [] }]);
     expect(paths['/v1/identidad/{tipo}/{numero}/validez'].get.security).toEqual([{ bearer: [] }]);
   });
+
+  it('PersonasModule queda cableado: /v1/personas pide token y sus cuatro rutas están en OpenAPI con bearer auth (spec 31)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/personas/busqueda?tipo=DNI&numero=45781236');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    expect(paths['/v1/personas/busqueda'].get.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/personas'].post.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/personas/{id}'].get.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/personas/{id}/roles'].post.security).toEqual([{ bearer: [] }]);
+  });
 });
