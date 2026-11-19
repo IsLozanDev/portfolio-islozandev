@@ -39,6 +39,44 @@ describe('configuración del worker', () => {
     expect(() => cargarConfig({ ...ENV_MINIMO, ARC_LIMPIEZA_CRON: 'cada noche' })).toThrow('ARC_LIMPIEZA_CRON');
   });
 
+  test('antivirus (spec 34): por defecto eicar, clamd en el 3310, 60 s de respuesta, 5 s de conexión y barrido cada 5 minutos', () => {
+    expect(cargarConfig(ENV_MINIMO)).toMatchObject({
+      ARC_ANTIVIRUS: 'eicar',
+      CLAMAV_PORT: 3310,
+      CLAMAV_TIMEOUT_MS: 60_000,
+      CLAMAV_CONEXION_TIMEOUT_MS: 5000,
+      ARC_REENCOLADO_CRON: '*/5 * * * *',
+    });
+    expect(cargarConfig(ENV_MINIMO).CLAMAV_HOST).toBeUndefined();
+    expect(() => cargarConfig({ ...ENV_MINIMO, ARC_REENCOLADO_CRON: 'cada rato' })).toThrow('ARC_REENCOLADO_CRON');
+    expect(() => cargarConfig({ ...ENV_MINIMO, ARC_ANTIVIRUS: 'otro' })).toThrow('ARC_ANTIVIRUS');
+  });
+
+  test('con APP_ENV=production y eicar (o sin definir) el worker no arranca', () => {
+    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32) };
+
+    expect(() => cargarConfig(produccion)).toThrow('Variables de entorno inválidas: ARC_ANTIVIRUS: custom');
+    expect(() => cargarConfig({ ...produccion, ARC_ANTIVIRUS: 'eicar' })).toThrow('Variables de entorno inválidas: ARC_ANTIVIRUS: custom');
+    expect(cargarConfig({ ...produccion, ARC_ANTIVIRUS: 'clamav', CLAMAV_HOST: 'clamav.railway.internal' })).toMatchObject({
+      ARC_ANTIVIRUS: 'clamav',
+      CLAMAV_HOST: 'clamav.railway.internal',
+    });
+  });
+
+  test('en staging eicar no bloquea el arranque', () => {
+    const staging = { ...ENV_MINIMO, APP_ENV: 'staging', OBS_SAL_DOCUMENTO: 's'.repeat(32) };
+
+    expect(cargarConfig(staging).ARC_ANTIVIRUS).toBe('eicar');
+  });
+
+  test('clamav sin CLAMAV_HOST no arranca, en cualquier ambiente', () => {
+    expect(() => cargarConfig({ ...ENV_MINIMO, ARC_ANTIVIRUS: 'clamav' })).toThrow('Variables de entorno inválidas: CLAMAV_HOST: custom');
+    expect(cargarConfig({ ...ENV_MINIMO, ARC_ANTIVIRUS: 'clamav', CLAMAV_HOST: 'localhost', CLAMAV_PORT: '13310' })).toMatchObject({
+      CLAMAV_HOST: 'localhost',
+      CLAMAV_PORT: 13310,
+    });
+  });
+
   test('un valor inválido falla sin mostrar la URL con la clave', () => {
     const invocar = () => cargarConfig({ ...ENV_MINIMO, REDIS_URL: 'http://localhost', EVT_LOTE: '0' });
 

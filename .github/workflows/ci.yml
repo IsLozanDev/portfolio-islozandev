@@ -37,10 +37,30 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+      # Antivirus de TR-ARC (spec 34): las pruebas del adaptador real hablan con clamd por TCP. Etiqueta de versión
+      # menor fijada, nunca latest. El entrypoint de la imagen escribe en clamd.conf cada variable CLAMD_CONF_<Opción>:
+      # los tres límites quedan por encima de los 25 MB del bucket.
+      clamav:
+        image: clamav/clamav:1.5
+        env:
+          CLAMD_CONF_StreamMaxLength: 30M
+          CLAMD_CONF_MaxFileSize: 30M
+          CLAMD_CONF_MaxScanSize: 30M
+        ports:
+          - 3310:3310
+        options: >-
+          --health-cmd "clamdcheck.sh"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 30
+          --health-start-period 30s
     env:
       # Las pruebas de integración crean bases temporales solo si existe TEST_DATABASE_URL.
       TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       REDIS_URL: redis://localhost:6379
+      # Sin CLAMAV_HOST las pruebas con clamd real se saltan (describeConClamav).
+      CLAMAV_HOST: localhost
+      CLAMAV_PORT: 3310
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,6 +86,23 @@ jobs:
         run: |
           echo "NX_BASE=$(git rev-parse HEAD^1)" >> "$GITHUB_ENV"
           echo "NX_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      # clamd tarda en cargar las firmas. Tope de 5 minutos: 60 intentos cada 5 s.
+      - name: Comprobar y esperar clamd
+        run: |
+          limites=$(docker exec "${{ job.services.clamav.id }}" grep -cE '^(StreamMaxLength|MaxFileSize|MaxScanSize) 30M$' /etc/clamav/clamd.conf)
+          if [ "$limites" != "3" ]; then
+            echo "clamd.conf no tiene los tres límites en 30M"
+            exit 1
+          fi
+          for intento in $(seq 1 60); do
+            if exec 3<>/dev/tcp/localhost/3310 && printf 'zPING\0' >&3 && read -r -d '' -t 5 respuesta <&3 && [ "$respuesta" = "PONG" ]; then
+              echo "clamd listo (intento $intento)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "clamd no respondió PONG en 5 minutos"
+          exit 1
       - run: pnpm nx affected -t lint test build
 
   # TR-RNF-113 (spec 21): en un PR, solo sus commits; en main, todo el historial. Reglas y excepción en .gitleaks.toml.

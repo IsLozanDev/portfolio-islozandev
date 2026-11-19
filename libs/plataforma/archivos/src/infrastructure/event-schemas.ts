@@ -7,7 +7,9 @@ const uuid = { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0
 const hashSha256 = { type: 'string', pattern: '^[0-9a-f]{64}$' };
 const entidadTipo = { type: 'string', pattern: '^[A-Z][A-Z0-9_]{1,39}$' };
 const entidadId = { type: 'string', minLength: 1, maxLength: 80 };
-const textoCorto = { type: 'string', minLength: 1, maxLength: 100 };
+/** Largo máximo de los textos cortos de los eventos; el antivirus recorta la firma a este largo. */
+export const LARGO_MAXIMO_TEXTO_CORTO = 100;
+const textoCorto = { type: 'string', minLength: 1, maxLength: LARGO_MAXIMO_TEXTO_CORTO };
 const enteroPositivo = { type: 'integer', minimum: 1 };
 
 const objeto = (properties: Record<string, object>) => ({

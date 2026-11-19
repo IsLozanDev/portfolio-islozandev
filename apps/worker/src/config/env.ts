@@ -1,7 +1,10 @@
+import { camposEntornoAntivirus, exigirAntivirusReal } from '@vitrina/plataforma/archivos';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { z } from 'zod';
 
 const entero = (defecto: number) => z.coerce.number().int().positive().default(defecto);
+
+const cron = (defecto: string) => z.string().trim().regex(/^\S+( \S+){4}$/).default(defecto);
 
 const esquema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -13,7 +16,10 @@ const esquema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1),
   ARC_BUCKET: z.string().min(1).default('archivos'),
   // Limpieza diaria de cargas que nunca se confirmaron, en America/Lima (cron de 5 campos).
-  ARC_LIMPIEZA_CRON: z.string().trim().regex(/^\S+( \S+){4}$/).default('45 3 * * *'),
+  ARC_LIMPIEZA_CRON: cron('45 3 * * *'),
+  // Spec 34: antivirus del análisis (ARC_ANTIVIRUS, CLAMAV_*) y barrido de análisis atascados, en America/Lima.
+  ...camposEntornoAntivirus,
+  ARC_REENCOLADO_CRON: cron('*/5 * * * *'),
   EVT_INTERVALO_MS: entero(1000),
   // TR-RN-035: el relay no lee filas más nuevas que el margen.
   EVT_MARGEN_SEG: z.coerce.number().int().nonnegative().default(2),
@@ -28,10 +34,10 @@ const esquema = z.object({
   // Spec 18: cada cuánto se vencen los accesos de soporte (el corte real es membresia.hasta, al instante).
   SOPORTE_VENCIMIENTO_CADA_MS: entero(60_000),
   // Spec 20b: verificación diaria de la cadena de auditoría, en America/Lima (cron de 5 campos).
-  AUD_VERIFICACION_CRON: z.string().trim().regex(/^\S+( \S+){4}$/).default('30 3 * * *'),
+  AUD_VERIFICACION_CRON: cron('30 3 * * *'),
   // Spec 21: logs, sal de documentos y ambiente (TR-RNF-026, TR-RNF-111).
   ...camposEntornoObservabilidad,
-}).superRefine(exigirSalFueraDeLocal);
+}).superRefine(exigirSalFueraDeLocal).superRefine(exigirAntivirusReal);
 
 export type Config = z.infer<typeof esquema>;
 

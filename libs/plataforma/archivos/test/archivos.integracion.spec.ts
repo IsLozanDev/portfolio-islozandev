@@ -3,6 +3,7 @@ import { AlsTenantContext, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma
 import { DataSource } from 'typeorm';
 import { Archivo, type ContenidoAnalizado } from '../src/domain/archivo.js';
 import { CODIGOS_CATEGORIA } from '../src/domain/categoria.js';
+import { ArchivosAtascadosSql } from '../src/infrastructure/typeorm/archivos-atascados.sql.js';
 import { RepositorioArchivosTypeOrm } from '../src/infrastructure/typeorm/archivos.repositorio.js';
 import { CargasPendientesSql } from '../src/infrastructure/typeorm/cargas-pendientes.sql.js';
 import { ENTIDADES_ARC } from '../src/infrastructure/typeorm/entidades.js';
@@ -230,5 +231,37 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     expect(vencidas.map((carga) => carga.archivoId)).not.toContain(enAnalisis.id);
     expect(await cargasPendientes.listarVencidas(ayer, LIMITE_LIMPIEZA)).toEqual([]);
     expect(await cargasPendientes.listarVencidas(manana, 1)).toHaveLength(1);
+  });
+
+  it('ArchivosAtascadosSql lista los EN_ANALISIS de todos los tenants por la fecha en que pasaron a ese estado (spec 34)', async () => {
+    const pendiente = await solicitarContrato(tenantA);
+    const confirmados: Archivo[] = [];
+    for (const tenantId of [tenantA, tenantB]) {
+      const archivo = await solicitarContrato(tenantId);
+      await enTenant(tenantId, async () => {
+        archivo.confirmarCarga();
+        await repositorio.guardar(archivo);
+      });
+      confirmados.push(archivo);
+    }
+    const [deA, deB] = confirmados;
+    const atascados = new ArchivosAtascadosSql(dataSource);
+    const manana = new Date(Date.now() + UN_DIA_MS);
+    const ayer = new Date(Date.now() - UN_DIA_MS);
+
+    const enAnalisis = await atascados.listarEnAnalisisAntesDe(manana, LIMITE_LIMPIEZA);
+
+    expect(enAnalisis).toEqual(expect.arrayContaining([
+      { tenantId: tenantA, archivoId: deA.id },
+      { tenantId: tenantB, archivoId: deB.id },
+    ]));
+    expect(enAnalisis.map((trabajo) => trabajo.archivoId)).not.toContain(pendiente.id);
+    expect(await atascados.listarEnAnalisisAntesDe(ayer, LIMITE_LIMPIEZA)).toEqual([]);
+    expect(await atascados.listarEnAnalisisAntesDe(manana, 1)).toHaveLength(1);
+    // El barrido cuenta desde actualizado_en: el ORM la mueve al guardar el paso a EN_ANALISIS.
+    const [{ movida }] = (await dataSource.query('SELECT actualizado_en > creado_en AS movida FROM arc.archivo WHERE id = $1', [deA.id])) as [
+      { movida: boolean },
+    ];
+    expect(movida).toBe(true);
   });
 });

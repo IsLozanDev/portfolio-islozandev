@@ -91,7 +91,20 @@ const CASOS = [
   { migracion: '01k_idn_cuota.sql', esquema: 'idn', prueba: 'tests/01k_idn_cuota.test.sql' },
   { migracion: '01l_per.sql', esquema: 'per', prueba: 'tests/01l_per.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
+  { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
 ];
+
+// Función e índice que agrega 01m_arc_analisis (2 en total).
+const objetosAnalisis = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'arc.archivos_en_analisis_atascados' AS o
+        WHERE to_regprocedure('arc.archivos_en_analisis_atascados(timestamptz, integer)') IS NOT NULL
+       UNION ALL SELECT indexname FROM pg_indexes WHERE schemaname = 'arc' AND indexname = 'ix_archivo_en_analisis'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
 
 const existeEstadoOutbox = async () =>
   (await ejecutar(urlDb, `SELECT to_regprocedure('sync.estado_outbox()') IS NOT NULL AS existe`)).rows[0].existe;
@@ -404,11 +417,19 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01m_arc_analisis deja arc como lo dejó 01m_arc y se puede reaplicar. Va antes que el de 01m_arc.
+    expect(await objetosAnalisis()).toHaveLength(2);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_analisis.sql'), 'utf8'));
+    expect(await objetosAnalisis()).toEqual([]);
+    expect(await existeEsquema('arc')).toBe(true);
+
     // El inverso de 01m_arc borra arc y se puede reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc.sql'), 'utf8'));
     expect(await existeEsquema('arc')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc.sql'), 'utf8'));
     expect(await existeEsquema('arc')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc_analisis.sql'), 'utf8'));
+    expect(await objetosAnalisis()).toHaveLength(2);
 
     // El inverso de 01l_per borra per y se puede reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per.sql'), 'utf8'));

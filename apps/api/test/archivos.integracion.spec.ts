@@ -2,25 +2,31 @@ import 'reflect-metadata';
 import { Global, Module, type CanActivate, type ExecutionContext, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { createServer, type AddressInfo } from 'node:net';
 import { DataSource } from 'typeorm';
 import {
   ALMACEN_ARCHIVOS,
   AlmacenArchivosMemoria,
   AnalizarArchivo,
+  AntivirusNoDisponibleError,
   ArchivosModule,
   COLA_ANALISIS_ABIERTA,
   ENTIDADES_ARC,
   registrarEsquemasArc,
+  type OpcionesAntivirus,
   type TrabajoAnalisis,
 } from '@vitrina/plataforma/archivos';
 import { AuditoriaModule, ENTIDADES_AUDITORIA } from '@vitrina/plataforma/auditoria';
 import { InMemoryEventSchemaValidator, KernelInfraModule, SystemClock, TENANT_CONTEXT, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { ALCANCE_ACTOR, ContextoTenantInterceptor, DIRECTORIO_SEG } from '@vitrina/plataforma/seguridad';
+import { ANTIVIRUS_CLAMAV, describeConDbYClamav } from './support/clamav.js';
 import { crearBaseTemporal, describeConDb, type BaseTemporal } from './support/temp-db.js';
 
 const CABECERA_TENANT = 'x-prueba-tenant';
 const USUARIO = uuidV7();
 const OPCIONES_SUPABASE = { supabase: { url: 'https://prueba.supabase.co', secretKey: 'sb_secret_prueba' }, bucket: 'archivos' };
+/** No se abre: la cola se reemplaza por una en memoria. */
+const REDIS_URL = 'redis://127.0.0.1:6379';
 const CODIFICADOR = new TextEncoder();
 const PDF = CODIFICADOR.encode('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
 const PNG = Uint8Array.from([
@@ -64,6 +70,35 @@ class ColaEnMemoria {
     if (!this.trabajos.some((pendiente) => pendiente.archivoId === trabajo.archivoId)) this.trabajos.push(trabajo);
     return Promise.resolve();
   }
+}
+
+const abrirDataSource = (url: string): Promise<DataSource> =>
+  new DataSource({ type: 'postgres', url, entities: [...ENTIDADES_ARC, ...ENTIDADES_AUDITORIA] }).initialize();
+
+/** La API y el análisis del worker en una sola app, con el almacén y la cola en memoria y el antivirus dado. */
+async function crearApp(dataSource: DataSource, almacen: AlmacenArchivosMemoria, cola: ColaEnMemoria, antivirus: OpcionesAntivirus): Promise<INestApplication> {
+  const validator = new InMemoryEventSchemaValidator();
+  registrarEsquemasArc(validator);
+  const modulo = await Test.createTestingModule({
+    imports: [
+      KernelInfraModule.register({ dataSource, validator }),
+      SeguridadDePrueba,
+      AuditoriaModule.registrarApi(),
+      ArchivosModule.register({ ...OPCIONES_SUPABASE, redisUrl: REDIS_URL }),
+      ArchivosModule.registrarWorker({ ...OPCIONES_SUPABASE, dataSource, redisUrl: REDIS_URL, antivirus }),
+    ],
+  })
+    .overrideProvider(ALMACEN_ARCHIVOS)
+    .useValue(almacen)
+    .overrideProvider(COLA_ANALISIS_ABIERTA)
+    .useValue({ cola, cerrar: () => Promise.resolve() })
+    .compile();
+  const app = modulo.createNestApplication({ logger: false });
+  app.useGlobalGuards(new TenantDeCabecera());
+  app.useGlobalInterceptors(new ContextoTenantInterceptor(app.get(TENANT_CONTEXT)));
+  app.setGlobalPrefix('v1');
+  await app.init();
+  return app;
 }
 
 describeConDb('HTTP /v1/archivos contra PostgreSQL 16 (TR-CA-199 a 201, 204 y 205)', () => {
@@ -111,32 +146,10 @@ describeConDb('HTTP /v1/archivos contra PostgreSQL 16 (TR-CA-199 a 201, 204 y 20
 
   beforeAll(async () => {
     base = await crearBaseTemporal();
-    dataSource = new DataSource({ type: 'postgres', url: base.url, entities: [...ENTIDADES_ARC, ...ENTIDADES_AUDITORIA] });
-    await dataSource.initialize();
-    const validator = new InMemoryEventSchemaValidator();
-    registrarEsquemasArc(validator);
+    dataSource = await abrirDataSource(base.url);
     almacen = new AlmacenArchivosMemoria(new SystemClock());
     cola = new ColaEnMemoria();
-
-    const modulo = await Test.createTestingModule({
-      imports: [
-        KernelInfraModule.register({ dataSource, validator }),
-        SeguridadDePrueba,
-        AuditoriaModule.registrarApi(),
-        ArchivosModule.register({ ...OPCIONES_SUPABASE, redisUrl: 'redis://127.0.0.1:6379' }),
-        ArchivosModule.registrarWorker({ ...OPCIONES_SUPABASE, dataSource }),
-      ],
-    })
-      .overrideProvider(ALMACEN_ARCHIVOS)
-      .useValue(almacen)
-      .overrideProvider(COLA_ANALISIS_ABIERTA)
-      .useValue({ cola, cerrar: () => Promise.resolve() })
-      .compile();
-    app = modulo.createNestApplication({ logger: false });
-    app.useGlobalGuards(new TenantDeCabecera());
-    app.useGlobalInterceptors(new ContextoTenantInterceptor(app.get(TENANT_CONTEXT)));
-    app.setGlobalPrefix('v1');
-    await app.init();
+    app = await crearApp(dataSource, almacen, cola, { motor: 'eicar' });
   });
 
   afterAll(async () => {
@@ -240,5 +253,116 @@ describeConDb('HTTP /v1/archivos contra PostgreSQL 16 (TR-CA-199 a 201, 204 y 20
 
     expect([respuesta.status, respuesta.body.codigo]).toEqual([422, 'TAMANO_EXCEDIDO']);
     expect(await consultar('SELECT count(*)::int AS filas FROM arc.archivo')).toEqual(antes);
+  });
+});
+
+/** Un puerto local donde nadie escucha: se abre un servidor para reservarlo y se cierra. */
+function puertoCerrado(): Promise<number> {
+  return new Promise((resolver) => {
+    const servidor = createServer();
+    servidor.listen(0, '127.0.0.1', () => {
+      const { port } = servidor.address() as AddressInfo;
+      servidor.close(() => resolver(port));
+    });
+  });
+}
+
+describeConDbYClamav('Análisis de /v1/archivos con clamd real (spec 34, TR-RNF-114)', () => {
+  let base: BaseTemporal;
+  let dataSource: DataSource;
+  let almacen: AlmacenArchivosMemoria;
+  let cola: ColaEnMemoria;
+  const apps: INestApplication[] = [];
+  const tenant = uuidV7();
+  const ADJUNTO_EICAR = { categoria: 'ADJUNTO_SOPORTE', mime: 'text/plain', nombre_original: 'prueba.txt', entidad_tipo: 'TICKET' };
+
+  const pedir = (app: INestApplication) => ({
+    get: (ruta: string) => request(app.getHttpServer()).get(`/v1/archivos${ruta}`).set(CABECERA_TENANT, tenant),
+    post: (ruta: string, cuerpo: object = {}) => request(app.getHttpServer()).post(`/v1/archivos${ruta}`).set(CABECERA_TENANT, tenant).send(cuerpo),
+  });
+  const eventosDe = (archivoId: string) =>
+    dataSource.query('SELECT event_type, payload FROM sync.outbox WHERE aggregate_id = $1 ORDER BY seq', [archivoId]) as Promise<
+      { event_type: string; payload: { firma?: string } }[]
+    >;
+
+  async function levantar(antivirus: OpcionesAntivirus): Promise<INestApplication> {
+    const app = await crearApp(dataSource, almacen, cola, antivirus);
+    apps.push(app);
+    return app;
+  }
+
+  /** Pide la URL, sube y confirma: el archivo queda EN_ANALISIS con su trabajo en la cola. */
+  async function subirYConfirmar(app: INestApplication, contenido: Uint8Array, cambios: object = {}): Promise<string> {
+    const solicitada = await pedir(app).post('/cargas', {
+      categoria: 'DOCUMENTO',
+      nombre_original: 'contrato.pdf',
+      tamano: contenido.byteLength,
+      mime: 'application/pdf',
+      entidad_tipo: 'PRUEBA_SENSIBLE',
+      entidad_id: 'E-1',
+      ...cambios,
+    });
+    expect(solicitada.status).toBe(201);
+    almacen.subirConUrl(solicitada.body.carga.url, contenido);
+    const confirmada = await pedir(app).post(`/${solicitada.body.archivo_id}/confirmar`);
+    expect([confirmada.status, confirmada.body.estado]).toEqual([200, 'EN_ANALISIS']);
+    return solicitada.body.archivo_id;
+  }
+
+  const analizarPendientes = async (app: INestApplication) => {
+    for (const trabajo of cola.trabajos.splice(0)) await app.get(AnalizarArchivo, { strict: false }).ejecutar(trabajo);
+  };
+
+  beforeAll(async () => {
+    base = await crearBaseTemporal();
+    dataSource = await abrirDataSource(base.url);
+    almacen = new AlmacenArchivosMemoria(new SystemClock());
+    cola = new ColaEnMemoria();
+  });
+
+  afterAll(async () => {
+    for (const app of apps) await app.close();
+    await dataSource?.destroy();
+    await base?.borrar();
+  });
+
+  it('TR-CA-201: la cadena EICAR queda en CUARENTENA con la firma de ClamAV, el objeto en Storage y la descarga en 409', async () => {
+    const app = await levantar(ANTIVIRUS_CLAMAV);
+    const archivoId = await subirYConfirmar(app, CODIFICADOR.encode(CADENA_EICAR), ADJUNTO_EICAR);
+
+    await analizarPendientes(app);
+
+    const descarga = await pedir(app).get(`/${archivoId}/descarga`);
+    const [evento, ...otros] = await eventosDe(archivoId);
+    expect([descarga.status, descarga.body]).toMatchObject([409, { codigo: 'ARCHIVO_NO_DISPONIBLE', estado: 'CUARENTENA' }]);
+    expect(almacen.existe(`${tenant}/${archivoId}/1`)).toBe(true);
+    expect([evento.event_type, otros]).toEqual(['archivo.en_cuarentena', []]);
+    // El nombre exacto cambia entre versiones de las firmas; no es el del analizador de prueba ni el de relleno.
+    expect(evento.payload.firma).toMatch(/EICAR/i);
+    expect(['EICAR-Test-File', 'DESCONOCIDA']).not.toContain(evento.payload.firma);
+  });
+
+  it('un PDF limpio queda DISPONIBLE con archivo.disponible', async () => {
+    const app = await levantar(ANTIVIRUS_CLAMAV);
+    const archivoId = await subirYConfirmar(app, PDF);
+
+    await analizarPendientes(app);
+
+    const estado = await pedir(app).get(`/${archivoId}`);
+    expect(estado.body).toMatchObject({ estado: 'DISPONIBLE', bytes: PDF.byteLength });
+    expect((await eventosDe(archivoId)).map((evento) => evento.event_type)).toEqual(['archivo.disponible']);
+  });
+
+  it('con clamd inalcanzable el análisis falla con AntivirusNoDisponibleError y el archivo sigue EN_ANALISIS, sin evento', async () => {
+    const app = await levantar({ ...ANTIVIRUS_CLAMAV, host: '127.0.0.1', puerto: await puertoCerrado() });
+    const archivoId = await subirYConfirmar(app, PDF);
+    const [trabajo] = cola.trabajos.splice(0);
+
+    const fallo = await app.get(AnalizarArchivo, { strict: false }).ejecutar(trabajo).catch((error: unknown) => error);
+
+    expect(fallo).toBeInstanceOf(AntivirusNoDisponibleError);
+    expect(fallo).toMatchObject({ codigoOrigen: 'CONEXION' });
+    expect((await pedir(app).get(`/${archivoId}`)).body).toMatchObject({ estado: 'EN_ANALISIS' });
+    expect(await eventosDe(archivoId)).toEqual([]);
   });
 });
