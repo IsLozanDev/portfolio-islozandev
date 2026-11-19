@@ -3,7 +3,7 @@ import { PERMISOS_ARC } from '../src/domain/permisos-arc.js';
 
 const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json', import.meta.url);
 
-describe('Manifiesto PLAT 1.21.0: parte de arc (spec 33)', () => {
+describe('Manifiesto PLAT 1.23.0: parte de arc (specs 33 y 35)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; descripcion: string; alcance_minimo: string; sensible: boolean }[];
@@ -17,12 +17,13 @@ describe('Manifiesto PLAT 1.21.0: parte de arc (spec 33)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.21.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.21.0');
+  it('está en la versión 1.23.0 y declara los tres permisos con alcance TENANT, no sensibles', () => {
+    expect(manifiesto.version).toBe('1.23.0');
     const deArchivos = manifiesto.permisos.filter((permiso) => esDeArchivos(permiso.codigo));
     expect(deArchivos.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_ARC.subir, 'Subir archivos', 'TENANT', false],
       [PERMISOS_ARC.descargar, 'Ver y descargar archivos', 'TENANT', false],
+      [PERMISOS_ARC.versionar, 'Subir versiones de un archivo y elegir la vigente', 'TENANT', false],
     ]);
   });
 

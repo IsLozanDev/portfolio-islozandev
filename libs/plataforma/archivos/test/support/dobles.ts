@@ -6,11 +6,12 @@ import type { AnalizadorAntivirus, ResultadoAntivirus } from '../../src/applicat
 import type { CargaFirmada } from '../../src/application/ports/almacen-archivos.js';
 import type { AutorizadorEntidad } from '../../src/application/ports/autorizador-entidad.js';
 import type { ColaAnalisis, TrabajoAnalisis } from '../../src/application/ports/cola-analisis.js';
-import type { RepositorioArchivos } from '../../src/application/ports/repositorio-archivos.js';
+import type { RepositorioArchivos, VersionRegistrada } from '../../src/application/ports/repositorio-archivos.js';
 import type { Archivo } from '../../src/domain/archivo.js';
 import { CategoriaArchivo } from '../../src/domain/categoria.js';
 import { AlmacenNoDisponibleError } from '../../src/domain/errores.js';
 import { AnalizadorFirmaEicar } from '../../src/infrastructure/antivirus/analizador-firma-eicar.js';
+import { idDeTrabajo } from '../../src/infrastructure/bullmq/cola-analisis.bullmq.js';
 import { AlmacenArchivosMemoria } from '../../src/infrastructure/memoria/almacen-archivos.memoria.js';
 import { DetectorTipoFileType } from '../../src/infrastructure/tipo/detector-tipo.file-type.js';
 import { categoriaDocumento, categoriaImagen, VEINTICINCO_MEGABYTES } from './categorias.js';
@@ -107,9 +108,15 @@ export class RepositorioArchivosMemoria implements RepositorioArchivos {
   buscarCategoria(codigo: string): Promise<CategoriaArchivo | null> {
     return Promise.resolve(this.categorias.find((categoria) => categoria.codigo === codigo) ?? null);
   }
+
+  /** Todas subidas en `AHORA`: el agregado no lleva la fecha. */
+  async listarVersiones(archivoId: string): Promise<VersionRegistrada[]> {
+    const archivo = await this.obtener(archivoId);
+    return (archivo?.versiones ?? []).map((version) => ({ ...version, subidoEn: new Date(AHORA) }));
+  }
 }
 
-/** Como BullMQ con `jobId`: un archivo con trabajo vivo no se encola dos veces. */
+/** Como BullMQ con `jobId` (`{archivoId}-{numero}`): una versión con trabajo vivo no se encola dos veces. */
 export class ColaMemoria implements ColaAnalisis {
   readonly vivos = new Map<string, TrabajoAnalisis>();
   intentos = 0;
@@ -118,7 +125,8 @@ export class ColaMemoria implements ColaAnalisis {
   encolar(trabajo: TrabajoAnalisis): Promise<void> {
     this.intentos += 1;
     if (this.caida) return Promise.reject(new Error('Redis no responde'));
-    if (!this.vivos.has(trabajo.archivoId)) this.vivos.set(trabajo.archivoId, trabajo);
+    const id = idDeTrabajo(trabajo);
+    if (!this.vivos.has(id)) this.vivos.set(id, trabajo);
     return Promise.resolve();
   }
 

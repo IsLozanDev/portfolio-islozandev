@@ -65,10 +65,10 @@ SELECT set_config('app.tenant_id', '33000000-0000-0000-0000-00000000000a', false
 INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, creado_por, creado_en)
 VALUES ('33000000-0000-0000-0000-0000000000a1', '33000000-0000-0000-0000-00000000000a', 'DOCUMENTO', 'PRUEBA_SENSIBLE', 'E-1',
         'contrato.pdf', 'PENDIENTE_CARGA', '33000000-0000-0000-0000-0000000000f1', '2026-11-16 08:00-05');
-INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
+INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
 VALUES ('33000000-0000-0000-0000-0000000000a1', 1, '33000000-0000-0000-0000-00000000000a',
         '33000000-0000-0000-0000-00000000000a/33000000-0000-0000-0000-0000000000a1/1', 'application/pdf', 1258291,
-        '33000000-0000-0000-0000-0000000000f1');
+        'PENDIENTE_CARGA', '33000000-0000-0000-0000-0000000000f1');
 
 DO $$ BEGIN
   IF (SELECT count(*) FROM arc.archivo WHERE version = 1 AND version_vigente IS NULL AND motivo_rechazo IS NULL) <> 1 THEN
@@ -112,7 +112,7 @@ SELECT arc_test.debe_fallar($$
 
 -- El recorrido válido: en análisis, disponible con su versión vigente y de vuelta.
 UPDATE arc.archivo SET estado = 'EN_ANALISIS' WHERE id = '33000000-0000-0000-0000-0000000000a1';
-UPDATE arc.version_archivo SET hash_sha256 = repeat('a', 64), bytes = 1258291, mime_real = 'application/pdf'
+UPDATE arc.version_archivo SET estado = 'DISPONIBLE', hash_sha256 = repeat('a', 64), bytes = 1258291, mime_real = 'application/pdf'
  WHERE archivo_id = '33000000-0000-0000-0000-0000000000a1' AND numero = 1;
 UPDATE arc.archivo SET estado = 'DISPONIBLE', version_vigente = 1 WHERE id = '33000000-0000-0000-0000-0000000000a1';
 UPDATE arc.archivo SET estado = 'RECHAZADO', version_vigente = NULL, motivo_rechazo = 'TAMANO_NO_COINCIDE'
@@ -121,31 +121,31 @@ UPDATE arc.archivo SET estado = 'PENDIENTE_CARGA', motivo_rechazo = NULL WHERE i
 
 -- Versiones: único de hash por archivo, ruta única, formato del hash y tamaño declarado.
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, hash_sha256, subido_por)
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, hash_sha256, subido_por)
   VALUES ('33000000-0000-0000-0000-0000000000a1', 2, '33000000-0000-0000-0000-00000000000a', 'a/a1/2', 'application/pdf', 10,
-          repeat('a', 64), gen_random_uuid())$$,
+          'DISPONIBLE', repeat('a', 64), gen_random_uuid())$$,
   '23505', 'hash repetido en el mismo archivo');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
   VALUES ('33000000-0000-0000-0000-0000000000a1', 2, '33000000-0000-0000-0000-00000000000a',
-          '33000000-0000-0000-0000-00000000000a/33000000-0000-0000-0000-0000000000a1/1', 'application/pdf', 10, gen_random_uuid())$$,
+          '33000000-0000-0000-0000-00000000000a/33000000-0000-0000-0000-0000000000a1/1', 'application/pdf', 10, 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '23505', 'ruta de Storage repetida');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, hash_sha256, subido_por)
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, hash_sha256, subido_por)
   VALUES ('33000000-0000-0000-0000-0000000000a1', 2, '33000000-0000-0000-0000-00000000000a', 'a/a1/2', 'application/pdf', 10,
-          repeat('A', 64), gen_random_uuid())$$,
+          'DISPONIBLE', repeat('A', 64), gen_random_uuid())$$,
   '23514', 'hash en mayúsculas');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
-  VALUES ('33000000-0000-0000-0000-0000000000a1', 2, '33000000-0000-0000-0000-00000000000a', 'a/a1/2', 'application/pdf', 0, gen_random_uuid())$$,
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
+  VALUES ('33000000-0000-0000-0000-0000000000a1', 2, '33000000-0000-0000-0000-00000000000a', 'a/a1/2', 'application/pdf', 0, 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '23514', 'tamaño declarado en cero');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
-  VALUES ('33000000-0000-0000-0000-0000000000a1', 0, '33000000-0000-0000-0000-00000000000a', 'a/a1/0', 'application/pdf', 10, gen_random_uuid())$$,
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
+  VALUES ('33000000-0000-0000-0000-0000000000a1', 0, '33000000-0000-0000-0000-00000000000a', 'a/a1/0', 'application/pdf', 10, 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '23514', 'versión número cero');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
-  VALUES (gen_random_uuid(), 1, '33000000-0000-0000-0000-00000000000a', 'a/x/1', 'application/pdf', 10, gen_random_uuid())$$,
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
+  VALUES (gen_random_uuid(), 1, '33000000-0000-0000-0000-00000000000a', 'a/x/1', 'application/pdf', 10, 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '23503', 'versión de un archivo que no existe');
 
 -- Otro pendiente reciente y uno en análisis antiguo: la limpieza no debe verlos.
@@ -162,10 +162,10 @@ SELECT set_config('app.tenant_id', '33000000-0000-0000-0000-00000000000b', false
 INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, creado_por, creado_en)
 VALUES ('33000000-0000-0000-0000-0000000000b1', '33000000-0000-0000-0000-00000000000b', 'EVIDENCIA', 'CASO', 'C-9',
         'acta.pdf', 'PENDIENTE_CARGA', '33000000-0000-0000-0000-0000000000f2', '2026-11-15 08:00-05');
-INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
+INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
 VALUES ('33000000-0000-0000-0000-0000000000b1', 1, '33000000-0000-0000-0000-00000000000b',
         '33000000-0000-0000-0000-00000000000b/33000000-0000-0000-0000-0000000000b1/1', 'application/pdf', 2048,
-        '33000000-0000-0000-0000-0000000000f2');
+        'PENDIENTE_CARGA', '33000000-0000-0000-0000-0000000000f2');
 
 DO $$
 DECLARE filas int;
@@ -190,8 +190,8 @@ SELECT arc_test.debe_fallar($$
   VALUES (gen_random_uuid(), '33000000-0000-0000-0000-00000000000a', 'IMAGEN', 'PRODUCTO', 'P-1', 'foto.png', 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '42501', 'B inserta un archivo con el tenant de A');
 SELECT arc_test.debe_fallar($$
-  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, subido_por)
-  VALUES ('33000000-0000-0000-0000-0000000000b1', 2, '33000000-0000-0000-0000-00000000000a', 'b/b1/2', 'application/pdf', 10, gen_random_uuid())$$,
+  INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
+  VALUES ('33000000-0000-0000-0000-0000000000b1', 2, '33000000-0000-0000-0000-00000000000a', 'b/b1/2', 'application/pdf', 10, 'PENDIENTE_CARGA', gen_random_uuid())$$,
   '42501', 'B inserta una versión con el tenant de A');
 SELECT arc_test.debe_fallar($$
   UPDATE arc.archivo SET tenant_id = '33000000-0000-0000-0000-00000000000a' WHERE id = '33000000-0000-0000-0000-0000000000b1'$$,

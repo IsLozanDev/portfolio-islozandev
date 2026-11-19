@@ -20,6 +20,8 @@ export interface FilaArchivo {
   nombreOriginal: string;
   estado: string;
   motivoRechazo: string | null;
+  motivoRechazoVersion: string | null;
+  versionCoincidente: number | null;
   versionVigente: number | null;
   version: number;
   creadoPor: string;
@@ -32,6 +34,7 @@ export interface FilaVersionArchivo {
   numero: number;
   tenantId: string;
   rutaStorage: string;
+  estado: string;
   mimeDeclarado: string;
   /** `bigint`: el driver lo entrega como texto. */
   bytesDeclarados: string;
@@ -67,6 +70,8 @@ export const ArchivoEntidad = new EntitySchema<FilaArchivo>({
     nombreOriginal: { name: 'nombre_original', type: 'varchar', length: 255 },
     estado: { type: 'varchar', length: 16 },
     motivoRechazo: { name: 'motivo_rechazo', type: 'varchar', length: 20, nullable: true },
+    motivoRechazoVersion: { name: 'motivo_rechazo_version', type: 'varchar', length: 20, nullable: true },
+    versionCoincidente: { name: 'version_coincidente', type: 'integer', nullable: true },
     versionVigente: { name: 'version_vigente', type: 'integer', nullable: true },
     // TypeORM la sube en uno en cada UPDATE: también en los cambios de estado que no publican evento.
     version: { type: 'integer', version: true },
@@ -85,6 +90,7 @@ export const VersionArchivoEntidad = new EntitySchema<FilaVersionArchivo>({
     numero: { type: 'integer', primary: true },
     tenantId: { name: 'tenant_id', type: 'uuid' },
     rutaStorage: { name: 'ruta_storage', type: 'varchar', length: 120 },
+    estado: { type: 'varchar', length: 16 },
     mimeDeclarado: { name: 'mime_declarado', type: 'varchar', length: 100 },
     bytesDeclarados: { name: 'bytes_declarados', type: 'bigint' },
     hashSha256: { name: 'hash_sha256', type: 'char', length: 64, nullable: true },

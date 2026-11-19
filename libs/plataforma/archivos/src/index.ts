@@ -1,5 +1,15 @@
-// TR-ARC: carga con URL firmada, análisis en el worker y descarga con URL firmada (spec 33), con antivirus ClamAV y reencolado de análisis atascados (spec 34). Solo este archivo es público.
-export { ESTADOS_ARCHIVO, MOTIVOS_RECHAZO, type CodigoEstadoArchivo, type MotivoRechazo } from './domain/archivo.js';
+// TR-ARC: carga con URL firmada, análisis en el worker y descarga con URL firmada (spec 33), con antivirus ClamAV y reencolado de análisis atascados (spec 34), y versiones (spec 35). Solo este archivo es público.
+export {
+  ESTADOS_ARCHIVO,
+  ESTADOS_VERSION,
+  MOTIVOS_RECHAZO,
+  MOTIVOS_RECHAZO_VERSION,
+  NUMERO_PRIMERA_VERSION,
+  type CodigoEstadoArchivo,
+  type CodigoEstadoVersion,
+  type MotivoRechazo,
+  type MotivoRechazoVersion,
+} from './domain/archivo.js';
 export { CODIGOS_CATEGORIA, type CodigoCategoria } from './domain/categoria.js';
 export {
   AccesoEntidadDenegadoError,
@@ -11,18 +21,32 @@ export {
   DatosArchivoInvalidosError,
   MimeNoPermitidoError,
   TamanoExcedidoError,
+  VersionEnCursoError,
+  VersionNoDisponibleError,
+  VersionNoEncontradaError,
   VigenciaInvalidaError,
   type CodigoErrorAntivirus,
 } from './domain/errores.js';
-export { EVENTOS_ARC, type ArchivoDisponible, type ArchivoEnCuarentena } from './domain/eventos-arc.js';
+export {
+  EVENTOS_ARC,
+  type ArchivoDisponible,
+  type ArchivoEnCuarentena,
+  type ArchivoVersionCreada,
+  type ArchivoVersionVigenteCambiada,
+} from './domain/eventos-arc.js';
 export {
   ARCHIVO_PORT,
   type ArchivoPort,
   type CargaSolicitada,
   type EstadoArchivo,
+  type NuevaVersionComando,
+  type RechazoVersionVisible,
   type SolicitarCargaComando,
   type UrlDescarga,
   type UrlDescargaConsulta,
+  type VersionesArchivo,
+  type VersionListada,
+  type VersionSolicitada,
 } from './application/ports/archivo.port.js';
 export { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
 export { ESQUEMAS_ARC, registrarEsquemasArc } from './infrastructure/event-schemas.js';

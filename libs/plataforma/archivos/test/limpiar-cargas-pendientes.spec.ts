@@ -1,7 +1,9 @@
 import { ConfirmarCarga } from '../src/application/confirmar-carga.js';
 import { LimpiarCargasPendientes } from '../src/application/limpiar-cargas-pendientes.js';
-import type { CargaPendiente, CargasPendientes } from '../src/application/ports/cargas-pendientes.js';
+import type { CargaPendiente, CargasPendientes, VersionPendiente } from '../src/application/ports/cargas-pendientes.js';
+import { ConfirmarVersion } from '../src/application/confirmar-version.js';
 import { SolicitarCarga } from '../src/application/solicitar-carga.js';
+import { SolicitarVersion } from '../src/application/solicitar-version.js';
 import type { Archivo } from '../src/domain/archivo.js';
 import { pdf } from './support/contenidos.js';
 import { crearDobles, TENANT_A, TENANT_B, USUARIO, type Dobles } from './support/dobles.js';
@@ -9,7 +11,10 @@ import { crearDobles, TENANT_A, TENANT_B, USUARIO, type Dobles } from './support
 const TAMANO_LOTE = 200;
 const MINUTOS_POR_HORA = 60;
 
-/** Como `arc.cargas_pendientes_vencidas`: pendientes de todos los tenants, del más antiguo al más reciente. */
+/**
+ * Como `arc.cargas_pendientes_vencidas` y `arc.versiones_pendientes_vencidas`: pendientes de todos los
+ * tenants, del más antiguo al más reciente. Las versiones, por `{archivoId}/{numero}`.
+ */
 class CargasPendientesMemoria implements CargasPendientes {
   readonly creadoEn = new Map<string, Date>();
   consultas = 0;
@@ -22,6 +27,18 @@ class CargasPendientesMemoria implements CargasPendientes {
       .filter((archivo) => archivo.estado === 'PENDIENTE_CARGA' && (this.creadoEn.get(archivo.id) as Date) < antes)
       .slice(0, limite)
       .map((archivo) => ({ tenantId: archivo.tenantId, archivoId: archivo.id }));
+    return Promise.resolve(vencidas);
+  }
+
+  listarVersionesVencidas(antes: Date, limite: number): Promise<VersionPendiente[]> {
+    const vencidas = this.guardados
+      .flatMap((archivo) => archivo.versiones.map((version) => ({ archivo, version })))
+      .filter(({ archivo, version }) => {
+        const pedidaEn = this.creadoEn.get(`${archivo.id}/${version.numero}`);
+        return version.numero > 1 && version.estado === 'PENDIENTE_CARGA' && pedidaEn !== undefined && pedidaEn < antes;
+      })
+      .slice(0, limite)
+      .map(({ archivo, version }) => ({ tenantId: archivo.tenantId, archivoId: archivo.id, numero: version.numero }));
     return Promise.resolve(vencidas);
   }
 }
@@ -63,7 +80,7 @@ describe('LimpiarCargasPendientes', () => {
 
     const resultado = await limpiar.ejecutar();
 
-    expect(resultado).toEqual({ borradas: 1, fallidas: 0 });
+    expect(resultado).toEqual({ borradas: 1, versionesBorradas: 0, fallidas: 0 });
     expect([existe(vieja), tieneObjeto(vieja)]).toEqual([false, false]);
   });
 
@@ -73,7 +90,7 @@ describe('LimpiarCargasPendientes', () => {
 
     const resultado = await limpiar.ejecutar();
 
-    expect(resultado).toEqual({ borradas: 0, fallidas: 0 });
+    expect(resultado).toEqual({ borradas: 0, versionesBorradas: 0, fallidas: 0 });
     expect([existe(reciente), tieneObjeto(reciente)]).toEqual([true, true]);
   });
 
@@ -81,7 +98,7 @@ describe('LimpiarCargasPendientes', () => {
     const sinObjeto = await solicitar(TENANT_A, false);
     pasanHoras(25);
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: 1, fallidas: 0 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: 1, versionesBorradas: 0, fallidas: 0 });
     expect(existe(sinObjeto)).toBe(false);
   });
 
@@ -93,7 +110,7 @@ describe('LimpiarCargasPendientes', () => {
     disponible.aprobar({ hash: 'a'.repeat(64), bytes: pdf().byteLength, mimeReal: 'application/pdf' });
     pasanHoras(48);
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, fallidas: 0 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 0, fallidas: 0 });
     expect([existe(enAnalisis), tieneObjeto(enAnalisis), existe(disponible), tieneObjeto(disponible)]).toEqual([true, true, true, true]);
   });
 
@@ -103,7 +120,7 @@ describe('LimpiarCargasPendientes', () => {
     pasanHoras(25);
     dobles.contexto.alcance = { tenantId: 'sin-tenant' };
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: 2, fallidas: 0 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: 2, versionesBorradas: 0, fallidas: 0 });
     expect([existe(deA), existe(deB)]).toEqual([false, false]);
     expect(dobles.contexto.alcance).toEqual({ tenantId: 'sin-tenant' });
   });
@@ -118,7 +135,7 @@ describe('LimpiarCargasPendientes', () => {
       return vencidas;
     };
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, fallidas: 0 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 0, fallidas: 0 });
     expect([existe(carga), tieneObjeto(carga)]).toEqual([true, true]);
   });
 
@@ -128,7 +145,7 @@ describe('LimpiarCargasPendientes', () => {
     pasanHoras(25);
     dobles.almacen.borrar = () => Promise.reject(new Error('Storage no responde'));
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, fallidas: 2 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 0, fallidas: 2 });
     expect([existe(primera), existe(segunda)]).toEqual([true, true]);
     expect(cargasPendientes.consultas).toBe(1);
   });
@@ -137,8 +154,48 @@ describe('LimpiarCargasPendientes', () => {
     for (let numero = 0; numero < TAMANO_LOTE + 5; numero += 1) await solicitar(TENANT_A, false);
     pasanHoras(25);
 
-    expect(await limpiar.ejecutar()).toEqual({ borradas: TAMANO_LOTE + 5, fallidas: 0 });
+    expect(await limpiar.ejecutar()).toEqual({ borradas: TAMANO_LOTE + 5, versionesBorradas: 0, fallidas: 0 });
     expect(dobles.archivos.guardados).toEqual([]);
     expect(cargasPendientes.consultas).toBe(2);
+  });
+
+  describe('versiones pendientes (spec 35)', () => {
+    /** Un archivo DISPONIBLE con su versión 1 vigente y una versión 2 pedida ahora, sin subir. */
+    async function conVersionPedida(): Promise<Archivo> {
+      const archivo = await solicitar(TENANT_A);
+      archivo.confirmarCarga();
+      archivo.aprobar({ hash: 'a'.repeat(64), bytes: pdf().byteLength, mimeReal: 'application/pdf' });
+      archivo.pullEvents();
+      const { numero, carga } = await new SolicitarVersion(dobles).ejecutar({ archivoId: archivo.id, tamano: pdf().byteLength, mime: 'application/pdf' });
+      dobles.almacen.subirConUrl(carga.url, pdf());
+      cargasPendientes.creadoEn.set(`${archivo.id}/${numero}`, dobles.reloj.now());
+      return archivo;
+    }
+
+    const rutaVersion2 = (archivo: Archivo) => `${archivo.tenantId}/${archivo.id}/2`;
+
+    it('una versión pendiente de más de 24 horas pierde su objeto y su fila; el archivo, su vigente y la versión 1 siguen', async () => {
+      const archivo = await conVersionPedida();
+      pasanHoras(25);
+
+      expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 1, fallidas: 0 });
+      expect(archivo).toMatchObject({ estado: 'DISPONIBLE', versionVigente: 1 });
+      expect(archivo.versiones.map((version) => version.numero)).toEqual([1]);
+      expect([existe(archivo), tieneObjeto(archivo), dobles.almacen.existe(rutaVersion2(archivo))]).toEqual([true, true, false]);
+    });
+
+    it('una versión de 23 horas o EN_ANALISIS no se toca', async () => {
+      const reciente = await conVersionPedida();
+      const enAnalisis = await conVersionPedida();
+      await new ConfirmarVersion(dobles).ejecutar(enAnalisis.id, 2);
+      pasanHoras(23);
+      expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 0, fallidas: 0 });
+      pasanHoras(2);
+
+      expect(await limpiar.ejecutar()).toEqual({ borradas: 0, versionesBorradas: 1, fallidas: 0 });
+      expect(reciente.versionNumero(2)).toBeNull();
+      expect(enAnalisis.versionNumero(2)?.estado).toBe('EN_ANALISIS');
+      expect(dobles.almacen.existe(rutaVersion2(enAnalisis))).toBe(true);
+    });
   });
 });

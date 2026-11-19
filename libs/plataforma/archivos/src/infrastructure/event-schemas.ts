@@ -27,15 +27,19 @@ const referencia = {
 };
 
 /** Esquemas de los eventos de archivos. `additionalProperties: false` impide que entre el nombre original. */
+const versionAnalizada = {
+  ...referencia,
+  version: enteroPositivo,
+  hash_sha256: hashSha256,
+  bytes: enteroPositivo,
+  mime_real: textoCorto,
+};
+
 export const ESQUEMAS_ARC: Readonly<Record<string, object>> = {
-  [EVENTOS_ARC.disponible]: objeto({
-    ...referencia,
-    version: enteroPositivo,
-    hash_sha256: hashSha256,
-    bytes: enteroPositivo,
-    mime_real: textoCorto,
-  }),
-  [EVENTOS_ARC.enCuarentena]: objeto({ ...referencia, firma: textoCorto }),
+  [EVENTOS_ARC.disponible]: objeto(versionAnalizada),
+  [EVENTOS_ARC.enCuarentena]: objeto({ ...referencia, version: enteroPositivo, firma: textoCorto }),
+  [EVENTOS_ARC.versionCreada]: objeto(versionAnalizada),
+  [EVENTOS_ARC.versionVigenteCambiada]: objeto({ ...referencia, version_anterior: enteroPositivo, version_vigente: enteroPositivo }),
 };
 
 export function registrarEsquemasArc(validador: Pick<InMemoryEventSchemaValidator, 'register'>): void {

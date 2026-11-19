@@ -14,7 +14,7 @@ interface Manifiesto {
 
 const PREFIJOS_CAT = ['plat.catalogo.', 'plat.feriado.'];
 
-describe('Manifiesto PLAT 1.21.0: parte de cat (specs 19a a 19e)', () => {
+describe('Manifiesto PLAT 1.23.0: parte de cat (specs 19a a 19e)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (rol: string) => manifiesto.roles_predefinidos.find((predefinido) => predefinido.codigo === rol)?.permisos ?? [];
   const esDeCat = (codigo: string) => PREFIJOS_CAT.some((prefijo) => codigo.startsWith(prefijo));
@@ -24,8 +24,8 @@ describe('Manifiesto PLAT 1.21.0: parte de cat (specs 19a a 19e)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.21.0', () => {
-    expect(manifiesto.version).toBe('1.21.0');
+  it('está en la versión 1.23.0', () => {
+    expect(manifiesto.version).toBe('1.23.0');
   });
 
   it('declara exactamente PERMISOS_CAT, todos de alcance TENANT; gestionar, item_gestionar e importar son sensibles (TR-RN-009)', () => {

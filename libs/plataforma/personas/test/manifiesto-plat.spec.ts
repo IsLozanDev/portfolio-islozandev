@@ -3,7 +3,7 @@ import { PERMISOS_PER } from '../src/domain/permisos-per.js';
 
 const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json', import.meta.url);
 
-describe('Manifiesto PLAT 1.21.0: parte de per (spec 31)', () => {
+describe('Manifiesto PLAT 1.23.0: parte de per (spec 31)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; descripcion: string; alcance_minimo: string; sensible: boolean }[];
@@ -17,8 +17,8 @@ describe('Manifiesto PLAT 1.21.0: parte de per (spec 31)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.21.0 y declara los tres permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.21.0');
+  it('está en la versión 1.23.0 y declara los tres permisos con alcance TENANT, no sensibles', () => {
+    expect(manifiesto.version).toBe('1.23.0');
     const dePersonas = manifiesto.permisos.filter((permiso) => esDePersonas(permiso.codigo));
     expect(dePersonas.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_PER.leer, 'TENANT', false],

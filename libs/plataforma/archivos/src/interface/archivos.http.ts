@@ -1,7 +1,13 @@
 import { Catch, HttpException, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
-import { AlmacenNoDisponibleError, ArchivoNoDisponibleError, TamanoExcedidoError } from '../domain/errores.js';
+import {
+  AlmacenNoDisponibleError,
+  ArchivoNoDisponibleError,
+  TamanoExcedidoError,
+  VersionEnCursoError,
+  VersionNoDisponibleError,
+} from '../domain/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
@@ -12,7 +18,7 @@ const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => 
   [ValidationError, HttpStatus.UNPROCESSABLE_ENTITY],
   [ForbiddenError, HttpStatus.FORBIDDEN],
   [NotFoundError, HttpStatus.NOT_FOUND],
-  // ARCHIVO_NO_DISPONIBLE y el conflicto de versión.
+  // ARCHIVO_NO_DISPONIBLE, VERSION_EN_CURSO, VERSION_NO_DISPONIBLE y el conflicto de bloqueo optimista.
   [ConflictError, HttpStatus.CONFLICT],
   [AlmacenNoDisponibleError, HttpStatus.SERVICE_UNAVAILABLE],
 ];
@@ -24,7 +30,8 @@ function cuerpoDeError(error: DomainError): Record<string, string | number> {
   if (error instanceof AlmacenNoDisponibleError) return { codigo: error.code, mensaje: MENSAJE_ALMACEN_CAIDO };
   const cuerpo = { codigo: error.code, mensaje: error.message };
   if (error instanceof TamanoExcedidoError) return { ...cuerpo, tamano_max_bytes: error.tamanoMaxBytes };
-  if (error instanceof ArchivoNoDisponibleError) return { ...cuerpo, estado: error.estado };
+  if (error instanceof ArchivoNoDisponibleError || error instanceof VersionNoDisponibleError) return { ...cuerpo, estado: error.estado };
+  if (error instanceof VersionEnCursoError) return { ...cuerpo, numero: error.numero };
   return cuerpo;
 }
 

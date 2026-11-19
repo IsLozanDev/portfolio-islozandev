@@ -1,16 +1,21 @@
 import { AnalizarArchivo } from '../src/application/analizar-archivo.js';
 import { ConfirmarCarga } from '../src/application/confirmar-carga.js';
+import { ConfirmarVersion } from '../src/application/confirmar-version.js';
 import type { ArchivosAtascados } from '../src/application/ports/archivos-atascados.js';
 import type { TrabajoAnalisis } from '../src/application/ports/cola-analisis.js';
 import { ReencolarAnalisisAtascados } from '../src/application/reencolar-analisis-atascados.js';
 import { SolicitarCarga } from '../src/application/solicitar-carga.js';
+import { SolicitarVersion } from '../src/application/solicitar-version.js';
 import type { Archivo } from '../src/domain/archivo.js';
-import { pdf } from './support/contenidos.js';
+import { pdf, texto } from './support/contenidos.js';
 import { crearDobles, TENANT_A, TENANT_B, USUARIO, type Dobles } from './support/dobles.js';
 
 const TAMANO_LOTE = 200;
 
-/** Como `arc.archivos_en_analisis_atascados`: los EN_ANALISIS de todos los tenants, del más antiguo al más reciente. */
+/**
+ * Como `arc.archivos_en_analisis_atascados`: los EN_ANALISIS de todos los tenants, del más antiguo al más reciente.
+ * Las versiones nuevas (spec 35) van por `{archivoId}/{numero}` y salen con su número.
+ */
 class ArchivosAtascadosMemoria implements ArchivosAtascados {
   readonly enAnalisisDesde = new Map<string, Date>();
   consultas = 0;
@@ -23,7 +28,13 @@ class ArchivosAtascadosMemoria implements ArchivosAtascados {
       .filter((archivo) => archivo.estado === 'EN_ANALISIS' && (this.enAnalisisDesde.get(archivo.id) as Date) < antes)
       .slice(0, limite)
       .map((archivo) => ({ tenantId: archivo.tenantId, archivoId: archivo.id }));
-    return Promise.resolve(atascados);
+    const versiones = this.guardados.flatMap((archivo) =>
+      archivo.versiones
+        .filter((version) => version.numero > 1 && version.estado === 'EN_ANALISIS')
+        .filter((version) => (this.enAnalisisDesde.get(`${archivo.id}/${version.numero}`) as Date) < antes)
+        .map((version) => ({ tenantId: archivo.tenantId, archivoId: archivo.id, numero: version.numero })),
+    );
+    return Promise.resolve([...atascados, ...versiones].slice(0, limite));
   }
 }
 
@@ -141,6 +152,26 @@ describe('ReencolarAnalisisAtascados (spec 34)', () => {
     for (const trabajo of dobles.cola.tomarTodos()) await new AnalizarArchivo(dobles).ejecutar(trabajo);
 
     expect(atascado.estado).toBe('DISPONIBLE');
+    expect(await reencolar.ejecutar()).toEqual({ reencolados: 0, fallidos: 0 });
+  });
+
+  it('una versión nueva atascada EN_ANALISIS se reencola con su número y su análisis la deja vigente (spec 35)', async () => {
+    const archivo = await solicitar(TENANT_A);
+    await new ConfirmarCarga(dobles).ejecutar(archivo.id);
+    for (const trabajo of dobles.cola.tomarTodos()) await new AnalizarArchivo(dobles).ejecutar(trabajo);
+    const segunda = Uint8Array.from([...pdf(), ...texto('% v2\n')]);
+    const { numero, carga } = await new SolicitarVersion(dobles).ejecutar({ archivoId: archivo.id, tamano: segunda.byteLength, mime: 'application/pdf' });
+    dobles.almacen.subirConUrl(carga.url, segunda);
+    await new ConfirmarVersion(dobles).ejecutar(archivo.id, numero);
+    atascados.enAnalisisDesde.set(`${archivo.id}/${numero}`, dobles.reloj.now());
+    dobles.cola.tomarTodos();
+    dobles.reloj.adelantarMinutos(16);
+
+    expect(await reencolar.ejecutar()).toEqual({ reencolados: 1, fallidos: 0 });
+    expect(encolados()).toEqual([{ tenantId: TENANT_A, archivoId: archivo.id, numero }]);
+    for (const trabajo of dobles.cola.tomarTodos()) await new AnalizarArchivo(dobles).ejecutar(trabajo);
+
+    expect(archivo.versionVigente).toBe(numero);
     expect(await reencolar.ejecutar()).toEqual({ reencolados: 0, fallidos: 0 });
   });
 

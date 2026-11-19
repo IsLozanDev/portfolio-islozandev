@@ -2,11 +2,11 @@ import { ConflictError } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import { DataSource } from 'typeorm';
 import { Archivo, type ContenidoAnalizado } from '../src/domain/archivo.js';
-import { CODIGOS_CATEGORIA } from '../src/domain/categoria.js';
+import { CODIGOS_CATEGORIA, type CategoriaArchivo } from '../src/domain/categoria.js';
 import { ArchivosAtascadosSql } from '../src/infrastructure/typeorm/archivos-atascados.sql.js';
 import { RepositorioArchivosTypeOrm } from '../src/infrastructure/typeorm/archivos.repositorio.js';
 import { CargasPendientesSql } from '../src/infrastructure/typeorm/cargas-pendientes.sql.js';
-import { ENTIDADES_ARC } from '../src/infrastructure/typeorm/entidades.js';
+import { ENTIDADES_ARC, VersionArchivoEntidad } from '../src/infrastructure/typeorm/entidades.js';
 import { DIEZ_MEGABYTES, MIME_DOCX, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
@@ -113,6 +113,7 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     expect(leido.primeraVersion).toEqual({
       numero: 1,
       rutaStorage: `${tenantA}/${archivo.id}/1`,
+      estado: 'PENDIENTE_CARGA',
       mimeDeclarado: 'application/pdf',
       bytesDeclarados: BYTES_PDF,
       hashSha256: null,
@@ -252,8 +253,8 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     const enAnalisis = await atascados.listarEnAnalisisAntesDe(manana, LIMITE_LIMPIEZA);
 
     expect(enAnalisis).toEqual(expect.arrayContaining([
-      { tenantId: tenantA, archivoId: deA.id },
-      { tenantId: tenantB, archivoId: deB.id },
+      { tenantId: tenantA, archivoId: deA.id, numero: 1 },
+      { tenantId: tenantB, archivoId: deB.id, numero: 1 },
     ]));
     expect(enAnalisis.map((trabajo) => trabajo.archivoId)).not.toContain(pendiente.id);
     expect(await atascados.listarEnAnalisisAntesDe(ayer, LIMITE_LIMPIEZA)).toEqual([]);
@@ -263,5 +264,171 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
       { movida: boolean },
     ];
     expect(movida).toBe(true);
+  });
+
+  describe('versiones (spec 35)', () => {
+    const categoriaDocumento = async () => (await repositorio.buscarCategoria('DOCUMENTO')) as CategoriaArchivo;
+    const pedido = { mimeDeclarado: 'application/pdf', bytesDeclarados: BYTES_PDF, solicitadoPor: usuario };
+    const contenidoDe = (marca: string): ContenidoAnalizado => ({ ...CONTENIDO_PDF, hash: marca.repeat(64) });
+
+    /** Lee, aplica el cambio y guarda en una transacción del tenant. */
+    async function cambiar(tenantId: string, archivoId: string, cambio: (archivo: Archivo, categoria: CategoriaArchivo) => void): Promise<void> {
+      await enTenant(tenantId, async () => {
+        const archivo = (await repositorio.obtener(archivoId)) as Archivo;
+        cambio(archivo, await categoriaDocumento());
+        await repositorio.guardar(archivo);
+      });
+    }
+
+    async function disponible(tenantId: string): Promise<Archivo> {
+      const archivo = await solicitarContrato(tenantId);
+      await cambiar(tenantId, archivo.id, (leido) => {
+        leido.confirmarCarga();
+        leido.aprobar(contenidoDe('1'));
+      });
+      return archivo;
+    }
+
+    async function conVersionEnAnalisis(tenantId: string): Promise<Archivo> {
+      const archivo = await disponible(tenantId);
+      await cambiar(tenantId, archivo.id, (leido, categoria) => {
+        leido.solicitarVersion(pedido, categoria);
+        leido.confirmarVersion(2);
+      });
+      return archivo;
+    }
+
+    it('guarda y lee las versiones con su estado; listarVersiones trae quién y cuándo, por número', async () => {
+      const archivo = await disponible(tenantA);
+
+      await cambiar(tenantA, archivo.id, (leido, categoria) => leido.solicitarVersion(pedido, categoria));
+
+      const leido = await obtenerExistente(tenantA, archivo.id);
+      expect(leido.versiones.map((version) => [version.numero, version.estado, version.rutaStorage])).toEqual([
+        [1, 'DISPONIBLE', `${tenantA}/${archivo.id}/1`],
+        [2, 'PENDIENTE_CARGA', `${tenantA}/${archivo.id}/2`],
+      ]);
+      expect(leido.versionEnCurso?.numero).toBe(2);
+      const registradas = await enTenant(tenantA, () => repositorio.listarVersiones(archivo.id));
+      expect(registradas.map((version) => [version.numero, version.subidoPor, version.subidoEn instanceof Date])).toEqual([
+        [1, usuario, true],
+        [2, usuario, true],
+      ]);
+    });
+
+    it('aprobar una versión la deja vigente con su contenido; la vigente anterior sigue DISPONIBLE', async () => {
+      const archivo = await conVersionEnAnalisis(tenantA);
+
+      await cambiar(tenantA, archivo.id, (leido) => leido.aprobarVersion(2, contenidoDe('2')));
+
+      const leido = await obtenerExistente(tenantA, archivo.id);
+      expect(leido).toMatchObject({ estado: 'DISPONIBLE', versionVigente: 2 });
+      expect(leido.versionNumero(2)).toMatchObject({ estado: 'DISPONIBLE', hashSha256: '2'.repeat(64), bytes: BYTES_PDF });
+      expect(leido.versionNumero(1)?.estado).toBe('DISPONIBLE');
+    });
+
+    it('una versión rechazada se borra con su motivo en el archivo; el siguiente intento reutiliza su número', async () => {
+      const archivo = await conVersionEnAnalisis(tenantA);
+
+      await cambiar(tenantA, archivo.id, (leido) => leido.rechazarVersion(2, { motivo: 'IDENTICA', versionCoincidente: 1 }));
+      const rechazado = await obtenerExistente(tenantA, archivo.id);
+      await cambiar(tenantA, archivo.id, (leido, categoria) => leido.solicitarVersion(pedido, categoria));
+      const reintento = await obtenerExistente(tenantA, archivo.id);
+
+      expect(rechazado.versiones.map((version) => version.numero)).toEqual([1]);
+      expect(rechazado.rechazoVersion).toEqual({ motivo: 'IDENTICA', versionCoincidente: 1 });
+      expect(reintento.versionNumero(2)?.estado).toBe('PENDIENTE_CARGA');
+      expect(reintento.rechazoVersion).toBeNull();
+    });
+
+    it('la cuarentena de una versión conserva su fila y su hash; descartar una pendiente la borra', async () => {
+      const archivo = await conVersionEnAnalisis(tenantA);
+      await cambiar(tenantA, archivo.id, (leido) => leido.ponerVersionEnCuarentena(2, { ...contenidoDe('e'), firma: 'EICAR-Test-File' }));
+      await cambiar(tenantA, archivo.id, (leido, categoria) => leido.solicitarVersion(pedido, categoria));
+
+      await cambiar(tenantA, archivo.id, (leido) => leido.descartarVersionPendiente(3));
+
+      const leido = await obtenerExistente(tenantA, archivo.id);
+      expect(leido.versiones.map((version) => [version.numero, version.estado, version.hashSha256])).toEqual([
+        [1, 'DISPONIBLE', '1'.repeat(64)],
+        [2, 'CUARENTENA', 'e'.repeat(64)],
+      ]);
+    });
+
+    it('marcar vigente sube la versión de la fila; un conflicto de bloqueo optimista entre dos lecturas falla la segunda', async () => {
+      const archivo = await disponible(tenantA);
+      await cambiar(tenantA, archivo.id, (leido, categoria) => {
+        leido.solicitarVersion(pedido, categoria);
+        leido.confirmarVersion(2);
+        leido.aprobarVersion(2, contenidoDe('2'));
+      });
+      const versionAntes = await versionEnBase(archivo.id);
+      const primeraLectura = await obtenerExistente(tenantA, archivo.id);
+      const segundaLectura = await obtenerExistente(tenantA, archivo.id);
+
+      primeraLectura.marcarVigente(1);
+      await enTenant(tenantA, () => repositorio.guardar(primeraLectura));
+      segundaLectura.solicitarVersion(pedido, await enTenant(tenantA, categoriaDocumento));
+
+      await expect(enTenant(tenantA, () => repositorio.guardar(segundaLectura))).rejects.toThrow(ConflictError);
+      expect(await versionEnBase(archivo.id)).toBe((versionAntes as number) + 1);
+      expect((await obtenerExistente(tenantA, archivo.id)).versiones.map((version) => version.numero)).toEqual([1, 2]);
+    });
+
+    it('ux_version_en_curso: la base rechaza una segunda versión en curso aunque se salte el dominio', async () => {
+      const archivo = await conVersionEnAnalisis(tenantA);
+
+      const insertarOtraEnCurso = enTenant(tenantA, () =>
+        unidadDeTrabajo.manager.getRepository(VersionArchivoEntidad).insert({
+          archivoId: archivo.id,
+          numero: 3,
+          tenantId: tenantA,
+          rutaStorage: `${tenantA}/${archivo.id}/3`,
+          estado: 'PENDIENTE_CARGA',
+          mimeDeclarado: 'application/pdf',
+          bytesDeclarados: String(BYTES_PDF),
+          subidoPor: usuario,
+        }),
+      );
+
+      await expect(insertarOtraEnCurso).rejects.toThrow(/ux_version_en_curso/);
+    });
+
+    it('aislamiento: B no lista ni modifica las versiones de A', async () => {
+      const archivo = await conVersionEnAnalisis(tenantA);
+      const leidoPorA = await obtenerExistente(tenantA, archivo.id);
+      leidoPorA.aprobarVersion(2, contenidoDe('2'));
+
+      expect(await enTenant(tenantB, () => repositorio.listarVersiones(archivo.id))).toEqual([]);
+      await expect(enTenant(tenantB, () => repositorio.guardar(leidoPorA))).rejects.toThrow(ConflictError);
+      expect((await obtenerExistente(tenantA, archivo.id)).versionNumero(2)?.estado).toBe('EN_ANALISIS');
+    });
+
+    it('CargasPendientesSql lista las versiones nuevas pendientes vencidas de todos los tenants, sin la versión 1', async () => {
+      const deA = await disponible(tenantA);
+      const deB = await disponible(tenantB);
+      for (const [tenantId, archivo] of [[tenantA, deA], [tenantB, deB]] as const) {
+        await cambiar(tenantId, archivo.id, (leido, categoria) => leido.solicitarVersion(pedido, categoria));
+      }
+      const pendienteV1 = await solicitarContrato(tenantA);
+      const cargasPendientes = new CargasPendientesSql(dataSource);
+
+      const vencidas = await cargasPendientes.listarVersionesVencidas(new Date(Date.now() + UN_DIA_MS), LIMITE_LIMPIEZA);
+
+      expect(vencidas).toEqual(expect.arrayContaining([
+        { tenantId: tenantA, archivoId: deA.id, numero: 2 },
+        { tenantId: tenantB, archivoId: deB.id, numero: 2 },
+      ]));
+      expect(vencidas.map((version) => version.archivoId)).not.toContain(pendienteV1.id);
+      expect(await cargasPendientes.listarVersionesVencidas(new Date(Date.now() - UN_DIA_MS), LIMITE_LIMPIEZA)).toEqual([]);
+    });
+
+    it('ArchivosAtascadosSql lista también las versiones nuevas EN_ANALISIS, con su número', async () => {
+      const archivo = await conVersionEnAnalisis(tenantB);
+
+      const enAnalisis = await new ArchivosAtascadosSql(dataSource).listarEnAnalisisAntesDe(new Date(Date.now() + UN_DIA_MS), LIMITE_LIMPIEZA);
+
+      expect(enAnalisis).toContainEqual({ tenantId: tenantB, archivoId: archivo.id, numero: 2 });
+    });
   });
 });

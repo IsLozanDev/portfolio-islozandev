@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Archivo, ContenidoAnalizado } from '../domain/archivo.js';
+import { NUMERO_PRIMERA_VERSION, type Archivo, type ContenidoAnalizado, type ContenidoInfectado } from '../domain/archivo.js';
 import type { CategoriaArchivo } from '../domain/categoria.js';
 import { CategoriaDesconocidaError } from '../domain/errores.js';
 import { evaluarAnalisis, type HallazgosAnalisis, type ResultadoAnalisis } from '../domain/resultado-analisis.js';
@@ -23,37 +23,65 @@ interface Medicion {
 }
 
 /**
- * TR-RF-080, en el worker: lee los bytes, calcula el SHA-256, detecta el tipo real y pasa el antivirus; deja
- * el archivo `DISPONIBLE`, `RECHAZADO` o en `CUARENTENA`. Los bytes se leen y se analizan fuera de la
- * transacción. Idempotente: un archivo que ya no está `EN_ANALISIS` no se toca. Un fallo de Storage o del
- * antivirus se relanza para que la cola reintente; el archivo sigue `EN_ANALISIS`.
+ * TR-RF-080 y 081, en el worker: lee los bytes de la versión del trabajo, calcula el SHA-256, detecta el
+ * tipo real, lo compara con las demás versiones y pasa el antivirus. La primera carga deja el archivo
+ * `DISPONIBLE`, `RECHAZADO` o en `CUARENTENA`; una versión nueva queda vigente, en `CUARENTENA` o se borra.
+ * Los bytes se leen y se analizan fuera de la transacción. Idempotente: una versión que ya no está
+ * `EN_ANALISIS` no se toca. Un fallo de Storage, del antivirus o un conflicto de bloqueo optimista se relanza
+ * para que la cola reintente; la versión sigue `EN_ANALISIS`.
  */
 export class AnalizarArchivo {
   constructor(private readonly dependencias: DependenciasAnalisis) {}
 
   ejecutar(trabajo: TrabajoAnalisis): Promise<void> {
-    return this.dependencias.contexto.run({ tenantId: trabajo.tenantId }, () => this.analizar(trabajo.archivoId));
+    const numero = trabajo.numero ?? NUMERO_PRIMERA_VERSION;
+    return this.dependencias.contexto.run({ tenantId: trabajo.tenantId }, () => this.analizar(trabajo.archivoId, numero));
   }
 
-  private async analizar(archivoId: string): Promise<void> {
-    const { unidadDeTrabajo, almacen } = this.dependencias;
-    const cargado = await unidadDeTrabajo.run(() => this.cargar(archivoId));
+  private async analizar(archivoId: string, numero: number): Promise<void> {
+    const cargado = await this.dependencias.unidadDeTrabajo.run(() => this.cargar(archivoId));
     if (!cargado) return;
-    const { archivo, categoria } = cargado;
+    if (numero === NUMERO_PRIMERA_VERSION) return this.analizarPrimeraCarga(cargado);
+    return this.analizarVersionNueva(cargado, numero);
+  }
+
+  private async analizarPrimeraCarga({ archivo, categoria }: ArchivoConCategoria): Promise<void> {
+    const { almacen } = this.dependencias;
     const ruta = archivo.primeraVersion.rutaStorage;
     // Un intento anterior guardó el rechazo y cayó antes de borrar: el borrado no falla si ya no existe.
     if (fueRechazado(archivo)) return almacen.borrar(ruta);
     if (archivo.estado !== 'EN_ANALISIS') return;
 
-    const contenido = await almacen.leer(ruta);
-    if (contenido === null) {
+    const medicion = await this.leerYMedir(ruta);
+    if (medicion === null) {
       archivo.devolverAPendiente();
     } else {
-      const medicion = await this.medir(contenido);
-      aplicarResultado(archivo, evaluarAnalisis(categoria, archivo.primeraVersion, hallazgosDe(medicion)), medicion);
+      aplicarResultadoPrimeraCarga(archivo, evaluarAnalisis(categoria, archivo.primeraVersion, hallazgosDe(medicion, null)), medicion);
     }
-    await unidadDeTrabajo.run(() => this.guardarConEventos(archivo));
+    await this.guardarConEventos(archivo);
     if (fueRechazado(archivo)) await almacen.borrar(ruta);
+  }
+
+  /**
+   * Una versión inexistente o fuera de análisis no se toca, ni su objeto: la ruta puede ser ya la de un
+   * intento nuevo con el mismo número (lo que quede de un rechazo lo borra `SolicitarVersion`).
+   */
+  private async analizarVersionNueva({ archivo, categoria }: ArchivoConCategoria, numero: number): Promise<void> {
+    const version = archivo.versionNumero(numero);
+    if (version?.estado !== 'EN_ANALISIS') return;
+    const ruta = version.rutaStorage;
+
+    const medicion = await this.leerYMedir(ruta);
+    let rechazada = false;
+    if (medicion === null) {
+      archivo.devolverVersionAPendiente(numero);
+    } else {
+      const versionCoincidente = archivo.versionConHash(medicion.hash)?.numero ?? null;
+      const resultado = evaluarAnalisis(categoria, version, hallazgosDe(medicion, versionCoincidente));
+      rechazada = aplicarResultadoVersion(archivo, numero, resultado, medicion, versionCoincidente);
+    }
+    await this.guardarConEventos(archivo);
+    if (rechazada) await this.dependencias.almacen.borrar(ruta);
   }
 
   private async cargar(archivoId: string): Promise<ArchivoConCategoria | null> {
@@ -63,6 +91,12 @@ export class AnalizarArchivo {
     const categoria = await archivos.buscarCategoria(archivo.categoria);
     if (!categoria) throw new CategoriaDesconocidaError();
     return { archivo, categoria };
+  }
+
+  /** `null` si el objeto no existe: el cliente confirmó sin haberlo subido. */
+  private async leerYMedir(ruta: string): Promise<Medicion | null> {
+    const contenido = await this.dependencias.almacen.leer(ruta);
+    return contenido === null ? null : this.medir(contenido);
   }
 
   private async medir(contenido: Uint8Array): Promise<Medicion> {
@@ -75,9 +109,11 @@ export class AnalizarArchivo {
     };
   }
 
-  private async guardarConEventos(archivo: Archivo): Promise<void> {
-    await this.dependencias.archivos.guardar(archivo);
-    await publicarEventosDe(this.dependencias.publicador, archivo);
+  private guardarConEventos(archivo: Archivo): Promise<void> {
+    return this.dependencias.unidadDeTrabajo.run(async () => {
+      await this.dependencias.archivos.guardar(archivo);
+      await publicarEventosDe(this.dependencias.publicador, archivo);
+    });
   }
 }
 
@@ -86,15 +122,37 @@ function fueRechazado(archivo: Archivo): boolean {
   return archivo.estado === 'RECHAZADO';
 }
 
-function hallazgosDe(medicion: Medicion): HallazgosAnalisis {
-  return { bytes: medicion.bytes, mimeReal: medicion.mimeReal, limpio: medicion.antivirus.limpio };
+function hallazgosDe(medicion: Medicion, versionCoincidente: number | null): HallazgosAnalisis {
+  return { bytes: medicion.bytes, mimeReal: medicion.mimeReal, limpio: medicion.antivirus.limpio, versionCoincidente };
 }
 
-function aplicarResultado(archivo: Archivo, resultado: ResultadoAnalisis, medicion: Medicion): void {
+/** La primera carga no tiene otra versión con la que coincidir: nunca llega `IDENTICA`. */
+function aplicarResultadoPrimeraCarga(archivo: Archivo, resultado: ResultadoAnalisis, medicion: Medicion): void {
+  if (resultado === 'IDENTICA') throw new Error('La primera carga no puede coincidir con otra versión');
   if (resultado === 'TAMANO_NO_COINCIDE' || resultado === 'TIPO_NO_PERMITIDO') return archivo.rechazar(resultado);
-  const contenido = contenidoAnalizado(medicion);
-  if (resultado === 'INFECTADO') return archivo.ponerEnCuarentena({ ...contenido, firma: medicion.antivirus.firma ?? FIRMA_SIN_NOMBRE });
-  archivo.aprobar(contenido);
+  if (resultado === 'INFECTADO') return archivo.ponerEnCuarentena(contenidoInfectado(medicion));
+  archivo.aprobar(contenidoAnalizado(medicion));
+}
+
+/** Devuelve si la versión se rechazó: entonces su objeto se borra después de guardar. */
+function aplicarResultadoVersion(
+  archivo: Archivo,
+  numero: number,
+  resultado: ResultadoAnalisis,
+  medicion: Medicion,
+  versionCoincidente: number | null,
+): boolean {
+  if (resultado === 'TAMANO_NO_COINCIDE' || resultado === 'TIPO_NO_PERMITIDO' || resultado === 'IDENTICA') {
+    archivo.rechazarVersion(numero, { motivo: resultado, versionCoincidente: resultado === 'IDENTICA' ? versionCoincidente : null });
+    return true;
+  }
+  if (resultado === 'INFECTADO') archivo.ponerVersionEnCuarentena(numero, contenidoInfectado(medicion));
+  else archivo.aprobarVersion(numero, contenidoAnalizado(medicion));
+  return false;
+}
+
+function contenidoInfectado(medicion: Medicion): ContenidoInfectado {
+  return { ...contenidoAnalizado(medicion), firma: medicion.antivirus.firma ?? FIRMA_SIN_NOMBRE };
 }
 
 /** `evaluarAnalisis` rechaza por tipo todo contenido sin MIME reconocido: aquí siempre llega con uno. */

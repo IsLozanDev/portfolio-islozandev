@@ -28,7 +28,7 @@ describe('ColaAnalisisBullmq', () => {
     expect(NOMBRE_COLA_ANALISIS).toBe('arc-analisis');
   });
 
-  it('encola con el id del archivo como jobId, 3 intentos con espera exponencial y sin retener el trabajo', async () => {
+  it('encola con {archivoId}-{numero} como jobId, 3 intentos con espera exponencial y sin retener el trabajo', async () => {
     const cola = new ColaDoble();
 
     await new ColaAnalisisBullmq(cola, new ConexionDoble('ready')).encolar(TRABAJO);
@@ -38,7 +38,7 @@ describe('ColaAnalisisBullmq', () => {
         'analizar',
         TRABAJO,
         {
-          jobId: TRABAJO.archivoId,
+          jobId: `${TRABAJO.archivoId}-1`,
           attempts: 3,
           backoff: { type: 'exponential', delay: 5_000 },
           removeOnComplete: true,
@@ -46,6 +46,15 @@ describe('ColaAnalisisBullmq', () => {
         },
       ],
     ]);
+  });
+
+  it('un trabajo por versión: la 3 lleva su número en el jobId, sin `:` (BullMQ lo usa como separador)', async () => {
+    const cola = new ColaDoble();
+
+    await new ColaAnalisisBullmq(cola, new ConexionDoble('ready')).encolar({ ...TRABAJO, numero: 3 });
+
+    expect(cola.agregados[0]?.[2]).toMatchObject({ jobId: `${TRABAJO.archivoId}-3` });
+    expect(String((cola.agregados[0]?.[2] as { jobId: string }).jobId)).not.toContain(':');
   });
 
   it('espera a que Redis termine de conectar antes de encolar', async () => {

@@ -4,10 +4,13 @@ import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { AnalizarArchivo } from './application/analizar-archivo.js';
 import { ConfirmarCarga } from './application/confirmar-carga.js';
+import { ConfirmarVersion } from './application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from './application/consultar-estado.js';
 import type { DependenciasArchivos } from './application/dependencias-archivos.js';
 import { EmitirUrlDescarga, type DependenciasDescarga } from './application/emitir-url-descarga.js';
 import { LimpiarCargasPendientes } from './application/limpiar-cargas-pendientes.js';
+import { ListarVersiones } from './application/listar-versiones.js';
+import { MarcarVersionVigente, type DependenciasVersionVigente } from './application/marcar-version-vigente.js';
 import type { AnalizadorAntivirus, SaludAntivirus } from './application/ports/analizador-antivirus.js';
 import { ARCHIVO_PORT, type ArchivoPort } from './application/ports/archivo.port.js';
 import type { AlmacenArchivos } from './application/ports/almacen-archivos.js';
@@ -15,6 +18,7 @@ import { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/po
 import { ReencolarAnalisisAtascados } from './application/reencolar-analisis-atascados.js';
 import { ServicioArchivos } from './application/servicio-archivos.js';
 import { SolicitarCarga } from './application/solicitar-carga.js';
+import { SolicitarVersion } from './application/solicitar-version.js';
 import { AnalizadorClamav, type MedicionAntivirus } from './infrastructure/antivirus/analizador-clamav.js';
 import { AnalizadorFirmaEicar } from './infrastructure/antivirus/analizador-firma-eicar.js';
 import { abrirColaAnalisis, EVENTO_ERROR_COLA_ANALISIS, type ColaAnalisisAbierta } from './infrastructure/bullmq/cola-analisis.bullmq.js';
@@ -64,7 +68,7 @@ export interface ArchivosWorkerOpciones {
   bucket: string;
 }
 
-type DependenciasApi = DependenciasArchivos & DependenciasDescarga;
+type DependenciasApi = DependenciasArchivos & DependenciasDescarga & DependenciasVersionVigente;
 
 function proveedorAlmacen(opciones: OpcionesAlmacenSupabase) {
   return {
@@ -146,6 +150,7 @@ export class ArchivosModule {
             autorizadores: AutorizadorEntidad[],
             almacen: AlmacenArchivos,
             abierta: ColaAnalisisAbierta,
+            publicador: EventPublisher,
           ): DependenciasApi => ({
             unidadDeTrabajo,
             contexto,
@@ -156,8 +161,19 @@ export class ArchivosModule {
             cola: abierta.cola,
             autorizadores,
             auditoria,
+            publicador,
           }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, AUDITORIA, AUTORIZADORES_ENTIDAD, ALMACEN_ARCHIVOS, COLA_ANALISIS_ABIERTA],
+          inject: [
+            TypeOrmUnitOfWork,
+            TENANT_CONTEXT,
+            CLOCK,
+            ID_GENERATOR,
+            AUDITORIA,
+            AUTORIZADORES_ENTIDAD,
+            ALMACEN_ARCHIVOS,
+            COLA_ANALISIS_ABIERTA,
+            EVENT_PUBLISHER,
+          ],
         },
         {
           provide: SolicitarCarga,
@@ -167,6 +183,26 @@ export class ArchivosModule {
         {
           provide: ConfirmarCarga,
           useFactory: (dependencias: DependenciasApi) => new ConfirmarCarga(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
+          provide: SolicitarVersion,
+          useFactory: (dependencias: DependenciasApi) => new SolicitarVersion(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
+          provide: ConfirmarVersion,
+          useFactory: (dependencias: DependenciasApi) => new ConfirmarVersion(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
+          provide: ListarVersiones,
+          useFactory: (dependencias: DependenciasApi) => new ListarVersiones(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
+          provide: MarcarVersionVigente,
+          useFactory: (dependencias: DependenciasApi) => new MarcarVersionVigente(dependencias),
           inject: [DEPENDENCIAS_ARCHIVOS],
         },
         {
@@ -184,10 +220,33 @@ export class ArchivosModule {
           useFactory: (
             solicitarCarga: SolicitarCarga,
             confirmarCarga: ConfirmarCarga,
+            solicitarVersion: SolicitarVersion,
+            confirmarVersion: ConfirmarVersion,
+            listarVersiones: ListarVersiones,
+            marcarVersionVigente: MarcarVersionVigente,
             emitirUrlDescarga: EmitirUrlDescarga,
             consultarEstado: ConsultarEstadoArchivo,
-          ): ArchivoPort => new ServicioArchivos({ solicitarCarga, confirmarCarga, emitirUrlDescarga, consultarEstado }),
-          inject: [SolicitarCarga, ConfirmarCarga, EmitirUrlDescarga, ConsultarEstadoArchivo],
+          ): ArchivoPort =>
+            new ServicioArchivos({
+              solicitarCarga,
+              confirmarCarga,
+              solicitarVersion,
+              confirmarVersion,
+              listarVersiones,
+              marcarVersionVigente,
+              emitirUrlDescarga,
+              consultarEstado,
+            }),
+          inject: [
+            SolicitarCarga,
+            ConfirmarCarga,
+            SolicitarVersion,
+            ConfirmarVersion,
+            ListarVersiones,
+            MarcarVersionVigente,
+            EmitirUrlDescarga,
+            ConsultarEstadoArchivo,
+          ],
         },
       ],
       exports: [ARCHIVO_PORT],

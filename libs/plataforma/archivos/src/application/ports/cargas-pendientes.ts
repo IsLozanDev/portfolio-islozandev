@@ -3,8 +3,15 @@ export interface CargaPendiente {
   archivoId: string;
 }
 
-/** Cargas `PENDIENTE_CARGA` de todos los tenants, para la limpieza diaria. Solo ids: el borrado va con el contexto de cada tenant. */
+/** Una versión nueva (número mayor que 1) que nadie confirmó. */
+export interface VersionPendiente extends CargaPendiente {
+  numero: number;
+}
+
+/** Pendientes de todos los tenants, para la limpieza diaria. Solo ids: el borrado va con el contexto de cada tenant. */
 export interface CargasPendientes {
-  /** Las creadas antes de `antes`, de la más antigua a la más reciente, hasta `limite`. */
+  /** Archivos `PENDIENTE_CARGA` creados antes de `antes`, del más antiguo al más reciente, hasta `limite`. */
   listarVencidas(antes: Date, limite: number): Promise<CargaPendiente[]>;
+  /** Versiones nuevas `PENDIENTE_CARGA` pedidas antes de `antes`, de la más antigua a la más reciente, hasta `limite`. */
+  listarVersionesVencidas(antes: Date, limite: number): Promise<VersionPendiente[]>;
 }
