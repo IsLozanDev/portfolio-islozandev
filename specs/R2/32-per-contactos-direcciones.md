@@ -1,6 +1,6 @@
 # SPEC 32 — Personas: contactos, direcciones con ubigeo y edición de datos básicos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 31, SPEC 19a, SPEC 19b
 > **Date:** 2026-11-18
 > **Objective:** Ampliar `libs/plataforma/personas` para agregar, editar y borrar los contactos y las direcciones de una persona, con un principal por tipo de contacto, un celular principal siempre presente y el ubigeo validado contra el catálogo `UBIGEO`, y para editar sus nombres o razón social, todo por `/v1/personas/{id}` con `plat.persona.editar` y el evento `persona.actualizada` por outbox.

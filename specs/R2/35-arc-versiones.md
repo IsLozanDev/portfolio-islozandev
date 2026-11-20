@@ -1,6 +1,6 @@
 # SPEC 35 — Archivos: versiones con la misma validación, rechazo por contenido idéntico, lista y versión vigente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 33
 > **Date:** 2026-11-18
 > **Objective:** Ampliar `libs/plataforma/archivos` (TR-ARC) para que un archivo `DISPONIBLE` reciba versiones nuevas con la misma carga firmada y el mismo análisis del worker, rechace el contenido idéntico al de cualquier versión, conserve y deje descargar las anteriores, las liste y permita marcar una anterior como vigente, con cada cambio auditado.

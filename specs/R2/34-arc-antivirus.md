@@ -1,6 +1,6 @@
 # SPEC 34 — Archivos: antivirus real con ClamAV (clamd) y reencolado de análisis atascados
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 33, SPEC 21
 > **Date:** 2026-11-18
 > **Objective:** Hacer que el worker analice cada archivo de TR-ARC con ClamAV (`clamd` por TCP, en la red privada) detrás del puerto `AnalizadorAntivirus`, elegir el motor por ambiente con `ARC_ANTIVIRUS`, reencolar los archivos que llevan más de 15 minutos `EN_ANALISIS` y dejar clamd funcionando en staging, para cumplir TR-RNF-114.

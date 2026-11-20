@@ -53,9 +53,9 @@ describeConDb('Menú del manifiesto PLAT (specs 17a, 18, 19d y 19e, PostgreSQL 1
     expect([...(await menuCon('PLAT_AGENTE_SOPORTE'))].sort()).toEqual(['plat.consola', 'plat.consola.soporte', 'plat.consola.tenants']);
   });
 
-  it('el administrador de tenants ve «Consola» con Tenants, y no ve «Organización»', async () => {
+  it('el administrador de tenants ve «Consola» con Tenants y las cuotas y proveedores DNI/RUC (spec 29), y no ve «Organización»', async () => {
     const menu = await menuCon('PLAT_ADMIN_TENANTS');
 
-    expect([...menu].sort()).toEqual(['plat.consola', 'plat.consola.tenants']);
+    expect([...menu].sort()).toEqual(['plat.consola', 'plat.consola.identidad_cuotas', 'plat.consola.identidad_proveedores', 'plat.consola.tenants']);
   });
 });

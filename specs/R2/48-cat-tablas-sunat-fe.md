@@ -1,6 +1,6 @@
 # SPEC 48 — Catálogos: tablas SUNAT de facturación electrónica (05, 09, 10, 16, 51, 52) y regeneración de 01, 06 y 07 con el Anexo 8 vigente
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 19a, SPEC 19b
 > **Date:** 2026-11-18
 > **Objective:** Agregar al importador de tablas oficiales los catálogos SUNAT 05, 09, 10, 16, 51 y 52 como catálogos GLOBAL de solo importación, y cargar esas seis tablas y la regeneración de 01, 06 y 07 desde el Anexo 8 vigente, reconstruido con su texto completo de 2017 más las resoluciones que lo modifican, para que TR-FE valide sus códigos con `CatalogoPort`.

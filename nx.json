@@ -2,7 +2,7 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "main",
   "cacheDirectory": ".nx/cache",
-  "maxCacheSize": "500MB",
+  "maxCacheSize": "200MB",
   "namedInputs": {
     "default": [
       "{projectRoot}/**/*",
