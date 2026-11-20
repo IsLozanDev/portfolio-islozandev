@@ -1,7 +1,11 @@
+import type { AgregarContacto } from './agregar-contacto.js';
+import type { AgregarDireccion } from './agregar-direccion.js';
 import type { AsignarRolPersona } from './asignar-rol.js';
 import type { BuscarPersonaPorDocumento } from './buscar-persona.js';
 import type { ObtenerPersona } from './obtener-persona.js';
 import type {
+  AgregarContactoComando,
+  AgregarDireccionComando,
   AsignarRolComando,
   PersonaDetalle,
   PersonaPort,
@@ -15,6 +19,8 @@ export interface CasosDeUsoPersonas {
   obtener: ObtenerPersona;
   registrar: RegistrarPersona;
   asignarRol: AsignarRolPersona;
+  agregarContacto: AgregarContacto;
+  agregarDireccion: AgregarDireccion;
 }
 
 export class ServicioPersonas implements PersonaPort {
@@ -35,5 +41,13 @@ export class ServicioPersonas implements PersonaPort {
 
   asignarRol(comando: AsignarRolComando): Promise<{ asignado: boolean }> {
     return this.casosDeUso.asignarRol.ejecutar(comando);
+  }
+
+  agregarContacto(comando: AgregarContactoComando): Promise<PersonaDetalle> {
+    return this.casosDeUso.agregarContacto.ejecutar(comando);
+  }
+
+  agregarDireccion(comando: AgregarDireccionComando): Promise<PersonaDetalle> {
+    return this.casosDeUso.agregarDireccion.ejecutar(comando);
   }
 }

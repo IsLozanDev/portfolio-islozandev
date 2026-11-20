@@ -91,6 +91,7 @@ const CASOS = [
   { migracion: '01j_idn.sql', esquema: 'idn', prueba: 'tests/01j_idn.test.sql' },
   { migracion: '01k_idn_cuota.sql', esquema: 'idn', prueba: 'tests/01k_idn_cuota.test.sql' },
   { migracion: '01l_per.sql', esquema: 'per', prueba: 'tests/01l_per.test.sql' },
+  { migracion: '01l_per_contactos.sql', esquema: 'per', prueba: 'tests/01l_per_contactos.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
   { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
 ];
@@ -409,6 +410,18 @@ const triggersSuscripcion = async () =>
     await ejecutar(urlDb, `SELECT tgname FROM pg_trigger WHERE tgrelid = 'org.suscripcion'::regclass AND tgname LIKE '%version%'`)
   ).rows.map((r) => r.tgname);
 
+// Tabla, índice único y política de borrado que agrega 01l_per_contactos (3 en total).
+const objetosContactos = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'tabla:' || tablename AS o FROM pg_tables WHERE schemaname = 'per' AND tablename = 'direccion'
+       UNION ALL SELECT 'indice:' || indexname FROM pg_indexes WHERE schemaname = 'per' AND indexname = 'uq_contacto_valor'
+       UNION ALL SELECT 'politica:' || policyname FROM pg_policies WHERE schemaname = 'per' AND policyname = 'contacto_delete'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
 describeConDb('db/ y supabase/migrations', () => {
   test('aplica, pasa las pruebas SQL, revierte y vuelve a aplicar', async () => {
     const dir = rutaDb('');
@@ -432,11 +445,19 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_analisis.sql'), 'utf8'));
     expect(await objetosAnalisis()).toHaveLength(2);
 
-    // El inverso de 01l_per borra per y se puede reaplicar.
+    // El inverso de 01l_per_contactos deja per como lo dejó 01l_per (spec 32) y va antes que el de 01l_per.
+    expect(await objetosContactos()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_contactos.sql'), 'utf8'));
+    expect(await objetosContactos()).toEqual([]);
+    expect(await existeEsquema('per')).toBe(true);
+
+    // El inverso de 01l_per borra per; ambas se pueden reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per.sql'), 'utf8'));
     expect(await existeEsquema('per')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per.sql'), 'utf8'));
     expect(await existeEsquema('per')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_contactos.sql'), 'utf8'));
+    expect(await objetosContactos()).toHaveLength(3);
 
     // El inverso de 01k_idn_cuota deja idn como lo dejó 01j_idn (con el proveedor sembrado) y se puede reaplicar.
     expect(await objetosCuota()).toHaveLength(6);

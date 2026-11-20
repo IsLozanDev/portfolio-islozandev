@@ -1,23 +1,40 @@
 import { ConflictError, type TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
-import type { EntityManager, FindOptionsWhere } from 'typeorm';
+import { In, QueryFailedError, type EntityManager, type FindOptionsWhere } from 'typeorm';
 import type { RepositorioPersonas } from '../../application/ports/repositorio-personas.js';
+import type { Contacto } from '../../domain/contacto.js';
+import type { Direccion } from '../../domain/direccion.js';
 import type { TipoDocumentoPersona } from '../../domain/documento-identidad.js';
-import { PersonaDuplicadaError } from '../../domain/errores.js';
+import { ContactoDuplicadoError, PersonaDuplicadaError } from '../../domain/errores.js';
 import type { Persona } from '../../domain/persona.js';
-import { ContactoEntidad, PersonaEntidad, PersonaRolEntidad, type FilaPersona } from './entidades.js';
-import { filaDesdeContacto, filaDesdePersona, filaDesdeRol, personaDesdeFilas } from './mapeo.js';
+import { compararConGuardados, porId } from './diferencias.js';
+import { ContactoEntidad, DireccionEntidad, PersonaEntidad, PersonaRolEntidad, type FilaPersona } from './entidades.js';
+import {
+  columnasEditablesDeContacto,
+  columnasEditablesDeDireccion,
+  columnasEditablesDePersona,
+  filaDesdeContacto,
+  filaDesdeDireccion,
+  filaDesdePersona,
+  filaDesdeRol,
+  personaDesdeFilas,
+} from './mapeo.js';
 
-/** Lo que la base tenía de la persona al leerla o guardarla: lo demás es nuevo. */
+const VIOLACION_UNICIDAD = '23505';
+const UNICO_CONTACTO_VALOR = 'uq_contacto_valor';
+
+/** Lo que la base tenía de la persona al leerla o guardarla: lo demás es nuevo, cambió o se borró. */
 interface EstadoGuardado {
   version: number;
   roles: number;
-  contactos: number;
+  contactos: ReadonlyMap<string, Contacto>;
+  direcciones: ReadonlyMap<string, Direccion>;
 }
 
 /**
- * per.persona con sus roles y contactos sobre el EntityManager de la transacción activa. Filtra por el
- * tenant del contexto además de la RLS (regla 3). Una persona que no salió de este repositorio es nueva.
+ * per.persona con sus roles, contactos y direcciones sobre el EntityManager de la transacción activa.
+ * Filtra por el tenant del contexto además de la RLS (regla 3). Una persona que no salió de este
+ * repositorio es nueva.
  */
 export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
   private readonly guardadas = new WeakMap<Persona, EstadoGuardado>();
@@ -35,11 +52,13 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     return this.buscar({ id: personaId });
   }
 
+  /** Primero la fila de la persona con su versión: si otra operación la cambió, nada más se escribe. */
   async guardar(persona: Persona): Promise<void> {
     const guardado = this.guardadas.get(persona) ?? (await this.insertar(persona));
-    if (guardado.version !== persona.version) await this.subirVersion(persona, guardado.version);
+    if (guardado.version !== persona.version) await this.actualizar(persona, guardado.version);
     await this.insertarRolesNuevos(persona, guardado.roles);
-    await this.insertarContactosNuevos(persona, guardado.contactos);
+    await this.sincronizarContactos(persona, guardado.contactos);
+    await this.sincronizarDirecciones(persona, guardado.direcciones);
     this.recordar(persona);
   }
 
@@ -47,13 +66,17 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     const tenantId = this.tenantId;
     const fila = await this.manager.getRepository(PersonaEntidad).findOneBy({ ...filtro, tenantId });
     if (!fila) return null;
+    const deLaPersona = { personaId: fila.id, tenantId };
     const roles = await this.manager
       .getRepository(PersonaRolEntidad)
-      .find({ where: { personaId: fila.id, tenantId }, order: { desde: 'ASC', productoCodigo: 'ASC', rol: 'ASC' } });
+      .find({ where: deLaPersona, order: { desde: 'ASC', productoCodigo: 'ASC', rol: 'ASC' } });
     const contactos = await this.manager
       .getRepository(ContactoEntidad)
-      .find({ where: { personaId: fila.id, tenantId }, order: { creadoEn: 'ASC', id: 'ASC' } });
-    return this.recordar(personaDesdeFilas(fila, roles, contactos));
+      .find({ where: deLaPersona, order: { creadoEn: 'ASC', id: 'ASC' } });
+    const direcciones = await this.manager
+      .getRepository(DireccionEntidad)
+      .find({ where: deLaPersona, order: { creadoEn: 'ASC', id: 'ASC' } });
+    return this.recordar(personaDesdeFilas({ persona: fila, roles, contactos, direcciones }));
   }
 
   /**
@@ -70,7 +93,7 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
       .returning('id')
       .execute();
     if ((resultado.raw as unknown[]).length === 0) throw new PersonaDuplicadaError(await this.idDelDocumento(persona));
-    return { version: persona.version, roles: 0, contactos: 0 };
+    return { version: persona.version, roles: 0, contactos: new Map(), direcciones: new Map() };
   }
 
   private async idDelDocumento(persona: Persona): Promise<string> {
@@ -82,10 +105,11 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     return existente.id;
   }
 
-  private async subirVersion(persona: Persona, versionGuardada: number): Promise<void> {
+  /** Bloqueo optimista: escribe la denominación y la versión nueva solo si la fila sigue en la versión leída. */
+  private async actualizar(persona: Persona, versionGuardada: number): Promise<void> {
     const resultado = await this.manager
       .getRepository(PersonaEntidad)
-      .update({ id: persona.id, tenantId: this.tenantId, version: versionGuardada }, { version: persona.version });
+      .update({ id: persona.id, tenantId: this.tenantId, version: versionGuardada }, columnasEditablesDePersona(persona));
     if (resultado.affected !== 1) {
       throw new ConflictError('La persona fue modificada por otra operación; vuelva a cargarla');
     }
@@ -97,17 +121,34 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     await this.manager.getRepository(PersonaRolEntidad).insert(nuevos.map((rolAsignado) => filaDesdeRol(persona, rolAsignado)));
   }
 
-  private async insertarContactosNuevos(persona: Persona, yaGuardados: number): Promise<void> {
-    const nuevos = persona.contactos.slice(yaGuardados);
-    if (nuevos.length === 0) return;
-    await this.manager.getRepository(ContactoEntidad).insert(nuevos.map((contacto) => filaDesdeContacto(persona, contacto)));
+  private async sincronizarContactos(persona: Persona, guardados: ReadonlyMap<string, Contacto>): Promise<void> {
+    const { eliminados, cambiados, nuevos } = compararConGuardados(persona.contactos, guardados);
+    const contactos = this.manager.getRepository(ContactoEntidad);
+    const tenantId = this.tenantId;
+    try {
+      if (eliminados.length > 0) await contactos.delete({ id: In(eliminados), tenantId });
+      for (const contacto of cambiados) await contactos.update({ id: contacto.id, tenantId }, columnasEditablesDeContacto(contacto));
+      if (nuevos.length > 0) await contactos.insert(nuevos.map((contacto) => filaDesdeContacto(persona, contacto)));
+    } catch (error) {
+      throw esContactoRepetido(error) ? new ContactoDuplicadoError() : error;
+    }
+  }
+
+  private async sincronizarDirecciones(persona: Persona, guardadas: ReadonlyMap<string, Direccion>): Promise<void> {
+    const { eliminados, cambiados, nuevos } = compararConGuardados(persona.direcciones, guardadas);
+    const direcciones = this.manager.getRepository(DireccionEntidad);
+    const tenantId = this.tenantId;
+    if (eliminados.length > 0) await direcciones.delete({ id: In(eliminados), tenantId });
+    for (const direccion of cambiados) await direcciones.update({ id: direccion.id, tenantId }, columnasEditablesDeDireccion(direccion));
+    if (nuevos.length > 0) await direcciones.insert(nuevos.map((direccion) => filaDesdeDireccion(persona, direccion)));
   }
 
   private recordar(persona: Persona): Persona {
     this.guardadas.set(persona, {
       version: persona.version,
       roles: persona.roles.length,
-      contactos: persona.contactos.length,
+      contactos: porId(persona.contactos),
+      direcciones: porId(persona.direcciones),
     });
     return persona;
   }
@@ -119,4 +160,11 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
   private get tenantId(): string {
     return this.contexto.current().tenantId;
   }
+}
+
+/** Segunda barrera del contacto repetido: otra operación lo agregó entre la lectura y la escritura. */
+function esContactoRepetido(error: unknown): boolean {
+  if (!(error instanceof QueryFailedError)) return false;
+  const { code, constraint } = error.driverError as { code?: string; constraint?: string };
+  return code === VIOLACION_UNICIDAD && constraint === UNICO_CONTACTO_VALOR;
 }

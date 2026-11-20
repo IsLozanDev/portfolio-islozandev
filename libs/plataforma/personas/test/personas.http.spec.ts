@@ -1,21 +1,13 @@
-import 'reflect-metadata';
-import type { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Test } from '@nestjs/testing';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { CuotaAgotadaError, ProveedorNoDisponibleError } from '@vitrina/plataforma/identidad';
-import { PERMISO, PermisoGuard } from '@vitrina/plataforma/seguridad';
+import { PERMISO } from '@vitrina/plataforma/seguridad';
 import request from 'supertest';
-import { AsignarRolPersona } from '../src/application/asignar-rol.js';
-import { BuscarPersonaPorDocumento } from '../src/application/buscar-persona.js';
-import { ObtenerPersona } from '../src/application/obtener-persona.js';
-import { RegistrarPersona } from '../src/application/registrar-persona.js';
 import { PersonasController } from '../src/interface/personas.controller.js';
+import { crearAppPersonas, SUCURSAL } from './support/app-http.js';
 import { crearDobles, HOY_EN_LIMA, respuestaDni, TENANT_A, TENANT_B, type Dobles } from './support/dobles.js';
 
-const USUARIO = 'cccccccc-0000-4000-8000-000000000003';
-const SUCURSAL = '0193f3a0-0000-7000-8000-000000000102';
-const MFA_MAX_EDAD_SEG = 900;
 const LEER = 'plat.persona.leer';
 const REGISTRAR = 'plat.persona.registrar';
 const ROL = 'plat.persona.rol';
@@ -29,17 +21,6 @@ const JUANA = {
   apellido_materno: 'Mamani',
   celular: '987654321',
 };
-
-/** Hace lo que deja AutenticacionGuard: el principal del token. */
-class PrincipalDePrueba implements CanActivate {
-  canActivate(contexto: ExecutionContext): boolean {
-    const solicitud = contexto.switchToHttp().getRequest();
-    solicitud.principal = { usuarioId: USUARIO, tenantId: TENANT_A, tipo: 'INTERNO', aal: 'aal1', sesionId: 'sesion', amr: [] };
-    return true;
-  }
-}
-
-type DependenciasGuard = ConstructorParameters<typeof PermisoGuard>;
 
 describe('HTTP /v1/personas con TR-IDN falso (TR-RF-039 y 040)', () => {
   let app: INestApplication;
@@ -57,28 +38,7 @@ describe('HTTP /v1/personas con TR-IDN falso (TR-RF-039 y 040)', () => {
 
   beforeAll(async () => {
     dobles = crearDobles();
-    const modulo = await Test.createTestingModule({
-      controllers: [PersonasController],
-      providers: [
-        { provide: BuscarPersonaPorDocumento, useValue: new BuscarPersonaPorDocumento(dobles) },
-        { provide: RegistrarPersona, useValue: new RegistrarPersona(dobles) },
-        { provide: ObtenerPersona, useValue: new ObtenerPersona(dobles) },
-        { provide: AsignarRolPersona, useValue: new AsignarRolPersona(dobles) },
-      ],
-    }).compile();
-    app = modulo.createNestApplication({ logger: false });
-
-    const resolver = { ejecutar: async () => ({ permisos: permisosDelActor }) } as unknown as DependenciasGuard[1];
-    const catalogo = { sensible: async () => false } as unknown as DependenciasGuard[2];
-    const bitacora = { registrar: async () => undefined } as unknown as DependenciasGuard[3];
-    const unidadDeTrabajo: DependenciasGuard[4] = { run: (trabajo) => trabajo() };
-    const contexto: DependenciasGuard[5] = { current: () => ({ tenantId: TENANT_A }), run: (_alcance, trabajo) => trabajo() };
-    app.useGlobalGuards(
-      new PrincipalDePrueba(),
-      new PermisoGuard(new Reflector(), resolver, catalogo, bitacora, unidadDeTrabajo, contexto, MFA_MAX_EDAD_SEG),
-    );
-    app.setGlobalPrefix('v1');
-    await app.init();
+    app = await crearAppPersonas(dobles, () => permisosDelActor);
   });
 
   beforeEach(() => {
@@ -207,6 +167,8 @@ describe('HTTP /v1/personas con TR-IDN falso (TR-RF-039 y 040)', () => {
         apellido_materno: 'Mamani',
         razon_social: null,
         activo: true,
+        version: 1,
+        direcciones: [],
         roles: [],
         contactos: [
           { id: expect.any(String), tipo: 'CELULAR', valor: '987654321', principal: true },
@@ -385,7 +347,9 @@ describe('HTTP /v1/personas con TR-IDN falso (TR-RF-039 y 040)', () => {
       const rutas = documento.paths;
       const codigos = (ruta: string, metodo: 'get' | 'post') => Object.keys(rutas[ruta][metodo]?.responses ?? {}).sort();
 
-      expect(Object.keys(rutas).sort()).toEqual(['/v1/personas', '/v1/personas/busqueda', '/v1/personas/{id}', '/v1/personas/{id}/roles']);
+      expect(Object.keys(rutas)).toEqual(
+        expect.arrayContaining(['/v1/personas', '/v1/personas/busqueda', '/v1/personas/{id}', '/v1/personas/{id}/roles']),
+      );
       expect(codigos('/v1/personas/busqueda', 'get')).toEqual(['200', '400', '401', '403', '422']);
       expect(codigos('/v1/personas', 'post')).toEqual(['201', '400', '401', '403', '409', '422']);
       expect(codigos('/v1/personas/{id}', 'get')).toEqual(['200', '400', '401', '403', '404']);

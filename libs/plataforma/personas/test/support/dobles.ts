@@ -104,14 +104,30 @@ export class SuscripcionesFijas implements SuscripcionesDelTenant {
   }
 }
 
+type ItemDeCatalogo = Pick<ResultadoValidacion, 'nombre' | 'atributos'>;
+
+export const UBIGEO_CAYMA = '040103';
+export const UBIGEO_LIMA = '150101';
+/** Como el CSV oficial: el distrito es el nombre del ítem, en mayúsculas. */
+const UBIGEOS: Record<string, ItemDeCatalogo> = {
+  [UBIGEO_CAYMA]: { nombre: 'CAYMA', atributos: { departamento: 'AREQUIPA', provincia: 'AREQUIPA' } },
+  [UBIGEO_LIMA]: { nombre: 'LIMA', atributos: { departamento: 'LIMA', provincia: 'LIMA' } },
+};
+
 export class CatalogoFijo implements Pick<CatalogoPort, 'validarItem'> {
   readonly consultas: [catalogo: string, codigo: string][] = [];
+  ubigeos: Record<string, ItemDeCatalogo> = { ...UBIGEOS };
+  /** Ubigeos con vigencia cerrada: existen, pero ya no son válidos ni devuelven nombre. */
+  ubigeosCerrados: string[] = [];
   constructor(public vigentes: string[] = ['DNI', 'CE', 'RUC', 'PASAPORTE', 'DOC_0']) {}
 
   async validarItem(catalogo: string, codigo: string): Promise<ResultadoValidacion> {
     this.consultas.push([catalogo, codigo]);
+    if (this.ubigeosCerrados.includes(codigo)) return { valido: false, motivo: 'FUERA_DE_VIGENCIA', atributos: {}, nombre: null };
+    const ubigeo = this.ubigeos[codigo];
+    if (ubigeo) return { valido: true, motivo: null, ...ubigeo };
     const valido = this.vigentes.includes(codigo);
-    return { valido, motivo: valido ? null : 'INEXISTENTE', atributos: valido ? {} : null };
+    return { valido, motivo: valido ? null : 'INEXISTENTE', atributos: valido ? {} : null, nombre: valido ? codigo : null };
   }
 }
 

@@ -6,7 +6,7 @@ import {
   type TipoConsultable,
 } from '@vitrina/plataforma/identidad';
 import { DocumentoIdentidad } from '../domain/documento-identidad.js';
-import type { DenominacionPersona } from '../domain/persona.js';
+import type { DenominacionPersona } from '../domain/denominacion.js';
 import type { DependenciasPersonas } from './dependencias-personas.js';
 import type { PersonaResumen } from './ports/persona.port.js';
 import { resumenDe } from './vista-persona.js';
