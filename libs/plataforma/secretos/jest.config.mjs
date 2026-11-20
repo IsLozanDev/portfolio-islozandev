@@ -9,7 +9,7 @@ export default {
     '^@vitrina/plataforma/auditoria$': '<rootDir>/../auditoria/src/index.ts',
     '^@vitrina/plataforma/seguridad$': '<rootDir>/../seguridad/src/index.ts',
     '^@vitrina/plataforma/eventos$': '<rootDir>/../eventos/src/index.ts',
-    '^@vitrina/plataforma/org$': '<rootDir>/../org/src/index.ts',
+    '^@vitrina/shared/util$': '<rootDir>/../../shared/util/src/index.ts',
   },
   testTimeout: 30_000,
   // RNF-025: la cobertura exigida es la del dominio.
