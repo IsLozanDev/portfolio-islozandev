@@ -61,6 +61,8 @@ export default [
             comp('per', 'kernel', 'seg', 'org', 'cat', 'idn'),
             // R2: archivos audita las descargas sensibles y publica por outbox (spec 33).
             comp('arc', 'kernel', 'seg', 'aud', 'evt'),
+            // R2: la bóveda audita sus escrituras (spec 41).
+            comp('sec', 'kernel', 'aud'),
           ],
         },
       ],

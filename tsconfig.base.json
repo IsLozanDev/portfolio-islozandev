@@ -60,6 +60,9 @@
       "@vitrina/plataforma/observabilidad-arranque": [
         "./libs/plataforma/observabilidad-arranque/src/index.ts"
       ],
+      "@vitrina/plataforma/secretos": [
+        "./libs/plataforma/secretos/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],
