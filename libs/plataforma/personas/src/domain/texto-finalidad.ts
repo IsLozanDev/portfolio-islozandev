@@ -2,7 +2,7 @@ import { exigirFinalidad, type Finalidad } from './consentimiento.js';
 import { TextoFinalidadInvalidoError } from './errores.js';
 
 /** El mismo formato y las mismas cotas que los CHECK de per.texto_finalidad. */
-const FORMATO_VERSION = /^[A-Za-z0-9._-]{1,20}$/;
+export const FORMATO_VERSION = /^[A-Za-z0-9._-]{1,20}$/;
 export const LONGITUD_MINIMA_TEXTO_LEGAL = 20;
 export const LONGITUD_MAXIMA_TEXTO_LEGAL = 10_000;
 

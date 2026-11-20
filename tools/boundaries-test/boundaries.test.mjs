@@ -48,12 +48,15 @@ const casos = [
   ['comp:cfg no importa de comp:idn', `${FX}/cfg/src/probe.ts`, "import '@vitrina-fixtures/idn';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
   ['personas (comp:per) no importa de comp:cfg', `${PLAT}/personas/src/probe.ts`, "import '@vitrina/plataforma/parametros';", { regla: BOUNDARIES, mensaje: /comp:per/ }],
   ['personas (comp:per) no importa de comp:obs', `${PLAT}/personas/src/probe.ts`, "import '@vitrina/plataforma/observabilidad';", { regla: BOUNDARIES, mensaje: /comp:per/ }],
-  ['personas (comp:per) no importa de comp:aud', `${PLAT}/personas/src/probe.ts`, "import '@vitrina-fixtures/aud';", { regla: BOUNDARIES, mensaje: /comp:per/ }],
+  // Spec 37: PER valida la evidencia en ARC y audita en AUD; ninguno de los dos importa de PER.
+  ['personas (comp:per) importa de archivos (comp:arc) y auditoria (comp:aud)', `${PLAT}/personas/src/probe.ts`, "import '@vitrina/plataforma/archivos'; import '@vitrina/plataforma/auditoria';", null],
+  ['comp:aud no importa de comp:per', `${FX}/aud/src/probe.ts`, "import '@vitrina-fixtures/per';", { regla: BOUNDARIES, mensaje: /comp:aud/ }],
   ['personas (comp:per) importa de kernel, seguridad, org, catalogos, identidad y shared', `${PLAT}/personas/src/probe.ts`, "import '@vitrina/plataforma/kernel'; import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/org'; import '@vitrina/plataforma/catalogos'; import '@vitrina/plataforma/identidad'; import '@vitrina/shared/util';", null],
   ['comp:cfg no importa de comp:per', `${FX}/cfg/src/probe.ts`, "import '@vitrina-fixtures/per';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],
   ['archivos (comp:arc) no importa de org', `${PLAT}/archivos/src/probe.ts`, "import '@vitrina/plataforma/org';", { regla: BOUNDARIES, mensaje: /comp:arc/ }],
   ['archivos (comp:arc) no importa de comp:cat', `${PLAT}/archivos/src/probe.ts`, "import '@vitrina/plataforma/catalogos';", { regla: BOUNDARIES, mensaje: /comp:arc/ }],
-  ['archivos (comp:arc) no importa de comp:per', `${PLAT}/archivos/src/probe.ts`, "import '@vitrina/plataforma/personas';", { regla: BOUNDARIES, mensaje: /comp:arc/ }],
+  // Con personas importando archivos (spec 37) la regla reporta el ciclo antes que los tags: se prueba con fixtures.
+  ['comp:arc no importa de comp:per', `${FX}/arc/src/probe.ts`, "import '@vitrina-fixtures/per';", { regla: BOUNDARIES, mensaje: /comp:arc/ }],
   ['archivos (comp:arc) no importa de comp:obs', `${PLAT}/archivos/src/probe.ts`, "import '@vitrina/plataforma/observabilidad';", { regla: BOUNDARIES, mensaje: /comp:arc/ }],
   ['archivos (comp:arc) importa de kernel, seguridad, auditoria, eventos y shared', `${PLAT}/archivos/src/probe.ts`, "import '@vitrina/plataforma/kernel'; import '@vitrina/plataforma/kernel-infra'; import '@vitrina/plataforma/seguridad'; import '@vitrina/plataforma/auditoria'; import '@vitrina/plataforma/eventos'; import '@vitrina/shared/util';", null],
   ['comp:cfg no importa de comp:arc', `${FX}/cfg/src/probe.ts`, "import '@vitrina-fixtures/arc';", { regla: BOUNDARIES, mensaje: /comp:cfg/ }],

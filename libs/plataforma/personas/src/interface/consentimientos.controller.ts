@@ -33,12 +33,11 @@ import {
   RegistrarConsentimientosDto,
   RevocarConsentimientoDto,
 } from './consentimientos.dto.js';
-import { EsquemaPersonaId, texto } from './esquemas.js';
+import { EsquemaPersonaId, LONGITUD_MAXIMA_VERSION, texto } from './esquemas.js';
 import { PersonasFiltro, validar } from './personas.http.js';
 
 /** Cotas de entrada: la lista de decisiones y el formato de la versión los valida el dominio, con su código. */
 const LONGITUD_MAXIMA_DECISION = 10;
-const LONGITUD_MAXIMA_VERSION = 40;
 
 // `decision` y `accion_expresa` pueden faltar aquí: el dominio responde 422 DATOS_INVALIDOS o ACCION_EXPRESA_REQUERIDA.
 const EsquemaDecision = z.object({

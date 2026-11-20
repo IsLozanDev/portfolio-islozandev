@@ -3,7 +3,7 @@ import type { DecisionPorFinalidad, TextoPublicado } from '../application/consen
 import type { DecisionRegistrada } from '../application/ports/consentimiento.port.js';
 import { CANALES, DECISIONES, FINALIDADES, type Canal, type Decision, type Finalidad } from '../domain/consentimiento.js';
 import { MOTIVOS_EVIDENCIA_INVALIDA, type MotivoEvidenciaInvalida } from '../domain/errores.js';
-import { LONGITUD_MAXIMA_TEXTO_LEGAL, LONGITUD_MINIMA_TEXTO_LEGAL } from '../domain/texto-finalidad.js';
+import { FORMATO_VERSION, LONGITUD_MAXIMA_TEXTO_LEGAL, LONGITUD_MINIMA_TEXTO_LEGAL } from '../domain/texto-finalidad.js';
 
 export const MAXIMO_DECISIONES_POR_LOTE = FINALIDADES.length;
 
@@ -44,7 +44,7 @@ export class PublicarTextoDto {
   @ApiProperty({ enum: FINALIDADES })
   finalidad!: Finalidad;
 
-  @ApiProperty({ example: '2026-03', pattern: '^[A-Za-z0-9._-]{1,20}$' })
+  @ApiProperty({ example: '2026-03', pattern: FORMATO_VERSION.source })
   version!: string;
 
   @ApiProperty({ minLength: LONGITUD_MINIMA_TEXTO_LEGAL, maxLength: LONGITUD_MAXIMA_TEXTO_LEGAL, description: 'Texto legal; publicado no se edita' })

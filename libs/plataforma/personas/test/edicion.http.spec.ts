@@ -630,9 +630,12 @@ describe('HTTP /v1/personas/{id}: datos básicos, contactos y direcciones (TR-RF
       const detalle = documento.components?.schemas?.['PersonaDetalleDto'] as { properties: object };
 
       expect(Object.keys(rutas).sort()).toEqual([
+        '/v1/consentimientos/textos',
         '/v1/personas',
         '/v1/personas/busqueda',
         '/v1/personas/{id}',
+        '/v1/personas/{id}/consentimientos',
+        '/v1/personas/{id}/consentimientos/{finalidad}/revocar',
         '/v1/personas/{id}/contactos',
         '/v1/personas/{id}/contactos/{contactoId}',
         '/v1/personas/{id}/direcciones',

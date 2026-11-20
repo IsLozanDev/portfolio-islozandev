@@ -3,7 +3,9 @@ import type { TextoFinalidad } from '../../domain/texto-finalidad.js';
 import type { DependenciasPersonas } from '../dependencias-personas.js';
 import { textoPublicadoDe, type TextoPublicado } from './vista-consentimiento.js';
 
-const posicionDe = (texto: TextoFinalidad) => FINALIDADES.indexOf(texto.finalidad);
+function posicionDe(texto: TextoFinalidad): number {
+  return FINALIDADES.indexOf(texto.finalidad);
+}
 
 /** Textos por finalidad del tenant del contexto. */
 export class ConsultarTextos {

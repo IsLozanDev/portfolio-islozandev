@@ -287,6 +287,20 @@ describe('api', () => {
     expect(seguridad).toEqual(Array(7).fill([{ bearer: [] }]));
   });
 
+  it('las cinco rutas de consentimientos están en OpenAPI con bearer auth y piden token (spec 37)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/consentimientos/textos');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    const seguridad = [
+      paths['/v1/personas/{id}/consentimientos'].get,
+      paths['/v1/personas/{id}/consentimientos'].post,
+      paths['/v1/personas/{id}/consentimientos/{finalidad}/revocar'].post,
+      paths['/v1/consentimientos/textos'].get,
+      paths['/v1/consentimientos/textos'].post,
+    ].map((operacion) => operacion.security);
+    expect(seguridad).toEqual(Array(5).fill([{ bearer: [] }]));
+  });
+
   it('ArchivosModule queda cableado: /v1/archivos pide token y sus cuatro rutas están en OpenAPI con bearer auth (spec 33)', async () => {
     const sinToken = await request(app.getHttpServer()).get('/v1/archivos/0193f3a0-0000-7000-8000-0000000000a1');
     expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);

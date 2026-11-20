@@ -57,8 +57,9 @@ export default [
             comp('aud', 'kernel', 'seg', 'evt'),
             comp('obs', 'kernel', 'evt'),
             comp('idn', 'kernel', 'seg'),
-            // PL-10 dibuja IDN después de PER; PER lo consume para el prellenado (spec 31).
-            comp('per', 'kernel', 'seg', 'org', 'cat', 'idn'),
+            // PL-10 dibuja IDN después de PER; PER lo consume para el prellenado (spec 31). ARC valida la
+            // evidencia de los consentimientos y AUD los audita (spec 37); ninguno depende de PER.
+            comp('per', 'kernel', 'seg', 'org', 'cat', 'idn', 'arc', 'aud'),
             // R2: archivos audita las descargas sensibles y publica por outbox (spec 33).
             comp('arc', 'kernel', 'seg', 'aud', 'evt'),
           ],

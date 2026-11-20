@@ -21,11 +21,10 @@ import { FINALIDADES } from '../domain/consentimiento.js';
 import { PERMISOS_PER } from '../domain/permisos-per.js';
 import { LONGITUD_MAXIMA_TEXTO_LEGAL } from '../domain/texto-finalidad.js';
 import { ErrorConsentimientoDto, PublicarTextoDto, TextoPublicadoDto, textoPublicadoDto } from './consentimientos.dto.js';
-import { texto } from './esquemas.js';
+import { LONGITUD_MAXIMA_VERSION, texto } from './esquemas.js';
 import { PersonasFiltro, validar } from './personas.http.js';
 
 // Cotas de entrada: el formato de la versión y el largo del texto los valida el dominio con DATOS_INVALIDOS.
-const LONGITUD_MAXIMA_VERSION = 40;
 /** zod cuenta unidades UTF-16 y el dominio caracteres: un carácter fuera del plano básico ocupa dos. */
 const COTA_TEXTO_EN_UNIDADES = 2 * LONGITUD_MAXIMA_TEXTO_LEGAL;
 

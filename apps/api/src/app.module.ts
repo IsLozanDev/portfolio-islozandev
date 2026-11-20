@@ -125,6 +125,14 @@ export class AppModule {
         inject: [PARAMETRO_PORT],
       },
     });
+    // Spec 37: la misma referencia en AppModule y PersonasModule (evidencia de consentimientos): un solo Redis y una cola.
+    // Spec 33: sin autorizadores de entidad todavía; cada producto registra el suyo en su spec.
+    const archivosModulo = ArchivosModule.register({
+      redisUrl: seguridad.redisUrl,
+      supabase: { url: seguridad.supabaseUrl, secretKey: seguridad.invitaciones.supabaseSecretKey },
+      bucket: archivos.bucket,
+      autorizadores: { useFactory: () => [] },
+    });
     return {
       module: AppModule,
       imports: [
@@ -145,14 +153,8 @@ export class AppModule {
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
         identidadModulo,
-        PersonasModule.register({ imports: [catalogosModulo, identidadModulo] }),
-        // Spec 33: sin autorizadores de entidad todavía; cada producto registra el suyo en su spec.
-        ArchivosModule.register({
-          redisUrl: seguridad.redisUrl,
-          supabase: { url: seguridad.supabaseUrl, secretKey: seguridad.invitaciones.supabaseSecretKey },
-          bucket: archivos.bucket,
-          autorizadores: { useFactory: () => [] },
-        }),
+        PersonasModule.register({ imports: [catalogosModulo, identidadModulo, archivosModulo] }),
+        archivosModulo,
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).

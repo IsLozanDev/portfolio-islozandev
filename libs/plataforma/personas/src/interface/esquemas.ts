@@ -4,6 +4,8 @@ import { z } from 'zod';
 export const LONGITUD_MAXIMA_TIPO = 20;
 export const LONGITUD_MAXIMA_NUMERO = 20;
 export const LONGITUD_MAXIMA_TEXTO = 300;
+/** Versión de un texto de consentimiento: el formato real lo valida el dominio. */
+export const LONGITUD_MAXIMA_VERSION = 40;
 
 export const texto = (maximo: number) => z.string().max(maximo);
 export const textoOpcional = texto(LONGITUD_MAXIMA_TEXTO).nullish();
