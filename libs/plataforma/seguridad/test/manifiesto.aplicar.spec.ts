@@ -48,8 +48,8 @@ describeConDb('AplicarManifiesto (TR-RF-008, PostgreSQL 16)', () => {
     expect(primera).toMatchObject({ producto: 'PLAT', version: '1.23.0', yaAplicado: false });
     // 8 de seg, 3 de cfg (spec 09), 2 de seq (spec 10), 2 de evt (spec 11), 1 de org (spec 12), 6 de org (spec 17a), 3 de seg (spec 18)
     // 1 de seg (spec 18b), 5 de cat (spec 19a), 1 de cat (spec 19b), 1 de feriados (spec 19c), 2 de aud (spec 20b),
-    // 5 de idn (specs 28 a 30), 3 de per (spec 31) y 2 de arc (spec 33).
-    expect(primera.cambios.permisos.insertados).toBe(45);
+    // 5 de idn (specs 28 a 30), 3 de per (spec 31), 2 de arc (spec 33), 1 de per (spec 32) y 1 de arc (spec 35).
+    expect(primera.cambios.permisos.insertados).toBe(47);
     const filas = await contar("SELECT count(*) AS n FROM seg.manifiesto_aplicado WHERE producto_codigo = 'PLAT'");
 
     const segunda = await aplicar.ejecutar(plat);

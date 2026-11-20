@@ -97,6 +97,19 @@ const CASOS = [
   { migracion: '01m_arc_versiones.sql', esquema: 'arc', prueba: 'tests/01m_arc_versiones.test.sql' },
 ];
 
+// Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
+const catalogosFacturacion = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT codigo FROM cat.catalogo
+        WHERE codigo IN ('TRIBUTO', 'TIPO_NOTA_CREDITO', 'TIPO_NOTA_DEBITO', 'TIPO_PRECIO', 'TIPO_OPERACION', 'LEYENDA')
+        ORDER BY codigo`,
+    )
+  ).rows.map((r) => r.codigo);
+
+const ITEM_TRIBUTO_PRUEBA = 'ca700000-0000-0000-0000-0000000d1000';
+
 // Columnas, índices, función, política y número en el barrido que agrega 01m_arc_versiones (8 en total).
 const objetosVersiones = async () =>
   (

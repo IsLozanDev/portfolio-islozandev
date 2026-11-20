@@ -208,7 +208,7 @@ describeConDb('HTTP /v1/archivos contra PostgreSQL 16 (TR-CA-199 a 201, 204 y 20
         accion: 'plat.archivo.descargar',
         tenant_id: tenantA,
         usuario_id: USUARIO,
-        despues: { categoria: 'DOCUMENTO', entidad_tipo: 'PRUEBA_SENSIBLE', entidad_id: 'E-1', disposicion: 'attachment' },
+        despues: { categoria: 'DOCUMENTO', entidad_tipo: 'PRUEBA_SENSIBLE', entidad_id: 'E-1', disposicion: 'attachment', version: 1 },
       },
     ]);
   });

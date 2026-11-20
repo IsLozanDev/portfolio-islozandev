@@ -74,6 +74,7 @@ describeConDb('SembrarPlataforma contra PostgreSQL 16 (spec 12)', () => {
           reintentosEventos: { intentos: 8, esperaBaseMs: 5000, esperaMaximaMs: 600_000 },
           tenantOperador: 'plataforma',
           identidad: { proveedor: 'falso', salDocumento: 'sal-de-prueba' },
+          archivos: { bucket: 'archivos' },
         }),
       ],
     })
