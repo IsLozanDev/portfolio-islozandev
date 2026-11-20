@@ -3,8 +3,8 @@ import { TextoFinalidadInvalidoError } from './errores.js';
 
 /** El mismo formato y las mismas cotas que los CHECK de per.texto_finalidad. */
 const FORMATO_VERSION = /^[A-Za-z0-9._-]{1,20}$/;
-export const LONGITUD_MINIMA_TEXTO = 20;
-export const LONGITUD_MAXIMA_TEXTO = 10_000;
+export const LONGITUD_MINIMA_TEXTO_LEGAL = 20;
+export const LONGITUD_MAXIMA_TEXTO_LEGAL = 10_000;
 
 export interface DatosTextoFinalidad {
   id: string;
@@ -30,8 +30,8 @@ export class TextoFinalidad {
     }
     // Por caracteres, como char_length en PostgreSQL, no por unidades UTF-16.
     const caracteres = Array.from(texto.texto).length;
-    if (caracteres < LONGITUD_MINIMA_TEXTO || caracteres > LONGITUD_MAXIMA_TEXTO) {
-      throw new TextoFinalidadInvalidoError(`El texto debe tener entre ${LONGITUD_MINIMA_TEXTO} y ${LONGITUD_MAXIMA_TEXTO} caracteres`);
+    if (caracteres < LONGITUD_MINIMA_TEXTO_LEGAL || caracteres > LONGITUD_MAXIMA_TEXTO_LEGAL) {
+      throw new TextoFinalidadInvalidoError(`El texto debe tener entre ${LONGITUD_MINIMA_TEXTO_LEGAL} y ${LONGITUD_MAXIMA_TEXTO_LEGAL} caracteres`);
     }
     return new TextoFinalidad({ ...texto, finalidad });
   }

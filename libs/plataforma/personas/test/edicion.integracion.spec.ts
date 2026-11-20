@@ -17,7 +17,8 @@ import { registrarEsquemasPer } from '../src/infrastructure/event-schemas.js';
 import { ContactoEntidad, ENTIDADES_PER } from '../src/infrastructure/typeorm/entidades.js';
 import { RepositorioPersonasTypeOrm } from '../src/infrastructure/typeorm/personas.repositorio.js';
 import { VerificadorReferenciasPer } from '../src/infrastructure/verificador-referencias.per.js';
-import { CatalogoFijo, IdentidadEspia, SuscripcionesFijas, UBIGEO_CAYMA } from './support/dobles.js';
+import { ArchivosFijos, AuditoriaEspia, CatalogoFijo, IdentidadEspia, SuscripcionesFijas, UBIGEO_CAYMA } from './support/dobles.js';
+import { RepositorioConsentimientosTypeOrm } from '../src/infrastructure/typeorm/consentimientos.repositorio.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const ITEM_ID = '32000000-0000-4000-8000-0000000000d1';
@@ -323,6 +324,9 @@ describeConDb('Contactos y direcciones de personas con TypeORM (TR-RF-041, Postg
         suscripciones: new SuscripcionesFijas(['CLI']),
         catalogo: new CatalogoFijo(),
         identidad: new IdentidadEspia(),
+        consentimientos: new RepositorioConsentimientosTypeOrm(unidadDeTrabajo, contexto),
+        auditoria: new AuditoriaEspia(),
+        archivos: new ArchivosFijos(),
       };
     });
 
