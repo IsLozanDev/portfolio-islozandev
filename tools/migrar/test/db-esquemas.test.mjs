@@ -505,6 +505,44 @@ const objetosContactos = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Tablas y función de solo revocación que agrega 01l_per_consentimientos (3 en total).
+const objetosConsentimientos = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'tabla:' || tablename AS o FROM pg_tables WHERE schemaname = 'per' AND tablename IN ('texto_finalidad', 'consentimiento')
+       UNION ALL SELECT 'funcion:' || proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'per' AND proname = 'consentimiento_solo_revocacion'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con un consentimiento guardado el inverso de 01l_per_consentimientos se niega; la transacción se revierte.
+async function inversoConsentimientosConFilas() {
+  const tenant = '37000000-0000-0000-0000-0000000000e0';
+  const persona = '37000000-0000-0000-0000-0000000000e1';
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(
+      `INSERT INTO per.persona (id, tenant_id, tipo_persona, tipo_documento, numero_documento, nombres, apellido_paterno)
+       VALUES ('${persona}', '${tenant}', 'NATURAL', 'DNI', '45781236', 'Juana', 'Quispe');
+       INSERT INTO per.texto_finalidad (id, tenant_id, finalidad, version, texto, publicado_por)
+       VALUES (gen_random_uuid(), '${tenant}', 'PRESTACION', 'v1', repeat('a', 20), gen_random_uuid());
+       INSERT INTO per.consentimiento (id, tenant_id, persona_id, finalidad, decision, version_texto, canal, accion_expresa, registrado_por)
+       VALUES (gen_random_uuid(), '${tenant}', '${persona}', 'PRESTACION', 'ACEPTA', 'v1', 'WEB', true, gen_random_uuid())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01l_per_consentimientos.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
 describeConDb('db/ y supabase/migrations', () => {
   test('aplica, pasa las pruebas SQL, revierte y vuelve a aplicar', async () => {
     const dir = rutaDb('');
@@ -543,6 +581,16 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
     expect(await objetosVersiones()).toHaveLength(8);
 
+    // El inverso de 01l_per_consentimientos se niega con consentimientos; sin ellos quita textos y decisiones,
+    // y se puede reaplicar (spec 37).
+    expect(await objetosConsentimientos()).toHaveLength(3);
+    expect(await inversoConsentimientosConFilas()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_consentimientos.sql'), 'utf8'));
+    expect(await objetosConsentimientos()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_consentimientos.sql'), 'utf8'));
+    expect(await objetosConsentimientos()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_consentimientos.sql'), 'utf8'));
+
     // El inverso de 01l_per_contactos deja per como lo dejó 01l_per (spec 32) y va antes que el de 01l_per.
     expect(await objetosContactos()).toHaveLength(3);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_contactos.sql'), 'utf8'));
@@ -556,6 +604,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('per')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per_contactos.sql'), 'utf8'));
     expect(await objetosContactos()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_consentimientos.sql'), 'utf8'));
+    expect(await objetosConsentimientos()).toHaveLength(3);
 
     // El inverso de 01k_idn_cuota deja idn como lo dejó 01j_idn (con el proveedor sembrado) y se puede reaplicar.
     expect(await objetosCuota()).toHaveLength(6);
