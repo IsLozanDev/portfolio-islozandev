@@ -1,6 +1,6 @@
 import { Module, type DynamicModule, type OnApplicationShutdown } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
-import { registrarEsquemasArc } from '@vitrina/plataforma/archivos';
+import { opcionesAntivirusDe, registrarEsquemasArc } from '@vitrina/plataforma/archivos';
 import { AuditoriaModule, registrarEsquemasAud } from '@vitrina/plataforma/auditoria';
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
 import { EventosModule } from '@vitrina/plataforma/eventos';
@@ -69,6 +69,8 @@ export class WorkerModule {
           supabase: { url: config.SUPABASE_URL, secretKey: config.SUPABASE_SECRET_KEY },
           bucket: config.ARC_BUCKET,
           patronLimpieza: config.ARC_LIMPIEZA_CRON,
+          antivirus: opcionesAntivirusDe(config),
+          patronReencolado: config.ARC_REENCOLADO_CRON,
         }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],

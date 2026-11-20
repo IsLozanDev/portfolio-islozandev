@@ -71,3 +71,18 @@ export class AlmacenNoDisponibleError extends DomainError {
     super(codigoOrigen ? `El almacén de archivos no respondió: ${codigoOrigen}` : 'El almacén de archivos no respondió');
   }
 }
+
+export const CODIGOS_ERROR_ANTIVIRUS = ['CONEXION', 'TIEMPO_AGOTADO', 'RESPUESTA_DESCONOCIDA', 'TAMANO_EXCEDIDO'] as const;
+export type CodigoErrorAntivirus = (typeof CODIGOS_ERROR_ANTIVIRUS)[number];
+
+/**
+ * El antivirus no dio un veredicto: el trabajo de análisis se reintenta y el archivo sigue EN_ANALISIS. Nunca
+ * equivale a «limpio». Lleva solo el código del origen, no la respuesta del motor.
+ */
+export class AntivirusNoDisponibleError extends DomainError {
+  readonly code = 'ANTIVIRUS_NO_DISPONIBLE';
+
+  constructor(readonly codigoOrigen: CodigoErrorAntivirus) {
+    super(`El antivirus no respondió: ${codigoOrigen}`);
+  }
+}

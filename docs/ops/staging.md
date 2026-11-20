@@ -8,7 +8,7 @@ Staging es una copia completa de la plataforma (base, api, worker y frontends) d
 
 ```
 Navegador ──► Vercel (admin, consola) ──/v1──► Railway: api ──► Supabase staging (base + login)
-                                                   │    └──────► Railway: Redis ◄── Railway: worker
+                                                   │    └──────► Railway: Redis ◄── Railway: worker ──► Railway: clamav (red privada)
                                                    └── trazas, métricas, logs ──► Grafana Cloud
                                                    └── errores 500 ─────────────► Sentry
 GitHub Actions ──► GHCR (imágenes) ──► Railway        GitHub Environment `staging` = secretos del pipeline
@@ -18,6 +18,7 @@ GitHub Actions ──► GHCR (imágenes) ──► Railway        GitHub Enviro
 | --- | --- | --- | --- |
 | **Supabase staging** | Base de datos y login (Auth) propios de staging | Las migraciones y las pruebas no tocan dev. Un proyecto por ambiente (CLAUDE.md, PL-09). | Free (se pausa tras 7 días sin uso) |
 | **Railway** | Corre la **api**, el **worker** y **Redis** | Son procesos que tienen que estar siempre encendidos (api, relay del outbox, tareas programadas); Vercel no los corre. El plan dejaba elegir entre Railway, Render y Fly.io; Railway da los tres en un solo proyecto. | Por uso (confirmar al contratar) |
+| **ClamAV** (servicio `clamav` en Railway) | Antivirus de los archivos de TR-ARC (spec 34, TR-RNF-114) | El worker le envía cada archivo por TCP dentro de la red privada del proyecto; los archivos no salen de la infraestructura. Imagen oficial `clamav/clamav`. | Por uso: es el servicio que más RAM pide (3-4 GiB recomendados). Anotar el costo real al crearlo. |
 | **Vercel** | Publica `plataforma-admin` y `plataforma-consola` | Son archivos estáticos: los sirve con HTTPS y reenvía `/v1` a la api, así que no hace falta CORS. | Free (Hobby) |
 | **GHCR** (GitHub Container Registry) | Guarda las imágenes Docker de api y worker | Viene con GitHub: no hay cuenta ni nada que crear. El pipeline sube las imágenes y Railway las baja. | Gratis para paquetes públicos |
 | **Grafana Cloud** | Recibe trazas, métricas y logs (E-03) | Muestra cuánto tarda cada solicitud (p95 de TR-RNF-001), sigue una operación de punta a punta por `trace_id` y alerta si el outbox se atrasa (TR-RNF-106). Lo pide el plan. | Free dentro de la cuota |
@@ -67,6 +68,32 @@ Si se pausa por 7 días sin uso: panel → proyecto → **Restore project** (tar
 5. **Token:** *Project Settings → Tokens → Create* (ambiente `production`, el único que trae Railway) → va como secreto `RAILWAY_TOKEN` en GitHub. No me lo pases.
 
 **Me pasas:** la URL pública de `api`.
+
+### 2.1 ClamAV (spec 34)
+
+El worker analiza cada archivo de TR-ARC con ClamAV (`clamd`). Es un servicio aparte en el mismo proyecto: el worker le habla por TCP (puerto 3310), sin cifrado ni autenticación, así que **nunca lleva dominio público**. `deploy-staging.yml` no lo redespliega: la imagen no es del repo.
+
+1. **Servicio `clamav`:** **+ Create → Docker Image** → `clamav/clamav:1.5` (etiqueta de versión menor fijada; nunca `latest`). Renómbralo a **`clamav`**: de ese nombre sale su DNS privado, `clamav.railway.internal`.
+2. **Sin dominio:** no generes dominio en *Settings → Networking*. Solo se alcanza por la red privada.
+3. **Límites** (*Variables* del servicio `clamav`). El entrypoint de la imagen escribe en `/etc/clamav/clamd.conf` cada variable `CLAMD_CONF_<Opción>`, así que no hace falta comando de inicio ni archivo montado:
+
+   | Variable | Valor |
+   | --- | --- |
+   | `CLAMD_CONF_StreamMaxLength` | `30M` |
+   | `CLAMD_CONF_MaxFileSize` | `30M` |
+   | `CLAMD_CONF_MaxScanSize` | `30M` |
+
+   El bucket admite 25 MB (`26214400` bytes). Con `StreamMaxLength` menor, clamd rechaza el flujo (`INSTREAM size limit exceeded`); un archivo mayor que `MaxFileSize` lo da por limpio **sin analizarlo**. Por eso van los tres juntos y por encima de 25 MB. No se activa `AlertExceedsMax`.
+4. **Volumen de firmas:** en el servicio, **Attach Volume** con *Mount path* `/var/lib/clamav`. Sin volumen, cada redeploy arranca con las firmas que trae la imagen y `freshclam` las vuelve a bajar. Con el volumen vacío, el primer arranque descarga la base completa (unos minutos).
+5. **RAM:** ClamAV recomienda 3 GiB como mínimo y 4 GiB como preferido: carga las firmas en memoria (más de 1 GiB) y al recargarlas tras una actualización usa el doble por un momento. Si Railway lo mata por memoria, clamd deja de responder una vez al día.
+6. **Variables del worker** (servicio `worker`): `ARC_ANTIVIRUS=clamav`, `CLAMAV_HOST=${{clamav.RAILWAY_PRIVATE_DOMAIN}}` (queda `clamav.railway.internal`) y `CLAMAV_PORT=3310`. Luego redeploy del worker.
+7. **Comprobar:** en los logs del worker, al arrancar, debe salir `Antivirus listo` con `motor: clamav`. Si sale `Antivirus no responde` con un código (`CONEXION`, `TIEMPO_AGOTADO`), clamd aún carga firmas o el nombre no resuelve: el worker arranca igual, los análisis fallan, se reintentan y el barrido cada 5 minutos los reencola. Después, las tres pruebas de «Evidencia» (EICAR, archivo limpio y 25 MB).
+
+**Red privada:** en ambientes de Railway creados después del 16-10-2025 el nombre `clamav.railway.internal` resuelve a IPv4 e IPv6; en los anteriores, solo a IPv6. clamd escucha en los dos (`0.0.0.0:3310` y `:::3310`, comprobado en la imagen `1.5`), así que funciona en ambos casos.
+
+**Volver a `eicar`:** si el costo de clamd no es asumible en staging, `ARC_ANTIVIRUS=eicar` en el worker y se apaga el servicio `clamav`. En producción no existe esa salida: con `APP_ENV=production` el worker no arranca con `eicar`.
+
+**Producción (pendiente, plan de pase a producción):** replicar los pasos 1 a 6 en el proyecto de producción, con `APP_ENV=production` en el worker. Además: alerta por antigüedad de las firmas (`freshclam` sin poder descargar) y revisar el costo de RAM. ARC no se habilita en producción sin este servicio.
 
 ## 3. Grafana Cloud
 
@@ -145,18 +172,28 @@ Se cargan en *Variables* de cada servicio (botón **Raw Editor** para pegarlas j
 | `OTEL_TRACES_SAMPLER` | `parentbased_traceidratio` |
 | `OTEL_TRACES_SAMPLER_ARG` | `1.0` |
 | `SENTRY_DSN` | DSN de `vitrina-api` en la api; DSN de `vitrina-worker` en el worker |
+| `SUPABASE_URL` | `https://<ref>.supabase.co`. El worker la usa desde el spec 33: lee y borra objetos del bucket de TR-ARC. |
+| `SUPABASE_SECRET_KEY` | `sb_secret_…` de staging (secreto; solo la api y el worker, regla 9) |
 
 **Solo `api`:**
 
 | Variable | Valor |
 | --- | --- |
-| `SUPABASE_URL` | `https://<ref>.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` de staging |
-| `SUPABASE_SECRET_KEY` | `sb_secret_…` de staging (secreto; solo la api, regla 9) |
 | `SEG_URL_INVITACION` | `https://<admin>.vercel.app/auth/invitacion` |
 | `PORT` | `3000`: el mismo puerto que *Networking* le asigna al dominio público |
 
-`ORIGENES_PERMITIDOS` queda sin definir, porque los frontends llegan por el rewrite de Vercel (mismo origen). El resto (`EVT_*`, `SOPORTE_*`, `AUD_*`, `ORG_TENANT_OPERADOR`) usa los valores por defecto.
+**Solo `worker`** (spec 34):
+
+| Variable | Valor |
+| --- | --- |
+| `ARC_ANTIVIRUS` | `clamav` (sin definir es `eicar`, que solo detecta la cadena de prueba) |
+| `CLAMAV_HOST` | `${{clamav.RAILWAY_PRIVATE_DOMAIN}}` (referencia al servicio `clamav`; queda `clamav.railway.internal`) |
+| `CLAMAV_PORT` | `3310` |
+
+**Solo `clamav`:** `CLAMD_CONF_StreamMaxLength`, `CLAMD_CONF_MaxFileSize` y `CLAMD_CONF_MaxScanSize` en `30M` (sección 2.1).
+
+`ORIGENES_PERMITIDOS` queda sin definir, porque los frontends llegan por el rewrite de Vercel (mismo origen). El resto (`EVT_*`, `SOPORTE_*`, `AUD_*`, `ARC_BUCKET`, `ARC_*_CRON`, `CLAMAV_TIMEOUT_MS`, `CLAMAV_CONEXION_TIMEOUT_MS`, `ORG_TENANT_OPERADOR`) usa los valores por defecto.
 
 ## 7. Qué me pasas (todo público)
 
@@ -198,6 +235,7 @@ Con esos datos reemplazo los `PENDIENTE`. Mientras quede alguno, `deploy-staging
 | Supabase staging | https://cswftpxqkuxgtzfmqhzl.supabase.co (ref `cswftpxqkuxgtzfmqhzl`) | Creado |
 | Railway `api` | https://api-production-87e9a495.up.railway.app | Creado |
 | Railway `worker` y Redis | — | Creado |
+| Railway `clamav` (spec 34) | Sin dominio; `clamav.railway.internal:3310` | **Pendiente de crear** (sección 2.1). Hasta entonces el worker de staging sigue con `eicar`. |
 | Vercel admin | https://vitrina-admin-staging.vercel.app | Creado |
 | Vercel consola | https://vitrina-consola-staging.vercel.app | Creado |
 | Grafana Cloud | OTLP `https://otlp-gateway-prod-us-west-0.grafana.net/otlp` | Creado |
@@ -223,3 +261,15 @@ Con esos datos reemplazo los `PENDIENTE`. Mientras quede alguno, `deploy-staging
 - Alerta «Outbox atrasado (staging)» (`grafana/alerta-outbox.json`): `max(vitrina_outbox_edad_pendiente_seg_seconds{deployment_environment_name="staging"}) > 60`, 5 min, *No data* = *Alerting* (la métrica la publica el worker; Grafana Cloud le agrega `_seconds` por la unidad). Con el worker removido en Railway y un evento publicado, disparó (correo *Firing* 2026-11-15 23:18:50 UTC, `grafana_state_reason=NoData`); al volver el worker, la métrica regresó en 0 y llegó el *Resolved* (A=0); la regla queda en *Normal* (`grafana-alerta-firing.png`, `grafana-alerta-resolved.png`, `grafana-alerta-normal.png`). Probado el camino «worker caído»; el umbral `> 60` con el worker vivo queda solo en la definición. Una primera versión de la regla usaba el nombre sin `_seconds` y siempre veía *No data*.
 
 Capturas en `.playwright-mcp/evidencia-staging/` (local, fuera del repo).
+
+### Spec 34: ClamAV en staging (pendiente)
+
+Se completa al crear el servicio `clamav` (sección 2.1). Qué probar y qué anotar aquí, con fecha:
+
+- [ ] Log del worker al arrancar: `Antivirus listo`, `motor: clamav`.
+- [ ] TR-CA-201: subir un archivo con la cadena de prueba EICAR → `CUARENTENA`, evento `archivo.en_cuarentena` con la firma que devuelve ClamAV (no `EICAR-Test-File` ni `DESCONOCIDA`), el objeto sigue en Storage y la descarga responde 409.
+- [ ] Un PDF limpio → `DISPONIBLE` con `archivo.disponible`.
+- [ ] Un archivo de 25 MB (`26214400` bytes) → se analiza sin `TAMANO_EXCEDIDO`; anotar `duracion_ms` del log `arc.antivirus.analisis`.
+- [ ] RAM y costo reales del servicio `clamav` en Railway.
+
+Referencia medida en local el 2026-11-18 con `clamav/clamav:1.5` (ClamAV 1.5.4) en Docker y los tres límites en `30M`: clamd responde `PONG` a los ~16 s de arrancar el contenedor con las firmas de la imagen; usa ~1,0 GiB de RAM en reposo; analiza 25 MB en ~4 s; con 31 MB responde `INSTREAM size limit exceeded` y el adaptador lanza `TAMANO_EXCEDIDO`. No reemplaza la prueba en staging.
