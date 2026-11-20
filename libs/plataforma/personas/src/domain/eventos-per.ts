@@ -1,4 +1,6 @@
+import type { DomainEvent } from '@vitrina/plataforma/kernel';
 import type { ProductoCodigo } from '@vitrina/plataforma/org';
+import type { Canal, Consentimiento, Finalidad } from './consentimiento.js';
 import type { TipoDocumentoPersona } from './documento-identidad.js';
 import type { TipoPersona } from './persona.js';
 import type { FechaRol, RolPersona } from './rol-persona.js';
@@ -11,6 +13,7 @@ export const EVENTOS_PER = {
   registrada: 'persona.registrada',
   rolAsignado: 'persona.rol_asignado',
   actualizada: 'persona.actualizada',
+  consentimientoRevocado: 'consentimiento.revocado',
 } as const;
 
 /** Qué parte de la persona cambió en un `persona.actualizada`. */
@@ -35,4 +38,34 @@ export interface PersonaRolAsignado {
 export interface PersonaActualizada {
   persona_id: string;
   cambio: CambioPersona;
+}
+
+/** Sin nombres, documento, contactos ni el texto legal. `canal` es el de la revocación. */
+export interface ConsentimientoRevocado {
+  persona_id: string;
+  finalidad: Finalidad;
+  version_texto: string;
+  canal: Canal;
+  revocado_en: string;
+}
+
+/** Del agregado `persona`, con la versión que la persona tenía al revocar: revocar no la cambia. */
+export function eventoConsentimientoRevocado(revocado: Consentimiento, versionPersona: number): DomainEvent<ConsentimientoRevocado> {
+  const revocacion = revocado.revocacion;
+  if (!revocacion) throw new Error('Solo un consentimiento revocado publica consentimiento.revocado');
+  return {
+    eventType: EVENTOS_PER.consentimientoRevocado,
+    aggregateType: AGREGADO_PERSONA,
+    aggregateId: revocado.personaId,
+    aggregateVersion: versionPersona,
+    schemaVersion: VERSION_ESQUEMA_PER,
+    payload: {
+      persona_id: revocado.personaId,
+      finalidad: revocado.finalidad,
+      version_texto: revocado.versionTexto,
+      canal: revocacion.canal,
+      revocado_en: revocacion.revocadoEn.toISOString(),
+    },
+    occurredAt: revocacion.revocadoEn,
+  };
 }

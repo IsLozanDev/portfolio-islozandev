@@ -4,4 +4,6 @@ export const PERMISOS_PER = {
   registrar: 'plat.persona.registrar',
   rol: 'plat.persona.rol',
   editar: 'plat.persona.editar',
+  consentimiento: 'plat.persona.consentimiento',
+  textoFinalidad: 'plat.persona.texto_finalidad',
 } as const;
