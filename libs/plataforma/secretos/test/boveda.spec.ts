@@ -14,6 +14,7 @@ import {
   TipoSecretoInvalidoError,
   ValorSecretoInvalidoError,
 } from '../src/domain/errores.js';
+import { BYTES_MAXIMOS_VALOR } from '../src/domain/valor-secreto.js';
 import { AHORA, clavesMaestrasDePrueba, crearEscenario, type EscenarioBoveda } from './support/dobles.js';
 
 const TIPO_CLAVE = 'fe.clave_certificado';
@@ -94,7 +95,7 @@ describe('BovedaSecretos (casos de uso)', () => {
     it('valida tipo, valor y usuario antes de tocar nada', async () => {
       await expect(enTenant(tenantA, () => boveda.guardar('Clave', valor))).rejects.toThrow(TipoSecretoInvalidoError);
       await expect(enTenant(tenantA, () => boveda.guardar(TIPO_CLAVE, new Uint8Array(0)))).rejects.toThrow(ValorSecretoInvalidoError);
-      await expect(enTenant(tenantA, () => boveda.guardar(TIPO_CLAVE, new Uint8Array(64 * 1024 + 1)))).rejects.toThrow(ValorSecretoInvalidoError);
+      await expect(enTenant(tenantA, () => boveda.guardar(TIPO_CLAVE, new Uint8Array(BYTES_MAXIMOS_VALOR + 1)))).rejects.toThrow(ValorSecretoInvalidoError);
       await expect(sinUsuario(tenantA, () => boveda.guardar(TIPO_CLAVE, valor))).rejects.toThrow(SecretoSinActorError);
 
       expect(escenario.secretos.filas.size).toBe(0);

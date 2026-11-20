@@ -1,10 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import type { ClavesMaestras, ResultadoReenvoltura } from '@vitrina/plataforma/secretos';
+import { BYTES_CLAVE, type ClavesMaestras, type ResultadoReenvoltura } from '@vitrina/plataforma/secretos';
 import { ejecutarReenvolturaCli, type Reenvolvedor } from '../src/cli/secretos.cli.js';
 import { cargarConfig } from '../src/config/env.js';
 
-const CLAVE_UNO = randomBytes(32).toString('base64');
-const CLAVE_DOS = randomBytes(32).toString('base64');
+const CLAVE_UNO = randomBytes(BYTES_CLAVE).toString('base64');
+const CLAVE_DOS = randomBytes(BYTES_CLAVE).toString('base64');
 const ENV = {
   DATABASE_URL: 'postgres://nadie:clave-local@127.0.0.1:5432/vitrina',
   REDIS_URL: 'redis://localhost:6379',
@@ -42,7 +42,7 @@ describe('CLI secretos:reenvolver (spec 41)', () => {
   let urlRecibida: string | undefined;
 
   const salida = () => {
-    const registro = { logs: [] as string[], errores: [] as string[], log: (m: string) => registro.logs.push(m), error: (m: string) => registro.errores.push(m) };
+    const registro = { logs: [] as string[], errores: [] as string[], log: (mensaje: string) => registro.logs.push(mensaje), error: (mensaje: string) => registro.errores.push(mensaje) };
     return registro;
   };
   const abrir = async (url: string, claves: ClavesMaestras): Promise<Reenvolvedor> => {

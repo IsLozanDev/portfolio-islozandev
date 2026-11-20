@@ -4,8 +4,8 @@ import type { FilaClaveTenant, FilaSecreto } from './entidades.js';
 
 type FilaClaveNueva = Omit<FilaClaveTenant, 'creadoEn'>;
 type FilaSecretoNueva = Omit<FilaSecreto, 'creadoEn'>;
-export type CambiosRotacion = Pick<FilaSecreto, 'cifrado' | 'iv' | 'rotadoPor' | 'rotadoEn'>;
-export type CambiosEnvoltura = Pick<FilaClaveTenant, 'claveCifrada' | 'iv' | 'versionClaveMaestra' | 'reenvueltaEn'>;
+type CambiosRotacion = Pick<FilaSecreto, 'cifrado' | 'iv' | 'rotadoPor' | 'rotadoEn'>;
+type CambiosEnvoltura = Pick<FilaClaveTenant, 'claveCifrada' | 'iv' | 'versionClaveMaestra' | 'reenvueltaEn'>;
 
 // El driver de pg solo escribe bytea desde un Buffer.
 const comoBuffer = (bytes: Uint8Array): Buffer => Buffer.from(bytes);

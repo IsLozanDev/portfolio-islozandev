@@ -64,8 +64,9 @@ function leerClaves(lista: string): Map<number, Uint8Array> {
     if (!version || !base64 || sobrante.length > 0 || !VERSION.test(version) || !BASE64.test(base64)) {
       throw new ClaveMaestraInvalidaError('Cada clave maestra va como <versión>:<base64>, separadas por ;');
     }
-    if (claves.has(Number(version))) throw new ClaveMaestraInvalidaError(`La versión ${version} está repetida`);
-    claves.set(Number(version), Buffer.from(base64, 'base64'));
+    const numeroVersion = Number(version);
+    if (claves.has(numeroVersion)) throw new ClaveMaestraInvalidaError(`La versión ${version} está repetida`);
+    claves.set(numeroVersion, Buffer.from(base64, 'base64'));
   }
   return claves;
 }
