@@ -13,6 +13,7 @@ import { ENTIDADES_CFG, registrarEsquemasCfg } from '@vitrina/plataforma/paramet
 import { ENTIDADES_PER, registrarEsquemasPer } from '@vitrina/plataforma/personas';
 import { ENTIDADES_ARC, registrarEsquemasArc } from '@vitrina/plataforma/archivos';
 import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
+import { clavesMaestrasDe, ENTIDADES_SEC } from '@vitrina/plataforma/secretos';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
@@ -27,7 +28,7 @@ const salDocumentos = salDocumento(config);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_PER, ...ENTIDADES_ARC],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_PER, ...ENTIDADES_ARC, ...ENTIDADES_SEC],
 });
 await dataSource.initialize();
 
@@ -55,6 +56,7 @@ const app = await NestFactory.create(
     observabilidad: { servicio: SERVICIO, nivel: config.LOG_LEVEL, salDocumento: salDocumentos },
     identidad: { proveedor: config.IDN_PROVEEDOR, decolectaToken: config.IDN_DECOLECTA_TOKEN, salDocumento: salDocumentos },
     archivos: { bucket: config.ARC_BUCKET },
+    clavesMaestras: clavesMaestrasDe(config),
   }),
   { bufferLogs: true },
 );
