@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import {
   AntivirusNoDisponibleError,
   NOMBRE_COLA_ANALISIS,
+  NUMERO_PRIMERA_VERSION,
   type AnalizarArchivo,
   type MotorAntivirus,
   type SaludAntivirus,
@@ -52,8 +53,8 @@ export class TareaAnalisisArchivos implements OnApplicationBootstrap, BeforeAppl
       concurrency: CONCURRENCIA,
     });
     this.trabajador.on('failed', (trabajo, error) => {
-      // Solo el id del archivo y el nombre del error: ni el nombre original ni la ruta (RNF-026).
-      this.avisar('Análisis de archivo falló', { archivoId: trabajo?.id, error: error.name });
+      // Solo el archivo, la versión y el nombre del error: ni el nombre original ni la ruta (RNF-026).
+      this.avisar('Análisis de archivo falló', { archivoId: trabajo?.data.archivoId, numero: trabajo?.data.numero ?? NUMERO_PRIMERA_VERSION, error: error.name });
       if (esFalloDefinitivo(trabajo)) this.reportador.reportar(error, { cola: NOMBRE_COLA_ANALISIS });
     });
     this.informar('Cola de análisis de archivos lista', { cola: NOMBRE_COLA_ANALISIS });

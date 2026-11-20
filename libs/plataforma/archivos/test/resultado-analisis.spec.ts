@@ -6,7 +6,7 @@ const VERSION = { bytesDeclarados: BYTES_DECLARADOS };
 const MIME_EJECUTABLE = 'application/x-msdownload';
 
 function hallazgos(cambios: Partial<HallazgosAnalisis> = {}): HallazgosAnalisis {
-  return { bytes: BYTES_DECLARADOS, mimeReal: 'application/pdf', limpio: true, ...cambios };
+  return { bytes: BYTES_DECLARADOS, mimeReal: 'application/pdf', limpio: true, versionCoincidente: null, ...cambios };
 }
 
 describe('evaluarAnalisis', () => {
@@ -34,11 +34,18 @@ describe('evaluarAnalisis', () => {
     expect(evaluarAnalisis(categoriaDocumento(), VERSION, hallazgos({ limpio: false }))).toBe('INFECTADO');
   });
 
-  it('evalúa en orden: tamaño, tipo, antivirus', () => {
-    const todoMal = hallazgos({ bytes: 1, mimeReal: MIME_EJECUTABLE, limpio: false });
-    const tipoYVirus = hallazgos({ mimeReal: MIME_EJECUTABLE, limpio: false });
+  it('rechaza como idéntica un contenido con el hash de otra versión (TR-CA-203)', () => {
+    expect(evaluarAnalisis(categoriaDocumento(), VERSION, hallazgos({ versionCoincidente: 2 }))).toBe('IDENTICA');
+  });
+
+  it('evalúa en orden: tamaño, tipo, idéntica, antivirus', () => {
+    const todoMal = hallazgos({ bytes: 1, mimeReal: MIME_EJECUTABLE, limpio: false, versionCoincidente: 1 });
+    const tipoIdenticaYVirus = hallazgos({ mimeReal: MIME_EJECUTABLE, limpio: false, versionCoincidente: 1 });
+    // El contenido de una versión en cuarentena está infectado: se rechaza antes como idéntico (uq_version_hash).
+    const identicaYVirus = hallazgos({ limpio: false, versionCoincidente: 2 });
 
     expect(evaluarAnalisis(categoriaDocumento(), VERSION, todoMal)).toBe('TAMANO_NO_COINCIDE');
-    expect(evaluarAnalisis(categoriaDocumento(), VERSION, tipoYVirus)).toBe('TIPO_NO_PERMITIDO');
+    expect(evaluarAnalisis(categoriaDocumento(), VERSION, tipoIdenticaYVirus)).toBe('TIPO_NO_PERMITIDO');
+    expect(evaluarAnalisis(categoriaDocumento(), VERSION, identicaYVirus)).toBe('IDENTICA');
   });
 });

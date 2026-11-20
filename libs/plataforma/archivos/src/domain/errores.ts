@@ -55,6 +55,32 @@ export class ArchivoNoDisponibleError extends ConflictError {
   }
 }
 
+/** Ya hay una versión nueva pendiente de carga o en análisis: se espera a que termine. */
+export class VersionEnCursoError extends ConflictError {
+  override readonly code = 'VERSION_EN_CURSO';
+
+  constructor(readonly numero: number) {
+    super(`El archivo ya tiene la versión ${numero} en curso`);
+  }
+}
+
+/** También para la versión de un intento rechazado o limpiado: su fila se borró. */
+export class VersionNoEncontradaError extends NotFoundError {
+  override readonly code = 'VERSION_NO_ENCONTRADA';
+
+  constructor() {
+    super('No existe esa versión del archivo');
+  }
+}
+
+export class VersionNoDisponibleError extends ConflictError {
+  override readonly code = 'VERSION_NO_DISPONIBLE';
+
+  constructor(readonly estado: string) {
+    super(`La versión no está disponible: ${estado}`);
+  }
+}
+
 export class AccesoEntidadDenegadoError extends ForbiddenError {
   override readonly code = 'ACCESO_ENTIDAD_DENEGADO';
 

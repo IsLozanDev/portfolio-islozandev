@@ -155,7 +155,7 @@ describe('ConfirmarCarga', () => {
     const estado = await confirmar.ejecutar(archivoId);
 
     expect(estado).toEqual({ archivoId, estado: 'EN_ANALISIS', categoria: 'DOCUMENTO', nombreOriginal: 'contrato.pdf' });
-    expect([...dobles.cola.vivos.values()]).toEqual([{ tenantId: TENANT_A, archivoId }]);
+    expect([...dobles.cola.vivos.values()]).toEqual([{ tenantId: TENANT_A, archivoId, numero: 1 }]);
     expect(dobles.unidadDeTrabajo.enCurso).toBe(0);
   });
 
@@ -179,7 +179,7 @@ describe('ConfirmarCarga', () => {
     dobles.cola.caida = false;
     await confirmar.ejecutar(archivoId);
 
-    expect([...dobles.cola.vivos.keys()]).toEqual([archivoId]);
+    expect([...dobles.cola.vivos.keys()]).toEqual([`${archivoId}-1`]);
   });
 
   it.each(['DISPONIBLE', 'RECHAZADO', 'CUARENTENA'] as const)('un archivo %s se devuelve tal cual, sin encolar', async (estadoFinal) => {

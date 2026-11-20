@@ -59,6 +59,7 @@ describe('Archivo.solicitar', () => {
     expect(archivo.primeraVersion).toEqual({
       numero: 1,
       rutaStorage: `${TENANT_ID}/${ARCHIVO_ID}/1`,
+      estado: 'PENDIENTE_CARGA',
       mimeDeclarado: 'application/pdf',
       bytesDeclarados: BYTES_PDF,
       hashSha256: null,
@@ -195,6 +196,7 @@ describe('resultado del análisis', () => {
       categoria: 'DOCUMENTO',
       entidad_tipo: 'PRUEBA_SENSIBLE',
       entidad_id: 'E-1',
+      version: 1,
       firma: FIRMA_EICAR,
     });
   });
@@ -251,13 +253,14 @@ describe('Archivo.reconstituir', () => {
       motivoRechazo: original.motivoRechazo,
       versionVigente: original.versionVigente,
       creadoPor: original.creadoPor,
-      primeraVersion: { ...original.primeraVersion },
+      versiones: original.versiones.map((version) => ({ ...version })),
+      rechazoVersion: null,
     };
 
     const reconstituido = Archivo.reconstituir(ARCHIVO_ID, 4, props);
     reconstituido.aprobar(CONTENIDO_PDF);
 
     expect(reconstituido.version).toBe(5);
-    expect(props.primeraVersion.hashSha256).toBeNull();
+    expect(props.versiones[0]?.hashSha256).toBeNull();
   });
 });

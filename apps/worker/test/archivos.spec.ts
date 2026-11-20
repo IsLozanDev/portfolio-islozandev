@@ -235,7 +235,7 @@ describe('Barrido contra la cola real: mismo jobId, un solo trabajo (spec 34, Re
     expect(await reencolar.ejecutar()).toEqual({ reencolados: 1, fallidos: 0 });
     expect(await reencolar.ejecutar()).toEqual({ reencolados: 1, fallidos: 0 });
 
-    const enEspera = (await colaAnalisis.getJobs(['waiting', 'delayed', 'active'])).filter((trabajo) => trabajo.id === atascado.archivoId);
+    const enEspera = (await colaAnalisis.getJobs(['waiting', 'delayed', 'active'])).filter((trabajo) => trabajo.id === `${atascado.archivoId}-1`);
     expect(enEspera.map((trabajo) => trabajo.data)).toEqual([atascado]);
 
     const analizados: TrabajoAnalisis[] = [];

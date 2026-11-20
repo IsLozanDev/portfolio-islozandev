@@ -2,7 +2,10 @@ import { EventSchemaValidationError, type DomainEvent } from '@vitrina/plataform
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { AnalizarArchivo } from '../src/application/analizar-archivo.js';
 import { ConfirmarCarga } from '../src/application/confirmar-carga.js';
+import { ConfirmarVersion } from '../src/application/confirmar-version.js';
+import { MarcarVersionVigente } from '../src/application/marcar-version-vigente.js';
 import { SolicitarCarga } from '../src/application/solicitar-carga.js';
+import { SolicitarVersion } from '../src/application/solicitar-version.js';
 import { EVENTOS_ARC } from '../src/domain/eventos-arc.js';
 import { ESQUEMAS_ARC, registrarEsquemasArc } from '../src/infrastructure/event-schemas.js';
 import { pdf, texto } from './support/contenidos.js';
@@ -54,6 +57,45 @@ describe('eventos de archivos', () => {
     const payloads = JSON.stringify((await eventosDeDosAnalisis()).map((evento) => evento.payload));
 
     for (const dato of ['juana', 'quispe', '45781236', '.pdf']) expect(payloads).not.toContain(dato);
+  });
+
+  it('los eventos de versiones (creada, en cuarentena y vigente cambiada) cumplen su esquema (spec 35)', async () => {
+    const dobles = crearDobles();
+    const procesar = async () => {
+      for (const trabajo of dobles.cola.tomarTodos()) await new AnalizarArchivo(dobles).ejecutar(trabajo);
+    };
+    const solicitada = await new SolicitarCarga(dobles).ejecutar({
+      categoria: 'DOCUMENTO',
+      nombreOriginal: NOMBRE_CON_DATOS_PERSONALES,
+      tamano: pdf().byteLength,
+      mime: 'application/pdf',
+      entidadTipo: 'PRUEBA_SENSIBLE',
+      entidadId: 'E-1',
+    });
+    dobles.almacen.subirConUrl(solicitada.carga.url, pdf());
+    await new ConfirmarCarga(dobles).ejecutar(solicitada.archivoId);
+    await procesar();
+    for (const contenido of [Uint8Array.from([...pdf(), ...texto('% v2\n')]), Uint8Array.from([...pdf(), ...texto(CADENA_EICAR)])]) {
+      const { numero, carga } = await new SolicitarVersion(dobles).ejecutar({
+        archivoId: solicitada.archivoId,
+        tamano: contenido.byteLength,
+        mime: 'application/pdf',
+      });
+      dobles.almacen.subirConUrl(carga.url, contenido);
+      await new ConfirmarVersion(dobles).ejecutar(solicitada.archivoId, numero);
+      await procesar();
+    }
+    await new MarcarVersionVigente(dobles).ejecutar(solicitada.archivoId, 1);
+
+    const deVersiones = dobles.publicador.eventos.slice(1);
+
+    expect(deVersiones.map((evento) => evento.eventType)).toEqual([
+      EVENTOS_ARC.versionCreada,
+      EVENTOS_ARC.enCuarentena,
+      EVENTOS_ARC.versionVigenteCambiada,
+    ]);
+    for (const evento of deVersiones) expect(() => validador.validate(evento)).not.toThrow();
+    expect(JSON.stringify(deVersiones.map((evento) => evento.payload))).not.toContain('juana');
   });
 
   it('el esquema rechaza un payload con el nombre original', async () => {

@@ -1,10 +1,8 @@
-import type { Archivo } from '../domain/archivo.js';
-import { AlmacenNoDisponibleError, ArchivoNoEncontradoError } from '../domain/errores.js';
-import type { DependenciasArchivos } from './dependencias-archivos.js';
+import { NUMERO_PRIMERA_VERSION, type Archivo } from '../domain/archivo.js';
+import { ArchivoNoEncontradoError } from '../domain/errores.js';
+import { encolarAnalisis, type DependenciasArchivos } from './dependencias-archivos.js';
 import type { EstadoArchivo } from './ports/archivo.port.js';
 import { estadoDe } from './vista-archivo.js';
-
-const CODIGO_COLA_CAIDA = 'cola_analisis';
 
 /**
  * El cliente avisa que ya subió el objeto: el archivo pasa a `EN_ANALISIS` y se encola su análisis después
@@ -16,7 +14,9 @@ export class ConfirmarCarga {
 
   async ejecutar(archivoId: string): Promise<EstadoArchivo> {
     const archivo = await this.dependencias.unidadDeTrabajo.run(() => this.confirmar(archivoId));
-    if (archivo.estado === 'EN_ANALISIS') await this.encolarAnalisis(archivo);
+    if (archivo.estado === 'EN_ANALISIS') {
+      await encolarAnalisis(this.dependencias.cola, { tenantId: archivo.tenantId, archivoId: archivo.id, numero: NUMERO_PRIMERA_VERSION });
+    }
     return estadoDe(archivo);
   }
 
@@ -26,14 +26,5 @@ export class ConfirmarCarga {
     if (!archivo) throw new ArchivoNoEncontradoError();
     if (archivo.confirmarCarga()) await archivos.guardar(archivo);
     return archivo;
-  }
-
-  /** Con la cola caída el archivo queda `EN_ANALISIS` sin trabajo: el cliente recibe 503 y confirma otra vez. */
-  private async encolarAnalisis(archivo: Archivo): Promise<void> {
-    try {
-      await this.dependencias.cola.encolar({ tenantId: archivo.tenantId, archivoId: archivo.id });
-    } catch {
-      throw new AlmacenNoDisponibleError(CODIGO_COLA_CAIDA);
-    }
   }
 }

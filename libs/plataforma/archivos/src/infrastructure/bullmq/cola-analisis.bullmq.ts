@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import type { ColaAnalisis, TrabajoAnalisis } from '../../application/ports/cola-analisis.js';
+import { NUMERO_PRIMERA_VERSION } from '../../domain/archivo.js';
 
 export type { TrabajoAnalisis } from '../../application/ports/cola-analisis.js';
 
@@ -26,6 +27,13 @@ export interface ConexionRedis {
   off(evento: string, alOcurrir: () => void): unknown;
 }
 
+const SEPARADOR_ID_TRABAJO = '-';
+
+/** Un trabajo por versión. Sin número es la versión 1. */
+export function idDeTrabajo(trabajo: TrabajoAnalisis): string {
+  return `${trabajo.archivoId}${SEPARADOR_ID_TRABAJO}${trabajo.numero ?? NUMERO_PRIMERA_VERSION}`;
+}
+
 class ColaNoConectadaError extends Error {
   constructor() {
     super('Redis de la cola de análisis no está conectado');
@@ -33,10 +41,11 @@ class ColaNoConectadaError extends Error {
 }
 
 /**
- * `jobId` es el id del archivo: BullMQ no duplica un trabajo que sigue vivo. Los trabajos terminados o
- * fallidos se borran al acabar: un `jobId` retenido impediría reencolar el mismo archivo cuando el cliente
- * confirma otra vez (objeto que aún no estaba, o intentos agotados). Con Redis caído, BullMQ espera la
- * reconexión en vez de fallar: se comprueba antes que la conexión esté lista, para responder 503.
+ * `jobId` es `{archivoId}-{numero}`: BullMQ no duplica un trabajo que sigue vivo. Sin `:`, que BullMQ usa como
+ * separador de sus claves en Redis. Los trabajos terminados o fallidos se borran al acabar: un `jobId`
+ * retenido impediría reencolar la misma versión cuando el cliente confirma otra vez (objeto que aún no estaba,
+ * o intentos agotados). Con Redis caído, BullMQ espera la reconexión en vez de fallar: se comprueba antes que
+ * la conexión esté lista, para responder 503.
  */
 export class ColaAnalisisBullmq implements ColaAnalisis {
   constructor(
@@ -47,7 +56,7 @@ export class ColaAnalisisBullmq implements ColaAnalisis {
   async encolar(trabajo: TrabajoAnalisis): Promise<void> {
     await this.esperarConexion();
     await this.cola.add(NOMBRE_TRABAJO_ANALISIS, trabajo, {
-      jobId: trabajo.archivoId,
+      jobId: idDeTrabajo(trabajo),
       attempts: INTENTOS,
       backoff: { type: 'exponential', delay: ESPERA_PRIMER_REINTENTO_MS },
       removeOnComplete: true,

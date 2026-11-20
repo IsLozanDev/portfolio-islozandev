@@ -28,6 +28,8 @@ export const EVENTOS_AUDITADOS = [
   'persona.actualizada',
   'archivo.disponible',
   'archivo.en_cuarentena',
+  'archivo.version_creada',
+  'archivo.version_vigente_cambiada',
 ] as const;
 
 /** Un método por tipo: `@SuscribirEvento` registra un tipo por método. */
@@ -126,6 +128,16 @@ export class AuditoriaConsumidor {
 
   @SuscribirEvento('archivo.en_cuarentena', { consumidor: CONSUMIDOR })
   archivoEnCuarentena(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('archivo.version_creada', { consumidor: CONSUMIDOR })
+  archivoVersionCreada(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('archivo.version_vigente_cambiada', { consumidor: CONSUMIDOR })
+  archivoVersionVigenteCambiada(evento: EventoEntregado): Promise<void> {
     return this.auditarEvento.ejecutar(evento);
   }
 }

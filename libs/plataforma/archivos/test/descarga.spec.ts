@@ -59,7 +59,7 @@ describe('EmitirUrlDescarga', () => {
         accion: 'plat.archivo.descargar',
         entidadTipo: 'ARCHIVO',
         entidadId: archivoId,
-        despues: { categoria: 'DOCUMENTO', entidad_tipo: ENTIDAD_CON_AUTORIZADOR, entidad_id: 'E-1', disposicion: 'attachment' },
+        despues: { categoria: 'DOCUMENTO', entidad_tipo: ENTIDAD_CON_AUTORIZADOR, entidad_id: 'E-1', version: 1, disposicion: 'attachment' },
       },
     ]);
   });

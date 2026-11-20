@@ -1,10 +1,10 @@
 import type { EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { Archivo } from '../domain/archivo.js';
-import { AccesoEntidadDenegadoError } from '../domain/errores.js';
+import { AccesoEntidadDenegadoError, AlmacenNoDisponibleError } from '../domain/errores.js';
 import type { AlmacenArchivos } from './ports/almacen-archivos.js';
 import type { AnalizadorAntivirus } from './ports/analizador-antivirus.js';
 import type { AutorizadorEntidad } from './ports/autorizador-entidad.js';
-import type { ColaAnalisis } from './ports/cola-analisis.js';
+import type { ColaAnalisis, TrabajoAnalisis } from './ports/cola-analisis.js';
 import type { DetectorTipo } from './ports/detector-tipo.js';
 import type { RepositorioArchivos } from './ports/repositorio-archivos.js';
 
@@ -46,4 +46,18 @@ export async function exigirAccesoEntidad(
   const autorizador = autorizadores.find((candidato) => candidato.entidadTipo === entidad.entidadTipo);
   if (!autorizador) return;
   if (!(await autorizador[acceso](entidad.entidadId))) throw new AccesoEntidadDenegadoError();
+}
+
+const CODIGO_COLA_CAIDA = 'cola_analisis';
+
+/**
+ * Después de confirmar la transacción. Con la cola caída la versión queda `EN_ANALISIS` sin trabajo: el
+ * cliente recibe 503 y confirma otra vez (mismo `jobId`).
+ */
+export async function encolarAnalisis(cola: ColaAnalisis, trabajo: TrabajoAnalisis): Promise<void> {
+  try {
+    await cola.encolar(trabajo);
+  } catch {
+    throw new AlmacenNoDisponibleError(CODIGO_COLA_CAIDA);
+  }
 }

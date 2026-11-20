@@ -94,7 +94,77 @@ const CASOS = [
   { migracion: '01l_per_contactos.sql', esquema: 'per', prueba: 'tests/01l_per_contactos.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
   { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
+  { migracion: '01m_arc_versiones.sql', esquema: 'arc', prueba: 'tests/01m_arc_versiones.test.sql' },
 ];
+
+// Columnas, índices, función, política y número en el barrido que agrega 01m_arc_versiones (8 en total).
+const objetosVersiones = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT table_name || '.' || column_name AS o FROM information_schema.columns
+        WHERE table_schema = 'arc' AND ((table_name = 'version_archivo' AND column_name = 'estado')
+           OR (table_name = 'archivo' AND column_name IN ('motivo_rechazo_version', 'version_coincidente')))
+       UNION ALL SELECT indexname FROM pg_indexes WHERE schemaname = 'arc' AND indexname IN ('ux_version_en_curso', 'ix_version_pendiente')
+       UNION ALL SELECT 'arc.versiones_pendientes_vencidas'
+        WHERE to_regprocedure('arc.versiones_pendientes_vencidas(timestamptz, integer)') IS NOT NULL
+       UNION ALL SELECT policyname FROM pg_policies WHERE schemaname = 'arc' AND policyname = 'version_archivo_lector'
+       UNION ALL SELECT 'barrido con numero'
+        WHERE pg_get_function_result('arc.archivos_en_analisis_atascados(timestamptz, integer)'::regprocedure) LIKE '%numero%'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+const TENANT_RELLENO = '35000000-0000-0000-0000-0000000000aa';
+const ESTADOS_ARCHIVO = ['PENDIENTE_CARGA', 'EN_ANALISIS', 'DISPONIBLE', 'CUARENTENA', 'RECHAZADO'];
+const archivoRelleno = (indice) => `35000000-0000-0000-0000-00000000010${indice}`;
+
+// Un archivo por estado con su versión 1 sin estado, como los deja el spec 33 antes de 01m_arc_versiones.
+async function insertarArchivosDelSpec33() {
+  const filas = ESTADOS_ARCHIVO.map((estado, indice) => {
+    const analizado = estado === 'DISPONIBLE' || estado === 'CUARENTENA';
+    return `SET app.tenant_id = '${TENANT_RELLENO}';
+      INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, motivo_rechazo, version_vigente, creado_por)
+      VALUES ('${archivoRelleno(indice)}', '${TENANT_RELLENO}', 'IMAGEN', 'PRODUCTO', 'P-${indice}', 'foto.png', '${estado}',
+              ${estado === 'RECHAZADO' ? `'TIPO_NO_PERMITIDO'` : 'NULL'}, ${estado === 'DISPONIBLE' ? 1 : 'NULL'}, gen_random_uuid());
+      INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, hash_sha256, subido_por)
+      VALUES ('${archivoRelleno(indice)}', 1, '${TENANT_RELLENO}', 'relleno/${indice}/1', 'image/png', 64,
+              ${analizado ? `repeat('${indice}', 64)` : 'NULL'}, gen_random_uuid());`;
+  });
+  await ejecutar(urlDb, filas.join('\n'));
+}
+
+const estadosRellenados = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SET app.tenant_id = '${TENANT_RELLENO}';
+       SELECT a.estado AS archivo, v.estado AS version FROM arc.archivo a JOIN arc.version_archivo v ON v.archivo_id = a.id ORDER BY a.id`,
+    )
+  ).at(-1).rows;
+
+const borrarArchivosDelRelleno = () => ejecutar(urlDb, `SET app.tenant_id = '${TENANT_RELLENO}'; DELETE FROM arc.archivo;`);
+
+// Con una versión numero > 1 el inverso de 01m_arc_versiones se niega; la transacción se revierte.
+async function inversoVersionesConVersionNueva() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(`SELECT set_config('app.tenant_id', '${TENANT_RELLENO}', true)`);
+    await c.query(
+      `INSERT INTO arc.version_archivo (archivo_id, numero, tenant_id, ruta_storage, mime_declarado, bytes_declarados, estado, subido_por)
+       VALUES ('${archivoRelleno(2)}', 2, '${TENANT_RELLENO}', 'relleno/2/2', 'image/png', 64, 'PENDIENTE_CARGA', gen_random_uuid())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01m_arc_versiones.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 // Función e índice que agrega 01m_arc_analisis (2 en total).
 const objetosAnalisis = async () =>
@@ -431,6 +501,19 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01m_arc_versiones se niega con versiones numero > 1; sin ellas deja arc como lo dejó
+    // 01m_arc_analisis. Reaplicada sobre archivos del spec 33, cada versión 1 toma el estado de su archivo.
+    expect(await objetosVersiones()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_versiones.sql'), 'utf8'));
+    expect(await objetosVersiones()).toEqual([]);
+    await insertarArchivosDelSpec33();
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
+    expect(await objetosVersiones()).toHaveLength(8);
+    expect(await estadosRellenados()).toEqual(ESTADOS_ARCHIVO.map((estado) => ({ archivo: estado, version: estado })));
+    expect(await inversoVersionesConVersionNueva()).toBe('55006');
+    await borrarArchivosDelRelleno();
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_versiones.sql'), 'utf8'));
+
     // El inverso de 01m_arc_analisis deja arc como lo dejó 01m_arc y se puede reaplicar. Va antes que el de 01m_arc.
     expect(await objetosAnalisis()).toHaveLength(2);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_analisis.sql'), 'utf8'));
@@ -444,6 +527,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('arc')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_analisis.sql'), 'utf8'));
     expect(await objetosAnalisis()).toHaveLength(2);
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
+    expect(await objetosVersiones()).toHaveLength(8);
 
     // El inverso de 01l_per_contactos deja per como lo dejó 01l_per (spec 32) y va antes que el de 01l_per.
     expect(await objetosContactos()).toHaveLength(3);
