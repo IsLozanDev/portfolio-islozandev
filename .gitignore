@@ -12,3 +12,6 @@ out.json
 __screenshots__/
 
 .playwright-mcp/
+
+# Documentos de origen de los datos oficiales: se identifican por su sha256 en FUENTES.md
+docs/datos-oficiales/origen/

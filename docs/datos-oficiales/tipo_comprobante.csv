@@ -1,18 +1,41 @@
 codigo,codigo_externo,descripcion
-01,01,FACTURA
-03,03,BOLETA DE VENTA
-07,07,NOTA DE CREDITO
-08,08,NOTA DE DEBITO
-09,09,GUIA DE REMISIÓN REMITENTE
-12,12,TICKET DE MAQUINA REGISTRADORA
-13,13,"DOCUMENTO EMITIDO POR BANCOS, INSTITUCIONES FINANCIERAS, CREDITICIAS Y DE SEGUROS QUE SE ENCUENTREN BAJO EL CONTROL DE LA SUPERINTENDENCIA DE BANCA Y SEGUROS"
-14,14,RECIBO SERVICIOS PÚBLICOS
-16,16,BOLETO DE VIAJE EMITIDO POR LAS EMPRESAS DE TRANSPORTE PÚBLICO INTERPROVINCIAL DE PASAJEROS
-18,18,DOCUMENTOS EMITIDOS POR LAS AFP
-20,20,COMPROBANTE DE RETENCION
-31,31,GUIA DE REMISIÓN TRANSPORTISTA
-40,40,COMPROBANTE DE PERCEPCION
-41,41,COMPROBANTE DE PERCEPCION – VENTA INTERNA (FÍSICO - FORMATO IMPRESO)
-56,56,COMPROBANTE DE PAGO SEAE
-71,71,GUIA DE REMISIÓN REMITENTE COMPLEMENTARIA
-72,72,GUIA DE REMISION TRANSPORTISTA COMPLEMENTARIA
+01,01,Factura
+03,03,Boleta de venta
+04,04,Liquidación de compra
+05,05,"Boletos de Transporte Aéreo que emiten las Compañías de Aviación Comercial por el servicio de transporte aéreo regular de pasajeros, emitido de manera manual, mecanizada o por medios electrónicos…"
+06,06,Carta de porte aéreo
+07,07,Nota de crédito
+08,08,Nota de débito
+09,09,Guía de remisión remitente
+11,11,Póliza emitida por las Bolsas de Valores
+12,12,Ticket de máquina registradora
+13,13,"Documento emitido por bancos, instituciones financieras, crediticias y de seguros que se encuentren bajo el control de la Superintendencia de Banca y Seguros"
+14,14,Recibo servicios públicos o recibo electrónico SP
+15,15,Boletos emitidos por el servicio de transporte terrestre regular urbano de pasajeros y el ferroviario público de pasajeros prestado en vía férrea local
+16,16,Boleto de viaje emitido por las empresas de transporte público interprovincial de pasajeros
+18,18,Documentos emitidos por las AFP
+19,19,Boleto por atracciones y espectáculos públicos
+20,20,Comprobante de retención
+21,21,Conocimiento de embarque por el servicio de transporte de carga marítima
+23,23,Pólizas de Adjudicación por remate o adjudicación de bienes
+24,24,Certificado de pago de regalías emitidas por PERUPETRO S.A.
+28,28,Etiquetas por el pago de la Tarifa Unificada de Uso de Aeropuerto – TUUA
+29,29,Documentos emitidos por la COFOPRI
+30,30,"Documentos emitidos por las empresas que desempeñan el rol adquirente en los sistemas de pago mediante tarjetas de crédito y débito, emitidas por bancos e instituciones financieras o crediticias…"
+31,31,Guía de remisión transportista
+32,32,Documentos emitidos por recaudadoras de la Garantía de Red Principal
+34,34,Documento del Operador
+35,35,Documento del Partícipe
+36,36,Recibo de Distribución de Gas Natural o recibo electrónico SP
+37,37,Documentos que emitan los concesionarios del servicio de revisiones técnicas
+40,40,Comprobante de Percepción
+41,41,Comprobante de Percepción – Venta interna (físico - formato impreso)
+42,42,Documentos emitidos por los adq. en los sistemas de pago por tarj. de crédito emitidas por ellas mismas
+43,43,Boleto de compañías de aviación transporte aéreo no regular
+45,45,"Documentos emitidos por centros educativos y culturales, universidades, asociaciones y fundaciones"
+55,55,BVME para transporte ferroviario de pasajeros
+56,56,Comprobante de pago SEAE
+71,71,Guía de remisión remitente complementaria
+72,72,Guía de remisión transportista complementaria
+87,87,Nota de crédito especial
+88,88,Nota de débito especial

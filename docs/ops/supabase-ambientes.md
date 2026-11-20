@@ -182,6 +182,40 @@ Tarea anual del operador: la semilla trae Semana Santa solo hasta 2027. Cada añ
 - [ ] (dev) Humo por HTTP con un token real de `plat.feriado.gestionar` (el de dev se hizo con los casos de uso de la lib; la capa HTTP está cubierta con supertest).
 - [ ] (prod) Migración y manifiesto cuando exista el proyecto.
 
+### 17. Tablas SUNAT de facturación electrónica (SPEC 48)
+
+Seis definiciones GLOBAL nuevas y vacías (`TRIBUTO`, `TIPO_NOTA_CREDITO`, `TIPO_NOTA_DEBITO`, `TIPO_PRECIO`, `TIPO_OPERACION`, `LEYENDA`) y nueve CSV por importar: los seis nuevos y la regeneración de `TIPO_COMPROBANTE`, `TIPO_DOC_IDENTIDAD` y `AFECTACION_IGV`. Sin manifiesto ni variables nuevas. Versión oficial, filas y efecto previsto de cada tabla: `docs/datos-oficiales/FUENTES.md`.
+
+Orden:
+1. Por el MCP, antes de migrar: `SELECT codigo FROM cat.catalogo WHERE codigo IN ('TRIBUTO', 'TIPO_NOTA_CREDITO', 'TIPO_NOTA_DEBITO', 'TIPO_PRECIO', 'TIPO_OPERACION', 'LEYENDA')` no devuelve filas. Si devuelve alguna, `ON CONFLICT DO NOTHING` no la pisa y hay que resolverla a mano.
+2. `corepack pnpm db:up:remoto` (aplica solo `01f_cat_tablas_fe.sql`, aunque `01g` a `01m` ya estén aplicadas). Por el MCP: las seis definiciones en versión 1 y sin ítems.
+3. Con la API y el worker locales contra dev y un token `aal2` con `plat.catalogo.importar`, por cada tabla de la lista de abajo, con `fecha_vigencia` igual al día de la carga:
+   - `POST /v1/catalogos/{codigo}/importaciones` (multipart: `archivo`, `version_oficial`, `fecha_vigencia`) responde 201 con el resumen, el `id` y la `version` de la importación;
+   - revisar el resumen contra «Efecto previsto al importar en dev» de `FUENTES.md` (filas, altas, cambios y bajas); en `TIPO_DOC_IDENTIDAD`, que no haya bajas y que `DNI`, `CE`, `RUC` y `PASAPORTE` salgan solo como cambio;
+   - `POST /v1/catalogos/importaciones/{id}/aplicar` con `{"version": <version de la previsualización>}` responde 202; `GET /v1/catalogos/importaciones/{id}` termina en `APLICADA` y la versión del catálogo sube en 1.
+4. Por el MCP, tras importar 06: el ítem `DNI` conserva `id`, `vigente_desde` y las claves `longitud` y `regex` de `atributos`. Registrar una persona con DNI.
+5. `validarItem` (o `GET` del ítem) para `TRIBUTO` `1000` (con `nombre_tributo` `IGV` y `codigo_internacional` `VAT`), `TIPO_NOTA_CREDITO` `01`, `TIPO_NOTA_DEBITO` `01`, `TIPO_PRECIO` `01`, `TIPO_OPERACION` `0101` y `LEYENDA` `1000`: válidos; `TRIBUTO` `1234`: no válido.
+6. Anotar en «Evidencia» altas, cambios y bajas por tabla.
+
+| `codigo` | Archivo | `version_oficial` |
+| --- | --- | --- |
+| `TIPO_COMPROBANTE` | `tipo_comprobante.csv` | `RS-206-2019` |
+| `TRIBUTO` | `tributo.csv` | `RS-244-2019` |
+| `TIPO_DOC_IDENTIDAD` | `tipo_doc_identidad.csv` | `RS-123-2022` |
+| `AFECTACION_IGV` | `afectacion_igv.csv` | `RS-013-2019` |
+| `TIPO_NOTA_CREDITO` | `tipo_nota_credito.csv` | `RS-165-2021` |
+| `TIPO_NOTA_DEBITO` | `tipo_nota_debito.csv` | `RS-013-2019` |
+| `TIPO_PRECIO` | `tipo_precio.csv` | `RS-013-2019` |
+| `TIPO_OPERACION` | `tipo_operacion.csv` | `RS-000005-2023` |
+| `LEYENDA` | `leyenda.csv` | `RS-013-2019` |
+
+- [ ] (dev) `01f_cat_tablas_fe.sql` aplicada; las seis definiciones en versión 1 y sin ítems.
+- [ ] (dev) Los nueve CSV importados, cada uno en una importación `APLICADA` que sube la versión de su catálogo en 1; altas, cambios y bajas por tabla anotados en «Evidencia».
+- [ ] (dev) El DNI conserva `id`, vigencia, `longitud` y `regex`; registrar una persona con DNI sigue funcionando.
+- [ ] (dev) `validarItem('TRIBUTO', '1000')` responde válido con `nombre_tributo` y `codigo_internacional`.
+- [ ] (dev, desde el 2027-01-01) Regenerar e importar `TIPO_COMPROBANTE`, `TIPO_NOTA_DEBITO` y `TIPO_OPERACION` con la RS 000048-2026.
+- [ ] (staging, prod) Migración e importación según el plan de pase.
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |
