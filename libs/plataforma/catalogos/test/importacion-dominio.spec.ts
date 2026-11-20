@@ -50,9 +50,13 @@ describe('errores de importación', () => {
 });
 
 describe('tablas importables', () => {
-  it('son las 7 oficiales', () => {
+  it('son las 13 oficiales, cada una con su diseño', () => {
+    expect(TABLAS_IMPORTABLES).toHaveLength(13);
     expect([...TABLAS_IMPORTABLES].sort()).toEqual(Object.keys(DISENOS_TABLAS).sort());
     expect(esTablaImportable('TIPO_COMPROBANTE')).toBe(true);
+    for (const tablaFacturacion of ['TRIBUTO', 'TIPO_NOTA_CREDITO', 'TIPO_NOTA_DEBITO', 'TIPO_PRECIO', 'TIPO_OPERACION', 'LEYENDA']) {
+      expect(esTablaImportable(tablaFacturacion)).toBe(true);
+    }
     expect(esTablaImportable('MEDIO_PAGO')).toBe(false);
   });
 });
@@ -80,6 +84,12 @@ describe('cabecera', () => {
     ['TIPO_DOC_IDENTIDAD', ['codigo', 'codigo_externo', 'descripcion'], ['abreviatura', 'orden']],
     ['AFECTACION_IGV', ['codigo', 'descripcion'], ['orden']],
     ['MONEDA', ['codigo', 'descripcion'], ['codigo_externo', 'abreviatura', 'orden']],
+    ['TRIBUTO', ['codigo', 'descripcion', 'nombre_tributo', 'codigo_internacional'], ['orden']],
+    ['TIPO_NOTA_CREDITO', ['codigo', 'descripcion'], ['orden']],
+    ['TIPO_NOTA_DEBITO', ['codigo', 'descripcion'], ['orden']],
+    ['TIPO_PRECIO', ['codigo', 'descripcion'], ['orden']],
+    ['TIPO_OPERACION', ['codigo', 'descripcion'], ['orden']],
+    ['LEYENDA', ['codigo', 'descripcion'], ['orden']],
   ] as const)('%s exige %j y admite %j', (tabla, obligatorias, opcionales) => {
     const diseno = DISENOS_TABLAS[tabla];
     expect(() => validarCabecera(diseno, [...obligatorias, ...opcionales])).not.toThrow();
@@ -101,9 +111,22 @@ describe('fila', () => {
     ['TIPO_DOC_IDENTIDAD', 'DOC_A', 'doc-a'],
     ['AFECTACION_IGV', '10', '100'],
     ['MONEDA', 'PEN', 'PE'],
+    ['TRIBUTO', '1000', '100'],
+    ['TIPO_NOTA_CREDITO', '01', '1'],
+    ['TIPO_NOTA_DEBITO', '01', '001'],
+    ['TIPO_PRECIO', '01', 'A1'],
+    ['TIPO_OPERACION', '0101', '01'],
+    ['LEYENDA', '1000', '10000'],
   ] as const)('%s acepta el código %s y rechaza %s', (tabla, valido, invalido) => {
     const diseno = DISENOS_TABLAS[tabla];
-    const celdas = { descripcion: 'X', departamento: 'LIMA', provincia: 'LIMA', codigo_externo: '1' };
+    const celdas = {
+      descripcion: 'X',
+      departamento: 'LIMA',
+      provincia: 'LIMA',
+      codigo_externo: '1',
+      nombre_tributo: 'IGV',
+      codigo_internacional: 'VAT',
+    };
     expect(validarFila(diseno, 2, { ...celdas, codigo: valido }).valida).toBe(true);
     const resultado = validarFila(diseno, 2, { ...celdas, codigo: invalido });
     expect(resultado).toEqual({

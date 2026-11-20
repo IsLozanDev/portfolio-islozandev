@@ -1,10 +1,13 @@
 codigo,codigo_externo,descripcion
-DOC_0,0,DOC.TRIB.NO.DOM.SIN.RUC
-DNI,1,DOC. NACIONAL DE IDENTIDAD
-CE,4,CARNET DE EXTRANJERIA
-RUC,6,REG. UNICO DE CONTRIBUYENTES
-PASAPORTE,7,PASAPORTE
-DOC_A,A,CED. DIPLOMATICA DE IDENTIDAD
-DOC_B,B,DOC.IDENT.PAIS.RESIDENCIA-NO.D
-DOC_C,C,Tax Identification Number - TIN – Doc Trib PP.NN
-DOC_D,D,Identification Number - IN – Doc Trib PP. JJ
+DOC_0,0,Doc.trib.no.dom.sin.ruc
+DNI,1,Doc. Nacional de Identidad
+CE,4,Carnet de extranjería
+RUC,6,Registro Único de Contribuyentes
+PASAPORTE,7,Pasaporte
+DOC_A,A,Ced. Diplomática de identidad
+DOC_B,B,Documento identidad país residencia-no.d
+DOC_C,C,Tax Identification Number - TIN – Doc. Trib PP.NN.
+DOC_D,D,Identification Number - IN – Doc. Trib. PP. JJ
+DOC_E,E,TAM- Tarjeta Andina de Migración
+DOC_F,F,Permiso Temporal de Permanencia – PTP
+DOC_G,G,Salvoconducto

@@ -1,4 +1,4 @@
-/** Las 7 tablas oficiales que se importan desde archivo (TR-RF-028). */
+/** Tablas oficiales que se importan desde archivo (TR-RF-028). */
 export const TABLAS_IMPORTABLES = [
   'UBIGEO',
   'CIE10',
@@ -7,6 +7,12 @@ export const TABLAS_IMPORTABLES = [
   'TIPO_DOC_IDENTIDAD',
   'AFECTACION_IGV',
   'MONEDA',
+  'TRIBUTO',
+  'TIPO_NOTA_CREDITO',
+  'TIPO_NOTA_DEBITO',
+  'TIPO_PRECIO',
+  'TIPO_OPERACION',
+  'LEYENDA',
 ] as const;
 export type TablaImportable = (typeof TABLAS_IMPORTABLES)[number];
 

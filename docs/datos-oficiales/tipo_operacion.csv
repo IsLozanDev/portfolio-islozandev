@@ -1,0 +1,31 @@
+codigo,descripcion
+0101,Venta interna
+0112,Venta interna – Sustenta Gastos Deducibles Persona Natural
+0113,Venta interna – NRUS
+0200,Exportación de bienes
+0201,Exportación de servicios – Prestación servicios realizados íntegramente en el país
+0202,Exportación de servicios – Prestación de servicios de hospedaje a No Domiciliados
+0203,Exportación de servicios – Transporte de navieras
+0204,Exportación de servicios – Servicios a naves y aeronaves de bandera extranjera
+0205,Exportación de servicios – Servicios que conformen un paquete turístico
+0206,Exportación de servicios – Servicios complementarios al transporte de carga
+0207,Exportación de servicios – Suministro de energía eléctrica a favor de sujetos domiciliados en ZED
+0208,Exportación de servicios – Prestación servicios realizados parcialmente en el extranjero
+0301,Operaciones con Carta de porte aéreo (emitidas en el ámbito nacional)
+0302,Operaciones de Transporte ferroviario de pasajeros
+0401,Ventas a no domiciliados que no califican como exportación
+0501,Compra interna
+0502,Anticipos
+0503,Compra de oro
+1001,Operación Sujeta a Detracción
+1002,Operación sujeta a detracción – Recursos hidrobiológicos
+1003,Operación sujeta a detracción – Servicios de transporte pasajeros
+1004,Operación sujeta a detracción – Servicios de transporte carga
+2001,Operación sujeta a percepción
+2100,Créditos a empresas
+2101,Créditos de consumo revolvente
+2102,Créditos de consumo no revolvente
+2103,Otras operaciones no gravadas – Empresas del sistema financiero y cooperativas de ahorro y crédito no autorizadas a captar recursos del público
+2104,Otras operaciones no gravadas – Empresas del sistema de seguros
+2105,Operaciones que realizan las Administradoras Privadas de Fondos de Pensiones que estén comprendidas en el inciso j) del artículo 2 de TUO de la Ley del IGV e ISC
+2106,Venta nacional a turistas – Tax Free

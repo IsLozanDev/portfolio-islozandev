@@ -88,10 +88,10 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 29 | idn-cuota | R2-02: TR-RF-047 (back, tarea mensual, aviso 80 % como evento) | 6 | 28, 12 | `tr-idn/idn-cuota-y-consola-proveedor.md` | Pendiente |
 | 30 | idn-consola-proveedor-cuotas | UI de 047 en la consola | 8 | 29, 17b, 17c | `tr-idn/idn-cuota-y-consola-proveedor.md` | Pendiente |
 | 31 | per-registro-y-roles | R2-01: TR-RF-039, 040 | 9 | 28, 07, 19a, 17a | `tr-per/per-registro-roles-contactos.md` | Pendiente |
-| 32 | per-contactos-direcciones | R2-01: TR-RF-041 | 5 | 31 | `tr-per/per-registro-roles-contactos.md` | Pendiente |
+| 32 | per-contactos-direcciones | R2-01: TR-RF-041 y edición de datos básicos de la persona | 6 | 31 | `tr-per/per-registro-roles-contactos.md` | Draft |
 | 33 | arc-carga-descarga | R2-03: TR-RF-080, 082 | 9 | 07, 11, 20a | `tr-arc/arc-subida-versiones-url-firmada.md` | Implementado |
-| 34 | arc-antivirus | TR-RNF-114 (adaptador real). Hasta este spec el único antivirus es la firma EICAR del 33: TR-ARC no se habilita en producción | 4 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
-| 35 | arc-versiones | R2-03: TR-RF-081 | 4 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
+| 34 | arc-antivirus | TR-RNF-114 (adaptador real). Hasta este spec el único antivirus es la firma EICAR del 33: TR-ARC no se habilita en producción. Incluye barrido de análisis atascados y clamd en staging | 6-7 | 33, 21 | `tr-arc/arc-subida-versiones-url-firmada.md` | Draft |
+| 35 | arc-versiones | R2-03: TR-RF-081 | 9-10 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Draft |
 | 36 | arc-ui-archivo-carga | `<ui-archivo-carga>` | 7 | 33, 35, 15 | `tr-arc/arc-subida-versiones-url-firmada.md` | Pendiente |
 | 37 | per-consentimientos | R2-01: TR-RF-043 | 7 | 31, 33, 20a, 11 | `tr-per/per-consentimientos.md` | Pendiente |
 | 38 | per-ui-persona-buscador | UI de 039 y 041 (`personas-ui`, `<ui-persona-buscador>`) | 8 | 31, 32, 15b-d | `tr-per/per-registro-roles-contactos.md` | Pendiente |
@@ -104,7 +104,7 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 45 | not-recordatorios | R2-10: TR-RF-076 | 4 | 42 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
 | 46 | not-preferencias-bajas | R2-10: TR-RF-077 | 6 | 45, 31 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
 | 47 | not-plantillas-ui | R2-11: UI de 074 | 4-5 | 43, 15, 17c, 19e | `tr-not/not-plantillas-ui.md` | Pendiente |
-| 48 | cat-tablas-sunat-fe | Catálogos SUNAT 05, 09, 10, 16, 51, 52 y regenerar 01, 06, 07 | 3-4 | 19b | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 48 | cat-tablas-sunat-fe | Catálogos SUNAT 05, 09, 10, 16, 51, 52 y regenerar 01, 06, 07 | 3-4 | 19b | `tr-fe/fe-boleta-factura-cdr.md` | Draft |
 | 49 | fe-emisor-configuracion | R2-04: TR-RF-052 (pasos 1-3, alerta de vencimiento) | 7-8 | 41, 09, 19a, 20a | `tr-fe/fe-emisor-y-puerto-pse.md` | Pendiente |
 | 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Pendiente |
 | 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |

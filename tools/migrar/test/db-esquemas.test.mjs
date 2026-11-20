@@ -83,6 +83,7 @@ const CASOS = [
   { migracion: '01f_cat_feriado.sql', esquema: 'cat', prueba: 'tests/01f_cat_feriado.test.sql' },
   { migracion: '01f_cat_importacion.sql', esquema: 'cat', prueba: 'tests/01f_cat_importacion.test.sql' },
   { migracion: '01f_cat_items_busqueda.sql', esquema: 'cat', prueba: 'tests/01f_cat_items_busqueda.test.sql' },
+  { migracion: '01f_cat_tablas_fe.sql', esquema: 'cat', prueba: 'tests/01f_cat_tablas_fe.test.sql' },
   { migracion: '01g_aud.sql', esquema: 'aud', prueba: 'tests/01g_aud.test.sql' },
   { migracion: '01g_aud_integridad.sql', esquema: 'aud', prueba: 'tests/01g_aud_integridad.test.sql' },
   { migracion: '01h_obs_estado_outbox.sql', esquema: 'sync', prueba: 'tests/01h_obs_estado_outbox.test.sql' },
@@ -472,6 +473,22 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('aud')).toBe(true);
     expect(await objetosIntegridad()).toHaveLength(8);
 
+    // El inverso de 01f_cat_tablas_fe borra las definiciones vacías, deja la que tiene ítems y se puede reaplicar.
+    // Va antes que el de 01f_cat_importacion: consulta cat.importacion.
+    expect(await catalogosFacturacion()).toHaveLength(6);
+    await ejecutar(
+      urlDb,
+      `SELECT cat.guardar_item_global('${ITEM_TRIBUTO_PRUEBA}', NULL, 'ca700000-0000-0000-0000-000000000010', '1000', NULL,
+              'IGV Impuesto General a las Ventas', NULL, 1, '{}', '2026-01-01', NULL, true, 'a4000000-0000-0000-0000-000000000901')`,
+    );
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_tablas_fe.sql'), 'utf8'));
+    expect(await catalogosFacturacion()).toEqual(['TRIBUTO']);
+    await ejecutar(urlDb, `DELETE FROM cat.catalogo_item WHERE id = '${ITEM_TRIBUTO_PRUEBA}'`);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_tablas_fe.sql'), 'utf8'));
+    expect(await catalogosFacturacion()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01f_cat_tablas_fe.sql'), 'utf8'));
+    expect(await catalogosFacturacion()).toHaveLength(6);
+
     // El inverso de 01f_cat_items_busqueda deja la búsqueda en código o nombre y se puede reaplicar.
     expect(await buscaEnAtributos()).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01f_cat_items_busqueda.sql'), 'utf8'));
@@ -502,6 +519,8 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01f_cat_importacion.sql'), 'utf8'));
     expect(await objetosImportacion()).toHaveLength(7);
     expect(await catalogosOficialesNuevos()).toBe(5);
+    await ejecutar(urlDb, await readFile(rutaDb('01f_cat_tablas_fe.sql'), 'utf8'));
+    expect(await catalogosFacturacion()).toHaveLength(6);
 
     // El inverso de 01e_sync_traza deja sync.outbox sin actor, IP ni trace (con datos) y se puede reaplicar.
     expect(await columnasTraza()).toEqual(['actor_id', 'ip', 'trace_id']);

@@ -30,7 +30,7 @@ export interface TablaOficial {
   tabla: TablaImportable;
 }
 
-/** 404 si el catálogo no existe; TABLA_NO_IMPORTABLE si no es una de las 7 oficiales. */
+/** 404 si el catálogo no existe; TABLA_NO_IMPORTABLE si no es una tabla oficial importable. */
 export async function buscarTablaOficial(catalogos: Pick<RepositorioCatalogos, 'buscarPorCodigo'>, codigo: string): Promise<TablaOficial> {
   const catalogo = await buscarCatalogo(catalogos, codigo);
   if (!esTablaImportable(catalogo.codigo)) throw new TablaNoImportableError();

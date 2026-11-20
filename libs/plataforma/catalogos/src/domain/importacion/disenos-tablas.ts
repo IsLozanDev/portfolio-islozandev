@@ -10,6 +10,12 @@ export interface DisenoTabla {
 }
 
 const BASE = ['codigo', 'descripcion'] as const;
+const ATRIBUTOS_TRIBUTO = ['nombre_tributo', 'codigo_internacional'] as const;
+
+/** Catálogos SUNAT cuyo código va tal cual al comprobante y que solo traen código y descripción. */
+function disenoCodigoSunat(formatoCodigo: RegExp): DisenoTabla {
+  return { obligatorias: BASE, opcionales: ['orden'], formatoCodigo, atributos: [] };
+}
 
 export const DISENOS_TABLAS: Readonly<Record<TablaImportable, DisenoTabla>> = {
   UBIGEO: {
@@ -54,6 +60,17 @@ export const DISENOS_TABLAS: Readonly<Record<TablaImportable, DisenoTabla>> = {
     formatoCodigo: /^[A-Z]{3}$/,
     atributos: [],
   },
+  TRIBUTO: {
+    obligatorias: [...BASE, ...ATRIBUTOS_TRIBUTO],
+    opcionales: ['orden'],
+    formatoCodigo: /^[0-9]{4}$/,
+    atributos: ATRIBUTOS_TRIBUTO,
+  },
+  TIPO_NOTA_CREDITO: disenoCodigoSunat(/^[0-9]{2}$/),
+  TIPO_NOTA_DEBITO: disenoCodigoSunat(/^[0-9]{2}$/),
+  TIPO_PRECIO: disenoCodigoSunat(/^[0-9]{2}$/),
+  TIPO_OPERACION: disenoCodigoSunat(/^[0-9]{4}$/),
+  LEYENDA: disenoCodigoSunat(/^[0-9]{4}$/),
 };
 
 /** Las mayúsculas y los espacios al borde no importan. */
