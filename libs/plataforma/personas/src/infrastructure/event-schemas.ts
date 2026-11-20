@@ -1,7 +1,7 @@
 import type { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { PRODUCTOS } from '@vitrina/plataforma/org';
 import { TIPOS_DOCUMENTO_PERSONA } from '../domain/documento-identidad.js';
-import { EVENTOS_PER, VERSION_ESQUEMA_PER } from '../domain/eventos-per.js';
+import { CAMBIOS_PERSONA, EVENTOS_PER, VERSION_ESQUEMA_PER } from '../domain/eventos-per.js';
 import { TIPOS_PERSONA } from '../domain/persona.js';
 import { ROLES_PERSONA } from '../domain/rol-persona.js';
 
@@ -29,6 +29,10 @@ export const ESQUEMAS_PER: Readonly<Record<string, object>> = {
     producto_codigo: unoDe(PRODUCTOS),
     rol: unoDe(ROLES_PERSONA),
     desde: fecha,
+  }),
+  [EVENTOS_PER.actualizada]: objeto({
+    persona_id: uuid,
+    cambio: unoDe(CAMBIOS_PERSONA),
   }),
 };
 

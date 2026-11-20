@@ -123,6 +123,42 @@ describe('PrevisualizarImportacion (TR-RF-028)', () => {
     expect(actual.importaciones.filas.size).toBe(0);
   });
 
+  describe('tablas SUNAT de facturación electrónica (spec 48)', () => {
+    const deTabla = (catalogo: string, archivo: Buffer) => comando(archivo, { catalogo, archivo: { nombre: 'tabla.csv', contenido: archivo } });
+
+    beforeEach(async () => {
+      await actual.catalogo('TRIBUTO', 'GLOBAL');
+      await actual.catalogo('TIPO_OPERACION', 'GLOBAL');
+    });
+
+    it('TRIBUTO: el alta lleva nombre_tributo y codigo_internacional como atributos', async () => {
+      const archivo = csv('codigo,descripcion,nombre_tributo,codigo_internacional', '1000,IGV Impuesto General a las Ventas,IGV,VAT');
+      const resultado = await previsualizar.ejecutar(deTabla('TRIBUTO', archivo));
+      expect(resultado.resumen).toMatchObject({ altas: 1, totalFilas: 1 });
+      expect(resultado.muestra.altas[0]).toMatchObject({ codigo: '1000', atributos: { nombre_tributo: 'IGV', codigo_internacional: 'VAT' } });
+    });
+
+    it('TRIBUTO: una columna desconocida o la falta de codigo_internacional dan COLUMNAS_INVALIDAS', async () => {
+      const desconocida = await capturar(
+        previsualizar.ejecutar(deTabla('TRIBUTO', csv('codigo,descripcion,nombre_tributo,codigo_internacional,categoria_impuesto', '1000,IGV,IGV,VAT,S'))),
+      );
+      expect(desconocida).toBeInstanceOf(ColumnasInvalidasError);
+      expect(desconocida.message).toBe('Columna desconocida: categoria_impuesto');
+      const faltante = await capturar(previsualizar.ejecutar(deTabla('TRIBUTO', csv('codigo,descripcion,nombre_tributo', '1000,IGV,IGV'))));
+      expect(faltante).toBeInstanceOf(ColumnasInvalidasError);
+      expect(faltante.message).toBe('Falta la columna codigo_internacional');
+      expect(actual.importaciones.filas.size).toBe(0);
+    });
+
+    it('TIPO_OPERACION: el código 01 da FILAS_INVALIDAS y no escribe ningún ítem', async () => {
+      const escriturasPrevias = actual.items.escrituras;
+      const error = await capturar<FilasInvalidasError>(previsualizar.ejecutar(deTabla('TIPO_OPERACION', csv('codigo,descripcion', '01,Venta interna'))));
+      expect(error).toBeInstanceOf(FilasInvalidasError);
+      expect(error.errores).toEqual([{ fila: 2, columna: 'codigo', valor: '01', mensaje: 'El código no tiene el formato de la tabla' }]);
+      expect(actual.items.escrituras).toBe(escriturasPrevias);
+    });
+  });
+
   it('una fila inválida entre 5 000 válidas: 422 con la fila, RECHAZADA y ningún ítem tocado', async () => {
     const escriturasPrevias = actual.items.escrituras;
     const error = await capturar<FilasInvalidasError>(previsualizar.ejecutar(deUnidades(unidades(5_001, (indice) => indice === 2_500))));

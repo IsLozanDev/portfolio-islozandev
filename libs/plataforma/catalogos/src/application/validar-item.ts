@@ -8,7 +8,7 @@ export interface DependenciasValidarItem {
   lector: LectorItems;
 }
 
-const INEXISTENTE: ResultadoValidacion = { valido: false, motivo: 'INEXISTENTE', atributos: null };
+const INEXISTENTE: ResultadoValidacion = { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null };
 
 /**
  * TR-RF-027: ¿el código es válido hoy para el tenant del contexto? Mismas versiones y caché que
@@ -26,9 +26,9 @@ export class ValidarItem implements CatalogoPort {
       const { visibles, noVisibles } = await lector.items(catalogo, tenantId, versiones, lector.fechaDeHoy());
 
       const visible = visibles.find((item) => item.codigo === codigo);
-      if (visible) return { valido: true, motivo: null, atributos: visible.atributos };
+      if (visible) return { valido: true, motivo: null, atributos: visible.atributos, nombre: visible.nombre };
       const noVisible = noVisibles[codigo];
-      if (noVisible) return { valido: false, motivo: noVisible.motivo, atributos: noVisible.atributos };
+      if (noVisible) return { valido: false, motivo: noVisible.motivo, atributos: noVisible.atributos, nombre: null };
       return INEXISTENTE;
     });
   }

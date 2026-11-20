@@ -222,6 +222,7 @@ describe('Persona.asignarRol', () => {
       activo: true,
       roles,
       contactos: [celularPrincipal()],
+      direcciones: [],
     });
 
     expect(persona.asignarRol('CLI', 'PACIENTE', HOY)).toBe(false);

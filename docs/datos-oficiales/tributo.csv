@@ -1,0 +1,11 @@
+codigo,descripcion,nombre_tributo,codigo_internacional
+1000,IGV Impuesto General a las Ventas,IGV,VAT
+1016,Impuesto a la Venta Arroz Pilado,IVAP,VAT
+2000,ISC Impuesto Selectivo al Consumo,ISC,EXC
+3000,Impuesto a la Renta,IR,TOX
+7152,Impuesto al Consumo de las bolsas de plástico,ICBPER,OTH
+9995,Exportación,EXP,FRE
+9996,Gratuito,GRA,FRE
+9997,Exonerado,EXO,VAT
+9998,Inafecto,INA,FRE
+9999,Otros tributos,OTROS,OTH

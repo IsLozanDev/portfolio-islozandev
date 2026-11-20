@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, Inject, Param, Post, Query, Req, Res, UseFilters } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Inject, Param, Patch, Post, Query, Req, Res, UseFilters } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -18,6 +18,7 @@ import {
 import { PRODUCTOS } from '@vitrina/plataforma/org';
 import { Permiso, type ContextoAutorizado } from '@vitrina/plataforma/seguridad';
 import { z } from 'zod';
+import { ActualizarDatosBasicos } from '../application/actualizar-datos-basicos.js';
 import { AsignarRolPersona } from '../application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../application/buscar-persona.js';
 import { ObtenerPersona } from '../application/obtener-persona.js';
@@ -26,6 +27,15 @@ import { PERMISOS_PER } from '../domain/permisos-per.js';
 import { TIPOS_PERSONA } from '../domain/persona.js';
 import { ROLES_PERSONA } from '../domain/rol-persona.js';
 import {
+  EsquemaPersonaId,
+  LONGITUD_MAXIMA_NUMERO,
+  LONGITUD_MAXIMA_TIPO,
+  texto,
+  textoOpcional,
+  versionLeida,
+} from './esquemas.js';
+import {
+  ActualizarDatosBasicosDto,
   AsignarRolDto,
   BusquedaDto,
   ErrorPersonaDto,
@@ -37,16 +47,7 @@ import {
 } from './personas.dto.js';
 import { PersonasFiltro, validar } from './personas.http.js';
 
-/** Cotas de entrada: el formato y las longitudes reales los valida el dominio, con su código de error. */
-const LONGITUD_MAXIMA_TIPO = 20;
-const LONGITUD_MAXIMA_NUMERO = 20;
-const LONGITUD_MAXIMA_TEXTO = 300;
-
-const texto = (maximo: number) => z.string().max(maximo);
-const textoOpcional = texto(LONGITUD_MAXIMA_TEXTO).nullish();
-
 const EsquemaBusqueda = z.object({ tipo: texto(LONGITUD_MAXIMA_TIPO), numero: texto(LONGITUD_MAXIMA_NUMERO) });
-const EsquemaPersonaId = z.object({ id: z.uuid() });
 const EsquemaRegistro = z.object({
   tipo_persona: z.enum(TIPOS_PERSONA),
   tipo_documento: texto(LONGITUD_MAXIMA_TIPO),
@@ -59,6 +60,14 @@ const EsquemaRegistro = z.object({
   correo: textoOpcional,
 });
 const EsquemaRol = z.object({ producto_codigo: z.enum(PRODUCTOS), rol: z.enum(ROLES_PERSONA) });
+/** Estricto: enviar el documento o el tipo de persona da 400 en vez de ignorarse en silencio. */
+const EsquemaDatosBasicos = z.strictObject({
+  version: versionLeida,
+  nombres: textoOpcional,
+  apellido_paterno: textoOpcional,
+  apellido_materno: textoOpcional,
+  razon_social: textoOpcional,
+});
 
 interface SolicitudAutorizada {
   /** Lo deja PermisoGuard con los permisos efectivos del usuario. */
@@ -69,7 +78,7 @@ interface RespuestaConEstado {
   status(codigo: number): unknown;
 }
 
-/** TR-RF-039 y 040. */
+/** TR-RF-039, 040 y la edición de datos básicos de TR-RF-041. */
 @ApiTags('personas')
 @ApiBearerAuth()
 @ApiHeader({ name: 'X-Sucursal-Id', required: true })
@@ -84,6 +93,7 @@ export class PersonasController {
     @Inject(RegistrarPersona) private readonly registrarPersona: RegistrarPersona,
     @Inject(ObtenerPersona) private readonly obtenerPersona: ObtenerPersona,
     @Inject(AsignarRolPersona) private readonly asignarRolPersona: AsignarRolPersona,
+    @Inject(ActualizarDatosBasicos) private readonly actualizarDatosBasicos: ActualizarDatosBasicos,
   ) {}
 
   @Get('busqueda')
@@ -136,6 +146,34 @@ export class PersonasController {
   async obtener(@Param() parametros: unknown): Promise<PersonaDetalleDto> {
     const { id } = validar(EsquemaPersonaId, parametros);
     return personaDetalleDto(await this.obtenerPersona.ejecutar(id));
+  }
+
+  @Patch(':id')
+  @Permiso(PERMISOS_PER.editar)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: ActualizarDatosBasicosDto })
+  @ApiOkResponse({
+    type: PersonaDetalleDto,
+    description: 'La persona con su versión nueva; si nada cambió, la misma versión. El documento y el tipo de persona no se editan',
+  })
+  @ApiUnprocessableEntityResponse({
+    type: ErrorPersonaDto,
+    description: 'TIPO_PERSONA_INCOHERENTE (razón social en NATURAL o nombres en JURIDICA) o validation_error (nombres)',
+  })
+  @ApiNotFoundResponse({ type: ErrorPersonaDto, description: 'NO_ENCONTRADA, también si es de otro tenant' })
+  @ApiConflictResponse({ type: ErrorPersonaDto, description: 'VERSION_OBSOLETA, o conflict si otra operación cambió la persona' })
+  async actualizar(@Param() parametros: unknown, @Body() cuerpo: unknown): Promise<PersonaDetalleDto> {
+    const { id } = validar(EsquemaPersonaId, parametros);
+    const datos = validar(EsquemaDatosBasicos, cuerpo);
+    const persona = await this.actualizarDatosBasicos.ejecutar({
+      personaId: id,
+      version: datos.version,
+      nombres: datos.nombres,
+      apellidoPaterno: datos.apellido_paterno,
+      apellidoMaterno: datos.apellido_materno,
+      razonSocial: datos.razon_social,
+    });
+    return personaDetalleDto(persona);
   }
 
   @Post(':id/roles')

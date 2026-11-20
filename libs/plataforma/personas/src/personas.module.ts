@@ -1,21 +1,52 @@
-import { Module, type DynamicModule, type ModuleMetadata } from '@nestjs/common';
+import { Module, type DynamicModule, type ModuleMetadata, type Provider } from '@nestjs/common';
 import { CATALOGO_PORT, type CatalogoPort } from '@vitrina/plataforma/catalogos';
 import { IDENTIDAD, type IdentidadPort } from '@vitrina/plataforma/identidad';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { SuscripcionRepositorioTypeOrm } from '@vitrina/plataforma/org';
+import { ActualizarDatosBasicos } from './application/actualizar-datos-basicos.js';
+import { AgregarContacto } from './application/agregar-contacto.js';
+import { AgregarDireccion } from './application/agregar-direccion.js';
 import { AsignarRolPersona } from './application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from './application/buscar-persona.js';
 import type { DependenciasPersonas } from './application/dependencias-personas.js';
+import { EditarContacto } from './application/editar-contacto.js';
+import { EditarDireccion } from './application/editar-direccion.js';
+import { EliminarContacto } from './application/eliminar-contacto.js';
+import { EliminarDireccion } from './application/eliminar-direccion.js';
 import { ObtenerPersona } from './application/obtener-persona.js';
 import { PERSONA_PORT, type PersonaPort } from './application/ports/persona.port.js';
 import { RegistrarPersona } from './application/registrar-persona.js';
 import { ServicioPersonas } from './application/servicio-personas.js';
 import { SuscripcionesDelTenantOrg } from './infrastructure/suscripciones-del-tenant.org.js';
 import { RepositorioPersonasTypeOrm } from './infrastructure/typeorm/personas.repositorio.js';
+import { ContactosPersonaController } from './interface/contactos.controller.js';
+import { DireccionesPersonaController } from './interface/direcciones.controller.js';
 import { PersonasController } from './interface/personas.controller.js';
 
 const DEPENDENCIAS_PERSONAS = Symbol('DependenciasPersonas');
+
+type CasoDeUso = new (dependencias: DependenciasPersonas) => unknown;
+
+const CASOS_DE_USO: CasoDeUso[] = [
+  BuscarPersonaPorDocumento,
+  RegistrarPersona,
+  ObtenerPersona,
+  AsignarRolPersona,
+  ActualizarDatosBasicos,
+  AgregarContacto,
+  EditarContacto,
+  EliminarContacto,
+  AgregarDireccion,
+  EditarDireccion,
+  EliminarDireccion,
+];
+
+const proveedorDe = (casoDeUso: CasoDeUso): Provider => ({
+  provide: casoDeUso,
+  useFactory: (dependencias: DependenciasPersonas) => new casoDeUso(dependencias),
+  inject: [DEPENDENCIAS_PERSONAS],
+});
 
 export interface PersonasOpciones {
   /** Módulos que exportan `IDENTIDAD` (IdentidadModule) y `CATALOGO_PORT` (CatalogosModule). */
@@ -30,7 +61,7 @@ export class PersonasModule {
     return {
       module: PersonasModule,
       imports: opciones.imports,
-      controllers: [PersonasController],
+      controllers: [PersonasController, ContactosPersonaController, DireccionesPersonaController],
       providers: [
         {
           provide: DEPENDENCIAS_PERSONAS,
@@ -55,26 +86,7 @@ export class PersonasModule {
           }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, CATALOGO_PORT, IDENTIDAD],
         },
-        {
-          provide: BuscarPersonaPorDocumento,
-          useFactory: (dependencias: DependenciasPersonas) => new BuscarPersonaPorDocumento(dependencias),
-          inject: [DEPENDENCIAS_PERSONAS],
-        },
-        {
-          provide: RegistrarPersona,
-          useFactory: (dependencias: DependenciasPersonas) => new RegistrarPersona(dependencias),
-          inject: [DEPENDENCIAS_PERSONAS],
-        },
-        {
-          provide: ObtenerPersona,
-          useFactory: (dependencias: DependenciasPersonas) => new ObtenerPersona(dependencias),
-          inject: [DEPENDENCIAS_PERSONAS],
-        },
-        {
-          provide: AsignarRolPersona,
-          useFactory: (dependencias: DependenciasPersonas) => new AsignarRolPersona(dependencias),
-          inject: [DEPENDENCIAS_PERSONAS],
-        },
+        ...CASOS_DE_USO.map(proveedorDe),
         {
           provide: PERSONA_PORT,
           useFactory: (
@@ -82,8 +94,11 @@ export class PersonasModule {
             obtener: ObtenerPersona,
             registrar: RegistrarPersona,
             asignarRol: AsignarRolPersona,
-          ): PersonaPort => new ServicioPersonas({ buscarPorDocumento, obtener, registrar, asignarRol }),
-          inject: [BuscarPersonaPorDocumento, ObtenerPersona, RegistrarPersona, AsignarRolPersona],
+            agregarContacto: AgregarContacto,
+            agregarDireccion: AgregarDireccion,
+          ): PersonaPort =>
+            new ServicioPersonas({ buscarPorDocumento, obtener, registrar, asignarRol, agregarContacto, agregarDireccion }),
+          inject: [BuscarPersonaPorDocumento, ObtenerPersona, RegistrarPersona, AsignarRolPersona, AgregarContacto, AgregarDireccion],
         },
       ],
       exports: [PERSONA_PORT],

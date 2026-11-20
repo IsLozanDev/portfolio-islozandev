@@ -10,7 +10,12 @@ export const VERSION_ESQUEMA_PER = 1;
 export const EVENTOS_PER = {
   registrada: 'persona.registrada',
   rolAsignado: 'persona.rol_asignado',
+  actualizada: 'persona.actualizada',
 } as const;
+
+/** Qué parte de la persona cambió en un `persona.actualizada`. */
+export const CAMBIOS_PERSONA = ['DATOS_BASICOS', 'CONTACTO', 'DIRECCION'] as const;
+export type CambioPersona = (typeof CAMBIOS_PERSONA)[number];
 
 /** Sin número de documento, nombres ni contactos: los consumidores leen la persona por `PersonaPort`. */
 export interface PersonaRegistrada {
@@ -24,4 +29,10 @@ export interface PersonaRolAsignado {
   producto_codigo: ProductoCodigo;
   rol: RolPersona;
   desde: FechaRol;
+}
+
+/** Sin nombres, contactos, direcciones ni ubigeo. */
+export interface PersonaActualizada {
+  persona_id: string;
+  cambio: CambioPersona;
 }

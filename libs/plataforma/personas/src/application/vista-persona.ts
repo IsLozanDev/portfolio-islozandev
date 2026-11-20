@@ -1,5 +1,6 @@
+import type { Direccion } from '../domain/direccion.js';
 import type { Persona } from '../domain/persona.js';
-import type { PersonaDetalle, PersonaResumen } from './ports/persona.port.js';
+import type { DireccionDetalle, PersonaDetalle, PersonaResumen } from './ports/persona.port.js';
 
 export function resumenDe(persona: Persona): PersonaResumen {
   return {
@@ -18,7 +19,13 @@ export function resumenDe(persona: Persona): PersonaResumen {
 export function detalleDe(persona: Persona): PersonaDetalle {
   return {
     ...resumenDe(persona),
+    version: persona.version,
     roles: persona.roles.map((rolAsignado) => ({ ...rolAsignado })),
     contactos: persona.contactos.map(({ id, tipo, valor, principal }) => ({ id, tipo, valor, principal })),
+    direcciones: persona.direcciones.map(direccionDetalleDe),
   };
+}
+
+function direccionDetalleDe({ id, direccion, referencia, ubigeo, ubicacion, principal }: Direccion): DireccionDetalle {
+  return { id, direccion, referencia, ubigeo, ...ubicacion, principal };
 }

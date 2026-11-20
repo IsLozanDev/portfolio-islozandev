@@ -9,6 +9,8 @@ export interface ResultadoValidacion {
   motivo: MotivoInvalido | null;
   /** null si el código no existe en el catálogo para el tenant. */
   atributos: AtributosItem | null;
+  /** Nombre del ítem si es válido; null en otro caso. */
+  nombre: string | null;
 }
 
 /**

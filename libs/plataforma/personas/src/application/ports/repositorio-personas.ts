@@ -6,8 +6,10 @@ export interface RepositorioPersonas {
   buscarPorDocumento(tipo: TipoDocumentoPersona, numero: string): Promise<Persona | null>;
   obtener(personaId: string): Promise<Persona | null>;
   /**
-   * Guarda la persona con sus roles y contactos nuevos. Lanza `PersonaDuplicadaError` si el documento ya
-   * existe en el tenant y `ConflictError` si otra operación cambió la persona desde que se leyó.
+   * Guarda la persona con su denominación y sus roles nuevos, y deja sus contactos y direcciones como
+   * están en el agregado (altas, cambios y bajas). Lanza `PersonaDuplicadaError` si el documento ya existe
+   * en el tenant, `ContactoDuplicadoError` si otra operación agregó el mismo contacto y `ConflictError`
+   * si otra operación cambió la persona desde que se leyó.
    */
   guardar(persona: Persona): Promise<void>;
 }

@@ -39,6 +39,20 @@ export interface FilaContacto {
   creadoEn: Date;
 }
 
+export interface FilaDireccion {
+  id: string;
+  personaId: string;
+  tenantId: string;
+  direccion: string;
+  referencia: string | null;
+  ubigeo: string;
+  distrito: string;
+  provincia: string;
+  departamento: string;
+  principal: boolean;
+  creadoEn: Date;
+}
+
 export const PersonaEntidad = new EntitySchema<FilaPersona>({
   name: 'Persona',
   schema: 'per',
@@ -90,4 +104,23 @@ export const ContactoEntidad = new EntitySchema<FilaContacto>({
   },
 });
 
-export const ENTIDADES_PER = [PersonaEntidad, PersonaRolEntidad, ContactoEntidad];
+export const DireccionEntidad = new EntitySchema<FilaDireccion>({
+  name: 'DireccionPersona',
+  schema: 'per',
+  tableName: 'direccion',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    personaId: { name: 'persona_id', type: 'uuid' },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    direccion: { type: 'varchar', length: 250 },
+    referencia: { type: 'varchar', length: 150, nullable: true },
+    ubigeo: { type: 'varchar', length: 6 },
+    distrito: { type: 'varchar', length: 200 },
+    provincia: { type: 'varchar', length: 200 },
+    departamento: { type: 'varchar', length: 200 },
+    principal: { type: 'boolean' },
+    creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },
+  },
+});
+
+export const ENTIDADES_PER = [PersonaEntidad, PersonaRolEntidad, ContactoEntidad, DireccionEntidad];

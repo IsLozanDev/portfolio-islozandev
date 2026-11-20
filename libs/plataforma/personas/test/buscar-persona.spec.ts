@@ -1,11 +1,18 @@
 import { CuotaAgotadaError, DocumentoNoEncontradoError, ProveedorNoDisponibleError } from '@vitrina/plataforma/identidad';
+import { AgregarContacto } from '../src/application/agregar-contacto.js';
+import { AgregarDireccion } from '../src/application/agregar-direccion.js';
 import { AsignarRolPersona } from '../src/application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../src/application/buscar-persona.js';
 import { ObtenerPersona } from '../src/application/obtener-persona.js';
 import { RegistrarPersona } from '../src/application/registrar-persona.js';
 import { ServicioPersonas } from '../src/application/servicio-personas.js';
-import { DocumentoInvalidoPersonaError, TipoDocumentoNoAdmitidoError } from '../src/domain/errores.js';
-import { crearDobles, respuestaDni, respuestaRuc, TENANT_B, type Dobles } from './support/dobles.js';
+import {
+  ContactoDuplicadoError,
+  DocumentoInvalidoPersonaError,
+  TipoDocumentoNoAdmitidoError,
+  UbigeoNoVigenteError,
+} from '../src/domain/errores.js';
+import { crearDobles, respuestaDni, respuestaRuc, TENANT_B, UBIGEO_CAYMA, type Dobles } from './support/dobles.js';
 
 const DNI_JUANA = '45781236';
 const JUANA = {
@@ -176,6 +183,8 @@ describe('ServicioPersonas (PersonaPort)', () => {
       obtener: new ObtenerPersona(dobles),
       registrar: new RegistrarPersona(dobles),
       asignarRol: new AsignarRolPersona(dobles),
+      agregarContacto: new AgregarContacto(dobles),
+      agregarDireccion: new AgregarDireccion(dobles),
     });
   });
 
@@ -187,6 +196,26 @@ describe('ServicioPersonas (PersonaPort)', () => {
       asignado: true,
     });
     expect((await servicio.obtener(registrada.id)).roles).toHaveLength(1);
+  });
+
+  it('agregarContacto y agregarDireccion aplican las reglas del dominio; obtener devuelve version y direcciones', async () => {
+    const registrada = await servicio.registrar(JUANA);
+
+    await servicio.agregarContacto({ personaId: registrada.id, tipo: 'WHATSAPP', valor: '+51987654321' });
+    await servicio.agregarDireccion({ personaId: registrada.id, direccion: 'Av. Ejército 710', ubigeo: UBIGEO_CAYMA, principal: true });
+    const repetido = servicio.agregarContacto({ personaId: registrada.id, tipo: 'WHATSAPP', valor: '+51987654321' });
+    const sinVigencia = servicio.agregarDireccion({ personaId: registrada.id, direccion: 'Av. Ejército 710', ubigeo: '999999' });
+
+    await expect(repetido).rejects.toBeInstanceOf(ContactoDuplicadoError);
+    await expect(sinVigencia).rejects.toBeInstanceOf(UbigeoNoVigenteError);
+    expect(await servicio.obtener(registrada.id)).toMatchObject({
+      version: 3,
+      contactos: [
+        { tipo: 'CELULAR', principal: true },
+        { tipo: 'WHATSAPP', valor: '+51987654321', principal: false },
+      ],
+      direcciones: [{ direccion: 'Av. Ejército 710', ubigeo: UBIGEO_CAYMA, distrito: 'CAYMA', principal: true }],
+    });
   });
 
   it('buscarPorDocumento devuelve null sin consultar TR-IDN', async () => {
