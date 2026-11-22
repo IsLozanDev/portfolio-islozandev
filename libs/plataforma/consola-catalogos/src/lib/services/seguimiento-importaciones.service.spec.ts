@@ -1,12 +1,12 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { SesionService } from '@vitrina/shared/auth';
+import { CorteDeStream, SesionService, StreamRechazado } from '@vitrina/shared/auth';
 import { TareasEnCursoService } from '@vitrina/shared/shell';
 import { AvisosService } from '@vitrina/shared/ui';
 import { EventosFalsos } from '../../testing/eventos-falsos';
 import type { DetalleImportacion, ImportacionActiva } from '../models/importacion';
 import { PERMISOS_CATALOGOS } from '../models/permisos-catalogos';
-import { CorteDeStream, EventosImportacionCliente, StreamRechazado } from './eventos-importacion.cliente';
+import { EventosImportacionCliente } from './eventos-importacion.cliente';
 import { ImportacionesCliente } from './importaciones.cliente';
 import { ESPERA_RECONEXION_MS, SeguimientoImportacionesService } from './seguimiento-importaciones.service';
 
