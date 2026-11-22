@@ -18,7 +18,18 @@ import {
   type MotivoRechazo,
   type MotivoRechazoVersion,
 } from '../domain/archivo.js';
-import { CODIGOS_CATEGORIA } from '../domain/categoria.js';
+import { CODIGOS_CATEGORIA, type CategoriaArchivo } from '../domain/categoria.js';
+
+export class CategoriaDto {
+  @ApiProperty({ enum: CODIGOS_CATEGORIA, example: 'DOCUMENTO' })
+  codigo!: string;
+
+  @ApiProperty({ type: [String], example: ['application/pdf', 'image/jpeg'] })
+  mimes_permitidos!: string[];
+
+  @ApiProperty({ example: 26214400 })
+  tamano_max_bytes!: number;
+}
 
 export class SolicitarCargaDto {
   @ApiProperty({ enum: CODIGOS_CATEGORIA, example: 'DOCUMENTO' })
@@ -197,6 +208,11 @@ export class ErrorArchivoDto {
 
   @ApiPropertyOptional({ description: 'Solo con VERSION_EN_CURSO: el número de la versión en curso' })
   numero?: number;
+}
+
+/** Sin `sensible`: es un detalle de auditoría que el front no necesita. */
+export function categoriaDto(categoria: CategoriaArchivo): CategoriaDto {
+  return { codigo: categoria.codigo, mimes_permitidos: [...categoria.mimesPermitidos], tamano_max_bytes: categoria.tamanoMaxBytes };
 }
 
 export function cargaSolicitadaDto(solicitada: CargaSolicitada): CargaSolicitadaDto {

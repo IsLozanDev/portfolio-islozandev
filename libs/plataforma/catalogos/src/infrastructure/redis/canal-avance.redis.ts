@@ -1,6 +1,6 @@
+import { AvisosEnEspera } from '@vitrina/plataforma/kernel-infra';
 import type { Redis } from 'ioredis';
 import type { AvisoImportacion, CanalAvance } from '../../application/ports/importacion.js';
-import { AvisosEnEspera } from '../avisos-en-espera.js';
 
 /** El último aviso sobrevive una hora: alcanza para que el front reconecte y lea el estado. */
 const TTL_AVANCE_SEGUNDOS = 3_600;
@@ -29,7 +29,7 @@ export class CanalAvanceRedis implements CanalAvance {
 
   async *suscribir(importacionId: string, senal: AbortSignal): AsyncGenerator<AvisoImportacion> {
     const suscriptor = this.redis.duplicate();
-    const espera = new AvisosEnEspera(senal);
+    const espera = new AvisosEnEspera<AvisoImportacion>(senal);
     suscriptor.on('message', (_canal: string, mensaje: string) => espera.recibir(JSON.parse(mensaje) as AvisoImportacion));
     try {
       if (suscriptor.status === 'wait') await suscriptor.connect();

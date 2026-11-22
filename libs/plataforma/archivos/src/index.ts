@@ -57,8 +57,10 @@ export { LimpiarCargasPendientes, type ResultadoLimpieza } from './application/l
 export {
   ALMACEN_ARCHIVOS,
   ArchivosModule,
+  CANAL_ANALISIS,
   COLA_ANALISIS_ABIERTA,
   EVENTO_ANALISIS_ANTIVIRUS,
+  EVENTO_ERROR_CANAL_ANALISIS,
   SALUD_ANTIVIRUS,
   type ArchivosOpciones,
   type ArchivosWorkerOpciones,
@@ -84,6 +86,13 @@ export {
   UrlFirmadaRechazadaError,
   type MotivoUrlRechazada,
 } from './infrastructure/memoria/almacen-archivos.memoria.js';
+export { CanalAnalisisMemoria } from './infrastructure/memoria/canal-analisis.memoria.js';
+export {
+  RESULTADOS_SEGUIMIENTO,
+  type CanalAnalisis,
+  type ResultadoAnalisis,
+  type ResultadoSeguimiento,
+} from './application/ports/canal-analisis.js';
 export { ENTIDADES_ARC } from './infrastructure/typeorm/entidades.js';
 export {
   DISPOSICIONES,

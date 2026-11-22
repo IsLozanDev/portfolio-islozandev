@@ -22,6 +22,7 @@ import { ConfirmarCarga } from '../application/confirmar-carga.js';
 import { ConfirmarVersion } from '../application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from '../application/consultar-estado.js';
 import { EmitirUrlDescarga } from '../application/emitir-url-descarga.js';
+import { ListarCategorias } from '../application/listar-categorias.js';
 import { ListarVersiones } from '../application/listar-versiones.js';
 import { MarcarVersionVigente } from '../application/marcar-version-vigente.js';
 import { SolicitarCarga } from '../application/solicitar-carga.js';
@@ -30,6 +31,7 @@ import { PERMISOS_ARC } from '../domain/permisos-arc.js';
 import { DISPOSICIONES, VIGENCIA_MAXIMA_SEGUNDOS, VIGENCIA_MINIMA_SEGUNDOS } from '../domain/vigencia-descarga.js';
 import {
   CargaSolicitadaDto,
+  CategoriaDto,
   ErrorArchivoDto,
   EstadoArchivoDto,
   MarcarVigenteDto,
@@ -40,6 +42,7 @@ import {
   VersionesArchivoDto,
   VersionSolicitadaDto,
   cargaSolicitadaDto,
+  categoriaDto,
   estadoArchivoDto,
   urlDescargaDto,
   versionDto,
@@ -95,7 +98,16 @@ export class ArchivosController {
     @Inject(ConfirmarVersion) private readonly confirmarVersion: ConfirmarVersion,
     @Inject(ListarVersiones) private readonly listarVersiones: ListarVersiones,
     @Inject(MarcarVersionVigente) private readonly marcarVersionVigente: MarcarVersionVigente,
+    @Inject(ListarCategorias) private readonly listarCategorias: ListarCategorias,
   ) {}
+
+  // Antes de las rutas con `:id`: si no, `categorias` caería en `GET :id`.
+  @Get('categorias')
+  @Permiso(PERMISOS_ARC.subir)
+  @ApiOkResponse({ type: [CategoriaDto], description: 'Las categorías con sus MIME y su tamaño máximo, por código' })
+  async categorias(): Promise<CategoriaDto[]> {
+    return (await this.listarCategorias.ejecutar()).map(categoriaDto);
+  }
 
   @Post('cargas')
   @Permiso(PERMISOS_ARC.subir)

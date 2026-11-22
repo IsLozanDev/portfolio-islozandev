@@ -88,6 +88,13 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     });
   });
 
+  it('lista las cinco categorías sembradas por código', async () => {
+    const categorias = await enTenant(tenantA, () => repositorio.listarCategorias());
+
+    expect(categorias.map((categoria) => categoria.codigo)).toEqual([...CODIGOS_CATEGORIA].sort());
+    expect(categorias.find((categoria) => categoria.codigo === 'IMAGEN')).toMatchObject({ tamanoMaxBytes: DIEZ_MEGABYTES });
+  });
+
   it('una categoría que no existe es nula', async () => {
     expect(await enTenant(tenantA, () => repositorio.buscarCategoria('VIDEO'))).toBeNull();
   });

@@ -2,6 +2,8 @@ import { Logger, Module, type DynamicModule, type InjectionToken, type ModuleMet
 import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { crearClienteRedis } from '@vitrina/plataforma/seguridad';
+import type { Redis } from 'ioredis';
 import { AnalizarArchivo } from './application/analizar-archivo.js';
 import { ConfirmarCarga } from './application/confirmar-carga.js';
 import { ConfirmarVersion } from './application/confirmar-version.js';
@@ -9,12 +11,14 @@ import { ConsultarEstadoArchivo } from './application/consultar-estado.js';
 import type { DependenciasArchivos } from './application/dependencias-archivos.js';
 import { EmitirUrlDescarga, type DependenciasDescarga } from './application/emitir-url-descarga.js';
 import { LimpiarCargasPendientes } from './application/limpiar-cargas-pendientes.js';
+import { ListarCategorias } from './application/listar-categorias.js';
 import { ListarVersiones } from './application/listar-versiones.js';
 import { MarcarVersionVigente, type DependenciasVersionVigente } from './application/marcar-version-vigente.js';
 import type { AnalizadorAntivirus, SaludAntivirus } from './application/ports/analizador-antivirus.js';
 import { ARCHIVO_PORT, type ArchivoPort } from './application/ports/archivo.port.js';
 import type { AlmacenArchivos } from './application/ports/almacen-archivos.js';
 import { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
+import type { CanalAnalisis } from './application/ports/canal-analisis.js';
 import { ReencolarAnalisisAtascados } from './application/reencolar-analisis-atascados.js';
 import { ServicioArchivos } from './application/servicio-archivos.js';
 import { SolicitarCarga } from './application/solicitar-carga.js';
@@ -23,6 +27,7 @@ import { AnalizadorClamav, type MedicionAntivirus } from './infrastructure/antiv
 import { AnalizadorFirmaEicar } from './infrastructure/antivirus/analizador-firma-eicar.js';
 import { abrirColaAnalisis, EVENTO_ERROR_COLA_ANALISIS, type ColaAnalisisAbierta } from './infrastructure/bullmq/cola-analisis.bullmq.js';
 import { AlmacenArchivosSupabase, type OpcionesAlmacenSupabase } from './infrastructure/supabase/almacen-archivos.supabase.js';
+import { CanalAnalisisRedis } from './infrastructure/redis/canal-analisis.redis.js';
 import { DetectorTipoFileType } from './infrastructure/tipo/detector-tipo.file-type.js';
 import { ArchivosAtascadosSql } from './infrastructure/typeorm/archivos-atascados.sql.js';
 import { RepositorioArchivosTypeOrm } from './infrastructure/typeorm/archivos.repositorio.js';
@@ -38,6 +43,10 @@ export const COLA_ANALISIS_ABIERTA = Symbol('ColaAnalisisAbierta');
 export const SALUD_ANTIVIRUS = Symbol('SaludAntivirus');
 const ANTIVIRUS = Symbol('AnalizadorAntivirus');
 export const EVENTO_ANALISIS_ANTIVIRUS = 'arc.antivirus.analisis';
+/** Las pruebas de la app lo reemplazan por CanalAnalisisMemoria. */
+export const CANAL_ANALISIS = Symbol('CanalAnalisis');
+const CLIENTE_REDIS_ARC = Symbol('ClienteRedisArc');
+export const EVENTO_ERROR_CANAL_ANALISIS = 'arc.analisis.canal_error';
 
 /** Fábrica de un proveedor que arma la app con sus propios tokens. */
 export interface FabricaDe<Proveedor> {
@@ -89,6 +98,28 @@ class CierreColaAnalisis implements OnModuleDestroy {
 
 const sinAutorizadores: FabricaDe<AutorizadorEntidad[]> = { useFactory: () => [] };
 
+/** Cierra la conexión del canal del análisis con la app. */
+class CierreRedisArc implements OnModuleDestroy {
+  constructor(private readonly redis: Redis) {}
+
+  onModuleDestroy(): void {
+    this.redis.disconnect();
+  }
+}
+
+/** Solo el nombre del error: el mensaje de Redis puede llevar la URL con su clave (TR-RNF-026). */
+function avisarErrorCanal(logger: Logger, error: unknown): void {
+  logger.warn({ evento: EVENTO_ERROR_CANAL_ANALISIS, error: error instanceof Error ? error.name : 'desconocido' });
+}
+
+function proveedoresCanal(redisUrl: string, logger: Logger) {
+  return [
+    { provide: CLIENTE_REDIS_ARC, useFactory: (): Redis => crearClienteRedis(redisUrl, (error) => avisarErrorCanal(logger, error)) },
+    { provide: CierreRedisArc, useFactory: (redis: Redis) => new CierreRedisArc(redis), inject: [CLIENTE_REDIS_ARC] },
+    { provide: CANAL_ANALISIS, useFactory: (redis: Redis): CanalAnalisis => new CanalAnalisisRedis(redis), inject: [CLIENTE_REDIS_ARC] },
+  ];
+}
+
 function proveedoresCola(redisUrl: string, logger: Logger) {
   return [
     {
@@ -139,6 +170,7 @@ export class ArchivosModule {
         { provide: AUTORIZADORES_ENTIDAD, ...(opciones.autorizadores ?? sinAutorizadores) },
         proveedorAlmacen({ ...opciones.supabase, bucket: opciones.bucket }),
         ...proveedoresCola(opciones.redisUrl, logger),
+        ...proveedoresCanal(opciones.redisUrl, logger),
         {
           provide: DEPENDENCIAS_ARCHIVOS,
           useFactory: (
@@ -206,6 +238,11 @@ export class ArchivosModule {
           inject: [DEPENDENCIAS_ARCHIVOS],
         },
         {
+          provide: ListarCategorias,
+          useFactory: (dependencias: DependenciasApi) => new ListarCategorias(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
           provide: ConsultarEstadoArchivo,
           useFactory: (dependencias: DependenciasApi) => new ConsultarEstadoArchivo(dependencias),
           inject: [DEPENDENCIAS_ARCHIVOS],
@@ -265,6 +302,7 @@ export class ArchivosModule {
       providers: [
         proveedorAlmacen({ ...opciones.supabase, bucket: opciones.bucket }),
         ...proveedoresCola(opciones.redisUrl, logger),
+        ...proveedoresCanal(opciones.redisUrl, logger),
         { provide: ANTIVIRUS, useFactory: () => crearAntivirus(opciones.antivirus, logger) },
         { provide: SALUD_ANTIVIRUS, useExisting: ANTIVIRUS },
         {
@@ -275,6 +313,7 @@ export class ArchivosModule {
             publicador: EventPublisher,
             almacen: AlmacenArchivos,
             antivirus: AnalizadorAntivirus,
+            canal: CanalAnalisis,
           ) =>
             new AnalizarArchivo({
               unidadDeTrabajo,
@@ -284,8 +323,10 @@ export class ArchivosModule {
               almacen,
               detector: new DetectorTipoFileType(),
               antivirus,
+              canal,
+              alFallarCanal: (error) => avisarErrorCanal(logger, error),
             }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, EVENT_PUBLISHER, ALMACEN_ARCHIVOS, ANTIVIRUS],
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, EVENT_PUBLISHER, ALMACEN_ARCHIVOS, ANTIVIRUS, CANAL_ANALISIS],
         },
         {
           provide: ReencolarAnalisisAtascados,

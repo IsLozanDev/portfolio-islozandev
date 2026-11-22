@@ -1,0 +1,23 @@
+import type { MotivoRechazo, MotivoRechazoVersion } from '../../domain/archivo.js';
+
+export const RESULTADOS_SEGUIMIENTO = ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'] as const;
+export type ResultadoSeguimiento = (typeof RESULTADOS_SEGUIMIENTO)[number];
+
+/** Lo que el worker publica al terminar el análisis de una carga (versión 1) o de una versión (n > 1). */
+export interface ResultadoAnalisis {
+  archivoId: string;
+  numero: number;
+  resultado: ResultadoSeguimiento;
+  motivoRechazo?: MotivoRechazo | MotivoRechazoVersion;
+  versionCoincidente?: number;
+  mensaje?: string;
+  /** Solo para autorizar el SSE: no sale al cliente. */
+  subidoPor: string;
+}
+
+/** Del worker a la API: el resultado de cada análisis, en vivo y el último guardado por un tiempo. */
+export interface CanalAnalisis {
+  publicar(resultado: ResultadoAnalisis): Promise<void>;
+  ultimo(archivoId: string, numero: number): Promise<ResultadoAnalisis | null>;
+  suscribir(archivoId: string, numero: number, senal: AbortSignal): AsyncGenerator<ResultadoAnalisis>;
+}

@@ -10,12 +10,13 @@ import { ConfirmarCarga } from '../src/application/confirmar-carga.js';
 import { ConfirmarVersion } from '../src/application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from '../src/application/consultar-estado.js';
 import { EmitirUrlDescarga } from '../src/application/emitir-url-descarga.js';
+import { ListarCategorias } from '../src/application/listar-categorias.js';
 import { ListarVersiones } from '../src/application/listar-versiones.js';
 import { MarcarVersionVigente } from '../src/application/marcar-version-vigente.js';
 import { SolicitarCarga } from '../src/application/solicitar-carga.js';
 import { SolicitarVersion } from '../src/application/solicitar-version.js';
 import { ArchivosController } from '../src/interface/archivos.controller.js';
-import { DIEZ_MEGABYTES, VEINTICINCO_MEGABYTES } from './support/categorias.js';
+import { DIEZ_MEGABYTES, MIME_DOCX, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 import { ejecutable, pdf, texto } from './support/contenidos.js';
 import { AutorizadorFijo, crearDobles, ENTIDAD_CON_AUTORIZADOR, TENANT_A, TENANT_B, USUARIO, type Dobles } from './support/dobles.js';
 
@@ -94,6 +95,7 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
         { provide: ConfirmarVersion, useValue: new ConfirmarVersion(dobles) },
         { provide: ListarVersiones, useValue: new ListarVersiones(dobles) },
         { provide: MarcarVersionVigente, useValue: new MarcarVersionVigente(dobles) },
+        { provide: ListarCategorias, useValue: new ListarCategorias(dobles) },
       ],
     }).compile();
     app = modulo.createNestApplication({ logger: false });
@@ -124,6 +126,28 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
   });
 
   afterAll(() => app?.close());
+
+  describe('GET /v1/archivos/categorias', () => {
+    it('200 con código, MIME y tamaño máximo de cada categoría, por código y sin `sensible`', async () => {
+      const respuesta = await get('/v1/archivos/categorias');
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.map((categoria: { codigo: string }) => categoria.codigo)).toEqual(['ADJUNTO_SOPORTE', 'DOCUMENTO', 'IMAGEN']);
+      expect(respuesta.body[1]).toEqual({
+        codigo: 'DOCUMENTO',
+        mimes_permitidos: ['application/pdf', MIME_DOCX, 'image/jpeg'],
+        tamano_max_bytes: VEINTICINCO_MEGABYTES,
+      });
+    });
+
+    it('sin plat.archivo.subir → 403', async () => {
+      permisosDelActor = [DESCARGAR, VERSIONAR];
+
+      const respuesta = await get('/v1/archivos/categorias');
+
+      expect([respuesta.status, respuesta.body.codigo]).toEqual([403, 'SIN_PERMISO']);
+    });
+  });
 
   describe('POST /v1/archivos/cargas', () => {
     it('201 con el archivo y la URL de carga', async () => {
@@ -561,6 +585,7 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
 
     expect(Object.keys(documento.paths).sort()).toEqual([
       '/v1/archivos/cargas',
+      '/v1/archivos/categorias',
       '/v1/archivos/{id}',
       '/v1/archivos/{id}/confirmar',
       '/v1/archivos/{id}/descarga',

@@ -20,6 +20,7 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import { transmitirEventosSse, type RespuestaEnStreaming } from '@vitrina/plataforma/kernel-infra';
 import { Permiso, PrincipalActual, type Principal } from '@vitrina/plataforma/seguridad';
 import { z } from 'zod';
 import { AplicarImportacion } from '../application/importacion/aplicar-importacion.js';
@@ -44,7 +45,7 @@ import {
   PrevisualizacionDto,
   PrevisualizarImportacionDto,
 } from './importaciones.dto.js';
-import { ArchivoGrandeFiltro, descargarCsv, transmitirAvisos, type RespuestaEnStreaming } from './importaciones.http.js';
+import { ArchivoGrandeFiltro, descargarCsv } from './importaciones.http.js';
 import { activaDto, detalleDto, historialDto, previsualizacionDto } from './importaciones.respuestas.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -131,7 +132,7 @@ export class ImportacionesController {
   async eventos(@PrincipalActual() principal: Principal, @Param('id') id: string, @Res() respuesta: RespuestaEnStreaming): Promise<void> {
     const cierre = new AbortController();
     const avisos = await this.seguirImportacion.ejecutar({ id: exigirUuid(id), actorId: principal.usuarioId, senal: cierre.signal });
-    await transmitirAvisos(respuesta, avisos, cierre);
+    await transmitirEventosSse(respuesta, avisos, cierre);
   }
 
   @Get('importaciones/:id')

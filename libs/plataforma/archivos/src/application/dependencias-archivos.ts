@@ -4,6 +4,7 @@ import { AccesoEntidadDenegadoError, AlmacenNoDisponibleError } from '../domain/
 import type { AlmacenArchivos } from './ports/almacen-archivos.js';
 import type { AnalizadorAntivirus } from './ports/analizador-antivirus.js';
 import type { AutorizadorEntidad } from './ports/autorizador-entidad.js';
+import type { CanalAnalisis } from './ports/canal-analisis.js';
 import type { ColaAnalisis, TrabajoAnalisis } from './ports/cola-analisis.js';
 import type { DetectorTipo } from './ports/detector-tipo.js';
 import type { RepositorioArchivos } from './ports/repositorio-archivos.js';
@@ -28,6 +29,9 @@ export interface DependenciasAnalisis {
   almacen: AlmacenArchivos;
   detector: DetectorTipo;
   antivirus: AnalizadorAntivirus;
+  canal: CanalAnalisis;
+  /** Redis no respondió al publicar el resultado: el análisis sigue, el SSE lo lee de la base al conectar. */
+  alFallarCanal: (error: unknown) => void;
 }
 
 /** Los eventos van al outbox en la misma transacción que guardó el archivo (regla 4). */
