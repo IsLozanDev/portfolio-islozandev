@@ -1,0 +1,35 @@
+<div class="flex flex-col gap-6">
+  <header class="flex flex-col gap-1">
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="m-0 text-2xl font-medium">Archivos de prueba</h1>
+      <vit-chip-estado tono="advertencia" texto="Solo desarrollo"><mat-icon class="vit-icono-chip-prueba" aria-hidden="true">construction</mat-icon></vit-chip-estado>
+    </div>
+    <p class="m-0 text-sm text-sobre-superficie-variante">
+      Ruta <code>dev/archivos</code>, fuera del build de producción. Entidad <code data-prueba="entidad">{{ entidadTipo }} · {{ entidadId() }}</code>.
+    </p>
+  </header>
+
+  <section class="flex flex-col gap-4 rounded-tarjeta border border-borde bg-superficie p-6" aria-labelledby="titulo-carga">
+    <div class="flex flex-col gap-1">
+      <h2 id="titulo-carga" class="m-0 text-lg font-medium">Carga</h2>
+      <p class="m-0 text-sm text-sobre-superficie-variante">Un archivo por zona. Se valida el tipo y el tamaño antes de subir.</p>
+    </div>
+    <mat-form-field class="w-full max-w-xs">
+      <mat-label>Categoría</mat-label>
+      <mat-select data-prueba="categoria" [value]="categoria()" (valueChange)="categoria.set($event)">
+        @for (opcion of categorias() ?? []; track opcion.codigo) {
+          <mat-option [value]="opcion.codigo">{{ opcion.codigo }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (entidadId()) {
+      <vit-archivo-carga [categoria]="categoria()" [entidadTipo]="entidadTipo" [entidadId]="entidadId()" (disponible)="alDisponible($event)" />
+    }
+  </section>
+
+  @if (archivoId(); as id) {
+    <section class="rounded-tarjeta border border-borde bg-superficie p-6">
+      <vit-archivo-versiones [archivoId]="id" />
+    </section>
+  }
+</div>

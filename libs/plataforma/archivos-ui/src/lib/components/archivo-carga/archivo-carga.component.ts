@@ -5,7 +5,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SesionService, StreamRechazado } from '@vitrina/shared/auth';
 import { ChipEstadoComponent } from '@vitrina/shared/ui';
 import type { Subscription } from 'rxjs';
-import type { AvisoAnalisis, CargaFirmada, EstadoArchivo } from '../../models/archivo';
+import { NUMERO_PRIMERA_VERSION, type AvisoAnalisis, type CargaFirmada, type EstadoArchivo } from '../../models/archivo';
 import type { Categoria } from '../../models/categoria';
 import { CODIGO_DESCONOCIDO, ErrorArchivos } from '../../models/error-archivos';
 import type { ArchivoDisponible, ArchivoRechazado, EtapaCarga, ModoCarga } from '../../models/estado-carga';
@@ -21,7 +21,6 @@ import { formatoBytes } from '../../utils/formato-bytes';
 import { reglaDeCategoria } from '../../utils/tipos-archivo';
 import { validarArchivo } from '../../utils/validar-archivo';
 
-const PRIMERA_VERSION = 1;
 const HTTP_NO_ENCONTRADO = 404;
 const SEPARADOR_DETALLE = ' · ';
 
@@ -80,7 +79,7 @@ export class ArchivoCargaComponent implements OnInit {
   protected readonly errorDescarga = signal<string | null>(null);
   private readonly reglas = signal<Categoria | null>(null);
   private readonly subidoAhora = signal(false);
-  private readonly numeroActual = signal(PRIMERA_VERSION);
+  private readonly numeroActual = signal(NUMERO_PRIMERA_VERSION);
 
   protected readonly enEspera = computed(() => this.etapa() === 'ESPERA');
   protected readonly analizando = computed(() => this.etapa() === 'CONFIRMANDO' || this.etapa() === 'ANALIZANDO');
@@ -232,13 +231,13 @@ export class ArchivoCargaComponent implements OnInit {
       entidadTipo: this.entidadTipo(),
       entidadId: this.entidadId(),
     });
-    return { ...pedida, numero: PRIMERA_VERSION };
+    return { ...pedida, numero: NUMERO_PRIMERA_VERSION };
   }
 
   private async confirmar(intento: number, carga: CargaEnCurso): Promise<void> {
     this.etapa.set('CONFIRMANDO');
     try {
-      if (carga.numero === PRIMERA_VERSION) await this.archivos.confirmarCarga(carga.archivoId);
+      if (carga.numero === NUMERO_PRIMERA_VERSION) await this.archivos.confirmarCarga(carga.archivoId);
       else await this.archivos.confirmarVersion(carga.archivoId, carga.numero);
     } catch (error) {
       if (intento === this.intento) this.fallarSubida(error);
@@ -285,7 +284,7 @@ export class ArchivoCargaComponent implements OnInit {
     }
     if (intento !== this.intento || estado.estado === 'PENDIENTE_CARGA') return;
 
-    this.enCurso = { archivoId, numero: estado.versionVigente ?? PRIMERA_VERSION };
+    this.enCurso = { archivoId, numero: estado.versionVigente ?? NUMERO_PRIMERA_VERSION };
     this.mostrado.set({ nombre: estado.nombreOriginal, ...(estado.bytes !== undefined && { bytes: estado.bytes }) });
     if (estado.estado === 'EN_ANALISIS') {
       this.seguir(intento, this.enCurso);

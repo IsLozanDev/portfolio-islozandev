@@ -1,8 +1,8 @@
-import { NUMERO_PRIMERA_VERSION, type Archivo, type CodigoEstadoVersion } from '../domain/archivo.js';
+import { NUMERO_PRIMERA_VERSION, type Archivo } from '../domain/archivo.js';
 import { AnalisisNoIniciadoError, ArchivoNoEncontradoError, VersionNoEncontradaError } from '../domain/errores.js';
 import { mensajeRechazoCarga } from '../domain/mensaje-rechazo-version.js';
 import type { DependenciasArchivos } from './dependencias-archivos.js';
-import type { CanalAnalisis, ResultadoAnalisis, ResultadoSeguimiento } from './ports/canal-analisis.js';
+import { esResultadoSeguimiento, type CanalAnalisis, type ResultadoAnalisis, type ResultadoSeguimiento } from './ports/canal-analisis.js';
 
 export interface SeguirAnalisisComando {
   archivoId: string;
@@ -26,12 +26,6 @@ export type AvisoAnalisis =
 
 export interface DependenciasSeguimiento extends Pick<DependenciasArchivos, 'unidadDeTrabajo' | 'archivos'> {
   canal: CanalAnalisis;
-}
-
-const ESTADOS_TERMINADOS: readonly CodigoEstadoVersion[] = ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'];
-
-function esTerminado(estado: CodigoEstadoVersion): estado is ResultadoSeguimiento {
-  return ESTADOS_TERMINADOS.includes(estado);
 }
 
 /**
@@ -89,7 +83,7 @@ export class SeguirAnalisis {
       if (!version) throw new VersionNoEncontradaError();
       if (version.subidoPor !== usuarioId) throw new ArchivoNoEncontradoError();
       if (version.estado === 'PENDIENTE_CARGA') throw new AnalisisNoIniciadoError();
-      return esTerminado(version.estado) ? finDeVersion(archivo, numero, version.estado) : null;
+      return esResultadoSeguimiento(version.estado) ? finDeVersion(archivo, numero, version.estado) : null;
     });
   }
 }

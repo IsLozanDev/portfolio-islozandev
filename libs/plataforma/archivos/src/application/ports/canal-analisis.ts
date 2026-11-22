@@ -3,6 +3,13 @@ import type { MotivoRechazo, MotivoRechazoVersion } from '../../domain/archivo.j
 export const RESULTADOS_SEGUIMIENTO = ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'] as const;
 export type ResultadoSeguimiento = (typeof RESULTADOS_SEGUIMIENTO)[number];
 
+const RESULTADOS: readonly string[] = RESULTADOS_SEGUIMIENTO;
+
+/** El estado de un archivo o una versión cuyo análisis ya terminó. */
+export function esResultadoSeguimiento(estado: string): estado is ResultadoSeguimiento {
+  return RESULTADOS.includes(estado);
+}
+
 /** Lo que el worker publica al terminar el análisis de una carga (versión 1) o de una versión (n > 1). */
 export interface ResultadoAnalisis {
   archivoId: string;

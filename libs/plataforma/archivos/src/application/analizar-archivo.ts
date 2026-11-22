@@ -6,7 +6,7 @@ import { mensajeRechazoCarga, mensajeRechazoVersion } from '../domain/mensaje-re
 import { evaluarAnalisis, type HallazgosAnalisis, type ResultadoAnalisis } from '../domain/resultado-analisis.js';
 import { publicarEventosDe, type DependenciasAnalisis } from './dependencias-archivos.js';
 import type { ResultadoAntivirus } from './ports/analizador-antivirus.js';
-import type { ResultadoAnalisis as ResultadoPublicado } from './ports/canal-analisis.js';
+import { esResultadoSeguimiento, type ResultadoAnalisis as ResultadoPublicado } from './ports/canal-analisis.js';
 import type { TrabajoAnalisis } from './ports/cola-analisis.js';
 
 const FIRMA_SIN_NOMBRE = 'DESCONOCIDA';
@@ -135,15 +135,9 @@ export class AnalizarArchivo {
   }
 }
 
-const ESTADOS_TERMINADOS: readonly string[] = ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'];
-
-function esTerminado(estado: string): estado is ResultadoPublicado['resultado'] {
-  return ESTADOS_TERMINADOS.includes(estado);
-}
-
 /** `null` si el archivo volvió a pendiente (se confirmó sin subir): no hay resultado que avisar. */
 function resultadoPrimeraCarga(archivo: Archivo): ResultadoPublicado | null {
-  if (!esTerminado(archivo.estado)) return null;
+  if (!esResultadoSeguimiento(archivo.estado)) return null;
   const base = { archivoId: archivo.id, numero: NUMERO_PRIMERA_VERSION, resultado: archivo.estado, subidoPor: archivo.primeraVersion.subidoPor };
   const motivo = archivo.motivoRechazo;
   return motivo === null ? base : { ...base, motivoRechazo: motivo, mensaje: mensajeRechazoCarga(motivo) };
@@ -153,7 +147,7 @@ function resultadoPrimeraCarga(archivo: Archivo): ResultadoPublicado | null {
 function resultadoVersion(archivo: Archivo, numero: number, subidoPor: string): ResultadoPublicado | null {
   const version = archivo.versionNumero(numero);
   const base = { archivoId: archivo.id, numero, subidoPor };
-  if (version !== null) return esTerminado(version.estado) ? { ...base, resultado: version.estado } : null;
+  if (version !== null) return esResultadoSeguimiento(version.estado) ? { ...base, resultado: version.estado } : null;
   const rechazo = archivo.rechazoVersion;
   if (rechazo === null) return null;
   return {

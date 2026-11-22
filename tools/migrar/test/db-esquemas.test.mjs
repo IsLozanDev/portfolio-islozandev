@@ -60,7 +60,7 @@ afterAll(async () => {
   if (!ADMIN_URL) return;
   await ejecutar(ADMIN_URL, `DROP DATABASE IF EXISTS ${nombreDb} WITH (FORCE)`);
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
-  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', 'arc_fk_test_dueno', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
   for (const rol of ['sec_test_app', 'sec_test_sin_permiso']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
@@ -95,6 +95,7 @@ const CASOS = [
   { migracion: '01l_per_contactos.sql', esquema: 'per', prueba: 'tests/01l_per_contactos.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
   { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
+  { migracion: '01m_arc_categoria_fk.sql', esquema: 'arc', prueba: 'tests/01m_arc_categoria_fk.test.sql' },
   { migracion: '01m_arc_versiones.sql', esquema: 'arc', prueba: 'tests/01m_arc_versiones.test.sql' },
   { migracion: '01n_sec.sql', esquema: 'sec', prueba: 'tests/01n_sec.test.sql' },
 ];
@@ -206,6 +207,19 @@ async function inversoSecretosConFilas() {
     await c.end();
   }
 }
+
+// El UPDATE sobre arc.categoria.codigo que 01m_arc_categoria_fk da al rol que migra. Se lee del ACL de la columna:
+// has_column_privilege da true a cualquier superusuario.
+const updateCodigoCategoria = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT coalesce(bool_or(acl.privilege_type = 'UPDATE' AND acl.grantee = (SELECT oid FROM pg_roles WHERE rolname = current_user)), false) AS tiene
+         FROM pg_attribute a
+         LEFT JOIN LATERAL aclexplode(a.attacl) acl ON true
+        WHERE a.attrelid = 'arc.categoria'::regclass AND a.attname = 'codigo'`,
+    )
+  ).rows[0].tiene;
 
 // Función e índice que agrega 01m_arc_analisis (2 en total).
 const objetosAnalisis = async () =>
@@ -602,6 +616,14 @@ describeConDb('db/ y supabase/migrations', () => {
     await borrarArchivosDelRelleno();
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_versiones.sql'), 'utf8'));
 
+    // El inverso de 01m_arc_categoria_fk le quita al rol que migra el UPDATE sobre arc.categoria.codigo y se puede reaplicar.
+    expect(await updateCodigoCategoria()).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_categoria_fk.sql'), 'utf8'));
+    expect(await updateCodigoCategoria()).toBe(false);
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc_categoria_fk.sql'), 'utf8'));
+    expect(await updateCodigoCategoria()).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_categoria_fk.sql'), 'utf8'));
+
     // El inverso de 01m_arc_analisis deja arc como lo dejó 01m_arc y se puede reaplicar. Va antes que el de 01m_arc.
     expect(await objetosAnalisis()).toHaveLength(2);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01m_arc_analisis.sql'), 'utf8'));
@@ -615,6 +637,7 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('arc')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_analisis.sql'), 'utf8'));
     expect(await objetosAnalisis()).toHaveLength(2);
+    await ejecutar(urlDb, await readFile(rutaDb('01m_arc_categoria_fk.sql'), 'utf8'));
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
     expect(await objetosVersiones()).toHaveLength(8);
 

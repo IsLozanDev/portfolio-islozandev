@@ -1,11 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { EventosSseCliente, type EventoSse } from '@vitrina/shared/auth';
 import { map, type Observable } from 'rxjs';
-import { aAvisoAnalisis, type AvisoAnalisis, type AvisoAnalisisRespuesta } from '../models/archivo';
+import { aAvisoAnalisis, NUMERO_PRIMERA_VERSION, type AvisoAnalisis, type AvisoAnalisisRespuesta } from '../models/archivo';
 import { RUTA_ARCHIVOS } from './archivos.cliente';
 
 const EVENTO_FIN = 'fin';
-const PRIMERA_VERSION = 1;
 const esFin = (evento: EventoSse) => evento.evento === EVENTO_FIN;
 
 /** SSE del análisis de una carga (versión 1) o de una versión. */
@@ -21,5 +20,5 @@ export class EventosAnalisisCliente {
 
 function rutaEventos(archivoId: string, numero: number): string {
   const rutaArchivo = `${RUTA_ARCHIVOS}/${encodeURIComponent(archivoId)}`;
-  return numero === PRIMERA_VERSION ? `${rutaArchivo}/eventos` : `${rutaArchivo}/versiones/${numero}/eventos`;
+  return numero === NUMERO_PRIMERA_VERSION ? `${rutaArchivo}/eventos` : `${rutaArchivo}/versiones/${numero}/eventos`;
 }

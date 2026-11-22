@@ -8,6 +8,9 @@ export type ResultadoAnalisis = (typeof RESULTADOS_ANALISIS)[number];
 
 export const DISPOSICION_ADJUNTO = 'attachment';
 
+/** La primera carga es la versión 1; las versiones nuevas van de la 2 en adelante. */
+export const NUMERO_PRIMERA_VERSION = 1;
+
 export interface SolicitudCarga {
   categoria: string;
   nombreOriginal: string;
