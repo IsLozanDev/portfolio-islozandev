@@ -53,7 +53,7 @@ CREATE UNIQUE INDEX ux_consentimiento_aceptado_vigente ON per.consentimiento (pe
 -- 3. Solo revocación: el historial es prueba legal y solo admite marcar la revocación una vez.
 -- ---------------------------------------------------------------------
 CREATE FUNCTION per.consentimiento_solo_revocacion() RETURNS trigger
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
   IF OLD.revocado_en IS NOT NULL THEN
     RAISE EXCEPTION 'El consentimiento % ya está revocado', OLD.id USING ERRCODE = 'check_violation';
