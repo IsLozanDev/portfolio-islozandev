@@ -3,6 +3,7 @@ import type { AuditoriaPort, EntradaAuditoria } from '@vitrina/plataforma/audito
 import type { DependenciasAnalisis, DependenciasArchivos } from '../../src/application/dependencias-archivos.js';
 import type { DependenciasDescarga } from '../../src/application/emitir-url-descarga.js';
 import type { AnalizadorAntivirus, ResultadoAntivirus } from '../../src/application/ports/analizador-antivirus.js';
+import type { ResultadoAnalisis } from '../../src/application/ports/canal-analisis.js';
 import type { CargaFirmada } from '../../src/application/ports/almacen-archivos.js';
 import type { AutorizadorEntidad } from '../../src/application/ports/autorizador-entidad.js';
 import type { ColaAnalisis, TrabajoAnalisis } from '../../src/application/ports/cola-analisis.js';
@@ -11,6 +12,7 @@ import type { Archivo } from '../../src/domain/archivo.js';
 import { CategoriaArchivo } from '../../src/domain/categoria.js';
 import { AlmacenNoDisponibleError } from '../../src/domain/errores.js';
 import { AnalizadorFirmaEicar } from '../../src/infrastructure/antivirus/analizador-firma-eicar.js';
+import { CanalAnalisisMemoria } from '../../src/infrastructure/memoria/canal-analisis.memoria.js';
 import { idDeTrabajo } from '../../src/infrastructure/bullmq/cola-analisis.bullmq.js';
 import { AlmacenArchivosMemoria } from '../../src/infrastructure/memoria/almacen-archivos.memoria.js';
 import { DetectorTipoFileType } from '../../src/infrastructure/tipo/detector-tipo.file-type.js';
@@ -76,6 +78,20 @@ export class PublicadorMemoria implements EventPublisher {
   }
 }
 
+/** Recuerda si cada resultado se publicó dentro de una transacción: debe ser después de confirmarla. */
+export class CanalAnalisisEspia extends CanalAnalisisMemoria {
+  readonly publicadosEnTransaccion: boolean[] = [];
+  readonly fallas: unknown[] = [];
+  constructor(private readonly unidadDeTrabajo: UnidadDeTrabajoDirecta) {
+    super();
+  }
+
+  override publicar(resultado: ResultadoAnalisis): Promise<void> {
+    this.publicadosEnTransaccion.push(this.unidadDeTrabajo.enCurso > 0);
+    return super.publicar(resultado);
+  }
+}
+
 /** Guarda por tenant del contexto, como el repositorio real, y cuenta las escrituras. */
 export class RepositorioArchivosMemoria implements RepositorioArchivos {
   readonly guardados: Archivo[] = [];
@@ -107,6 +123,10 @@ export class RepositorioArchivosMemoria implements RepositorioArchivos {
 
   buscarCategoria(codigo: string): Promise<CategoriaArchivo | null> {
     return Promise.resolve(this.categorias.find((categoria) => categoria.codigo === codigo) ?? null);
+  }
+
+  listarCategorias(): Promise<CategoriaArchivo[]> {
+    return Promise.resolve([...this.categorias].sort((una, otra) => una.codigo.localeCompare(otra.codigo)));
   }
 
   /** Todas subidas en `AHORA`: el agregado no lleva la fecha. */
@@ -224,6 +244,7 @@ export interface Dobles extends DependenciasArchivos, DependenciasAnalisis, Depe
   antivirus: AntivirusConFallas;
   autorizadores: AutorizadorFijo[];
   auditoria: AuditoriaEspia;
+  canal: CanalAnalisisEspia;
 }
 
 /** Sin autorizadores registrados, como nace `AUTORIZADORES_ENTIDAD`. El detector de tipo es el real. */
@@ -231,6 +252,7 @@ export function crearDobles(): Dobles {
   const contexto = new ContextoFijo({ tenantId: TENANT_A, actorId: USUARIO });
   const unidadDeTrabajo = new UnidadDeTrabajoDirecta();
   const reloj = new RelojFijo(AHORA);
+  const canal = new CanalAnalisisEspia(unidadDeTrabajo);
   return {
     unidadDeTrabajo,
     contexto,
@@ -244,5 +266,7 @@ export function crearDobles(): Dobles {
     antivirus: new AntivirusConFallas(),
     autorizadores: [],
     auditoria: new AuditoriaEspia(unidadDeTrabajo),
+    canal,
+    alFallarCanal: (error) => canal.fallas.push(error),
   };
 }

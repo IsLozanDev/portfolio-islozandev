@@ -167,9 +167,10 @@ Canvas «Vitrina · Diseño UI», página «36 · Archivos» (https://claude.ai/
 
 | Entrada | Tipo | Uso |
 | --- | --- | --- |
-| `categoria` | `string` | Obligatoria en modo carga |
+| `categoria` | `string` | Obligatoria en modo carga; en modo versión, si falta, se lee de `GET /v1/archivos/{id}` |
 | `entidadTipo`, `entidadId` | `string` | Obligatorias en modo carga |
-| `archivoId` | `string \| undefined` | Con valor: modo versión (sube una versión de ese archivo) |
+| `modo` | `'carga' \| 'version'` | Por defecto `carga`. `version` sube una versión nueva del archivo `archivoId` |
+| `archivoId` | `string \| undefined` | Obligatoria en modo versión. En modo carga, un archivo ya subido que la pantalla vuelve a mostrar |
 | `etiqueta` | `string` | Texto de la zona («Arrastra el documento aquí») |
 | `deshabilitado` | `boolean` | |
 
@@ -289,6 +290,9 @@ Canvas «Vitrina · Diseño UI», página «36 · Archivos» (https://claude.ai/
 - **Sí:** diseño previo en el canvas, página «36 · Archivos». Decisión del usuario. La zona de carga, la barra de progreso y los estados de cuarentena y rechazo no existían en ninguna pantalla tipo (regla de diseño de `CLAUDE.md`).
 - **Sí:** «Elegir otro archivo» tras cuarentena o rechazo, y confirmación de «Marcar vigente» como diálogo de `AvisosService`. Salieron del diseño en el canvas.
 - **Sí:** «Reintentar» tras un error de subida empieza una carga nueva. No hay ruta para volver a firmar una carga pendiente; la anterior la borra la limpieza diaria.
+- **Sí (en la implementación):** `vit-archivo-carga` tiene la entrada `modo` (`carga` o `version`); `archivoId` en modo carga es un archivo ya subido que la pantalla vuelve a mostrar. Resolvía la contradicción entre la tabla de entradas y el párrafo de «volver a mostrar».
+- **Sí (en la implementación):** si el SSE se corta después de confirmar, «Reintentar» reabre el seguimiento en vez de subir de nuevo: el archivo ya está subido.
+- **Hallazgo (verificación en dev, 2026-11-22):** toda carga fallaba con 500 en Supabase. `01m_arc.sql` (spec 33) le quita UPDATE sobre `arc.categoria` al rol que migra, que en Supabase es su dueño y no es superusuario, y el chequeo de la FK `arc.archivo.categoria` corre `SELECT ... FOR KEY SHARE` como dueño, que exige UPDATE (42501). En CI no se veía porque migra un superusuario. Se corrige en este spec con `db/01m_arc_categoria_fk.sql` (reversible): UPDATE solo sobre `codigo`; MIME, tamaño y `sensible` siguen sin poder cambiarse. Aplicada en dev el 2026-11-22.
 
 ## Riesgos
 

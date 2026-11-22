@@ -2,9 +2,11 @@ import { createHash } from 'node:crypto';
 import { NUMERO_PRIMERA_VERSION, type Archivo, type ContenidoAnalizado, type ContenidoInfectado } from '../domain/archivo.js';
 import type { CategoriaArchivo } from '../domain/categoria.js';
 import { CategoriaDesconocidaError } from '../domain/errores.js';
+import { mensajeRechazoCarga, mensajeRechazoVersion } from '../domain/mensaje-rechazo-version.js';
 import { evaluarAnalisis, type HallazgosAnalisis, type ResultadoAnalisis } from '../domain/resultado-analisis.js';
 import { publicarEventosDe, type DependenciasAnalisis } from './dependencias-archivos.js';
 import type { ResultadoAntivirus } from './ports/analizador-antivirus.js';
+import { esResultadoSeguimiento, type ResultadoAnalisis as ResultadoPublicado } from './ports/canal-analisis.js';
 import type { TrabajoAnalisis } from './ports/cola-analisis.js';
 
 const FIRMA_SIN_NOMBRE = 'DESCONOCIDA';
@@ -59,6 +61,7 @@ export class AnalizarArchivo {
       aplicarResultadoPrimeraCarga(archivo, evaluarAnalisis(categoria, archivo.primeraVersion, hallazgosDe(medicion, null)), medicion);
     }
     await this.guardarConEventos(archivo);
+    await this.publicarResultado(resultadoPrimeraCarga(archivo));
     if (fueRechazado(archivo)) await almacen.borrar(ruta);
   }
 
@@ -70,6 +73,7 @@ export class AnalizarArchivo {
     const version = archivo.versionNumero(numero);
     if (version?.estado !== 'EN_ANALISIS') return;
     const ruta = version.rutaStorage;
+    const { subidoPor } = version;
 
     const medicion = await this.leerYMedir(ruta);
     let rechazada = false;
@@ -81,6 +85,7 @@ export class AnalizarArchivo {
       rechazada = aplicarResultadoVersion(archivo, numero, resultado, medicion, versionCoincidente);
     }
     await this.guardarConEventos(archivo);
+    await this.publicarResultado(resultadoVersion(archivo, numero, subidoPor));
     if (rechazada) await this.dependencias.almacen.borrar(ruta);
   }
 
@@ -109,12 +114,49 @@ export class AnalizarArchivo {
     };
   }
 
+  /**
+   * Después de confirmar la transacción: un mensaje de una transacción revertida mentiría. Con Redis caído no
+   * relanza; el resultado ya está en la base y el SSE lo lee al conectar.
+   */
+  private async publicarResultado(resultado: ResultadoPublicado | null): Promise<void> {
+    if (resultado === null) return;
+    try {
+      await this.dependencias.canal.publicar(resultado);
+    } catch (error) {
+      this.dependencias.alFallarCanal(error);
+    }
+  }
+
   private guardarConEventos(archivo: Archivo): Promise<void> {
     return this.dependencias.unidadDeTrabajo.run(async () => {
       await this.dependencias.archivos.guardar(archivo);
       await publicarEventosDe(this.dependencias.publicador, archivo);
     });
   }
+}
+
+/** `null` si el archivo volvió a pendiente (se confirmó sin subir): no hay resultado que avisar. */
+function resultadoPrimeraCarga(archivo: Archivo): ResultadoPublicado | null {
+  if (!esResultadoSeguimiento(archivo.estado)) return null;
+  const base = { archivoId: archivo.id, numero: NUMERO_PRIMERA_VERSION, resultado: archivo.estado, subidoPor: archivo.primeraVersion.subidoPor };
+  const motivo = archivo.motivoRechazo;
+  return motivo === null ? base : { ...base, motivoRechazo: motivo, mensaje: mensajeRechazoCarga(motivo) };
+}
+
+/** Un intento rechazado ya no está en el archivo: queda su rechazo, y quién lo subió llega aparte. */
+function resultadoVersion(archivo: Archivo, numero: number, subidoPor: string): ResultadoPublicado | null {
+  const version = archivo.versionNumero(numero);
+  const base = { archivoId: archivo.id, numero, subidoPor };
+  if (version !== null) return esResultadoSeguimiento(version.estado) ? { ...base, resultado: version.estado } : null;
+  const rechazo = archivo.rechazoVersion;
+  if (rechazo === null) return null;
+  return {
+    ...base,
+    resultado: 'RECHAZADO',
+    motivoRechazo: rechazo.motivo,
+    ...(rechazo.versionCoincidente !== null && { versionCoincidente: rechazo.versionCoincidente }),
+    mensaje: mensajeRechazoVersion(rechazo, archivo.versionVigente),
+  };
 }
 
 /** En una función aparte: el compilador da por fijo el estado que ya comprobó y las transiciones lo cambian. */

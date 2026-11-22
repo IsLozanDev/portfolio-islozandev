@@ -1,5 +1,5 @@
+import { AvisosEnEspera } from '@vitrina/plataforma/kernel-infra';
 import type { AvisoImportacion, CanalAvance } from '../application/ports/importacion.js';
-import { AvisosEnEspera } from './avisos-en-espera.js';
 
 /** El mismo contrato que CanalAvanceRedis, en un proceso: para pruebas sin Redis. */
 export class CanalAvanceMemoria implements CanalAvance {
@@ -21,7 +21,7 @@ export class CanalAvanceMemoria implements CanalAvance {
   }
 
   async *suscribir(importacionId: string, senal: AbortSignal): AsyncGenerator<AvisoImportacion> {
-    const espera = new AvisosEnEspera(senal);
+    const espera = new AvisosEnEspera<AvisoImportacion>(senal);
     const oyente = (aviso: AvisoImportacion) => espera.recibir(aviso);
     const oyentes = this.oyentes.get(importacionId) ?? new Set();
     this.oyentes.set(importacionId, oyentes.add(oyente));

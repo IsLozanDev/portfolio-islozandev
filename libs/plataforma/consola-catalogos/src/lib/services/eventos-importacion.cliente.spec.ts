@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, CorteDeStream, SesionService, StreamRechazado } from '@vitrina/shared/auth';
 import { firstValueFrom, toArray } from 'rxjs';
 import { API_URL } from '../../testing/http-de-prueba';
-import { CorteDeStream, EventosImportacionCliente, StreamRechazado } from './eventos-importacion.cliente';
+import { EventosImportacionCliente } from './eventos-importacion.cliente';
 
 const ID = 'imp-1';
 const TOKEN = 'token-secreto';

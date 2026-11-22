@@ -10,12 +10,14 @@ import { ConfirmarCarga } from '../src/application/confirmar-carga.js';
 import { ConfirmarVersion } from '../src/application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from '../src/application/consultar-estado.js';
 import { EmitirUrlDescarga } from '../src/application/emitir-url-descarga.js';
+import { ListarCategorias } from '../src/application/listar-categorias.js';
 import { ListarVersiones } from '../src/application/listar-versiones.js';
 import { MarcarVersionVigente } from '../src/application/marcar-version-vigente.js';
+import { SeguirAnalisis } from '../src/application/seguir-analisis.js';
 import { SolicitarCarga } from '../src/application/solicitar-carga.js';
 import { SolicitarVersion } from '../src/application/solicitar-version.js';
 import { ArchivosController } from '../src/interface/archivos.controller.js';
-import { DIEZ_MEGABYTES, VEINTICINCO_MEGABYTES } from './support/categorias.js';
+import { DIEZ_MEGABYTES, MIME_DOCX, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 import { ejecutable, pdf, texto } from './support/contenidos.js';
 import { AutorizadorFijo, crearDobles, ENTIDAD_CON_AUTORIZADOR, TENANT_A, TENANT_B, USUARIO, type Dobles } from './support/dobles.js';
 
@@ -25,6 +27,7 @@ const SUBIR = 'plat.archivo.subir';
 const DESCARGAR = 'plat.archivo.descargar';
 const VERSIONAR = 'plat.archivo.versionar';
 const ARCHIVO_INEXISTENTE = '99999999-0000-4000-8000-000000000009';
+const OTRO_USUARIO = 'dddddddd-0000-4000-8000-000000000004';
 // Partida en dos para que el antivirus de la máquina no ponga este archivo en cuarentena.
 const CADENA_EICAR = ['X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD', '-ANTIVIRUS-TEST-FILE!$H+H*'].join('');
 const pdfInfectado = (): Uint8Array => Uint8Array.from([...pdf(), ...texto(CADENA_EICAR)]);
@@ -42,11 +45,23 @@ const cargaDe = (contenido: Uint8Array, cambios: object = {}) => ({
   ...cambios,
 });
 
-/** Hace lo que deja AutenticacionGuard: el principal del token. */
+/** Lee un SSE completo: pares `evento` y `data` en el orden en que llegaron. */
+function eventosDe(texto: string): { evento: string; data: unknown }[] {
+  return texto
+    .split('\n\n')
+    .filter((bloque) => bloque.startsWith('event:'))
+    .map((bloque) => {
+      const [linea, datos] = bloque.split('\n');
+      return { evento: linea?.slice('event: '.length) ?? '', data: JSON.parse(datos?.slice('data: '.length) ?? 'null') };
+    });
+}
+
+/** Hace lo que deja AutenticacionGuard: el principal del token. `x-prueba-usuario` cambia el usuario. */
 class PrincipalDePrueba implements CanActivate {
   canActivate(contexto: ExecutionContext): boolean {
     const solicitud = contexto.switchToHttp().getRequest();
-    solicitud.principal = { usuarioId: USUARIO, tenantId: TENANT_A, tipo: 'INTERNO', aal: 'aal1', sesionId: 'sesion', amr: [] };
+    const usuarioId = solicitud.headers['x-prueba-usuario'] ?? USUARIO;
+    solicitud.principal = { usuarioId, tenantId: TENANT_A, tipo: 'INTERNO', aal: 'aal1', sesionId: 'sesion', amr: [] };
     return true;
   }
 }
@@ -94,6 +109,8 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
         { provide: ConfirmarVersion, useValue: new ConfirmarVersion(dobles) },
         { provide: ListarVersiones, useValue: new ListarVersiones(dobles) },
         { provide: MarcarVersionVigente, useValue: new MarcarVersionVigente(dobles) },
+        { provide: ListarCategorias, useValue: new ListarCategorias(dobles) },
+        { provide: SeguirAnalisis, useValue: new SeguirAnalisis(dobles) },
       ],
     }).compile();
     app = modulo.createNestApplication({ logger: false });
@@ -121,9 +138,33 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
     dobles.cola.tomarTodos();
     dobles.cola.caida = false;
     dobles.almacen.caido = false;
+    dobles.canal.publicados.length = 0;
+    dobles.canal.caido = false;
   });
 
   afterAll(() => app?.close());
+
+  describe('GET /v1/archivos/categorias', () => {
+    it('200 con código, MIME y tamaño máximo de cada categoría, por código y sin `sensible`', async () => {
+      const respuesta = await get('/v1/archivos/categorias');
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.map((categoria: { codigo: string }) => categoria.codigo)).toEqual(['ADJUNTO_SOPORTE', 'DOCUMENTO', 'IMAGEN']);
+      expect(respuesta.body[1]).toEqual({
+        codigo: 'DOCUMENTO',
+        mimes_permitidos: ['application/pdf', MIME_DOCX, 'image/jpeg'],
+        tamano_max_bytes: VEINTICINCO_MEGABYTES,
+      });
+    });
+
+    it('sin plat.archivo.subir → 403', async () => {
+      permisosDelActor = [DESCARGAR, VERSIONAR];
+
+      const respuesta = await get('/v1/archivos/categorias');
+
+      expect([respuesta.status, respuesta.body.codigo]).toEqual([403, 'SIN_PERMISO']);
+    });
+  });
 
   describe('POST /v1/archivos/cargas', () => {
     it('201 con el archivo y la URL de carga', async () => {
@@ -514,6 +555,164 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
     });
   });
 
+  describe('SSE del análisis (spec 36)', () => {
+    const eventos = (ruta: string, usuario = USUARIO) => get(ruta).set('x-prueba-usuario', usuario).buffer(true);
+
+    async function confirmada(contenido: Uint8Array): Promise<string> {
+      const archivoId = await subir(contenido);
+      await post(`/v1/archivos/${archivoId}/confirmar`);
+      return archivoId;
+    }
+
+    /** Analiza cuando el SSE ya se suscribió al canal. */
+    async function analizarAlSuscribirse(archivoId: string, numero = 1): Promise<void> {
+      while (dobles.canal.suscritos(archivoId, numero) === 0) await new Promise((resolver) => setTimeout(resolver, 5));
+      await procesarCola();
+    }
+
+    it('tras confirmar entrega `estado` EN_ANALISIS y después `fin` DISPONIBLE, con las cabeceras de SSE, y cierra', async () => {
+      const archivoId = await confirmada(pdf());
+
+      const [respuesta] = await Promise.all([eventos(`/v1/archivos/${archivoId}/eventos`), analizarAlSuscribirse(archivoId)]);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.headers['content-type']).toBe('text/event-stream; charset=utf-8');
+      expect(respuesta.headers['x-accel-buffering']).toBe('no');
+      expect(eventosDe(respuesta.text)).toEqual([
+        { evento: 'estado', data: { tipo: 'estado', numero: 1, estado: 'EN_ANALISIS' } },
+        { evento: 'fin', data: { tipo: 'fin', numero: 1, resultado: 'DISPONIBLE' } },
+      ]);
+      expect(dobles.canal.suscritos(archivoId, 1)).toBe(0);
+    });
+
+    it('si el análisis ya terminó entrega solo el `fin`', async () => {
+      const archivoId = await subirYAnalizar(pdf());
+
+      const respuesta = await eventos(`/v1/archivos/${archivoId}/eventos`);
+
+      expect(eventosDe(respuesta.text)).toEqual([{ evento: 'fin', data: { tipo: 'fin', numero: 1, resultado: 'DISPONIBLE' } }]);
+      expect(dobles.canal.suscritos(archivoId, 1)).toBe(0);
+    });
+
+    it('un resultado publicado entre la suscripción y la lectura del estado no se pierde', async () => {
+      const archivoId = await confirmada(pdf());
+      const ultimoReal = dobles.canal.ultimo.bind(dobles.canal);
+      dobles.canal.ultimo = async (id, numero) => {
+        const leido = await ultimoReal(id, numero);
+        await procesarCola();
+        return leido;
+      };
+
+      try {
+        const respuesta = await eventos(`/v1/archivos/${archivoId}/eventos`);
+        expect(eventosDe(respuesta.text)).toEqual([{ evento: 'fin', data: { tipo: 'fin', numero: 1, resultado: 'DISPONIBLE' } }]);
+      } finally {
+        dobles.canal.ultimo = ultimoReal;
+      }
+    });
+
+    it('TR-CA-200: un .exe declarado PDF entrega `fin` RECHAZADO con el motivo y su mensaje', async () => {
+      const archivoId = await confirmada(ejecutable());
+
+      const [respuesta] = await Promise.all([eventos(`/v1/archivos/${archivoId}/eventos`), analizarAlSuscribirse(archivoId)]);
+
+      expect(eventosDe(respuesta.text).at(-1)?.data).toEqual({
+        tipo: 'fin',
+        numero: 1,
+        resultado: 'RECHAZADO',
+        motivo: 'TIPO_NO_PERMITIDO',
+        mensaje: 'El tipo real del archivo no está permitido en su categoría',
+      });
+    });
+
+    it('TR-CA-201: la firma EICAR entrega `fin` CUARENTENA', async () => {
+      const archivoId = await confirmada(pdfInfectado());
+
+      const [respuesta] = await Promise.all([eventos(`/v1/archivos/${archivoId}/eventos`), analizarAlSuscribirse(archivoId)]);
+
+      expect(eventosDe(respuesta.text).at(-1)?.data).toEqual({ tipo: 'fin', numero: 1, resultado: 'CUARENTENA' });
+    });
+
+    it('TR-CA-203: un intento de versión IDENTICA entrega `fin` RECHAZADO con motivo, versión coincidente y mensaje, aunque su fila ya no exista', async () => {
+      const archivoId = await subirYAnalizar(pdfCon('v1'));
+      const pedida = await post(`/v1/archivos/${archivoId}/versiones`, { tamano: pdfCon('v1').byteLength, mime: 'application/pdf' });
+      dobles.almacen.subirConUrl(pedida.body.carga.url, pdfCon('v1'));
+      await post(`/v1/archivos/${archivoId}/versiones/2/confirmar`);
+      await procesarCola();
+
+      const respuesta = await eventos(`/v1/archivos/${archivoId}/versiones/2/eventos`);
+
+      expect(eventosDe(respuesta.text)).toEqual([
+        {
+          evento: 'fin',
+          data: {
+            tipo: 'fin',
+            numero: 2,
+            resultado: 'RECHAZADO',
+            motivo: 'IDENTICA',
+            version_coincidente: 1,
+            mensaje: 'El archivo es idéntico a la versión vigente',
+          },
+        },
+      ]);
+    });
+
+    it('si Redis no estaba al publicar, el análisis termina y el SSE abierto después entrega el `fin` leído de la base', async () => {
+      const archivoId = await confirmada(pdf());
+      dobles.canal.caido = true;
+      await procesarCola();
+
+      const respuesta = await eventos(`/v1/archivos/${archivoId}/eventos`);
+
+      expect(eventosDe(respuesta.text)).toEqual([{ evento: 'fin', data: { tipo: 'fin', numero: 1, resultado: 'DISPONIBLE' } }]);
+    });
+
+    it('ningún aviso lleva el nombre original, la URL, el token ni quién subió', async () => {
+      const archivoId = await confirmada(pdf());
+
+      const [respuesta] = await Promise.all([eventos(`/v1/archivos/${archivoId}/eventos`), analizarAlSuscribirse(archivoId)]);
+
+      expect(respuesta.text).not.toMatch(/contrato|token|http|subido|subidoPor/);
+      expect(respuesta.text).not.toContain(USUARIO);
+    });
+
+    it('otro usuario → 404; otro tenant → 404 NO_ENCONTRADO; versión inexistente → 404 VERSION_NO_ENCONTRADA; sin confirmar → 409', async () => {
+      const analizado = await subirYAnalizar(pdf());
+      const sinConfirmar = await subir(pdf());
+
+      const otroUsuario = await eventos(`/v1/archivos/${analizado}/eventos`, OTRO_USUARIO);
+      const versionInexistente = await eventos(`/v1/archivos/${analizado}/versiones/5/eventos`);
+      const pendiente = await eventos(`/v1/archivos/${sinConfirmar}/eventos`);
+      const inexistente = await eventos(`/v1/archivos/${ARCHIVO_INEXISTENTE}/eventos`);
+      dobles.contexto.alcance = { tenantId: TENANT_B, actorId: USUARIO };
+      const otroTenant = await eventos(`/v1/archivos/${analizado}/eventos`);
+
+      expect([otroUsuario, versionInexistente, pendiente, inexistente, otroTenant].map((respuesta) => [respuesta.status, respuesta.body.codigo])).toEqual([
+        [404, 'NO_ENCONTRADO'],
+        [404, 'VERSION_NO_ENCONTRADA'],
+        [409, 'ANALISIS_NO_INICIADO'],
+        [404, 'NO_ENCONTRADO'],
+        [404, 'NO_ENCONTRADO'],
+      ]);
+      expect(dobles.canal.suscritos(analizado, 1)).toBe(0);
+      expect(dobles.canal.suscritos(sinConfirmar, 1)).toBe(0);
+    });
+
+    it('sin plat.archivo.subir → 403 en /eventos; sin plat.archivo.versionar → 403 en /versiones/{n}/eventos', async () => {
+      const archivoId = await subirYAnalizar(pdf());
+
+      permisosDelActor = [DESCARGAR, VERSIONAR];
+      const sinSubir = await eventos(`/v1/archivos/${archivoId}/eventos`);
+      permisosDelActor = [SUBIR, DESCARGAR];
+      const sinVersionar = await eventos(`/v1/archivos/${archivoId}/versiones/1/eventos`);
+
+      expect([sinSubir, sinVersionar].map((respuesta) => [respuesta.status, respuesta.body.codigo])).toEqual([
+        [403, 'SIN_PERMISO'],
+        [403, 'SIN_PERMISO'],
+      ]);
+    });
+  });
+
   describe('permisos', () => {
     it('sin plat.archivo.versionar → 403 al pedir, confirmar y marcar vigente; sin plat.archivo.descargar → 403 al listar', async () => {
       const archivoId = await subirYAnalizar(pdf());
@@ -561,13 +760,21 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
 
     expect(Object.keys(documento.paths).sort()).toEqual([
       '/v1/archivos/cargas',
+      '/v1/archivos/categorias',
       '/v1/archivos/{id}',
       '/v1/archivos/{id}/confirmar',
       '/v1/archivos/{id}/descarga',
+      '/v1/archivos/{id}/eventos',
       '/v1/archivos/{id}/version-vigente',
       '/v1/archivos/{id}/versiones',
       '/v1/archivos/{id}/versiones/{numero}/confirmar',
+      '/v1/archivos/{id}/versiones/{numero}/eventos',
     ]);
+    for (const ruta of ['/v1/archivos/{id}/eventos', '/v1/archivos/{id}/versiones/{numero}/eventos']) {
+      const operacion = documento.paths[ruta]?.get;
+      expect(Object.keys(operacion?.responses ?? {})).toEqual(expect.arrayContaining(['200', '401', '403', '404', '409']));
+      expect(Object.keys((operacion?.responses['200'] as { content?: object })?.content ?? {})).toEqual(['text/event-stream']);
+    }
     expect(Object.keys(documento.paths['/v1/archivos/{id}/versiones']?.post?.responses ?? {})).toEqual(
       expect.arrayContaining(['201', '400', '401', '403', '404', '409', '422', '503']),
     );

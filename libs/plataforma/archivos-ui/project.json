@@ -1,0 +1,36 @@
+{
+  "name": "archivos-ui",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plataforma/archivos-ui/src",
+  "prefix": "vit",
+  "projectType": "library",
+  "tags": [
+    "scope:plataforma",
+    "type:feature"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "project": "libs/plataforma/archivos-ui/ng-package.json",
+        "tsConfig": "libs/plataforma/archivos-ui/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/plataforma/archivos-ui/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      }
+    },
+    "test": {
+      "executor": "@nx/angular:unit-test",
+      "options": {
+        "watch": false
+      }
+    }
+  }
+}

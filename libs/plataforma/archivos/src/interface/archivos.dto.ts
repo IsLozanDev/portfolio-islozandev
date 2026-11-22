@@ -18,7 +18,18 @@ import {
   type MotivoRechazo,
   type MotivoRechazoVersion,
 } from '../domain/archivo.js';
-import { CODIGOS_CATEGORIA } from '../domain/categoria.js';
+import { CODIGOS_CATEGORIA, type CategoriaArchivo } from '../domain/categoria.js';
+
+export class CategoriaDto {
+  @ApiProperty({ enum: CODIGOS_CATEGORIA, example: 'DOCUMENTO' })
+  codigo!: string;
+
+  @ApiProperty({ type: [String], example: ['application/pdf', 'image/jpeg'] })
+  mimes_permitidos!: string[];
+
+  @ApiProperty({ example: 26214400 })
+  tamano_max_bytes!: number;
+}
 
 export class SolicitarCargaDto {
   @ApiProperty({ enum: CODIGOS_CATEGORIA, example: 'DOCUMENTO' })
@@ -182,6 +193,29 @@ export class UrlDescargaDto {
   expira_en!: string;
 }
 
+export class AvisoAnalisisDto {
+  @ApiProperty({ enum: ['estado', 'fin'] })
+  tipo!: string;
+
+  @ApiProperty({ example: 1 })
+  numero!: number;
+
+  @ApiPropertyOptional({ enum: ['EN_ANALISIS'], description: 'Solo en `estado`' })
+  estado?: string;
+
+  @ApiPropertyOptional({ enum: ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'], description: 'Solo en `fin`' })
+  resultado?: string;
+
+  @ApiPropertyOptional({ enum: MOTIVOS_RECHAZO_VERSION, description: 'Solo en un `fin` RECHAZADO' })
+  motivo?: string;
+
+  @ApiPropertyOptional({ description: 'Solo con IDENTICA: la versión con el mismo contenido' })
+  version_coincidente?: number;
+
+  @ApiPropertyOptional({ example: 'El archivo es idéntico a la versión vigente' })
+  mensaje?: string;
+}
+
 export class ErrorArchivoDto {
   @ApiProperty({ example: 'TAMANO_EXCEDIDO' })
   codigo!: string;
@@ -197,6 +231,11 @@ export class ErrorArchivoDto {
 
   @ApiPropertyOptional({ description: 'Solo con VERSION_EN_CURSO: el número de la versión en curso' })
   numero?: number;
+}
+
+/** Sin `sensible`: es un detalle de auditoría que el front no necesita. */
+export function categoriaDto(categoria: CategoriaArchivo): CategoriaDto {
+  return { codigo: categoria.codigo, mimes_permitidos: [...categoria.mimesPermitidos], tamano_max_bytes: categoria.tamanoMaxBytes };
 }
 
 export function cargaSolicitadaDto(solicitada: CargaSolicitada): CargaSolicitadaDto {

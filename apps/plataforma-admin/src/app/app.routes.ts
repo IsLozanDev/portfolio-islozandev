@@ -6,9 +6,10 @@ import { environment } from '../environments/environment';
 const PREFIJO_MENU_ADMIN = '/admin';
 export const NOMBRE_APP = 'Administración';
 
-/** Muestra de `shared/ui` para verificar en navegador; no existe en el build de producción. */
+/** Muestras de `shared/ui` y de `archivos-ui` para verificar en navegador; no existen en el build de producción. */
 const RUTAS_DE_DESARROLLO: Route[] = [
   { path: 'dev/componentes', loadComponent: () => import('./pages/componentes/componentes.page').then((modulo) => modulo.ComponentesPage) },
+  { path: 'dev/archivos', loadComponent: () => import('./pages/archivos-prueba/archivos-prueba.page').then((modulo) => modulo.ArchivosPruebaPage) },
 ];
 
 export const appRoutes: Route[] = [

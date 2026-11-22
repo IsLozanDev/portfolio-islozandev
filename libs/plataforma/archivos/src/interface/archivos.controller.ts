@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, UseFilters } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Query, Res, UseFilters } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -10,26 +10,33 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiParam,
+  ApiProduces,
   ApiQuery,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { Permiso } from '@vitrina/plataforma/seguridad';
+import { transmitirEventosSse, type RespuestaEnStreaming } from '@vitrina/plataforma/kernel-infra';
+import { Permiso, PrincipalActual, type Principal } from '@vitrina/plataforma/seguridad';
 import { z } from 'zod';
 import { ConfirmarCarga } from '../application/confirmar-carga.js';
 import { ConfirmarVersion } from '../application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from '../application/consultar-estado.js';
 import { EmitirUrlDescarga } from '../application/emitir-url-descarga.js';
+import { ListarCategorias } from '../application/listar-categorias.js';
 import { ListarVersiones } from '../application/listar-versiones.js';
 import { MarcarVersionVigente } from '../application/marcar-version-vigente.js';
+import { SeguirAnalisis } from '../application/seguir-analisis.js';
 import { SolicitarCarga } from '../application/solicitar-carga.js';
 import { SolicitarVersion } from '../application/solicitar-version.js';
+import { NUMERO_PRIMERA_VERSION } from '../domain/archivo.js';
 import { PERMISOS_ARC } from '../domain/permisos-arc.js';
 import { DISPOSICIONES, VIGENCIA_MAXIMA_SEGUNDOS, VIGENCIA_MINIMA_SEGUNDOS } from '../domain/vigencia-descarga.js';
 import {
   CargaSolicitadaDto,
+  CategoriaDto,
+  AvisoAnalisisDto,
   ErrorArchivoDto,
   EstadoArchivoDto,
   MarcarVigenteDto,
@@ -40,6 +47,7 @@ import {
   VersionesArchivoDto,
   VersionSolicitadaDto,
   cargaSolicitadaDto,
+  categoriaDto,
   estadoArchivoDto,
   urlDescargaDto,
   versionDto,
@@ -75,6 +83,10 @@ const EsquemaDescarga = z.object({
 
 const NO_ENCONTRADO = 'NO_ENCONTRADO, también si es de otro tenant';
 const VERSION_NO_ENCONTRADA = 'NO_ENCONTRADO (también si es de otro tenant) o VERSION_NO_ENCONTRADA';
+const EVENTOS_ANALISIS =
+  'Eventos `estado` (EN_ANALISIS) y `fin` (DISPONIBLE, CUARENTENA o RECHAZADO con `motivo` y `mensaje`), data = aviso en JSON; `: ping` cada 15 s; cierra con el `fin` o a los 15 min';
+const SOLO_QUIEN_SUBIO = 'NO_ENCONTRADO (también si es de otro tenant o la subió otro usuario) o VERSION_NO_ENCONTRADA';
+const ANALISIS_NO_INICIADO = 'ANALISIS_NO_INICIADO: falta confirmar la subida';
 
 /** TR-RF-080, 081 y 082. El navegador sube y baja directo a Storage con las URL firmadas que emiten estas rutas. */
 @ApiTags('archivos')
@@ -95,7 +107,17 @@ export class ArchivosController {
     @Inject(ConfirmarVersion) private readonly confirmarVersion: ConfirmarVersion,
     @Inject(ListarVersiones) private readonly listarVersiones: ListarVersiones,
     @Inject(MarcarVersionVigente) private readonly marcarVersionVigente: MarcarVersionVigente,
+    @Inject(ListarCategorias) private readonly listarCategorias: ListarCategorias,
+    @Inject(SeguirAnalisis) private readonly seguirAnalisis: SeguirAnalisis,
   ) {}
+
+  // Antes de las rutas con `:id`: si no, `categorias` caería en `GET :id`.
+  @Get('categorias')
+  @Permiso(PERMISOS_ARC.subir)
+  @ApiOkResponse({ type: [CategoriaDto], description: 'Las categorías con sus MIME y su tamaño máximo, por código' })
+  async categorias(): Promise<CategoriaDto[]> {
+    return (await this.listarCategorias.ejecutar()).map(categoriaDto);
+  }
 
   @Post('cargas')
   @Permiso(PERMISOS_ARC.subir)
@@ -133,6 +155,31 @@ export class ArchivosController {
   async confirmar(@Param() parametros: unknown): Promise<EstadoArchivoDto> {
     const { id } = validar(EsquemaArchivoId, parametros);
     return estadoArchivoDto(await this.confirmarCarga.ejecutar(id));
+  }
+
+  @Get(':id/eventos')
+  @Permiso(PERMISOS_ARC.subir)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiProduces('text/event-stream')
+  @ApiOkResponse({ type: AvisoAnalisisDto, description: `${EVENTOS_ANALISIS}. Solo para quien subió la carga` })
+  @ApiNotFoundResponse({ type: ErrorArchivoDto, description: SOLO_QUIEN_SUBIO })
+  @ApiConflictResponse({ type: ErrorArchivoDto, description: ANALISIS_NO_INICIADO })
+  async eventosCarga(@PrincipalActual() principal: Principal, @Param() parametros: unknown, @Res() respuesta: RespuestaEnStreaming): Promise<void> {
+    const { id } = validar(EsquemaArchivoId, parametros);
+    await this.transmitirAnalisis(respuesta, id, NUMERO_PRIMERA_VERSION, principal.usuarioId);
+  }
+
+  @Get(':id/versiones/:numero/eventos')
+  @Permiso(PERMISOS_ARC.versionar)
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiParam({ name: 'numero', type: Number, description: 'Número de la versión que se subió' })
+  @ApiProduces('text/event-stream')
+  @ApiOkResponse({ type: AvisoAnalisisDto, description: `${EVENTOS_ANALISIS}. Solo para quien subió la versión` })
+  @ApiNotFoundResponse({ type: ErrorArchivoDto, description: SOLO_QUIEN_SUBIO })
+  @ApiConflictResponse({ type: ErrorArchivoDto, description: ANALISIS_NO_INICIADO })
+  async eventosVersion(@PrincipalActual() principal: Principal, @Param() parametros: unknown, @Res() respuesta: RespuestaEnStreaming): Promise<void> {
+    const { id, numero } = validar(EsquemaVersionDeArchivo, parametros);
+    await this.transmitirAnalisis(respuesta, id, numero, principal.usuarioId);
   }
 
   @Post(':id/versiones')
@@ -234,5 +281,12 @@ export class ArchivosController {
     const { id } = validar(EsquemaArchivoId, parametros);
     const { version, disposicion, vigencia_segundos: vigenciaSegundos } = validar(EsquemaDescarga, consulta);
     return urlDescargaDto(await this.emitirUrlDescarga.ejecutar({ archivoId: id, version, disposicion, vigenciaSegundos }));
+  }
+
+  /** Los errores (404, 409) salen antes de abrir el stream, con el filtro de archivos. */
+  private async transmitirAnalisis(respuesta: RespuestaEnStreaming, archivoId: string, numero: number, usuarioId: string): Promise<void> {
+    const cierre = new AbortController();
+    const avisos = await this.seguirAnalisis.ejecutar({ archivoId, numero, usuarioId, senal: cierre.signal });
+    await transmitirEventosSse(respuesta, avisos, cierre);
   }
 }

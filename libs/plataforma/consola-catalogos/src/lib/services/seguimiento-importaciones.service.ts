@@ -1,5 +1,5 @@
 import { effect, inject, Injectable } from '@angular/core';
-import { SesionService } from '@vitrina/shared/auth';
+import { SesionService, StreamRechazado } from '@vitrina/shared/auth';
 import { TareasEnCursoService } from '@vitrina/shared/shell';
 import { AvisosService } from '@vitrina/shared/ui';
 import { Subject, type Observable, type Subscription } from 'rxjs';
@@ -14,7 +14,7 @@ import {
   mensajeTituloImportando,
 } from '../models/mensajes-catalogos';
 import { PERMISOS_CATALOGOS } from '../models/permisos-catalogos';
-import { StreamRechazado, EventosImportacionCliente } from './eventos-importacion.cliente';
+import { EventosImportacionCliente } from './eventos-importacion.cliente';
 import { ImportacionesCliente } from './importaciones.cliente';
 
 /** Espera entre reintentos del `GET` de recuperación cuando ese `GET` falla. */

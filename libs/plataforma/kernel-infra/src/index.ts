@@ -1,4 +1,5 @@
 export { AlsTenantContext } from './als-tenant-context.js';
+export { AvisosEnEspera } from './avisos-en-espera.js';
 export { HttpExceptionFilter } from './http-exception.filter.js';
 export { InMemoryEventSchemaValidator } from './in-memory-event-schema-validator.js';
 export {
@@ -14,6 +15,7 @@ export {
 export { OutboxPublisher } from './outbox.publisher.js';
 export { REPORTADOR_ERRORES, REPORTADOR_SIN_ENVIO, type ReportadorErrores } from './reportador-errores.js';
 export { SystemClock } from './system-clock.js';
+export { transmitirEventosSse, type RespuestaEnStreaming } from './transmitir-eventos-sse.js';
 export { anotarSpanActivo, traceIdActivo } from './traza-activa.js';
 export { TypeOrmUnitOfWork } from './typeorm-unit-of-work.js';
 export { uuidV7 } from './uuid-v7.js';

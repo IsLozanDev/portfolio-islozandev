@@ -108,6 +108,9 @@
       "@vitrina/plataforma/consola-catalogos": [
         "./libs/plataforma/consola-catalogos/src/index.ts"
       ],
+      "@vitrina/plataforma/archivos-ui": [
+        "./libs/plataforma/archivos-ui/src/index.ts"
+      ],
       "@vitrina/plataforma/feriados": [
         "./libs/plataforma/feriados/src/index.ts"
       ],

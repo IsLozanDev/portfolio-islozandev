@@ -1,0 +1,94 @@
+<input #selector type="file" class="hidden" tabindex="-1" aria-hidden="true" [accept]="tiposAceptados()" (change)="alElegir($event)" data-prueba="selector" />
+
+<section
+  class="vit-zona-carga flex min-h-46 flex-col justify-center gap-3 rounded-xl p-6 text-sobre-superficie"
+  [class.vit-zona-encima]="encima()"
+  [class.vit-zona-fija]="!enEspera() && !encima()"
+  [class.vit-zona-deshabilitada]="deshabilitado()"
+  [attr.aria-label]="etiquetaZona()"
+  [attr.aria-disabled]="deshabilitado()"
+  [attr.tabindex]="enEspera() && !deshabilitado() ? 0 : -1"
+  (dragover)="alArrastrarEncima($event)"
+  (dragleave)="alSalirArrastre($event)"
+  (drop)="alSoltar($event)"
+  (keydown.enter)="alPulsarZona($event)"
+  (keydown.space)="alPulsarZona($event)"
+>
+  @if (encima()) {
+    <div class="flex flex-col items-center gap-2 text-center">
+      <mat-icon class="vit-icono-zona" aria-hidden="true">file_download</mat-icon>
+      <p class="m-0 text-base font-medium">{{ mensajes.soltar }}</p>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ regla() }}</p>
+    </div>
+  } @else if (enEspera()) {
+    <div class="flex flex-col items-center gap-2 text-center">
+      <mat-icon class="vit-icono-zona" aria-hidden="true">upload_file</mat-icon>
+      <p class="m-0 text-base font-medium">{{ textoZona() }}</p>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.separador }}</p>
+      <button matButton="tonal" type="button" data-accion="elegir" [disabled]="deshabilitado()" (click)="abrirSelector()">
+        <mat-icon aria-hidden="true">folder_open</mat-icon>
+        {{ mensajes.elegir }}
+      </button>
+      @if (regla()) {
+        <p class="m-0 text-sm text-sobre-superficie-variante" data-prueba="regla">{{ regla() }}</p>
+      }
+    </div>
+    @if (aviso(); as mensaje) {
+      <div role="alert" class="flex items-start gap-2 rounded-xl bg-contenedor-error px-4 py-3 text-sm text-sobre-contenedor-error" data-prueba="aviso">
+        <mat-icon class="vit-icono-mensaje" aria-hidden="true">error</mat-icon>
+        <span>{{ mensaje }}</span>
+      </div>
+    }
+  } @else {
+    <div class="flex items-center gap-4">
+      <span class="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-superficie-contenedor text-sobre-superficie-variante" aria-hidden="true">
+        <mat-icon>description</mat-icon>
+      </span>
+      <div class="flex min-w-0 grow flex-col gap-1">
+        <span class="truncate text-base font-medium" data-prueba="nombre">{{ mostrado()?.nombre }}</span>
+        <span class="text-sm text-sobre-superficie-variante tabular-nums" aria-live="polite" data-prueba="detalle">{{ detalle() }}</span>
+      </div>
+      @if (etapa() === 'SUBIENDO') {
+        <button mat-button type="button" data-accion="cancelar" (click)="cancelar()">{{ mensajes.cancelar }}</button>
+      }
+      @if (etapa() === 'DISPONIBLE' && puedeDescargar()) {
+        <button matButton="tonal" type="button" data-accion="descargar" (click)="descargar()">
+          <mat-icon aria-hidden="true">download</mat-icon>
+          {{ mensajes.descargar }}
+        </button>
+      }
+    </div>
+
+    @if (etapa() === 'SUBIENDO') {
+      <mat-progress-bar mode="determinate" [value]="progreso()" [attr.aria-label]="mensajes.avanceSubida" />
+    }
+    @if (analizando()) {
+      <div class="flex" role="status">
+        <vit-chip-estado tono="info" [texto]="mensajes.enAnalisis"><span class="vit-giro" aria-hidden="true"></span></vit-chip-estado>
+      </div>
+    }
+    @if (etapa() === 'DISPONIBLE') {
+      <div class="flex">
+        <vit-chip-estado tono="exito" [texto]="mensajes.disponible"><mat-icon class="vit-icono-chip" aria-hidden="true">check_circle</mat-icon></vit-chip-estado>
+      </div>
+    }
+    @if (errorDescarga(); as mensaje) {
+      <p role="alert" class="m-0 text-sm text-error">{{ mensaje }}</p>
+    }
+    @if (falla(); as falla) {
+      <div class="flex">
+        <vit-chip-estado tono="error" [texto]="falla.chip"><mat-icon class="vit-icono-chip" aria-hidden="true">{{ falla.icono }}</mat-icon></vit-chip-estado>
+      </div>
+      <div role="alert" class="flex items-start gap-2 rounded-xl bg-contenedor-error px-4 py-3 text-sm text-sobre-contenedor-error" data-prueba="falla">
+        <mat-icon class="vit-icono-mensaje" aria-hidden="true">info</mat-icon>
+        <span>{{ mensajeFalla() }}</span>
+      </div>
+      <div class="flex flex-wrap justify-end gap-2">
+        <button matButton="tonal" type="button" data-accion="falla" [disabled]="deshabilitado()" (click)="atenderFalla()">
+          <mat-icon aria-hidden="true">{{ falla.iconoAccion }}</mat-icon>
+          {{ falla.textoAccion }}
+        </button>
+      </div>
+    }
+  }
+</section>

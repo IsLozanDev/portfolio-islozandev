@@ -23,6 +23,7 @@ interface EstadoGuardado {
 }
 
 const POR_NUMERO = { numero: 'ASC' } as const;
+const POR_CODIGO = { codigo: 'ASC' } as const;
 
 /**
  * arc.archivo con sus versiones sobre el EntityManager de la transacción activa. Filtra por el tenant del
@@ -66,6 +67,11 @@ export class RepositorioArchivosTypeOrm implements RepositorioArchivos {
   async buscarCategoria(codigo: string): Promise<CategoriaArchivo | null> {
     const fila = await this.manager.getRepository(CategoriaEntidad).findOneBy({ codigo });
     return fila ? categoriaDesdeFila(fila) : null;
+  }
+
+  async listarCategorias(): Promise<CategoriaArchivo[]> {
+    const filas = await this.manager.getRepository(CategoriaEntidad).find({ order: POR_CODIGO });
+    return filas.map(categoriaDesdeFila);
   }
 
   async listarVersiones(archivoId: string): Promise<VersionRegistrada[]> {

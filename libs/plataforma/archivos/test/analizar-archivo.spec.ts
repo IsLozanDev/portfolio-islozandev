@@ -204,4 +204,57 @@ describe('AnalizarArchivo', () => {
 
     expect(archivo.estado).toBe('CUARENTENA');
   });
+
+  describe('resultado al canal del análisis (spec 36)', () => {
+    it('DISPONIBLE se publica después de confirmar la transacción, con quién subió y sin nombre original ni rutas', async () => {
+      const archivo = await cargar(pdf());
+
+      await procesarCola();
+
+      expect(dobles.canal.publicados).toEqual([{ archivoId: archivo.id, numero: 1, resultado: 'DISPONIBLE', subidoPor: archivo.primeraVersion.subidoPor }]);
+      expect(dobles.canal.publicadosEnTransaccion).toEqual([false]);
+      expect(JSON.stringify(dobles.canal.publicados)).not.toMatch(/contrato|token|http/);
+    });
+
+    it('TR-CA-200: el rechazo por tipo lleva el motivo y su mensaje', async () => {
+      const archivo = await cargar(ejecutable(), { tamano: ejecutable().byteLength });
+
+      await procesarCola();
+
+      expect(dobles.canal.publicados).toEqual([
+        expect.objectContaining({
+          archivoId: archivo.id,
+          resultado: 'RECHAZADO',
+          motivoRechazo: 'TIPO_NO_PERMITIDO',
+          mensaje: 'El tipo real del archivo no está permitido en su categoría',
+        }),
+      ]);
+    });
+
+    it('TR-CA-201: EICAR publica CUARENTENA', async () => {
+      await cargar(pdfInfectado());
+
+      await procesarCola();
+
+      expect(dobles.canal.publicados.map((resultado) => resultado.resultado)).toEqual(['CUARENTENA']);
+    });
+
+    it('confirmar sin haber subido no publica: no hay resultado', async () => {
+      await cargar(null);
+
+      await procesarCola();
+
+      expect(dobles.canal.publicados).toEqual([]);
+    });
+
+    it('con Redis caído el análisis no falla, el archivo queda DISPONIBLE y la falla se avisa', async () => {
+      const archivo = await cargar(pdf());
+      dobles.canal.caido = true;
+
+      await procesarCola();
+
+      expect(archivo.estado).toBe('DISPONIBLE');
+      expect(dobles.canal.fallas).toHaveLength(1);
+    });
+  });
 });

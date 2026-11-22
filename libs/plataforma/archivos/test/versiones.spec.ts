@@ -440,4 +440,39 @@ describe('Versiones de un archivo (spec 35, TR-RF-081)', () => {
 
     expect(JSON.stringify(dobles.publicador.eventos.map((evento) => evento.payload))).not.toContain('contrato');
   });
+
+  describe('resultado al canal del análisis (spec 36)', () => {
+    it('una versión aprobada publica DISPONIBLE con su número', async () => {
+      const archivo = await disponible();
+
+      const numero = await subirVersion(archivo, pdfCon('v2'));
+
+      expect(dobles.canal.publicados.at(-1)).toEqual({ archivoId: archivo.id, numero, resultado: 'DISPONIBLE', subidoPor: USUARIO });
+    });
+
+    it('TR-CA-203: idéntica a la vigente publica RECHAZADO con motivo, versión coincidente y mensaje, aunque su fila ya no exista', async () => {
+      const archivo = await disponible();
+
+      const numero = await subirVersion(archivo, pdfCon('v1'));
+
+      expect(archivo.versionNumero(numero)).toBeNull();
+      expect(dobles.canal.publicados.at(-1)).toEqual({
+        archivoId: archivo.id,
+        numero,
+        resultado: 'RECHAZADO',
+        motivoRechazo: 'IDENTICA',
+        versionCoincidente: 1,
+        mensaje: 'El archivo es idéntico a la versión vigente',
+        subidoPor: USUARIO,
+      });
+    });
+
+    it('EICAR en una versión publica CUARENTENA', async () => {
+      const archivo = await disponible();
+
+      await subirVersion(archivo, pdfInfectado());
+
+      expect(dobles.canal.publicados.at(-1)?.resultado).toBe('CUARENTENA');
+    });
+  });
 });

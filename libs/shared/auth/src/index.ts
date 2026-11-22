@@ -1,10 +1,13 @@
 export { CONFIG_AUTH, type ConfigAuth, type RutasAuth } from './lib/config/config';
 export { provideAuth } from './lib/config/provide-auth';
 export { ErrorAuth, MENSAJES_AUTH } from './lib/models/errores';
+export { CorteDeStream, StreamRechazado } from './lib/models/errores-sse';
 export type { ContextoUsuario, ModoSoporte, SesionSoporte } from './lib/models/mi-contexto';
 export { OMITIR_AVISO_ERROR, type OpcionesCargaContexto } from './lib/models/omitir-aviso-error';
 export { SesionService, type ProveedorExterno } from './lib/services/sesion.service';
 export { MfaService, type EnrolamientoTotp } from './lib/services/mfa.service';
+export { EventosSseCliente } from './lib/services/eventos-sse.cliente';
+export { lectorEventosSse, type EventoSse, type LecturaEventosSse } from './lib/utils/lector-eventos-sse';
 export { autenticadoGuard } from './lib/guards/autenticado.guard';
 export { anonimoGuard } from './lib/guards/anonimo.guard';
 export { aal2Guard } from './lib/guards/aal2.guard';

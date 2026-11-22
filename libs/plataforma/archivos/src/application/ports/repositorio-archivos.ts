@@ -18,6 +18,8 @@ export interface RepositorioArchivos {
   /** Borra el archivo con sus versiones. No falla si ya no existe. */
   eliminar(archivoId: string): Promise<void>;
   buscarCategoria(codigo: string): Promise<CategoriaArchivo | null>;
+  /** Por código. */
+  listarCategorias(): Promise<CategoriaArchivo[]>;
   /** Por número. Vacío si el archivo no existe. */
   listarVersiones(archivoId: string): Promise<VersionRegistrada[]>;
 }
