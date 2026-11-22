@@ -1,0 +1,76 @@
+<section class="flex flex-col gap-4" aria-labelledby="titulo-versiones">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="flex min-w-0 flex-col gap-1">
+      <h2 id="titulo-versiones" class="m-0 text-lg font-medium">{{ mensajes.titulo }}</h2>
+      @if (nombre()) {
+        <p class="m-0 truncate text-sm text-sobre-superficie-variante" data-prueba="nombre">{{ nombre() }}</p>
+      }
+    </div>
+    @if (puedeVersionar()) {
+      <button
+        matButton="tonal"
+        type="button"
+        data-accion="subir-version"
+        [disabled]="hayEnCurso() || cargando() || ocupado()"
+        [attr.aria-describedby]="hayEnCurso() ? 'aviso-version-en-curso' : null"
+        (click)="abrirPanel()"
+      >
+        <mat-icon aria-hidden="true">upload</mat-icon>
+        {{ mensajes.subirVersion }}
+      </button>
+    }
+  </div>
+
+  @if (hayEnCurso()) {
+    <p id="aviso-version-en-curso" class="m-0 flex items-center gap-2 text-sm text-sobre-superficie-variante" data-prueba="en-curso">
+      <mat-icon aria-hidden="true">hourglass_top</mat-icon>
+      {{ mensajes.enCurso }}
+    </p>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filas()"
+    [total]="todas().length"
+    [cargando]="cargando()"
+    [indicePagina]="pagina().indice"
+    [tamanosPagina]="tamanosPagina"
+    [textoVacio]="mensajes.sinVersiones"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitAccionesFila let-fila>
+      <span class="flex justify-end">
+        @if (fila.marcable && puedeVersionar()) {
+          <button
+            mat-icon-button
+            type="button"
+            data-accion="marcar-vigente"
+            [disabled]="ocupado()"
+            [attr.aria-label]="mensajes.marcarVigenteVersion(fila.numero)"
+            [matTooltip]="mensajes.marcarVigente"
+            (click)="marcarVigente(fila)"
+          >
+            <mat-icon>task_alt</mat-icon>
+          </button>
+        }
+        @if (fila.descargable && puedeDescargar()) {
+          <button
+            mat-icon-button
+            type="button"
+            data-accion="descargar"
+            [disabled]="ocupado()"
+            [attr.aria-label]="mensajes.descargarVersion(fila.numero)"
+            [matTooltip]="mensajes.descargar"
+            (click)="descargar(fila)"
+          >
+            <mat-icon>download</mat-icon>
+          </button>
+        }
+      </span>
+    </ng-template>
+  </vit-tabla>
+</section>

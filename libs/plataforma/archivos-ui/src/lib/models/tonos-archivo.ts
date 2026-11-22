@@ -8,3 +8,11 @@ export const TONOS_ESTADO_ARCHIVO: Readonly<Record<CodigoEstadoArchivo, TonoEsta
   CUARENTENA: 'error',
   RECHAZADO: 'error',
 };
+
+export const ETIQUETAS_ESTADO_ARCHIVO: Readonly<Record<CodigoEstadoArchivo, string>> = {
+  DISPONIBLE: 'Disponible',
+  EN_ANALISIS: 'En análisis',
+  PENDIENTE_CARGA: 'Pendiente de carga',
+  CUARENTENA: 'En cuarentena',
+  RECHAZADO: 'Rechazado',
+};

@@ -1,0 +1,13 @@
+<vit-panel-lateral [titulo]="mensajes.subirVersion">
+  <div class="flex flex-col gap-4">
+    <p class="m-0 text-sm text-sobre-superficie-variante" data-prueba="subtitulo">{{ subtitulo }}</p>
+    <vit-archivo-carga modo="version" [archivoId]="datos.archivoId" [categoria]="datos.categoria" (disponible)="alDisponible($event)" />
+    <p class="m-0 flex items-start gap-2 text-sm text-sobre-superficie-variante">
+      <mat-icon class="shrink-0" aria-hidden="true">info</mat-icon>
+      <span>{{ mensajes.notaPanel }}</span>
+    </p>
+  </div>
+  <div accionesPanel class="flex justify-end">
+    <button mat-button type="button" data-accion="cerrar-panel" (click)="cerrar()">{{ mensajes.cerrar }}</button>
+  </div>
+</vit-panel-lateral>
