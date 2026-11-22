@@ -123,4 +123,75 @@ export const DireccionEntidad = new EntitySchema<FilaDireccion>({
   },
 });
 
-export const ENTIDADES_PER = [PersonaEntidad, PersonaRolEntidad, ContactoEntidad, DireccionEntidad];
+export interface FilaTextoFinalidad {
+  id: string;
+  tenantId: string;
+  finalidad: string;
+  version: string;
+  texto: string;
+  publicadoPor: string;
+  publicadoEn: Date;
+}
+
+export interface FilaConsentimiento {
+  id: string;
+  tenantId: string;
+  personaId: string;
+  finalidad: string;
+  decision: string;
+  versionTexto: string;
+  canal: string;
+  accionExpresa: boolean;
+  evidenciaArchivoId: string | null;
+  registradoPor: string;
+  registradoEn: Date;
+  revocadoEn: Date | null;
+  revocadoPor: string | null;
+  canalRevocacion: string | null;
+}
+
+export const TextoFinalidadEntidad = new EntitySchema<FilaTextoFinalidad>({
+  name: 'TextoFinalidad',
+  schema: 'per',
+  tableName: 'texto_finalidad',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    finalidad: { type: 'varchar', length: 24 },
+    version: { type: 'varchar', length: 20 },
+    texto: { type: 'text' },
+    publicadoPor: { name: 'publicado_por', type: 'uuid' },
+    publicadoEn: { name: 'publicado_en', type: 'timestamptz' },
+  },
+});
+
+export const ConsentimientoEntidad = new EntitySchema<FilaConsentimiento>({
+  name: 'Consentimiento',
+  schema: 'per',
+  tableName: 'consentimiento',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    personaId: { name: 'persona_id', type: 'uuid' },
+    finalidad: { type: 'varchar', length: 24 },
+    decision: { type: 'varchar', length: 8 },
+    versionTexto: { name: 'version_texto', type: 'varchar', length: 20 },
+    canal: { type: 'varchar', length: 10 },
+    accionExpresa: { name: 'accion_expresa', type: 'boolean' },
+    evidenciaArchivoId: { name: 'evidencia_archivo_id', type: 'uuid', nullable: true },
+    registradoPor: { name: 'registrado_por', type: 'uuid' },
+    registradoEn: { name: 'registrado_en', type: 'timestamptz' },
+    revocadoEn: { name: 'revocado_en', type: 'timestamptz', nullable: true },
+    revocadoPor: { name: 'revocado_por', type: 'uuid', nullable: true },
+    canalRevocacion: { name: 'canal_revocacion', type: 'varchar', length: 10, nullable: true },
+  },
+});
+
+export const ENTIDADES_PER = [
+  PersonaEntidad,
+  PersonaRolEntidad,
+  ContactoEntidad,
+  DireccionEntidad,
+  TextoFinalidadEntidad,
+  ConsentimientoEntidad,
+];

@@ -1,7 +1,14 @@
 import { Catch, HttpException, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { ConflictError, DomainError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
 import type { z } from 'zod';
-import { DocumentoInvalidoPersonaError, PersonaDuplicadaError } from '../domain/errores.js';
+import {
+  DocumentoInvalidoPersonaError,
+  EvidenciaInvalidaError,
+  FinalidadRepetidaError,
+  PersonaDuplicadaError,
+  TextoNoPublicadoError,
+  VersionTextoNoVigenteError,
+} from '../domain/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
@@ -17,8 +24,10 @@ const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => 
 
 function cuerpoDeError(error: DomainError): Record<string, string> {
   const cuerpo = { codigo: error.code, mensaje: error.message };
-  if (error instanceof DocumentoInvalidoPersonaError) return { ...cuerpo, motivo: error.motivo };
+  if (error instanceof DocumentoInvalidoPersonaError || error instanceof EvidenciaInvalidaError) return { ...cuerpo, motivo: error.motivo };
   if (error instanceof PersonaDuplicadaError) return { ...cuerpo, persona_id: error.personaId };
+  if (error instanceof VersionTextoNoVigenteError) return { ...cuerpo, finalidad: error.finalidad, version_vigente: error.versionVigente };
+  if (error instanceof TextoNoPublicadoError || error instanceof FinalidadRepetidaError) return { ...cuerpo, finalidad: error.finalidad };
   return cuerpo;
 }
 

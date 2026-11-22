@@ -8,15 +8,22 @@ import { AgregarContacto } from '../../src/application/agregar-contacto.js';
 import { AgregarDireccion } from '../../src/application/agregar-direccion.js';
 import { AsignarRolPersona } from '../../src/application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../../src/application/buscar-persona.js';
+import { ConsultarConsentimientos } from '../../src/application/consentimientos/consultar-consentimientos.js';
+import { ConsultarTextos } from '../../src/application/consentimientos/consultar-textos.js';
+import { PublicarTextoFinalidad } from '../../src/application/consentimientos/publicar-texto-finalidad.js';
+import { RegistrarConsentimientos } from '../../src/application/consentimientos/registrar-consentimientos.js';
+import { RevocarConsentimiento } from '../../src/application/consentimientos/revocar-consentimiento.js';
 import { EditarContacto } from '../../src/application/editar-contacto.js';
 import { EditarDireccion } from '../../src/application/editar-direccion.js';
 import { EliminarContacto } from '../../src/application/eliminar-contacto.js';
 import { EliminarDireccion } from '../../src/application/eliminar-direccion.js';
 import { ObtenerPersona } from '../../src/application/obtener-persona.js';
 import { RegistrarPersona } from '../../src/application/registrar-persona.js';
+import { ConsentimientosPersonaController } from '../../src/interface/consentimientos.controller.js';
 import { ContactosPersonaController } from '../../src/interface/contactos.controller.js';
 import { DireccionesPersonaController } from '../../src/interface/direcciones.controller.js';
 import { PersonasController } from '../../src/interface/personas.controller.js';
+import { TextosFinalidadController } from '../../src/interface/textos-finalidad.controller.js';
 import { TENANT_A, type Dobles } from './dobles.js';
 
 export const USUARIO = 'cccccccc-0000-4000-8000-000000000003';
@@ -35,6 +42,11 @@ const CASOS_DE_USO = [
   AgregarDireccion,
   EditarDireccion,
   EliminarDireccion,
+  ConsultarConsentimientos,
+  RegistrarConsentimientos,
+  RevocarConsentimiento,
+  PublicarTextoFinalidad,
+  ConsultarTextos,
 ];
 
 /** Hace lo que deja AutenticacionGuard: el principal del token. */
@@ -48,10 +60,16 @@ class PrincipalDePrueba implements CanActivate {
 
 type DependenciasGuard = ConstructorParameters<typeof PermisoGuard>;
 
-/** Los tres controladores de personas sobre los dobles, bajo /v1 y con el PermisoGuard real. */
+/** Los controladores de personas sobre los dobles, bajo /v1 y con el PermisoGuard real. */
 export async function crearAppPersonas(dobles: Dobles, permisosDelActor: () => string[]): Promise<INestApplication> {
   const modulo = await Test.createTestingModule({
-    controllers: [PersonasController, ContactosPersonaController, DireccionesPersonaController],
+    controllers: [
+      PersonasController,
+      ContactosPersonaController,
+      DireccionesPersonaController,
+      ConsentimientosPersonaController,
+      TextosFinalidadController,
+    ],
     providers: CASOS_DE_USO.map((CasoDeUso) => ({ provide: CasoDeUso, useValue: new CasoDeUso(dobles) })),
   }).compile();
   const app = modulo.createNestApplication({ logger: false });

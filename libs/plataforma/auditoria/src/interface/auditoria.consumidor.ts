@@ -26,6 +26,7 @@ export const EVENTOS_AUDITADOS = [
   'persona.registrada',
   'persona.rol_asignado',
   'persona.actualizada',
+  'consentimiento.revocado',
   'archivo.disponible',
   'archivo.en_cuarentena',
   'archivo.version_creada',
@@ -118,6 +119,11 @@ export class AuditoriaConsumidor {
 
   @SuscribirEvento('persona.actualizada', { consumidor: CONSUMIDOR })
   personaActualizada(evento: EventoEntregado): Promise<void> {
+    return this.auditarEvento.ejecutar(evento);
+  }
+
+  @SuscribirEvento('consentimiento.revocado', { consumidor: CONSUMIDOR })
+  consentimientoRevocado(evento: EventoEntregado): Promise<void> {
     return this.auditarEvento.ejecutar(evento);
   }
 

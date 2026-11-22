@@ -9,6 +9,7 @@ import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataf
 import { ObservabilidadModule, salDocumento } from '@vitrina/plataforma/observabilidad';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
+import { clavesMaestrasDe, SecretosModule } from '@vitrina/plataforma/secretos';
 import { ArchivosWorkerModule } from './archivos/archivos.module.js';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
@@ -58,6 +59,9 @@ export class WorkerModule {
           concurrencia: config.EVT_CONCURRENCIA,
         }),
         AuditoriaModule.registrarWorker(),
+        // Spec 41: la bóveda audita sus escrituras; ningún trabajo la usa todavía (NOT la integra en su spec).
+        AuditoriaModule.registrarPuerto(),
+        SecretosModule.register({ claves: clavesMaestrasDe(config) }),
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         CuotasModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),

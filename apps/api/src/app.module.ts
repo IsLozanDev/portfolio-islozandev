@@ -33,6 +33,7 @@ import { DefinicionesRepositorioTypeOrm, PARAMETRO_PORT, ParametrosModule, type 
 import { PersonasModule, VerificadorReferenciasPer } from '@vitrina/plataforma/personas';
 import { ArchivosModule } from '@vitrina/plataforma/archivos';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
+import { SecretosModule, type ClavesMaestras } from '@vitrina/plataforma/secretos';
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
@@ -66,12 +67,14 @@ export type AppOpciones = KernelInfraOptions &
     identidad: { proveedor: ProveedorElegido; decolectaToken?: string; salDocumento: string };
     /** Spec 33: bucket privado de TR-ARC. La URL y la secret key de Supabase son las de seguridad. */
     archivos: { bucket: string };
+    /** Spec 41: claves maestras de la bóveda. Sin ellas (dev, pruebas) la bóveda lanza BovedaNoConfiguradaError al usarse. */
+    clavesMaestras?: ClavesMaestras;
   };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, clavesMaestras, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     const registroCuota = new Logger(CONTEXTO_LOG_CUOTA);
@@ -125,6 +128,14 @@ export class AppModule {
         inject: [PARAMETRO_PORT],
       },
     });
+    // Spec 37: la misma referencia en AppModule y PersonasModule (evidencia de consentimientos): un solo Redis y una cola.
+    // Spec 33: sin autorizadores de entidad todavía; cada producto registra el suyo en su spec.
+    const archivosModulo = ArchivosModule.register({
+      redisUrl: seguridad.redisUrl,
+      supabase: { url: seguridad.supabaseUrl, secretKey: seguridad.invitaciones.supabaseSecretKey },
+      bucket: archivos.bucket,
+      autorizadores: { useFactory: () => [] },
+    });
     return {
       module: AppModule,
       imports: [
@@ -145,14 +156,10 @@ export class AppModule {
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
         identidadModulo,
-        PersonasModule.register({ imports: [catalogosModulo, identidadModulo] }),
-        // Spec 33: sin autorizadores de entidad todavía; cada producto registra el suyo en su spec.
-        ArchivosModule.register({
-          redisUrl: seguridad.redisUrl,
-          supabase: { url: seguridad.supabaseUrl, secretKey: seguridad.invitaciones.supabaseSecretKey },
-          bucket: archivos.bucket,
-          autorizadores: { useFactory: () => [] },
-        }),
+        PersonasModule.register({ imports: [catalogosModulo, identidadModulo, archivosModulo] }),
+        archivosModulo,
+        // Spec 41: ningún consumidor la usa todavía; FE, PAG y NOT la integran en sus specs.
+        SecretosModule.register({ claves: clavesMaestras }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).

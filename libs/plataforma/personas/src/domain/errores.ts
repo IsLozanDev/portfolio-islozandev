@@ -109,3 +109,90 @@ export class VersionObsoletaPersonaError extends ConflictError {
     super('La persona cambió desde que se leyó; vuelva a cargarla');
   }
 }
+
+// Consentimientos (spec 37). Los mensajes no llevan el texto legal ni datos de la persona.
+
+export class AccionExpresaRequeridaError extends ValidationError {
+  override readonly code = 'ACCION_EXPRESA_REQUERIDA';
+
+  constructor() {
+    super('Cada decisión exige una acción expresa del titular');
+  }
+}
+
+/** Decisión, finalidad o canal fuera de lista, o un lote vacío. */
+export class DatosConsentimientoInvalidosError extends ValidationError {
+  override readonly code = 'DATOS_INVALIDOS';
+}
+
+export class FinalidadRepetidaError extends ValidationError {
+  override readonly code = 'FINALIDAD_REPETIDA';
+
+  constructor(readonly finalidad: string) {
+    super(`La finalidad ${finalidad} se repite en el lote`);
+  }
+}
+
+export class TextoNoPublicadoError extends ConflictError {
+  override readonly code = 'TEXTO_NO_PUBLICADO';
+
+  constructor(readonly finalidad: string) {
+    super(`La finalidad ${finalidad} no tiene texto publicado`);
+  }
+}
+
+export class VersionTextoNoVigenteError extends ConflictError {
+  override readonly code = 'VERSION_TEXTO_NO_VIGENTE';
+
+  constructor(
+    readonly finalidad: string,
+    readonly versionVigente: string,
+  ) {
+    super(`La versión del texto de ${finalidad} no es la vigente`);
+  }
+}
+
+export class VersionTextoDuplicadaError extends ConflictError {
+  override readonly code = 'VERSION_TEXTO_DUPLICADA';
+
+  constructor() {
+    super('Esa versión del texto ya está publicada para la finalidad');
+  }
+}
+
+export class SinConsentimientoVigenteError extends ConflictError {
+  override readonly code = 'SIN_CONSENTIMIENTO_VIGENTE';
+
+  constructor() {
+    super('La persona no tiene un consentimiento vigente en esa finalidad');
+  }
+}
+
+export const MOTIVOS_EVIDENCIA_INVALIDA = ['NO_DISPONIBLE', 'CATEGORIA'] as const;
+export type MotivoEvidenciaInvalida = (typeof MOTIVOS_EVIDENCIA_INVALIDA)[number];
+
+const MENSAJES_EVIDENCIA_INVALIDA: Record<MotivoEvidenciaInvalida, string> = {
+  NO_DISPONIBLE: 'La evidencia todavía no está disponible',
+  CATEGORIA: 'La evidencia no es de la categoría EVIDENCIA',
+};
+
+export class EvidenciaInvalidaError extends ValidationError {
+  override readonly code = 'EVIDENCIA_INVALIDA';
+
+  constructor(readonly motivo: MotivoEvidenciaInvalida) {
+    super(MENSAJES_EVIDENCIA_INVALIDA[motivo]);
+  }
+}
+
+/** Un archivo de otro tenant o inexistente. */
+export class EvidenciaNoEncontradaError extends NotFoundError {
+  override readonly code = 'EVIDENCIA_NO_ENCONTRADA';
+
+  constructor() {
+    super('No existe ese archivo de evidencia');
+  }
+}
+
+export class TextoFinalidadInvalidoError extends ValidationError {
+  override readonly code = 'DATOS_INVALIDOS';
+}

@@ -1,5 +1,6 @@
 import { camposEntornoAntivirus, exigirAntivirusReal } from '@vitrina/plataforma/archivos';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
+import { camposEntornoSecretos, exigirClaveMaestraEnProduccion } from '@vitrina/plataforma/secretos';
 import { z } from 'zod';
 
 const entero = (defecto: number) => z.coerce.number().int().positive().default(defecto);
@@ -37,7 +38,12 @@ const esquema = z.object({
   AUD_VERIFICACION_CRON: cron('30 3 * * *'),
   // Spec 21: logs, sal de documentos y ambiente (TR-RNF-026, TR-RNF-111).
   ...camposEntornoObservabilidad,
-}).superRefine(exigirSalFueraDeLocal).superRefine(exigirAntivirusReal);
+  // Spec 41: claves maestras de la bóveda, las mismas que la api; obligatorias en producción.
+  ...camposEntornoSecretos,
+})
+  .superRefine(exigirSalFueraDeLocal)
+  .superRefine(exigirAntivirusReal)
+  .superRefine(exigirClaveMaestraEnProduccion);
 
 export type Config = z.infer<typeof esquema>;
 

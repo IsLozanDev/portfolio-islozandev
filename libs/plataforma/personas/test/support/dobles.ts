@@ -1,20 +1,27 @@
+import { ArchivoNoEncontradoError, type ArchivoPort, type EstadoArchivo } from '@vitrina/plataforma/archivos';
+import type { AuditoriaPort, EntradaAuditoria } from '@vitrina/plataforma/auditoria';
 import type { CatalogoPort, ResultadoValidacion } from '@vitrina/plataforma/catalogos';
 import type { ConsultaDocumento, IdentidadPort, RespuestaConsulta } from '@vitrina/plataforma/identidad';
-import type {
-  Clock,
-  DomainEvent,
-  EventPublisher,
-  IdGenerator,
-  TenantContext,
-  TenantScope,
-  UnitOfWork,
+import {
+  ConflictError,
+  type Clock,
+  type DomainEvent,
+  type EventPublisher,
+  type IdGenerator,
+  type TenantContext,
+  type TenantScope,
+  type UnitOfWork,
 } from '@vitrina/plataforma/kernel';
 import type { ProductoCodigo } from '@vitrina/plataforma/org';
 import type { DependenciasPersonas } from '../../src/application/dependencias-personas.js';
+import type { RepositorioConsentimientos } from '../../src/application/ports/repositorio-consentimientos.js';
 import type { RepositorioPersonas } from '../../src/application/ports/repositorio-personas.js';
 import type { SuscripcionesDelTenant } from '../../src/application/ports/suscripciones-del-tenant.js';
+import type { Consentimiento, Finalidad } from '../../src/domain/consentimiento.js';
 import type { TipoDocumentoPersona } from '../../src/domain/documento-identidad.js';
+import { VersionTextoDuplicadaError } from '../../src/domain/errores.js';
 import type { Persona } from '../../src/domain/persona.js';
+import type { TextoFinalidad } from '../../src/domain/texto-finalidad.js';
 
 export const TENANT_A = 'aaaaaaaa-0000-4000-8000-000000000001';
 export const TENANT_B = 'bbbbbbbb-0000-4000-8000-000000000002';
@@ -154,18 +161,109 @@ export class IdentidadEspia implements Pick<IdentidadPort, 'consultar'> {
   }
 }
 
+/** Por tenant del contexto, como el repositorio real; un ACEPTA vigente repetido choca como el único de la base. */
+export class RepositorioConsentimientosMemoria implements RepositorioConsentimientos {
+  private filas: { tenantId: string; consentimiento: Consentimiento }[] = [];
+  private textos: { tenantId: string; texto: TextoFinalidad }[] = [];
+  constructor(private readonly contexto: TenantContext) {}
+
+  async decisionesDe(personaId: string): Promise<Consentimiento[]> {
+    return this.delTenant(this.filas)
+      .map(({ consentimiento }) => consentimiento)
+      .filter((consentimiento) => consentimiento.personaId === personaId)
+      .sort((una, otra) => otra.registradoEn.getTime() - una.registradoEn.getTime());
+  }
+
+  async guardar(nuevas: Consentimiento[], revocadas: Consentimiento[]): Promise<void> {
+    for (const revocada of revocadas) {
+      const fila = this.delTenant(this.filas).find(({ consentimiento }) => consentimiento.id === revocada.id);
+      if (!fila || fila.consentimiento.revocacion) throw new ConflictError('carrera');
+      fila.consentimiento = revocada;
+    }
+    const tenantId = this.tenantId;
+    for (const nueva of nuevas) {
+      const yaAceptada = this.delTenant(this.filas).some(
+        ({ consentimiento }) => consentimiento.personaId === nueva.personaId && consentimiento.finalidad === nueva.finalidad && consentimiento.consiente,
+      );
+      if (nueva.consiente && yaAceptada) throw new ConflictError('carrera');
+      this.filas.push({ tenantId, consentimiento: nueva });
+    }
+  }
+
+  async textosVigentes(): Promise<TextoFinalidad[]> {
+    const vigentes = new Map<string, TextoFinalidad>();
+    for (const { texto } of this.delTenant(this.textos)) {
+      const anterior = vigentes.get(texto.finalidad);
+      if (!anterior || anterior.datos.publicadoEn <= texto.datos.publicadoEn) vigentes.set(texto.finalidad, texto);
+    }
+    return [...vigentes.values()];
+  }
+
+  async historialTextos(finalidad: Finalidad): Promise<TextoFinalidad[]> {
+    return this.delTenant(this.textos)
+      .map(({ texto }) => texto)
+      .filter((texto) => texto.finalidad === finalidad)
+      .sort((uno, otro) => otro.datos.publicadoEn.getTime() - uno.datos.publicadoEn.getTime());
+  }
+
+  async publicarTexto(texto: TextoFinalidad): Promise<void> {
+    const repetido = this.delTenant(this.textos).some(({ texto: otro }) => otro.finalidad === texto.finalidad && otro.version === texto.version);
+    if (repetido) throw new VersionTextoDuplicadaError();
+    this.textos.push({ tenantId: this.tenantId, texto });
+  }
+
+  vaciar(): void {
+    this.filas = [];
+    this.textos = [];
+  }
+
+  private delTenant<Fila extends { tenantId: string }>(filas: Fila[]): Fila[] {
+    return filas.filter((fila) => fila.tenantId === this.tenantId);
+  }
+
+  private get tenantId(): string {
+    return this.contexto.current().tenantId;
+  }
+}
+
+export class AuditoriaEspia implements Pick<AuditoriaPort, 'registrar'> {
+  readonly entradas: EntradaAuditoria[] = [];
+  async registrar(entrada: EntradaAuditoria): Promise<void> {
+    this.entradas.push(entrada);
+  }
+}
+
+type EstadoArchivoFijo = Pick<EstadoArchivo, 'estado' | 'categoria'>;
+
+/** Archivos del tenant A por id; los demás no existen, como un archivo de otro tenant. */
+export class ArchivosFijos implements Pick<ArchivoPort, 'estado'> {
+  readonly archivos = new Map<string, EstadoArchivoFijo>();
+
+  async estado(archivoId: string): Promise<EstadoArchivo> {
+    const archivo = this.archivos.get(archivoId);
+    if (!archivo) throw new ArchivoNoEncontradoError();
+    return { archivoId, nombreOriginal: 'evidencia.pdf', ...archivo };
+  }
+}
+
 export interface Dobles extends DependenciasPersonas {
   unidadDeTrabajo: UnidadDeTrabajoDirecta;
+  reloj: RelojFalso;
   contexto: ContextoFijo;
   publicador: PublicadorMemoria;
   personas: RepositorioPersonasMemoria;
   suscripciones: SuscripcionesFijas;
   catalogo: CatalogoFijo;
   identidad: IdentidadEspia;
+  consentimientos: RepositorioConsentimientosMemoria;
+  auditoria: AuditoriaEspia;
+  archivos: ArchivosFijos;
 }
 
+export const USUARIO_DEL_CONTEXTO = 'cccccccc-0000-4000-8000-000000000003';
+
 export function crearDobles(): Dobles {
-  const contexto = new ContextoFijo({ tenantId: TENANT_A });
+  const contexto = new ContextoFijo({ tenantId: TENANT_A, actorId: USUARIO_DEL_CONTEXTO });
   return {
     unidadDeTrabajo: new UnidadDeTrabajoDirecta(),
     contexto,
@@ -176,5 +274,8 @@ export function crearDobles(): Dobles {
     suscripciones: new SuscripcionesFijas(['CLI', 'GYM']),
     catalogo: new CatalogoFijo(),
     identidad: new IdentidadEspia(),
+    consentimientos: new RepositorioConsentimientosMemoria(contexto),
+    auditoria: new AuditoriaEspia(),
+    archivos: new ArchivosFijos(),
   };
 }

@@ -72,6 +72,27 @@ Marcar cada paso al terminarlo y llenar la evidencia. Los pasos de panel no se p
 - [ ] `.env` está en `.gitignore` y `.env.example` no trae valores secretos.
 - [ ] La contraseña de la base y la API key de Resend que circularon en el chat se rotaron.
 
+#### Bóveda de secretos (SPEC 41)
+
+Los secretos de los tenants (credenciales del PSE, `.pfx` y su clave, llaves de pasarela) viven en `sec.secreto` cifrados con AES-256-GCM bajo la clave de datos de cada tenant (`sec.clave_tenant`), y esa clave va envuelta por la clave maestra. Las claves maestras solo existen en el entorno de `apps/api` y `apps/worker` (`SEC_CLAVES_MAESTRAS`, `SEC_CLAVE_ACTIVA`); **sin la clave maestra no hay forma de leer ningún secreto**. En `production` las dos variables son obligatorias: sin ellas, con una clave que no es de 32 bytes o con la activa fuera de la lista, api y worker no arrancan.
+
+Alta de la primera clave (por ambiente):
+1. `corepack pnpm secretos:clave 1` imprime `1:<base64>`. No escribe archivos.
+2. Guardarla en el gestor de contraseñas del equipo y en el panel del proveedor de despliegue **antes** de usarla.
+3. `SEC_CLAVES_MAESTRAS=1:<base64>` y `SEC_CLAVE_ACTIVA=1` en api y worker (en local, en `.env`, fuera del repo).
+
+Rotación de la clave maestra, sin interrupción (durante todo el proceso se lee con cualquier versión configurada):
+1. `corepack pnpm secretos:clave <N>` con la versión siguiente; guardarla como en el alta.
+2. Agregarla a la lista en api **y** worker, sin cambiar la activa (`1:<vieja>;2:<nueva>`), y desplegar los dos.
+3. Activarla (`SEC_CLAVE_ACTIVA=2`) y desplegar los dos con la misma lista: las claves nuevas ya se envuelven con la 2.
+4. `corepack pnpm secretos:reenvolver` (`:remoto` contra Supabase): re-envuelve las claves de datos de todos los tenants con la activa; los secretos no se tocan. Termina en 0 si no quedan pendientes.
+5. `corepack pnpm secretos:reenvolver --verificar` debe informar `0` pendientes. Si no, `ClaveMaestraDesconocidaError` en el log dice qué versión falta: volver a agregarla y repetir el paso 4.
+6. Recién entonces quitar la versión vieja de la lista en api y worker, y desplegar.
+
+- [ ] (dev) `01n_sec.sql` aplicada; `sec` fuera de la Data API y `get_advisors` sin alertas nuevas.
+- [ ] (dev) Clave maestra de dev generada y guardada fuera del repo; api y worker locales arrancan con ella.
+- [ ] (staging, prod) Clave maestra propia por ambiente, guardada en el gestor y en el panel antes del primer despliegue.
+
 ### 9. Esquema seg, espejo y hook de token (SPEC 04)
 
 Orden: primero `db/` y luego `supabase/migrations`; para revertir, al revés (`db:down:supabase:remoto` antes que `db:down:remoto`). `supabase/migrations` necesita `org`, `seg` y `auth`: no corre contra el compose local.

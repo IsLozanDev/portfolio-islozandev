@@ -12,6 +12,9 @@ import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { PADRON_RUC, RegistrarEmpresa } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, ParametrosModule } from '@vitrina/plataforma/parametros';
 import { REGISTRO_ACCESO } from '@vitrina/plataforma/seguridad';
+import { BOVEDA_SECRETOS, BovedaNoConfiguradaError, type BovedaSecretos } from '@vitrina/plataforma/secretos';
+import { TENANT_CONTEXT } from '@vitrina/plataforma/kernel-infra';
+import type { TenantContext } from '@vitrina/plataforma/kernel';
 import { AppModule } from '../src/app.module.js';
 import { PadronRucIdentidad } from '../src/identidad/padron-ruc.identidad.js';
 import { AltaTenant } from '../src/org/alta-tenant.js';
@@ -202,6 +205,25 @@ describe('api', () => {
     expect((await request(app.getHttpServer()).get('/v1/cfg/parametros')).status).toBe(401);
   });
 
+  it('spec 41: la bóveda queda cableada y, sin claves maestras, falla al usarse', async () => {
+    const boveda = app.get<BovedaSecretos>(BOVEDA_SECRETOS);
+    const contexto = app.get<TenantContext>(TENANT_CONTEXT);
+
+    await expect(contexto.run({ tenantId: 't', actorId: 'u' }, () => boveda.leer('s'))).rejects.toThrow(BovedaNoConfiguradaError);
+  });
+
+  it('spec 41: en production sin claves maestras, con una clave que no es de 32 bytes o con la activa fuera de la lista, no arranca', () => {
+    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32), IDN_PROVEEDOR: 'decolecta', IDN_DECOLECTA_TOKEN: 'token' };
+    const clave = Buffer.alloc(32, 7).toString('base64');
+
+    expect(() => cargarConfig(produccion)).toThrow('SEC_CLAVES_MAESTRAS: custom; SEC_CLAVE_ACTIVA: custom');
+    expect(() => cargarConfig({ ...produccion, SEC_CLAVES_MAESTRAS: `1:${Buffer.alloc(16).toString('base64')}`, SEC_CLAVE_ACTIVA: '1' })).toThrow('SEC_CLAVES_MAESTRAS');
+    expect(() => cargarConfig({ ...produccion, SEC_CLAVES_MAESTRAS: `1:${clave}`, SEC_CLAVE_ACTIVA: '2' })).toThrow('SEC_CLAVES_MAESTRAS');
+    expect(() => cargarConfig({ ...produccion, SEC_CLAVES_MAESTRAS: `1:${clave}`, SEC_CLAVE_ACTIVA: '2' })).not.toThrow(clave);
+    expect(cargarConfig({ ...produccion, SEC_CLAVES_MAESTRAS: `1:${clave}`, SEC_CLAVE_ACTIVA: '1' }).SEC_CLAVE_ACTIVA).toBe(1);
+    expect(cargarConfig(ENV_MINIMO).SEC_CLAVES_MAESTRAS).toBeUndefined();
+  });
+
   it('cargarConfig rechaza un PORT inválido', () => {
     expect(() => cargarConfig({ ...ENV_MINIMO, PORT: 'abc' })).toThrow(/PORT/);
   });
@@ -243,7 +265,8 @@ describe('api', () => {
   });
 
   it('cargarConfig no arranca en producción con el proveedor de identidad falso o sin token, y no repite el token (spec 28)', () => {
-    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32) };
+    // Spec 41: en producción las claves maestras son obligatorias.
+    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32), SEC_CLAVES_MAESTRAS: `1:${Buffer.alloc(32, 1).toString('base64')}`, SEC_CLAVE_ACTIVA: '1' };
     expect(cargarConfig(ENV_MINIMO).IDN_PROVEEDOR).toBe('falso');
     expect(() => cargarConfig(produccion)).toThrow(/IDN_PROVEEDOR/);
     expect(() => cargarConfig({ ...produccion, IDN_PROVEEDOR: 'falso', IDN_DECOLECTA_TOKEN: 'token-secreto' })).toThrow(/IDN_PROVEEDOR/);
@@ -285,6 +308,20 @@ describe('api', () => {
       paths['/v1/personas/{id}/direcciones/{direccionId}'].delete,
     ].map((operacion) => operacion.security);
     expect(seguridad).toEqual(Array(7).fill([{ bearer: [] }]));
+  });
+
+  it('las cinco rutas de consentimientos están en OpenAPI con bearer auth y piden token (spec 37)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/consentimientos/textos');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    const seguridad = [
+      paths['/v1/personas/{id}/consentimientos'].get,
+      paths['/v1/personas/{id}/consentimientos'].post,
+      paths['/v1/personas/{id}/consentimientos/{finalidad}/revocar'].post,
+      paths['/v1/consentimientos/textos'].get,
+      paths['/v1/consentimientos/textos'].post,
+    ].map((operacion) => operacion.security);
+    expect(seguridad).toEqual(Array(5).fill([{ bearer: [] }]));
   });
 
   it('ArchivosModule queda cableado: /v1/archivos pide token y sus cuatro rutas están en OpenAPI con bearer auth (spec 33)', async () => {
