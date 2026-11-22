@@ -73,6 +73,15 @@ export class VersionNoEncontradaError extends NotFoundError {
   }
 }
 
+/** Seguir el análisis de una carga o versión que todavía no se confirmó. */
+export class AnalisisNoIniciadoError extends ConflictError {
+  override readonly code = 'ANALISIS_NO_INICIADO';
+
+  constructor() {
+    super('El análisis no empezó: falta confirmar la subida');
+  }
+}
+
 export class VersionNoDisponibleError extends ConflictError {
   override readonly code = 'VERSION_NO_DISPONIBLE';
 

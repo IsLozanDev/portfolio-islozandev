@@ -10,7 +10,8 @@ export const claveResultadoDe = (archivoId: string, numero: number): string => `
 
 /**
  * Resultado del análisis del worker a la API por pub/sub. `suscribir` abre una conexión propia por stream:
- * una conexión suscrita no admite otros comandos.
+ * una conexión suscrita no admite otros comandos. Puede entregar el mismo resultado dos veces (el guardado
+ * y el del canal): quien sigue el análisis termina con el primero.
  */
 export class CanalAnalisisRedis implements CanalAnalisis {
   constructor(private readonly redis: Redis) {}
@@ -39,6 +40,9 @@ export class CanalAnalisisRedis implements CanalAnalisis {
     try {
       if (suscriptor.status === 'wait') await suscriptor.connect();
       await suscriptor.subscribe(canalAnalisisDe(archivoId, numero));
+      // Un resultado publicado mientras la suscripción se abría no llegó por el canal: queda guardado.
+      const guardado = await this.ultimo(archivoId, numero);
+      if (guardado) espera.recibir(guardado);
       yield* espera.avisos();
     } finally {
       suscriptor.disconnect();

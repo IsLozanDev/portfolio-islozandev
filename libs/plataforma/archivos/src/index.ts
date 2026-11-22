@@ -13,6 +13,7 @@ export {
 export { CODIGOS_CATEGORIA, type CodigoCategoria } from './domain/categoria.js';
 export {
   AccesoEntidadDenegadoError,
+  AnalisisNoIniciadoError,
   AlmacenNoDisponibleError,
   AntivirusNoDisponibleError,
   ArchivoNoDisponibleError,

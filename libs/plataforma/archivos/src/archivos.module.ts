@@ -20,6 +20,7 @@ import type { AlmacenArchivos } from './application/ports/almacen-archivos.js';
 import { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
 import type { CanalAnalisis } from './application/ports/canal-analisis.js';
 import { ReencolarAnalisisAtascados } from './application/reencolar-analisis-atascados.js';
+import { SeguirAnalisis, type DependenciasSeguimiento } from './application/seguir-analisis.js';
 import { ServicioArchivos } from './application/servicio-archivos.js';
 import { SolicitarCarga } from './application/solicitar-carga.js';
 import { SolicitarVersion } from './application/solicitar-version.js';
@@ -77,7 +78,7 @@ export interface ArchivosWorkerOpciones {
   bucket: string;
 }
 
-type DependenciasApi = DependenciasArchivos & DependenciasDescarga & DependenciasVersionVigente;
+type DependenciasApi = DependenciasArchivos & DependenciasDescarga & DependenciasVersionVigente & DependenciasSeguimiento;
 
 function proveedorAlmacen(opciones: OpcionesAlmacenSupabase) {
   return {
@@ -183,6 +184,7 @@ export class ArchivosModule {
             almacen: AlmacenArchivos,
             abierta: ColaAnalisisAbierta,
             publicador: EventPublisher,
+            canal: CanalAnalisis,
           ): DependenciasApi => ({
             unidadDeTrabajo,
             contexto,
@@ -194,6 +196,7 @@ export class ArchivosModule {
             autorizadores,
             auditoria,
             publicador,
+            canal,
           }),
           inject: [
             TypeOrmUnitOfWork,
@@ -205,6 +208,7 @@ export class ArchivosModule {
             ALMACEN_ARCHIVOS,
             COLA_ANALISIS_ABIERTA,
             EVENT_PUBLISHER,
+            CANAL_ANALISIS,
           ],
         },
         {
@@ -235,6 +239,11 @@ export class ArchivosModule {
         {
           provide: MarcarVersionVigente,
           useFactory: (dependencias: DependenciasApi) => new MarcarVersionVigente(dependencias),
+          inject: [DEPENDENCIAS_ARCHIVOS],
+        },
+        {
+          provide: SeguirAnalisis,
+          useFactory: (dependencias: DependenciasApi) => new SeguirAnalisis(dependencias),
           inject: [DEPENDENCIAS_ARCHIVOS],
         },
         {

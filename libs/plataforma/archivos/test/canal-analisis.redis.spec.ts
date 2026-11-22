@@ -41,6 +41,19 @@ describe('CanalAnalisisRedis (spec 36, Redis 7)', () => {
     expect(ttl).toBeLessThanOrEqual(TTL_RESULTADO_SEGUNDOS);
   });
 
+  it('un resultado publicado antes de que la suscripción quedara abierta llega igual, desde el guardado', async () => {
+    const archivoId = randomUUID();
+    await canal.publicar(resultadoDe(archivoId, 1));
+    const cierre = new AbortController();
+
+    const suscripcion = canal.suscribir(archivoId, 1, cierre.signal);
+    const primero = await suscripcion.next();
+    cierre.abort();
+    await suscripcion.return(undefined);
+
+    expect(primero.value).toEqual(resultadoDe(archivoId, 1));
+  });
+
   it('la suscripción recibe solo lo de su versión, publicado después de suscribirse, y se suelta al abortar', async () => {
     const archivoId = randomUUID();
     const cierre = new AbortController();

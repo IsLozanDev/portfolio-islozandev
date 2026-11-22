@@ -193,6 +193,29 @@ export class UrlDescargaDto {
   expira_en!: string;
 }
 
+export class AvisoAnalisisDto {
+  @ApiProperty({ enum: ['estado', 'fin'] })
+  tipo!: string;
+
+  @ApiProperty({ example: 1 })
+  numero!: number;
+
+  @ApiPropertyOptional({ enum: ['EN_ANALISIS'], description: 'Solo en `estado`' })
+  estado?: string;
+
+  @ApiPropertyOptional({ enum: ['DISPONIBLE', 'CUARENTENA', 'RECHAZADO'], description: 'Solo en `fin`' })
+  resultado?: string;
+
+  @ApiPropertyOptional({ enum: MOTIVOS_RECHAZO_VERSION, description: 'Solo en un `fin` RECHAZADO' })
+  motivo?: string;
+
+  @ApiPropertyOptional({ description: 'Solo con IDENTICA: la versión con el mismo contenido' })
+  version_coincidente?: number;
+
+  @ApiPropertyOptional({ example: 'El archivo es idéntico a la versión vigente' })
+  mensaje?: string;
+}
+
 export class ErrorArchivoDto {
   @ApiProperty({ example: 'TAMANO_EXCEDIDO' })
   codigo!: string;
