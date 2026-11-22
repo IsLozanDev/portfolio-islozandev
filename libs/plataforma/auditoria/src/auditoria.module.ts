@@ -33,6 +33,13 @@ const deConsulta = <T>(Clase: CasoDeConsulta<T>) => ({
   inject: [DEPENDENCIAS_CONSULTA],
 });
 
+const PROVEEDOR_AUDITORIA = {
+  provide: AUDITORIA,
+  useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>
+    crearAuditoria({ contexto, ids, reloj, registro: crearRegistro(unidadDeTrabajo) }),
+  inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK],
+};
+
 // Usa los tokens de KernelInfraModule (global), que la app debe importar.
 @Module({})
 export class AuditoriaModule {
@@ -81,12 +88,7 @@ export class AuditoriaModule {
             new ObtenerUltimaVerificacion({ ...dependencias, registro: new RegistroVerificacionesTypeOrm(unidadDeTrabajo, contexto) }),
           inject: [DEPENDENCIAS_CONSULTA, TypeOrmUnitOfWork, TENANT_CONTEXT],
         },
-        {
-          provide: AUDITORIA,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, ids: IdGenerator, reloj: Clock) =>
-            crearAuditoria({ contexto, ids, reloj, registro: crearRegistro(unidadDeTrabajo) }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK],
-        },
+        PROVEEDOR_AUDITORIA,
       ],
       exports: [AUDITORIA],
     };
@@ -130,6 +132,14 @@ export class AuditoriaModule {
       ],
       exports: [VerificarIntegridad, VerificarTodosLosTenants],
     };
+  }
+
+  /**
+   * Solo `AUDITORIA`, global, para las apps sin SeguridadModule ni rutas /v1/aud (apps/worker y sus CLI): la bóveda
+   * de secretos audita sus escrituras con él (spec 41).
+   */
+  static registrarPuerto(): DynamicModule {
+    return { module: AuditoriaModule, global: true, providers: [PROVEEDOR_AUDITORIA], exports: [AUDITORIA] };
   }
 
   /** Consumidor `auditoria` de los eventos de plataforma. EventosModule.registrarWorker lo descubre por `@SuscribirEvento`. */

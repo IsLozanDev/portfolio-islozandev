@@ -53,7 +53,8 @@ describe('configuración del worker', () => {
   });
 
   test('con APP_ENV=production y eicar (o sin definir) el worker no arranca', () => {
-    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32) };
+    // Spec 41: en producción las claves maestras son obligatorias.
+    const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32), SEC_CLAVES_MAESTRAS: `1:${Buffer.alloc(32, 1).toString('base64')}`, SEC_CLAVE_ACTIVA: '1' };
 
     expect(() => cargarConfig(produccion)).toThrow('Variables de entorno inválidas: ARC_ANTIVIRUS: custom');
     expect(() => cargarConfig({ ...produccion, ARC_ANTIVIRUS: 'eicar' })).toThrow('Variables de entorno inválidas: ARC_ANTIVIRUS: custom');

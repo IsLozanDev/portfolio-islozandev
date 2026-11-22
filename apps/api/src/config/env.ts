@@ -1,5 +1,6 @@
 import { camposEntornoIdentidad, exigirProveedorReal } from '@vitrina/plataforma/identidad';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
+import { camposEntornoSecretos, exigirClaveMaestraEnProduccion } from '@vitrina/plataforma/secretos';
 import { z } from 'zod';
 
 const esquema = z.object({
@@ -32,9 +33,12 @@ const esquema = z.object({
   ...camposEntornoObservabilidad,
   // Spec 28: proveedor de identidad; el falso no se admite en producción.
   ...camposEntornoIdentidad,
+  // Spec 41: claves maestras de la bóveda (SEC_CLAVES_MAESTRAS, SEC_CLAVE_ACTIVA); obligatorias en producción.
+  ...camposEntornoSecretos,
 })
   .superRefine(exigirSalFueraDeLocal)
-  .superRefine(exigirProveedorReal);
+  .superRefine(exigirProveedorReal)
+  .superRefine(exigirClaveMaestraEnProduccion);
 
 export type Config = z.infer<typeof esquema>;
 
