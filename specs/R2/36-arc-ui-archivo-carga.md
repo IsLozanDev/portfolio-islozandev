@@ -167,9 +167,10 @@ Canvas «Vitrina · Diseño UI», página «36 · Archivos» (https://claude.ai/
 
 | Entrada | Tipo | Uso |
 | --- | --- | --- |
-| `categoria` | `string` | Obligatoria en modo carga |
+| `categoria` | `string` | Obligatoria en modo carga; en modo versión, si falta, se lee de `GET /v1/archivos/{id}` |
 | `entidadTipo`, `entidadId` | `string` | Obligatorias en modo carga |
-| `archivoId` | `string \| undefined` | Con valor: modo versión (sube una versión de ese archivo) |
+| `modo` | `'carga' \| 'version'` | Por defecto `carga`. `version` sube una versión nueva del archivo `archivoId` |
+| `archivoId` | `string \| undefined` | Obligatoria en modo versión. En modo carga, un archivo ya subido que la pantalla vuelve a mostrar |
 | `etiqueta` | `string` | Texto de la zona («Arrastra el documento aquí») |
 | `deshabilitado` | `boolean` | |
 
