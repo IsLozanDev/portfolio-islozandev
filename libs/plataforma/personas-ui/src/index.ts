@@ -1,3 +1,7 @@
+export { PanelNuevaPersonaComponent, type DatosPanelNuevaPersona, type ResultadoNuevaPersona } from './lib/components/panel-nueva-persona/panel-nueva-persona.component';
+export { PersonaAltaComponent } from './lib/components/persona-alta/persona-alta.component';
+export { ESPERA_BUSQUEDA_MS, PersonaBuscadorComponent } from './lib/components/persona-buscador/persona-buscador.component';
+export type { ModoBuscador, PedidoAlta, PersonaElegida } from './lib/models/buscador';
 export {
   aListadoPersonas,
   aParametrosListado,

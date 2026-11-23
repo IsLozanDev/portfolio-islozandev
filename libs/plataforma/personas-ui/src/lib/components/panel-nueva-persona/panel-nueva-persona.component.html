@@ -1,0 +1,26 @@
+@if (pedido(); as pedidoAlta) {
+  <vit-persona-alta
+    [pedido]="pedidoAlta"
+    (registrada)="alRegistrar($event)"
+    (existente)="abrirExistente($event)"
+    (volver)="pedido.set(null)"
+    (cancelar)="cerrar()"
+  />
+} @else {
+  <vit-panel-lateral [titulo]="mensajes.tituloNuevaPersona">
+    <div class="flex flex-col gap-4">
+      <p class="m-0 flex items-start gap-2 text-sm text-sobre-superficie-variante">
+        <mat-icon class="shrink-0" aria-hidden="true">info</mat-icon>
+        <span>{{ mensajes.notaBusqueda }}</span>
+      </p>
+      <vit-persona-buscador
+        [etiquetaUsar]="etiquetaUsar"
+        (seleccionada)="alElegir($event)"
+        (registrar)="pedido.set($event)"
+      />
+    </div>
+    <div accionesPanel class="flex justify-end">
+      <button mat-button type="button" data-accion="cancelar" (click)="cerrar()">{{ mensajes.cancelar }}</button>
+    </div>
+  </vit-panel-lateral>
+}

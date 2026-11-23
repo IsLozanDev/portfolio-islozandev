@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { CONFIG_AUTH } from '@vitrina/shared/auth';
+import { map, type Observable } from 'rxjs';
 import {
   aListadoPersonas,
   aParametrosListado,
@@ -26,7 +27,7 @@ import {
   type CambiosDatosBasicos,
   type RegistroPersona,
 } from '../models/solicitudes-persona';
-import { solicitar } from '../utils/solicitar';
+import { conErroresDePersonas, solicitar } from '../utils/solicitar';
 
 export const RUTA_PERSONAS = '/personas';
 
@@ -36,15 +37,24 @@ export class PersonasCliente {
   private readonly http = inject(HttpClient);
   private readonly urlPersonas = inject(CONFIG_AUTH).apiUrl + RUTA_PERSONAS;
 
-  async listar(criterios: CriteriosListado): Promise<ListadoPersonas> {
+  listar(criterios: CriteriosListado): Promise<ListadoPersonas> {
+    return solicitar(this.observarListado(criterios));
+  }
+
+  /** Como `listar`, sin convertir a promesa: desuscribirse aborta la petición (sugerencias mientras se escribe). */
+  observarListado(criterios: CriteriosListado): Observable<ListadoPersonas> {
     const peticion = this.http.get<ListadoPersonasRespuesta>(this.urlPersonas, { params: aParametrosListado(criterios) });
-    return aListadoPersonas(await solicitar(peticion));
+    return conErroresDePersonas(peticion).pipe(map(aListadoPersonas));
   }
 
   /** La persona del tenant o, si no existe, el prellenado de TR-IDN (solo DNI y RUC). */
-  async buscarPorDocumento(tipo: TipoDocumento, numero: string): Promise<ResultadoBusquedaDocumento> {
+  buscarPorDocumento(tipo: TipoDocumento, numero: string): Promise<ResultadoBusquedaDocumento> {
+    return solicitar(this.observarBusquedaDocumento(tipo, numero));
+  }
+
+  observarBusquedaDocumento(tipo: TipoDocumento, numero: string): Observable<ResultadoBusquedaDocumento> {
     const peticion = this.http.get<BusquedaDocumentoRespuesta>(`${this.urlPersonas}/busqueda`, { params: { tipo, numero } });
-    return aResultadoBusquedaDocumento(await solicitar(peticion));
+    return conErroresDePersonas(peticion).pipe(map(aResultadoBusquedaDocumento));
   }
 
   async registrar(registro: RegistroPersona): Promise<PersonaDetalle> {

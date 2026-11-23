@@ -1,0 +1,103 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="mensajes.titulo">
+    <div class="flex flex-col gap-4">
+      <div>
+        <button mat-button type="button" data-accion="volver" (click)="volver.emit()">
+          <mat-icon aria-hidden="true">arrow_back</mat-icon>{{ mensajes.volver }}
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3 rounded-tarjeta bg-superficie-contenedor px-4 py-3">
+        <mat-icon class="shrink-0 text-sobre-superficie-variante" aria-hidden="true">badge</mat-icon>
+        <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+          <b class="font-mono text-[15px] font-medium" data-prueba="documento">{{ documento() }}</b>
+          <span class="text-sm text-sobre-superficie-variante" data-prueba="tipo-persona">{{ textoTipoPersona() }}</span>
+        </span>
+        @if (fuente(); as fuenteDatos) {
+          <vit-chip-estado tono="info" [texto]="mensajes.datosDe(fuenteDatos)" data-prueba="fuente" />
+        }
+      </div>
+
+      @if (aviso(); as avisoAlta) {
+        <p
+          class="m-0 flex items-start gap-2 rounded-tarjeta p-3 text-sm"
+          data-prueba="aviso"
+          [class.bg-chip-advertencia]="avisoAlta.advertencia"
+          [class.text-sobre-chip-advertencia]="avisoAlta.advertencia"
+          [class.bg-chip-info]="!avisoAlta.advertencia"
+          [class.text-sobre-chip-info]="!avisoAlta.advertencia"
+        >
+          <mat-icon class="vit-icono-mensaje shrink-0" aria-hidden="true">{{ avisoAlta.advertencia ? 'cloud_off' : 'info' }}</mat-icon>
+          <span>{{ avisoAlta.texto }}</span>
+        </p>
+      }
+
+      @if (duplicadaId(); as personaId) {
+        <p role="alert" class="m-0 flex flex-wrap items-center gap-2 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="duplicada">
+          <mat-icon class="vit-icono-mensaje shrink-0" aria-hidden="true">error</mat-icon>
+          <span class="flex-1">{{ mensajes.duplicada }}</span>
+          <button mat-button type="button" data-accion="abrir-existente" (click)="abrirExistente(personaId)">{{ mensajes.abrirFicha }}</button>
+        </p>
+      }
+
+      @if (error(); as mensajeError) {
+        <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+      }
+
+      @if (juridica()) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.campos.razonSocial }}</mat-label>
+          <input matInput formControlName="razonSocial" maxlength="200" autocomplete="off" data-campo="razon-social" />
+          <mat-error>{{ formulario.controls.razonSocial.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.campos.nombres }}</mat-label>
+          <input matInput formControlName="nombres" maxlength="100" autocomplete="off" data-campo="nombres" />
+          <mat-error>{{ formulario.controls.nombres.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+        <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.campos.apellidoPaterno }}</mat-label>
+            <input matInput formControlName="apellidoPaterno" maxlength="60" autocomplete="off" data-campo="apellido-paterno" />
+            <mat-error>{{ formulario.controls.apellidoPaterno.errors | mensajeValidacion }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.campos.apellidoMaterno }}</mat-label>
+            <input matInput formControlName="apellidoMaterno" maxlength="60" autocomplete="off" data-campo="apellido-materno" />
+            <mat-error>{{ formulario.controls.apellidoMaterno.errors | mensajeValidacion }}</mat-error>
+          </mat-form-field>
+        </div>
+        @if (fuente(); as fuenteDatos) {
+          <p class="m-0 flex items-start gap-2 text-sm text-sobre-superficie-variante">
+            <mat-icon class="vit-icono-mensaje shrink-0" aria-hidden="true">edit</mat-icon>
+            <span>{{ mensajes.notaSugerencia(fuenteDatos) }}</span>
+          </p>
+        }
+      }
+
+      <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.campos.celular }}</mat-label>
+          <input matInput formControlName="celular" inputmode="numeric" maxlength="9" autocomplete="off" data-campo="celular" />
+          <mat-hint>{{ mensajesCelular.ayuda }}</mat-hint>
+          <mat-error data-prueba="error-celular">
+            {{ formulario.controls.celular.hasError('celular') ? mensajesCelular.invalido : (formulario.controls.celular.errors | mensajeValidacion) }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.campos.correo }}</mat-label>
+          <input matInput type="email" formControlName="correo" autocomplete="off" data-campo="correo" />
+          <mat-hint>{{ mensajesCorreo.ayuda }}</mat-hint>
+          <mat-error data-prueba="error-correo">{{ mensajesCorreo.invalido }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <p class="m-0 flex items-start gap-2 text-sm text-sobre-superficie-variante">
+        <mat-icon class="vit-icono-mensaje shrink-0" aria-hidden="true">lock</mat-icon>
+        <span>{{ mensajes.notaPrincipales }}</span>
+      </p>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" [textoGuardar]="mensajes.registrar" (cancelar)="cancelar.emit()" />
+  </vit-panel-lateral>
+</form>

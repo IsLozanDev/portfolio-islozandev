@@ -268,8 +268,8 @@ src/testing/   http-de-prueba.ts, persona-de-prueba.ts y, desde el paso 6, doble
 
 | Salida | Carga útil |
 | --- | --- |
-| `seleccionada` | `PersonaListada` o `PersonaResumen` |
-| `registrada` | `PersonaDetalle` |
+| `seleccionada` | `PersonaElegida` (`id`, `denominacion`, tipo y número de documento) |
+| `registrar` | `PedidoAlta` (documento, prellenado o nulo, aviso de TR-IDN o nulo): el buscador no registra |
 | `consulta` | `string` (modo lista, con espera de 300 ms) |
 
 - Campo con `mat-autocomplete` (combobox accesible, flechas y Enter) y un selector compacto de tipo: «Auto», DNI, RUC, CE, Pasaporte.
@@ -278,12 +278,14 @@ src/testing/   http-de-prueba.ts, persona-de-prueba.ts y, desde el paso 6, doble
 - Sin resultados: «No hay personas que coincidan» y, si es un documento válido, «Registrar».
 - Estados de carga con `mat-progress-bar` dentro del campo; `aria-live` anuncia la cantidad de resultados.
 
-`vit-persona-alta` (panel lateral, `vit-acciones-formulario`):
+`vit-panel-nueva-persona` (contenido del panel lateral; `PanelLateralService.abrir`, datos `{ etiquetaUsar? }`): paso «Nueva persona» con `vit-persona-buscador` y pie «Cancelar»; al `registrar` pasa al paso `vit-persona-alta` en el mismo panel. Cierra con `{ personaId, registrada }`: la persona elegida, la registrada o la que ya tenía el documento. Sin resultado: se canceló.
 
-- Entradas: `tipoDocumento`, `numeroDocumento` (bloqueados), `prellenado` opcional.
+`vit-persona-alta` (paso del panel, `vit-acciones-formulario` en el pie):
+
+- Entrada: `pedido` (`PedidoAlta`); el documento se muestra bloqueado. Salidas: `registrada`, `existente` (id de la persona duplicada), `volver` y `cancelar`. «Volver a la búsqueda» es un botón al inicio del cuerpo (`vit-panel-lateral` no tiene flecha en la cabecera).
 - `tipo_persona` se deduce: RUC que empieza por 20 → JURIDICA (razón social); el resto → NATURAL (nombres, apellido paterno, apellido materno opcional). El prellenado se puede editar.
 - Celular obligatorio (`validarCelular`, «El celular debe tener 9 dígitos e iniciar con 9»), correo opcional (`validarCorreo`).
-- 201 → emite `registrada` y cierra. 409 `PERSONA_DUPLICADA` → «Ya existe una persona con ese documento» con «Ver ficha» (por `persona_id`). 422 → mensaje junto al campo.
+- 201 → emite `registrada`. 409 `PERSONA_DUPLICADA` → «Ya existe una persona con ese documento en tu organización» con «Abrir su ficha» (por `persona_id`). Otro error → su mensaje sobre el formulario; los de formato se validan antes en el campo.
 
 Ficha (piezas de `personas-ui`, compuestas en `persona-detalle` de `admin-cliente`):
 
@@ -296,7 +298,7 @@ Ficha (piezas de `personas-ui`, compuestas en `persona-detalle` de `admin-client
 
 ### Front: `admin-cliente`
 
-- `pages/personas-lista/`: `vit-persona-buscador` en modo lista dentro de `vit-filtros`, selects de tipo de persona, producto (los nueve de `PRODUCTOS`) y rol; `vit-tabla` con persona (denominación), documento, celular, roles (chips) y coincidencia; `ColumnaTabla.movil` con persona, documento y celular. Estado en la URL (`?q=&tipo=&producto=&rol=&pagina=&tamano=`) con `utils/filtro-url-personas.ts`. «Nueva persona» (`plat.persona.registrar`) abre el panel con `vit-persona-buscador` en modo selección y alta; al `registrada` navega a la ficha; al `seleccionada` también. Clic en una fila abre la ficha.
+- `pages/personas-lista/`: `vit-persona-buscador` en modo lista dentro de `vit-filtros`, selects de tipo de persona, producto (los nueve de `PRODUCTOS`) y rol; `vit-tabla` con persona (denominación), documento, celular, roles (chips) y coincidencia; `ColumnaTabla.movil` con persona, documento y celular. Estado en la URL (`?q=&tipo=&producto=&rol=&pagina=&tamano=`) con `utils/filtro-url-personas.ts`. «Nueva persona» (`plat.persona.registrar`) abre `vit-panel-nueva-persona` con «Abrir ficha»; al cerrarse con una persona navega a su ficha. Clic en una fila abre la ficha.
 - `pages/persona-detalle/`: compone las piezas de la ficha; 404 → `vit-estado-vacio` «La persona no existe o no es de su organización».
 - Rutas en `ADMIN_CLIENTE_ROUTES`: `personas` y `personas/:personaId` con `permisoGuard(plat.persona.leer)`.
 
@@ -394,6 +396,8 @@ Ficha (piezas de `personas-ui`, compuestas en `persona-detalle` de `admin-client
 - **Sí:** prefijo `vit-` (`vit-persona-buscador`). El SRS lo llama `<ui-persona-buscador>`; manda el prefijo del repo (mismo criterio del 36).
 - **Sí (en la implementación):** copias comentadas de `validarDocumento` y de los validadores de contacto en `personas-ui/src/lib/utils/`. La lib se empaqueta con ng-packagr y no puede importar `shared/util`, que no es buildable: mismo criterio que la copia de `validarRuc` en `admin-cliente` (specs 17b y 17c). El servidor valida con los originales.
 - **Sí:** `personas-ui` con `type:feature`. Llama a la API y usa `shared/auth` (`type:data-access`), que una lib `type:ui` no puede importar (mismo criterio del 36).
+- **Sí (en la implementación):** el buscador no registra: emite `registrar` con el pedido de alta y `vit-panel-nueva-persona` aloja los dos pasos (buscar y registrar) en el mismo panel, como el canvas. Decisión del usuario. El spec pedía que el buscador emitiera `registrada` y a la vez que el alta tuviera su pie en el panel; las dos cosas no caben en un componente. Un producto reutiliza el flujo abriendo el mismo panel.
+- **Sí (en la implementación):** `PersonasCliente.observarListado` y `observarBusquedaDocumento` devuelven Observable: con `switchMap`, una búsqueda nueva aborta la petición HTTP anterior (las versiones con Promise no se pueden abortar).
 - **Sí:** piezas en `personas-ui` y páginas en `admin-cliente`. SazónPOS y otros productos reutilizan el buscador y las piezas sin las páginas de admin.
 - **Sí:** autocompletar de ubigeo sobre `GET /v1/catalogos/UBIGEO/items` con `plat.catalogo.leer`, filtrado en el navegador. Decisión del usuario. Sin back nuevo; la lista se cachea con `ETag`.
 - **No:** ruta propia de ubigeos en PER. Decisión del usuario.
