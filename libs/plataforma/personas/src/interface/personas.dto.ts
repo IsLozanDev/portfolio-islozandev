@@ -2,9 +2,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PRODUCTOS, type ProductoCodigo } from '@vitrina/plataforma/org';
 import type { MotivoInvalidez } from '@vitrina/shared/util';
 import type { AvisoPrellenado, Prellenado, ResultadoBusqueda } from '../application/buscar-persona.js';
+import type { ListadoPersonas } from '../application/buscar-personas.js';
+import type { Coincidencia, PersonaListada } from '../application/ports/consulta-personas.js';
 import type { PersonaDetalle, PersonaResumen } from '../application/ports/persona.port.js';
 import { TIPOS_CONTACTO, type TipoContacto } from '../domain/contacto.js';
-import type { DenominacionPersona } from '../domain/denominacion.js';
+import { denominacionVisible, type DenominacionPersona } from '../domain/denominacion.js';
 import { TIPOS_DOCUMENTO_PERSONA, type TipoDocumentoPersona } from '../domain/documento-identidad.js';
 import { TIPOS_PERSONA, type TipoPersona } from '../domain/persona.js';
 import { ROLES_PERSONA, type RolPersona } from '../domain/rol-persona.js';
@@ -12,6 +14,7 @@ import { DireccionDto, direccionDto } from './direcciones.dto.js';
 
 const MOTIVOS_INVALIDEZ: MotivoInvalidez[] = ['LONGITUD', 'PREFIJO', 'DIGITO_VERIFICADOR', 'CARACTERES'];
 const AVISOS_PRELLENADO: AvisoPrellenado[] = ['IDENTIDAD_NO_DISPONIBLE', 'CUOTA_AGOTADA', 'NO_ENCONTRADO_EN_IDENTIDAD'];
+const COINCIDENCIAS: Coincidencia[] = ['DOCUMENTO', 'CONTACTO', 'NOMBRE'];
 
 class DenominacionDto {
   @ApiProperty({ type: String, nullable: true, example: 'Juana' })
@@ -165,6 +168,57 @@ export class RolAsignadoDto {
   asignado!: boolean;
 }
 
+class RolVigenteDto {
+  @ApiProperty({ enum: PRODUCTOS })
+  producto_codigo!: ProductoCodigo;
+
+  @ApiProperty({ enum: ROLES_PERSONA })
+  rol!: RolPersona;
+}
+
+export class PersonaListadaDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ enum: TIPOS_PERSONA })
+  tipo_persona!: TipoPersona;
+
+  @ApiProperty({ enum: TIPOS_DOCUMENTO_PERSONA })
+  tipo_documento!: TipoDocumentoPersona;
+
+  @ApiProperty({ example: '45781236' })
+  numero_documento!: string;
+
+  @ApiProperty({ example: 'Quispe Mamani, Juana', description: 'Natural: apellidos, nombres. Jurídica: la razón social' })
+  denominacion!: string;
+
+  @ApiProperty({ type: String, nullable: true, example: '987654321' })
+  celular_principal!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  correo_principal!: string | null;
+
+  @ApiProperty({ type: [RolVigenteDto], description: 'Roles vigentes' })
+  roles!: RolVigenteDto[];
+
+  @ApiProperty({ enum: COINCIDENCIAS, nullable: true, description: 'Por qué entró en el resultado; nula sin `q`' })
+  coincidencia!: Coincidencia | null;
+}
+
+export class ListadoPersonasDto {
+  @ApiProperty({ type: [PersonaListadaDto] })
+  items!: PersonaListadaDto[];
+
+  @ApiProperty({ description: 'Personas que cumplen la búsqueda y los filtros, sin paginar' })
+  total!: number;
+
+  @ApiProperty({ minimum: 1 })
+  pagina!: number;
+
+  @ApiProperty({ minimum: 1 })
+  tamano!: number;
+}
+
 export class ErrorPersonaDto {
   @ApiProperty({ example: 'PERSONA_DUPLICADA' })
   codigo!: string;
@@ -217,4 +271,22 @@ export function busquedaDto(resultado: ResultadoBusqueda): BusquedaDto {
   if (resultado.encontrada) return { encontrada: true, persona: personaDto(resultado.persona) };
   const sinPersona = { encontrada: false, prellenado: prellenadoDto(resultado.prellenado) };
   return resultado.aviso === undefined ? sinPersona : { ...sinPersona, aviso: resultado.aviso };
+}
+
+function personaListadaDto(persona: PersonaListada): PersonaListadaDto {
+  return {
+    id: persona.id,
+    tipo_persona: persona.tipoPersona,
+    tipo_documento: persona.tipoDocumento,
+    numero_documento: persona.numeroDocumento,
+    denominacion: denominacionVisible(persona),
+    celular_principal: persona.celularPrincipal,
+    correo_principal: persona.correoPrincipal,
+    roles: persona.roles.map(({ productoCodigo, rol }) => ({ producto_codigo: productoCodigo, rol })),
+    coincidencia: persona.coincidencia,
+  };
+}
+
+export function listadoPersonasDto(listado: ListadoPersonas): ListadoPersonasDto {
+  return { items: listado.items.map(personaListadaDto), total: listado.total, pagina: listado.pagina, tamano: listado.tamano };
 }

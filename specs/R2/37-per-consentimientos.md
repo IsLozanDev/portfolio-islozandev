@@ -1,6 +1,6 @@
 # SPEC 37 — Personas: consentimientos por finalidad con textos versionados, revocación y evidencia
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 31, SPEC 33, SPEC 20a, SPEC 11
 > **Date:** 2026-11-20
 > **Objective:** Ampliar `libs/plataforma/personas` para publicar textos versionados por finalidad, registrar la decisión expresa de la persona en cada finalidad (con versión, canal y evidencia opcional validada en TR-ARC), revocarla con `consentimiento.revocado` por outbox y responder a otros componentes si hay consentimiento vigente.

@@ -15,6 +15,7 @@ import { ContactoDuplicadoError } from '../src/domain/errores.js';
 import { Persona } from '../src/domain/persona.js';
 import { registrarEsquemasPer } from '../src/infrastructure/event-schemas.js';
 import { ContactoEntidad, ENTIDADES_PER } from '../src/infrastructure/typeorm/entidades.js';
+import { ConsultaPersonasTypeOrm } from '../src/infrastructure/typeorm/consulta-personas.typeorm.js';
 import { RepositorioPersonasTypeOrm } from '../src/infrastructure/typeorm/personas.repositorio.js';
 import { VerificadorReferenciasPer } from '../src/infrastructure/verificador-referencias.per.js';
 import { ArchivosFijos, AuditoriaEspia, CatalogoFijo, IdentidadEspia, SuscripcionesFijas, UBIGEO_CAYMA } from './support/dobles.js';
@@ -321,6 +322,7 @@ describeConDb('Contactos y direcciones de personas con TypeORM (TR-RF-041, Postg
         ids: { next: uuidV7 },
         publicador: new OutboxPublisher(unidadDeTrabajo, contexto, validador, { next: uuidV7 }),
         personas: repositorio,
+        consultaPersonas: new ConsultaPersonasTypeOrm(unidadDeTrabajo, contexto),
         suscripciones: new SuscripcionesFijas(['CLI']),
         catalogo: new CatalogoFijo(),
         identidad: new IdentidadEspia(),

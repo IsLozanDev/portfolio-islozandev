@@ -11,6 +11,7 @@ import { AgregarContacto } from './application/agregar-contacto.js';
 import { AgregarDireccion } from './application/agregar-direccion.js';
 import { AsignarRolPersona } from './application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from './application/buscar-persona.js';
+import { BuscarPersonas } from './application/buscar-personas.js';
 import { ConsultarConsentimientos } from './application/consentimientos/consultar-consentimientos.js';
 import { ConsultarTextos } from './application/consentimientos/consultar-textos.js';
 import { PublicarTextoFinalidad } from './application/consentimientos/publicar-texto-finalidad.js';
@@ -29,6 +30,7 @@ import { RegistrarPersona } from './application/registrar-persona.js';
 import { ServicioPersonas } from './application/servicio-personas.js';
 import { SuscripcionesDelTenantOrg } from './infrastructure/suscripciones-del-tenant.org.js';
 import { RepositorioConsentimientosTypeOrm } from './infrastructure/typeorm/consentimientos.repositorio.js';
+import { ConsultaPersonasTypeOrm } from './infrastructure/typeorm/consulta-personas.typeorm.js';
 import { RepositorioPersonasTypeOrm } from './infrastructure/typeorm/personas.repositorio.js';
 import { ConsentimientosPersonaController } from './interface/consentimientos.controller.js';
 import { ContactosPersonaController } from './interface/contactos.controller.js';
@@ -41,6 +43,7 @@ const DEPENDENCIAS_PERSONAS = Symbol('DependenciasPersonas');
 type CasoDeUso = new (dependencias: DependenciasPersonas) => unknown;
 
 const CASOS_DE_USO: CasoDeUso[] = [
+  BuscarPersonas,
   BuscarPersonaPorDocumento,
   RegistrarPersona,
   ObtenerPersona,
@@ -108,6 +111,7 @@ export class PersonasModule {
             ids,
             publicador,
             personas: new RepositorioPersonasTypeOrm(unidadDeTrabajo, contexto),
+            consultaPersonas: new ConsultaPersonasTypeOrm(unidadDeTrabajo, contexto),
             suscripciones: new SuscripcionesDelTenantOrg(new SuscripcionRepositorioTypeOrm(unidadDeTrabajo, contexto)),
             catalogo,
             identidad,

@@ -1,6 +1,6 @@
 # SPEC 41 — Bóveda de secretos por tenant con cifrado por sobre y rotación sin interrupción
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 20a
 > **Date:** 2026-11-20
 > **Objective:** Crear `libs/plataforma/secretos` con el puerto `BovedaSecretos`, que guarda, lee, rota y elimina secretos del tenant cifrados con AES-256-GCM bajo una clave de datos por tenant envuelta por una clave maestra versionada que solo vive en el entorno de `apps/api` y `apps/worker`, con las escrituras auditadas y un comando que re-envuelve las claves al rotar la maestra.

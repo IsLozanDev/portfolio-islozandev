@@ -14,6 +14,7 @@ import {
 } from '@vitrina/plataforma/kernel';
 import type { ProductoCodigo } from '@vitrina/plataforma/org';
 import type { DependenciasPersonas } from '../../src/application/dependencias-personas.js';
+import type { ConsultaPersonas, CriteriosConsultaPersonas, PaginaPersonas } from '../../src/application/ports/consulta-personas.js';
 import type { RepositorioConsentimientos } from '../../src/application/ports/repositorio-consentimientos.js';
 import type { RepositorioPersonas } from '../../src/application/ports/repositorio-personas.js';
 import type { SuscripcionesDelTenant } from '../../src/application/ports/suscripciones-del-tenant.js';
@@ -108,6 +109,17 @@ export class SuscripcionesFijas implements SuscripcionesDelTenant {
   constructor(public vigentes: ProductoCodigo[]) {}
   async estaVigente(productoCodigo: ProductoCodigo): Promise<boolean> {
     return this.vigentes.includes(productoCodigo);
+  }
+}
+
+/** Guarda los criterios que recibe y devuelve la página fijada por la prueba. */
+export class ConsultaPersonasEspia implements ConsultaPersonas {
+  readonly criterios: CriteriosConsultaPersonas[] = [];
+  pagina: PaginaPersonas = { items: [], total: 0 };
+
+  async buscar(criterios: CriteriosConsultaPersonas): Promise<PaginaPersonas> {
+    this.criterios.push(criterios);
+    return this.pagina;
   }
 }
 
@@ -252,6 +264,7 @@ export interface Dobles extends DependenciasPersonas {
   contexto: ContextoFijo;
   publicador: PublicadorMemoria;
   personas: RepositorioPersonasMemoria;
+  consultaPersonas: ConsultaPersonasEspia;
   suscripciones: SuscripcionesFijas;
   catalogo: CatalogoFijo;
   identidad: IdentidadEspia;
@@ -271,6 +284,7 @@ export function crearDobles(): Dobles {
     ids: new IdsEnOrden(),
     publicador: new PublicadorMemoria(),
     personas: new RepositorioPersonasMemoria(contexto),
+    consultaPersonas: new ConsultaPersonasEspia(),
     suscripciones: new SuscripcionesFijas(['CLI', 'GYM']),
     catalogo: new CatalogoFijo(),
     identidad: new IdentidadEspia(),

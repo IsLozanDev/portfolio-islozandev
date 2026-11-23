@@ -55,6 +55,15 @@ export class ProductoNoSuscritoError extends ValidationError {
   }
 }
 
+/** Sin el texto buscado en el mensaje: puede ser un nombre o un documento (TR-RNF-026). */
+export class ConsultaMuyCortaError extends ValidationError {
+  override readonly code = 'CONSULTA_MUY_CORTA';
+
+  constructor() {
+    super('Escriba al menos 3 letras o 4 dígitos');
+  }
+}
+
 // Los mensajes de contactos y direcciones no llevan el valor ni la dirección (TR-RNF-026).
 
 export class ContactoDuplicadoError extends ConflictError {

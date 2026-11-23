@@ -93,6 +93,7 @@ const CASOS = [
   { migracion: '01j_idn.sql', esquema: 'idn', prueba: 'tests/01j_idn.test.sql' },
   { migracion: '01k_idn_cuota.sql', esquema: 'idn', prueba: 'tests/01k_idn_cuota.test.sql' },
   { migracion: '01l_per.sql', esquema: 'per', prueba: 'tests/01l_per.test.sql' },
+  { migracion: '01l_per_busqueda.sql', esquema: 'per', prueba: 'tests/01l_per_busqueda.test.sql' },
   { migracion: '01l_per_contactos.sql', esquema: 'per', prueba: 'tests/01l_per_contactos.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
   { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
@@ -608,6 +609,24 @@ const objetosContactos = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Funciones, columnas generadas e índices que agrega 01l_per_busqueda (8 en total).
+const objetosBusqueda = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'funcion:' || proname AS o FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'per' AND proname IN ('normalizar_busqueda', 'clave_fonetica')
+       UNION ALL SELECT 'columna:' || column_name FROM information_schema.columns
+        WHERE table_schema = 'per' AND table_name = 'persona' AND column_name IN ('busqueda_texto', 'busqueda_fonetica')
+       UNION ALL SELECT 'indice:' || indexname FROM pg_indexes WHERE schemaname = 'per'
+        AND indexname IN ('ix_persona_busqueda_texto', 'ix_persona_busqueda_fonetica', 'ix_persona_documento_prefijo', 'ix_contacto_valor_prefijo')
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+const extensionesBusqueda = async () =>
+  (await ejecutar(urlDb, `SELECT extname FROM pg_extension WHERE extname IN ('unaccent', 'pg_trgm', 'btree_gin') ORDER BY 1`)).rows.map((r) => r.extname);
+
 // Tablas y función de solo revocación que agrega 01l_per_consentimientos (3 en total).
 const objetosConsentimientos = async () =>
   (
@@ -735,11 +754,23 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await objetosContactos()).toEqual([]);
     expect(await existeEsquema('per')).toBe(true);
 
+    // El inverso de 01l_per_busqueda quita funciones, columnas e índices de búsqueda, deja las extensiones
+    // y se puede reaplicar (spec 38). Va antes que el de 01l_per.
+    expect(await objetosBusqueda()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_busqueda.sql'), 'utf8'));
+    expect(await objetosBusqueda()).toEqual([]);
+    expect(await extensionesBusqueda()).toEqual(['btree_gin', 'pg_trgm', 'unaccent']);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_busqueda.sql'), 'utf8'));
+    expect(await objetosBusqueda()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_busqueda.sql'), 'utf8'));
+
     // El inverso de 01l_per borra per; ambas se pueden reaplicar.
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per.sql'), 'utf8'));
     expect(await existeEsquema('per')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per.sql'), 'utf8'));
     expect(await existeEsquema('per')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_busqueda.sql'), 'utf8'));
+    expect(await objetosBusqueda()).toHaveLength(8);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per_contactos.sql'), 'utf8'));
     expect(await objetosContactos()).toHaveLength(3);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per_consentimientos.sql'), 'utf8'));
