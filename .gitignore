@@ -15,3 +15,6 @@ __screenshots__/
 
 # Documentos de origen de los datos oficiales: se identifican por su sha256 en FUENTES.md
 docs/datos-oficiales/origen/
+
+# Worktrees de agentes
+.claude/worktrees/
