@@ -4,9 +4,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   denominacionDe,
   ErrorPersonas,
-  ETIQUETAS_ROL,
-  ETIQUETAS_TIPO_DOCUMENTO,
   ETIQUETAS_TIPO_PERSONA,
+  formatoDocumento,
+  formatoRol,
   inicialesDe,
   mensajeDeError,
   PersonaConsentimientosComponent,
@@ -64,9 +64,9 @@ export class PersonaDetallePage {
     return {
       denominacion: denominacionDe(persona),
       iniciales: inicialesDe(persona),
-      documento: `${ETIQUETAS_TIPO_DOCUMENTO[persona.tipoDocumento]} ${persona.numeroDocumento}`,
+      documento: formatoDocumento(persona.tipoDocumento, persona.numeroDocumento),
       tipoPersona: ETIQUETAS_TIPO_PERSONA[persona.tipoPersona],
-      roles: persona.roles.filter((rol) => rol.hasta === null).map((rol) => `${rol.productoCodigo} · ${ETIQUETAS_ROL[rol.rol]}`),
+      roles: persona.roles.filter((rol) => rol.hasta === null).map((rol) => formatoRol(rol.productoCodigo, rol.rol)),
     };
   });
 

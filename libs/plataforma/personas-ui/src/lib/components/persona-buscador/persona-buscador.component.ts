@@ -14,28 +14,24 @@ import { catchError, concat, debounceTime, map, of, switchMap, type Observable }
 import type { ModoBuscador, PedidoAlta, PersonaElegida, ResultadoBuscador } from '../../models/buscador';
 import type { PersonaListada, ResultadoBusquedaDocumento } from '../../models/busqueda';
 import { aErrorPersonas } from '../../models/error-personas';
-import { ETIQUETAS_ROL, ETIQUETAS_TIPO_DOCUMENTO } from '../../models/etiquetas-personas';
+import { ETIQUETAS_TIPO_DOCUMENTO } from '../../models/etiquetas-personas';
 import { MENSAJES_BUSCADOR, TIPOS_BUSQUEDA } from '../../models/mensajes-buscador';
-import {
-  ETIQUETAS_COINCIDENCIA,
-  fuenteDeIdentidad,
-  mensajeDeError,
-  TEXTO_SIN_CONSULTA_EN_LINEA,
-  textoAvisoIdentidad,
-} from '../../models/mensajes-personas';
-import type { TipoDocumento } from '../../models/persona';
+import { avisoSinPrellenado, ETIQUETAS_COINCIDENCIA, fuenteDeIdentidad, mensajeDeError } from '../../models/mensajes-personas';
+import type { PersonaResumen, TipoDocumento } from '../../models/persona';
 import { PERMISOS_PERSONAS } from '../../models/permisos-personas';
 import { TONO_ROL, TONOS_COINCIDENCIA } from '../../models/tonos-personas';
 import { PersonasCliente } from '../../services/personas.cliente';
 import { clasificarEntrada, type EntradaClasificada, type TipoElegido } from '../../utils/clasificar-entrada';
 import { denominacionDe, inicialesDe, inicialesDeTexto, nombreCompletoDe } from '../../utils/denominacion';
 import { formatoCelular } from '../../utils/formato-contacto';
+import { formatoDocumento, formatoRol } from '../../utils/formato-persona';
 
 /** TR-RNF-001: espera tras la última tecla antes de buscar; una búsqueda nueva aborta la anterior. */
 export const ESPERA_BUSQUEDA_MS = 300;
 export const MAXIMO_SUGERENCIAS = 8;
 /** CE y pasaporte no tienen longitud fija: se buscan al pulsar Enter. */
 const TIPOS_CON_ENTER: readonly TipoDocumento[] = ['CE', 'PASAPORTE'];
+const AVISO_POR_DEFECTO = 'NO_ENCONTRADO_EN_IDENTIDAD';
 const TECLAS_NAVEGACION = { abajo: 'ArrowDown', arriba: 'ArrowUp', enter: 'Enter' } as const;
 
 let siguienteBuscador = 0;
@@ -128,18 +124,18 @@ export class PersonaBuscadorComponent implements OnInit {
     const resultado = this.resultado();
     if (resultado.tipo !== 'encontrada') return null;
     const { persona } = resultado;
-    return { persona, denominacion: denominacionDe(persona), iniciales: inicialesDe(persona), documento: this.documentoDe(persona.tipoDocumento, persona.numeroDocumento) };
+    return { persona, denominacion: denominacionDe(persona), iniciales: inicialesDe(persona), documento: formatoDocumento(persona.tipoDocumento, persona.numeroDocumento) };
   });
   protected readonly nueva = computed(() => {
     const resultado = this.resultado();
     if (resultado.tipo !== 'nueva') return null;
     const { pedido } = resultado;
-    const documento = this.documentoDe(pedido.tipoDocumento, pedido.numeroDocumento);
+    const documento = formatoDocumento(pedido.tipoDocumento, pedido.numeroDocumento);
     if (pedido.prellenado) {
       const nombre = nombreCompletoDe(pedido.prellenado);
       return { pedido, documento, prellenado: { nombre, iniciales: inicialesDe(pedido.prellenado), fuente: fuenteDeIdentidad(pedido.tipoDocumento) } };
     }
-    return { pedido, documento, prellenado: null, aviso: this.avisoDe(pedido) };
+    return { pedido, documento, prellenado: null, aviso: avisoSinPrellenado(pedido.tipoDocumento, pedido.aviso ?? AVISO_POR_DEFECTO) };
   });
   protected readonly anuncio = computed(() => {
     const resultado = this.resultado();
@@ -199,18 +195,21 @@ export class PersonaBuscadorComponent implements OnInit {
   }
 
   protected elegir(persona: PersonaListada): void {
-    this.seleccionada.emit({ id: persona.id, denominacion: persona.denominacion, tipoDocumento: persona.tipoDocumento, numeroDocumento: persona.numeroDocumento });
+    this.emitirSeleccion(persona, persona.denominacion);
   }
 
   protected usarEncontrada(): void {
     const encontrada = this.encontrada();
     if (!encontrada) return;
-    const { persona, denominacion } = encontrada;
-    this.seleccionada.emit({ id: persona.id, denominacion, tipoDocumento: persona.tipoDocumento, numeroDocumento: persona.numeroDocumento });
+    this.emitirSeleccion(encontrada.persona, encontrada.denominacion);
   }
 
   protected pedirAlta(pedido: PedidoAlta): void {
     this.registrar.emit(pedido);
+  }
+
+  private emitirSeleccion({ id, tipoDocumento, numeroDocumento }: PersonaListada | PersonaResumen, denominacion: string): void {
+    this.seleccionada.emit({ id, denominacion, tipoDocumento, numeroDocumento });
   }
 
   private validarDocumento(control: AbstractControl<string>): ValidationErrors | null {
@@ -261,27 +260,16 @@ export class PersonaBuscadorComponent implements OnInit {
     return ayuda.vacia;
   }
 
-  /** Por qué no hay prellenado: CE y pasaporte no se consultan; DNI y RUC traen el aviso de TR-IDN. */
-  private avisoDe(pedido: PedidoAlta): { texto: string; advertencia: boolean } {
-    if (TIPOS_CON_ENTER.includes(pedido.tipoDocumento)) return { texto: TEXTO_SIN_CONSULTA_EN_LINEA, advertencia: false };
-    const aviso = pedido.aviso ?? 'NO_ENCONTRADO_EN_IDENTIDAD';
-    return { texto: textoAvisoIdentidad(aviso, pedido.tipoDocumento), advertencia: aviso !== 'NO_ENCONTRADO_EN_IDENTIDAD' };
-  }
-
-  private documentoDe(tipo: TipoDocumento, numero: string): string {
-    return `${ETIQUETAS_TIPO_DOCUMENTO[tipo]} ${numero}`;
-  }
-
   private vistaSugerencia(persona: PersonaListada, indice: number) {
     return {
       persona,
       id: `${this.idLista}-${indice}`,
       activa: indice === this.activa(),
       iniciales: inicialesDeTexto(persona.denominacion),
-      documento: this.documentoDe(persona.tipoDocumento, persona.numeroDocumento),
+      documento: formatoDocumento(persona.tipoDocumento, persona.numeroDocumento),
       celular: persona.celularPrincipal ? formatoCelular(persona.celularPrincipal) : null,
       coincidencia: persona.coincidencia ? { texto: ETIQUETAS_COINCIDENCIA[persona.coincidencia], tono: TONOS_COINCIDENCIA[persona.coincidencia] } : null,
-      roles: persona.roles.map(({ productoCodigo, rol }) => `${productoCodigo} · ${ETIQUETAS_ROL[rol]}`),
+      roles: persona.roles.map(({ productoCodigo, rol }) => formatoRol(productoCodigo, rol)),
     };
   }
 }

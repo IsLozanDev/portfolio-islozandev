@@ -25,7 +25,6 @@ export interface FilaContacto {
   borrable: boolean;
 }
 
-
 /** Sección «Contactos» (TR-RF-041): un principal por tipo; marcar, editar y borrar con `plat.persona.editar`. */
 @Component({
   selector: 'vit-persona-contactos',

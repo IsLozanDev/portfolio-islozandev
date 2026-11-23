@@ -7,20 +7,14 @@ import { MatInputModule } from '@angular/material/input';
 import { AccionesFormularioComponent, ChipEstadoComponent, MensajeValidacionPipe, PanelLateralComponent } from '@vitrina/shared/ui';
 import type { PedidoAlta } from '../../models/buscador';
 import { aErrorPersonas } from '../../models/error-personas';
-import { ETIQUETAS_TIPO_DOCUMENTO, ETIQUETAS_TIPO_PERSONA } from '../../models/etiquetas-personas';
+import { ETIQUETAS_TIPO_PERSONA } from '../../models/etiquetas-personas';
 import { MENSAJES_ALTA } from '../../models/mensajes-buscador';
-import {
-  fuenteDeIdentidad,
-  MENSAJES_CELULAR,
-  MENSAJES_CORREO,
-  mensajeDeError,
-  TEXTO_SIN_CONSULTA_EN_LINEA,
-  textoAvisoIdentidad,
-} from '../../models/mensajes-personas';
+import { avisoSinPrellenado, fuenteDeIdentidad, MENSAJES_CELULAR, MENSAJES_CORREO, mensajeDeError } from '../../models/mensajes-personas';
 import type { PersonaDetalle, TipoPersona } from '../../models/persona';
 import type { RegistroPersona } from '../../models/solicitudes-persona';
 import { PersonasCliente } from '../../services/personas.cliente';
 import { esDocumentoDeJuridica } from '../../utils/denominacion';
+import { formatoDocumento } from '../../utils/formato-persona';
 import { celularValido, correoValido } from '../../utils/validadores-formulario';
 
 /** Los mismos límites del dominio (spec 31). */
@@ -28,7 +22,6 @@ const LONGITUD_NOMBRES = 100;
 const LONGITUD_APELLIDO = 60;
 const LONGITUD_RAZON_SOCIAL = 200;
 const CODIGO_DUPLICADA = 'PERSONA_DUPLICADA';
-const TIPOS_SIN_CONSULTA = ['CE', 'PASAPORTE'];
 
 /**
  * Paso «Registrar persona» del panel lateral (TR-RF-039): documento bloqueado, tipo de persona deducido
@@ -79,14 +72,11 @@ export class PersonaAltaComponent implements OnInit {
   protected readonly juridica = computed(() => esDocumentoDeJuridica(this.pedido().tipoDocumento, this.pedido().numeroDocumento));
   protected readonly tipoPersona = computed<TipoPersona>(() => (this.juridica() ? 'JURIDICA' : 'NATURAL'));
   protected readonly textoTipoPersona = computed(() => ETIQUETAS_TIPO_PERSONA[this.tipoPersona()]);
-  protected readonly documento = computed(() => `${ETIQUETAS_TIPO_DOCUMENTO[this.pedido().tipoDocumento]} ${this.pedido().numeroDocumento}`);
+  protected readonly documento = computed(() => formatoDocumento(this.pedido().tipoDocumento, this.pedido().numeroDocumento));
   protected readonly fuente = computed(() => (this.pedido().prellenado ? fuenteDeIdentidad(this.pedido().tipoDocumento) : null));
   protected readonly aviso = computed(() => {
     const { prellenado, aviso, tipoDocumento } = this.pedido();
-    if (prellenado) return null;
-    if (TIPOS_SIN_CONSULTA.includes(tipoDocumento)) return { texto: TEXTO_SIN_CONSULTA_EN_LINEA, advertencia: false };
-    if (!aviso) return null;
-    return { texto: textoAvisoIdentidad(aviso, tipoDocumento), advertencia: aviso !== 'NO_ENCONTRADO_EN_IDENTIDAD' };
+    return prellenado ? null : avisoSinPrellenado(tipoDocumento, aviso);
   });
 
   ngOnInit(): void {

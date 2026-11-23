@@ -5,13 +5,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { AccionesFormularioComponent, MensajeValidacionPipe, PanelLateralComponent } from '@vitrina/shared/ui';
-import { ETIQUETAS_TIPO_DOCUMENTO, ETIQUETAS_TIPO_PERSONA } from '../../models/etiquetas-personas';
+import { ETIQUETAS_TIPO_PERSONA } from '../../models/etiquetas-personas';
 import type { ResultadoPanelFicha } from '../../models/ficha';
 import { MENSAJES_FICHA } from '../../models/mensajes-ficha';
 import type { PersonaDetalle } from '../../models/persona';
 import type { CambiosDatosBasicos } from '../../models/solicitudes-persona';
 import { PersonasCliente } from '../../services/personas.cliente';
 import { esPersonaCambiada, mensajeDe } from '../../utils/cambios-ficha';
+import { formatoDocumento } from '../../utils/formato-persona';
 
 /** Los mismos límites del dominio (spec 31). */
 const LONGITUD_NOMBRES = 100;
@@ -35,7 +36,7 @@ export class PanelDatosBasicosComponent {
 
   protected readonly mensajes = MENSAJES_FICHA.datos;
   protected readonly juridica = this.persona.tipoPersona === 'JURIDICA';
-  protected readonly documento = `${ETIQUETAS_TIPO_DOCUMENTO[this.persona.tipoDocumento]} ${this.persona.numeroDocumento}`;
+  protected readonly documento = formatoDocumento(this.persona.tipoDocumento, this.persona.numeroDocumento);
   protected readonly tipoPersona = ETIQUETAS_TIPO_PERSONA[this.persona.tipoPersona];
   protected readonly formulario = inject(NonNullableFormBuilder).group({
     nombres: [this.persona.nombres ?? '', [Validators.required, Validators.maxLength(LONGITUD_NOMBRES)]],

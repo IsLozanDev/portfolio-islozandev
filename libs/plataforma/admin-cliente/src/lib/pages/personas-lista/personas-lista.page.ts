@@ -8,9 +8,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ETIQUETAS_COINCIDENCIA,
   ETIQUETAS_ROL,
-  ETIQUETAS_TIPO_DOCUMENTO,
   ETIQUETAS_TIPO_PERSONA,
   formatoCelular,
+  formatoDocumento,
+  formatoRol,
   inicialesDeTexto,
   mensajeDeError,
   ErrorPersonas,
@@ -51,6 +52,7 @@ export interface FilaPersona {
 }
 
 const MENSAJES = MENSAJES_PERSONAS_ADMIN;
+const PRIMERA_PAGINA = 1;
 
 const COLUMNAS: ColumnaTabla<FilaPersona>[] = [
   { clave: 'persona', titulo: MENSAJES.columnas.persona, movil: 'titulo' },
@@ -112,19 +114,19 @@ export class PersonasListaPage {
 
   protected buscar(q: string): void {
     if (q === this.filtro().q) return;
-    this.navegar({ ...this.filtro(), q, pagina: 1 });
+    this.filtrar({ q });
   }
 
   protected elegirTipo(tipoPersona: TipoPersona | null): void {
-    this.navegar({ ...this.filtro(), tipoPersona, pagina: 1 });
+    this.filtrar({ tipoPersona });
   }
 
   protected elegirProducto(producto: ProductoCodigo | null): void {
-    this.navegar({ ...this.filtro(), producto, pagina: 1 });
+    this.filtrar({ producto });
   }
 
   protected elegirRol(rol: RolPersona | null): void {
-    this.navegar({ ...this.filtro(), rol, pagina: 1 });
+    this.filtrar({ rol });
   }
 
   protected paginar({ indice, tamano }: CambioPagina): void {
@@ -139,6 +141,11 @@ export class PersonasListaPage {
     if (!resultado) return;
     if (resultado.registrada) this.avisos.toast('exito', MENSAJES.registrada);
     void this.router.navigate([resultado.personaId], { relativeTo: this.ruta });
+  }
+
+  /** Un filtro nuevo vuelve a la primera página. */
+  private filtrar(cambio: Partial<FiltroPersonasUrl>): void {
+    this.navegar({ ...this.filtro(), ...cambio, pagina: PRIMERA_PAGINA });
   }
 
   private navegar(filtro: FiltroPersonasUrl): void {
@@ -166,12 +173,12 @@ export class PersonasListaPage {
 }
 
 function filaDe(persona: PersonaListada): FilaPersona {
-  const listaRoles = persona.roles.map(({ productoCodigo, rol }) => `${productoCodigo} · ${ETIQUETAS_ROL[rol]}`);
+  const listaRoles = persona.roles.map(({ productoCodigo, rol }) => formatoRol(productoCodigo, rol));
   return {
     id: persona.id,
     persona: persona.denominacion,
     iniciales: inicialesDeTexto(persona.denominacion),
-    documento: `${ETIQUETAS_TIPO_DOCUMENTO[persona.tipoDocumento]} ${persona.numeroDocumento}`,
+    documento: formatoDocumento(persona.tipoDocumento, persona.numeroDocumento),
     celular: persona.celularPrincipal ? formatoCelular(persona.celularPrincipal) : MENSAJES.sinCelular,
     roles: listaRoles.join(', '),
     listaRoles,

@@ -27,7 +27,7 @@ const MENSAJES_MOTIVO: Record<MotivoInvalidez, (tipo: TipoDocumento) => string> 
   CARACTERES: (tipo) => (tipo === 'DNI' || tipo === 'RUC' ? `El ${tipo} solo lleva dígitos` : 'Solo letras y dígitos, sin espacios'),
 };
 
-const LONGITUDES: Partial<Record<TipoDocumento, number>> = { DNI: LONGITUD_DNI, RUC: LONGITUD_RUC };
+const LONGITUDES: Record<'DNI' | 'RUC', number> = { DNI: LONGITUD_DNI, RUC: LONGITUD_RUC };
 
 function documento(tipo: TipoDocumento, numero: string): EntradaClasificada {
   const validez = validarDocumento(tipo, numero);
@@ -37,7 +37,7 @@ function documento(tipo: TipoDocumento, numero: string): EntradaClasificada {
 
 /** Con DNI o RUC elegido: mientras faltan dígitos, la entrada es corta; con los que corresponden, se valida. */
 function documentoNumerico(tipo: 'DNI' | 'RUC', numero: string): EntradaClasificada {
-  const longitud = LONGITUDES[tipo] as number;
+  const longitud = LONGITUDES[tipo];
   if (SOLO_DIGITOS.test(numero) && numero.length < longitud) return { clase: 'CORTA', mensaje: `El ${tipo} tiene ${longitud} dígitos` };
   return documento(tipo, numero);
 }
@@ -57,15 +57,15 @@ export function clasificarEntrada(texto: string, tipoElegido: TipoElegido = 'AUT
   if (SOLO_DIGITOS.test(sinSeparadores)) {
     if (sinSeparadores.length === LONGITUD_DNI) return documento('DNI', sinSeparadores);
     if (sinSeparadores.length === LONGITUD_RUC) return documento('RUC', sinSeparadores);
-    if (sinSeparadores.length < LONGITUD_MINIMA_NUMERO) return { clase: 'CORTA', mensaje: 'Escribe al menos 4 dígitos' };
+    if (sinSeparadores.length < LONGITUD_MINIMA_NUMERO) return { clase: 'CORTA', mensaje: `Escribe al menos ${LONGITUD_MINIMA_NUMERO} dígitos` };
     return { clase: 'NUMERO', valor: sinSeparadores };
   }
 
   if (recortado.includes('@')) {
-    if (recortado.length < LONGITUD_MINIMA_TEXTO) return { clase: 'CORTA', mensaje: 'Escribe al menos 3 caracteres' };
+    if (recortado.length < LONGITUD_MINIMA_TEXTO) return { clase: 'CORTA', mensaje: `Escribe al menos ${LONGITUD_MINIMA_TEXTO} caracteres` };
     return { clase: 'CORREO', valor: recortado.toLowerCase() };
   }
 
-  if (normalizarTexto(recortado).replace(/\s/g, '').length < LONGITUD_MINIMA_TEXTO) return { clase: 'CORTA', mensaje: 'Escribe al menos 3 letras' };
+  if (normalizarTexto(recortado).replace(/\s/g, '').length < LONGITUD_MINIMA_TEXTO) return { clase: 'CORTA', mensaje: `Escribe al menos ${LONGITUD_MINIMA_TEXTO} letras` };
   return { clase: 'TEXTO', valor: recortado };
 }

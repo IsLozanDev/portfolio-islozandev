@@ -41,6 +41,21 @@ export function textoAvisoIdentidad(aviso: AvisoIdentidad, tipo: TipoDocumento):
 
 export const TEXTO_SIN_CONSULTA_EN_LINEA = 'Los carnés de extranjería y los pasaportes no se consultan en línea: completa los datos a mano.';
 
+/** CE y pasaporte: TR-IDN no los consulta. */
+export const TIPOS_SIN_CONSULTA_EN_LINEA: readonly TipoDocumento[] = ['CE', 'PASAPORTE'];
+
+export interface AvisoSinPrellenado {
+  texto: string;
+  advertencia: boolean;
+}
+
+/** Por qué no hay prellenado: CE y pasaporte no se consultan; DNI y RUC traen el aviso de TR-IDN. Sin aviso, nada. */
+export function avisoSinPrellenado(tipo: TipoDocumento, aviso: AvisoIdentidad | null): AvisoSinPrellenado | null {
+  if (TIPOS_SIN_CONSULTA_EN_LINEA.includes(tipo)) return { texto: TEXTO_SIN_CONSULTA_EN_LINEA, advertencia: false };
+  if (!aviso) return null;
+  return { texto: textoAvisoIdentidad(aviso, tipo), advertencia: aviso !== 'NO_ENCONTRADO_EN_IDENTIDAD' };
+}
+
 export const MENSAJES_CELULAR = MENSAJES_CONTACTO.CELULAR;
 
 /** En el alta el correo es opcional: la ayuda lo dice en vez del formato. */

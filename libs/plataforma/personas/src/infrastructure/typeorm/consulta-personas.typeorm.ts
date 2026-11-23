@@ -25,6 +25,11 @@ const PUNTAJE_FONETICO = 0.9;
 const TIPOS_TELEFONO = ['CELULAR', 'FIJO', 'WHATSAPP'];
 const TIPOS_CONTACTO_LISTADO = ['CELULAR', 'CORREO'];
 
+interface FilaPuntaje {
+  persona_id: string;
+  puntaje: string;
+}
+
 /** Ordena primero por relevancia y, a igual relevancia, por apellidos o razón social. */
 const ORDEN_DENOMINACION = ['coalesce(persona.apellido_paterno, persona.razon_social)', 'persona.apellido_materno', 'persona.nombres', 'persona.id'];
 
@@ -83,23 +88,18 @@ export class ConsultaPersonasTypeOrm implements ConsultaPersonas {
     const total = await consulta.clone().getCount();
     if (total === 0) return { items: [], total };
 
+    consulta.addSelect(this.puntaje(criterios.consulta), 'puntaje').orderBy('puntaje', 'DESC');
+    for (const columna of ORDEN_DENOMINACION) consulta.addOrderBy(columna, 'ASC');
     const { entities: filas, raw } = await consulta
-      .addSelect(this.puntaje(criterios.consulta), 'puntaje')
-      .orderBy('puntaje', 'DESC')
-      .addOrderBy(ORDEN_DENOMINACION[0], 'ASC')
-      .addOrderBy(ORDEN_DENOMINACION[1], 'ASC')
-      .addOrderBy(ORDEN_DENOMINACION[2], 'ASC')
-      .addOrderBy(ORDEN_DENOMINACION[3], 'ASC')
       .offset((criterios.pagina - 1) * criterios.tamano)
       .limit(criterios.tamano)
       .getRawAndEntities();
 
-    const puntajes = new Map<string, number>(raw.map((fila: { persona_id: string; puntaje: string }) => [fila.persona_id, Number(fila.puntaje)]));
+    const puntajes = new Map<string, number>(raw.map((fila: FilaPuntaje) => [fila.persona_id, Number(fila.puntaje)]));
     const ids = filas.map((fila) => fila.id);
     const [contactos, roles] = await Promise.all([this.contactosPrincipales(ids), this.rolesVigentes(ids)]);
     const items = filas.map((fila) =>
-      listada(fila, contactos.filter((contacto) => contacto.personaId === fila.id), roles.filter((rol) => rol.personaId === fila.id),
-        coincidenciaDe(criterios.consulta, puntajes.get(fila.id) ?? 0)),
+      listada(fila, deLaPersona(contactos, fila.id), deLaPersona(roles, fila.id), coincidenciaDe(criterios.consulta, puntajes.get(fila.id) ?? 0)),
     );
     return { items, total };
   }
@@ -188,6 +188,10 @@ function coincidenciaDe(clasificada: ConsultaClasificada | null, puntaje: number
   if (clasificada.clase === 'TEXTO') return 'NOMBRE';
   if (clasificada.clase === 'NUMERO' && puntaje >= PUNTAJE_DOCUMENTO_PREFIJO) return 'DOCUMENTO';
   return 'CONTACTO';
+}
+
+function deLaPersona<Fila extends { personaId: string }>(filas: Fila[], personaId: string): Fila[] {
+  return filas.filter((fila) => fila.personaId === personaId);
 }
 
 function valorPrincipal(contactos: FilaContacto[], tipo: string): string | null {

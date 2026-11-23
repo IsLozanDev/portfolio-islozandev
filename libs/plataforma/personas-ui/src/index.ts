@@ -78,6 +78,7 @@ export { clasificarEntrada, type EntradaClasificada, type TipoElegido } from './
 export { denominacionDe, esDocumentoDeJuridica, inicialesDe, inicialesDeTexto, nombreCompletoDe } from './lib/utils/denominacion';
 export { filtrarUbigeos } from './lib/utils/filtrar-ubigeos';
 export { formatoCelular, formatoContacto } from './lib/utils/formato-contacto';
+export { formatoDocumento, formatoRol } from './lib/utils/formato-persona';
 export { formatoFecha, formatoFechaHora } from './lib/utils/fechas';
 export { formatoUbigeo } from './lib/utils/formato-ubigeo';
 export { validarCelular, validarContacto, validarCorreo } from './lib/utils/validar-contacto';
