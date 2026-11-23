@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.24.0",
+  "version": "1.25.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -83,7 +83,9 @@
     { "codigo": "plat.persona.texto_finalidad", "descripcion": "Publicar textos de consentimiento por finalidad", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.archivo.subir", "descripcion": "Subir archivos", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.archivo.descargar", "descripcion": "Ver y descargar archivos", "alcance_minimo": "TENANT", "sensible": false },
-    { "codigo": "plat.archivo.versionar", "descripcion": "Subir versiones de un archivo y elegir la vigente", "alcance_minimo": "TENANT", "sensible": false }
+    { "codigo": "plat.archivo.versionar", "descripcion": "Subir versiones de un archivo y elegir la vigente", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.fe.configurar", "descripcion": "Configurar el emisor electrónico", "alcance_minimo": "TENANT", "sensible": true },
+    { "codigo": "plat.fe.consultar", "descripcion": "Ver el emisor electrónico", "alcance_minimo": "TENANT", "sensible": false }
   ],
   "roles_predefinidos": [
     {
@@ -129,8 +131,14 @@
         "plat.unidad.gestionar", "plat.seguridad.bitacora", "plat.soporte.autorizar", "plat.seguridad.bitacora_exportar",
         "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
         "plat.catalogo.item_propio", "plat.catalogo.importar", "plat.feriado.gestionar", "plat.auditoria.consultar",
-        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar", "plat.identidad.cuota"
+        "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar", "plat.identidad.cuota",
+        "plat.fe.configurar", "plat.fe.consultar"
       ]
+    },
+    {
+      "codigo": "PLAT_ENCARGADO_FACTURACION",
+      "nombre": "Encargado de facturación electrónica",
+      "permisos": ["plat.fe.configurar", "plat.fe.consultar", "plat.sesion.contexto"]
     }
   ],
   "parametros": [
@@ -154,7 +162,15 @@
         "required": ["BASICO", "PRO", "EMPRESA"]
       }
     },
-    { "codigo": "plat.identidad.cuota_umbral_aviso", "descripcion": "Porcentaje de la cuota DNI/RUC que dispara el aviso", "tipo": "NUMERO", "valor_defecto": 80, "alcance_maximo": "TENANT" }
+    { "codigo": "plat.identidad.cuota_umbral_aviso", "descripcion": "Porcentaje de la cuota DNI/RUC que dispara el aviso", "tipo": "NUMERO", "valor_defecto": 80, "alcance_maximo": "TENANT" },
+    {
+      "codigo": "plat.fe.dias_aviso_certificado",
+      "descripcion": "Días antes del vencimiento del certificado digital en que se avisa",
+      "tipo": "NUMERO",
+      "valor_defecto": 30,
+      "alcance_maximo": "TENANT",
+      "esquema": { "type": "integer", "minimum": 1, "maximum": 90 }
+    }
   ],
   "indicadores": [],
   "reportes": []

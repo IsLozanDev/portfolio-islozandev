@@ -2,6 +2,7 @@ import { Logger, Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { CatalogosModule } from '@vitrina/plataforma/catalogos';
+import { ComprobantesModule } from '@vitrina/plataforma/comprobantes';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
@@ -34,6 +35,7 @@ import { PersonasModule, VerificadorReferenciasPer } from '@vitrina/plataforma/p
 import { ArchivosModule } from '@vitrina/plataforma/archivos';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { SecretosModule, type ClavesMaestras } from '@vitrina/plataforma/secretos';
+import { NotificacionesModule, type EntornoNotificaciones } from '@vitrina/plataforma/notificaciones';
 import { ParametrosCalendarioCfg } from './catalogos/parametros-calendario.js';
 import { VerificadorOperadorOrg } from './catalogos/verificador-operador.js';
 import { FallidosController } from './eventos/fallidos.controller.js';
@@ -69,12 +71,14 @@ export type AppOpciones = KernelInfraOptions &
     archivos: { bucket: string };
     /** Spec 41: claves maestras de la bóveda. Sin ellas (dev, pruebas) la bóveda lanza BovedaNoConfiguradaError al usarse. */
     clavesMaestras?: ClavesMaestras;
+    /** Spec 42: Resend, remitente y sal del destino. Sin ellos (dev, pruebas) el webhook responde 503 y los envíos quedan ENCOLADO. */
+    notificaciones?: EntornoNotificaciones;
   };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, clavesMaestras, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, clavesMaestras, notificaciones = {}, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     const registroCuota = new Logger(CONTEXTO_LOG_CUOTA);
@@ -136,19 +140,24 @@ export class AppModule {
       bucket: archivos.bucket,
       autorizadores: { useFactory: () => [] },
     });
+    // Spec 42: la misma referencia en AppModule y NotificacionesModule (persona y consentimiento del destinatario).
+    const personasModulo = PersonasModule.register({ imports: [catalogosModulo, identidadModulo, archivosModulo] });
+    // Spec 49: la misma referencia en AppModule y ComprobantesModule (ConsultarEmpresa, la bóveda).
+    const orgModulo = OrgModule.register({
+      imports: [identidadModulo],
+      padronRuc: {
+        provide: PADRON_RUC,
+        useFactory: (identidadPort: IdentidadPort) => new PadronRucIdentidad(identidadPort),
+        inject: [IDENTIDAD],
+      },
+    });
+    const secretosModulo = SecretosModule.register({ claves: clavesMaestras });
     return {
       module: AppModule,
       imports: [
         KernelInfraModule.register({ dataSource, validator }),
         ...(observabilidad ? [ObservabilidadModule.register(observabilidad)] : []),
-        OrgModule.register({
-          imports: [identidadModulo],
-          padronRuc: {
-            provide: PADRON_RUC,
-            useFactory: (identidadPort: IdentidadPort) => new PadronRucIdentidad(identidadPort),
-            inject: [IDENTIDAD],
-          },
-        }),
+        orgModulo,
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         parametros,
         CorrelativosModule.register(),
@@ -156,10 +165,13 @@ export class AppModule {
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
         identidadModulo,
-        PersonasModule.register({ imports: [catalogosModulo, identidadModulo, archivosModulo] }),
+        personasModulo,
         archivosModulo,
-        // Spec 41: ningún consumidor la usa todavía; FE, PAG y NOT la integran en sus specs.
-        SecretosModule.register({ claves: clavesMaestras }),
+        // Spec 41: la bóveda de secretos; FE la usa desde el spec 49, PAG y NOT la integran en sus specs.
+        secretosModulo,
+        ComprobantesModule.register({ imports: [orgModulo, catalogosModulo, secretosModulo] }),
+        // Spec 42: NotificacionPort en proceso y el webhook de Resend.
+        NotificacionesModule.register({ entorno: notificaciones, dataSource, imports: [personasModulo] }),
       ],
       // Fallidos y org viven aquí y no en sus libs: cruzan componentes que PL-10 no deja importar
       // (org no puede usar @Permiso de seguridad).

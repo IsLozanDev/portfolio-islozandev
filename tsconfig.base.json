@@ -63,6 +63,12 @@
       "@vitrina/plataforma/secretos": [
         "./libs/plataforma/secretos/src/index.ts"
       ],
+      "@vitrina/plataforma/notificaciones": [
+        "./libs/plataforma/notificaciones/src/index.ts"
+      ],
+      "@vitrina/plataforma/comprobantes": [
+        "./libs/plataforma/comprobantes/src/index.ts"
+      ],
       "@vitrina-fixtures/cfg": [
         "./tools/boundaries-test/fixtures/cfg/src/index.ts"
       ],

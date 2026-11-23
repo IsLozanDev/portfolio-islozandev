@@ -1,0 +1,18 @@
+{
+  "name": "notificaciones",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plataforma/notificaciones/src",
+  "projectType": "library",
+  "tags": ["scope:plataforma", "type:backend", "comp:not"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsc -b libs/plataforma/notificaciones/tsconfig.json", "cwd": "{workspaceRoot}" },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "node --experimental-vm-modules node_modules/jest/bin/jest.js -c libs/plataforma/notificaciones/jest.config.mjs", "cwd": "{workspaceRoot}" }
+    }
+  }
+}
