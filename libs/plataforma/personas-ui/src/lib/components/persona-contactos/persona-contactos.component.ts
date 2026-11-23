@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SesionService } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, AvisosService, PanelLateralService, TablaComponent, type ColumnaTabla } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, AvisosService, CeldaTablaDirective, PanelLateralService, TablaComponent, type ColumnaTabla } from '@vitrina/shared/ui';
 import { firstValueFrom } from 'rxjs';
 import { ETIQUETAS_TIPO_CONTACTO } from '../../models/etiquetas-personas';
 import { TAMANO_LISTA_FICHA, type CambioFicha, type ResultadoPanelFicha } from '../../models/ficha';
@@ -25,13 +25,13 @@ export interface FilaContacto {
   borrable: boolean;
 }
 
-const ICONO_PRINCIPAL = 'star';
 
 /** Sección «Contactos» (TR-RF-041): un principal por tipo; marcar, editar y borrar con `plat.persona.editar`. */
 @Component({
   selector: 'vit-persona-contactos',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, AccionesFilaDirective, TablaComponent],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule, AccionesFilaDirective, CeldaTablaDirective, TablaComponent],
   templateUrl: './persona-contactos.component.html',
+  styleUrl: './persona-contactos.component.css',
 })
 export class PersonaContactosComponent {
   private readonly contactos = inject(ContactosCliente);
@@ -47,7 +47,7 @@ export class PersonaContactosComponent {
   protected readonly columnas: ColumnaTabla<FilaContacto>[] = [
     { clave: 'tipo', titulo: this.mensajes.tipo, movil: 'detalle' },
     { clave: 'valor', titulo: this.mensajes.valor, movil: 'titulo' },
-    { clave: 'principal', titulo: this.mensajes.principal, icono: (fila) => (fila.contacto.principal ? ICONO_PRINCIPAL : null), movil: 'estado' },
+    { clave: 'principal', titulo: this.mensajes.principal, movil: 'estado' },
   ];
   protected readonly puedeEditar = computed(() => this.sesion.tiene(PERMISOS_PERSONAS.editar));
   protected readonly filas = computed(() => this.persona().contactos.map((contacto) => this.filaDe(contacto)));

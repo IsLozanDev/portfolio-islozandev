@@ -77,6 +77,9 @@ describe('PersonasListaPage', () => {
     expect(texto).toContain('CLI · Paciente');
     expect(texto).not.toContain('Coincide por');
     expect(elemento().querySelector('[data-accion="abrir-ficha"]')?.getAttribute('href')).toBe('/admin/personas/per-juana');
+    // En celular vit-tabla pinta el nombre como texto: la fila lleva además su enlace a la ficha.
+    const enlaceFila = elemento().querySelector('[data-accion="abrir-ficha-fila"]');
+    expect([enlaceFila?.getAttribute('href'), enlaceFila?.getAttribute('aria-label')]).toEqual(['/admin/personas/per-juana', 'Abrir la ficha de Quispe Mamani, Juana']);
   });
 
   it('los filtros de la URL llegan a la API y la búsqueda muestra la columna de coincidencia', async () => {

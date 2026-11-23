@@ -16,6 +16,13 @@
   }
 
   <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="filas().length" [tamanosPagina]="tamanosPagina" [textoVacio]="mensajes.sinContactos">
+    <ng-template vitCeldaTabla="principal" let-fila>
+      @if (fila.contacto.principal) {
+        <mat-icon class="vit-estrella-principal" aria-hidden="true">star</mat-icon>
+        <span class="sr-only">{{ mensajes.principal }}</span>
+      }
+    </ng-template>
+
     @if (puedeEditar()) {
       <ng-template vitAccionesFila let-fila>
         <span class="flex justify-end">

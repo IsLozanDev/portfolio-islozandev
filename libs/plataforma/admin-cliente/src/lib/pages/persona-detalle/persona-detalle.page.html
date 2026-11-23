@@ -16,7 +16,7 @@
   } @else if (persona(); as ficha) {
     @if (cabecera(); as datos) {
       <header class="flex flex-wrap items-center gap-4">
-        <span class="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-menta-suave text-xl font-medium" aria-hidden="true">{{ datos.iniciales }}</span>
+        <span class="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xl font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ datos.iniciales }}</span>
         <div class="flex min-w-0 flex-[1_1_260px] flex-col gap-1.5">
           <h1 class="m-0 text-2xl font-medium" data-prueba="denominacion">{{ datos.denominacion }}</h1>
           <p class="m-0 text-sm text-sobre-superficie-variante"><span class="font-mono">{{ datos.documento }}</span> · {{ datos.tipoPersona }}</p>

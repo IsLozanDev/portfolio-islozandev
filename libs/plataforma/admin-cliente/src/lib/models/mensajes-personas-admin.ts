@@ -4,6 +4,7 @@ export const MENSAJES_PERSONAS_ADMIN = {
   subtitulo: 'Clientes, pacientes, socios y proveedores de tu organización. Una sola ficha por documento, compartida entre tus productos.',
   nueva: 'Nueva persona',
   abrirFicha: 'Abrir ficha',
+  abrirFichaDe: (persona: string) => `Abrir la ficha de ${persona}`,
   registrada: 'Persona registrada',
   buscar: 'Buscar persona',
   tipo: 'Tipo',

@@ -76,20 +76,22 @@
               [attr.aria-selected]="sugerencia.activa"
               (click)="elegir(sugerencia.persona)"
             >
-              <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-menta-suave text-xs font-medium text-sobre-superficie" aria-hidden="true">{{ sugerencia.iniciales }}</span>
-              <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ sugerencia.iniciales }}</span>
+              <span class="flex min-w-0 flex-1 flex-col gap-1">
                 <b class="truncate text-sm font-medium">{{ sugerencia.persona.denominacion }}</b>
                 <span class="truncate text-xs text-sobre-superficie-variante">
                   <span class="font-mono">{{ sugerencia.documento }}</span>
                   @if (sugerencia.celular) { · {{ sugerencia.celular }} }
                 </span>
-              </span>
-              <span class="flex shrink-0 flex-wrap justify-end gap-1">
-                @if (sugerencia.coincidencia; as coincidencia) {
-                  <vit-chip-estado [texto]="coincidencia.texto" [tono]="coincidencia.tono" />
-                }
-                @for (rol of sugerencia.roles; track rol) {
-                  <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+                @if (sugerencia.coincidencia || sugerencia.roles.length > 0) {
+                  <span class="flex flex-wrap gap-1">
+                    @if (sugerencia.coincidencia; as coincidencia) {
+                      <vit-chip-estado [texto]="coincidencia.texto" [tono]="coincidencia.tono" />
+                    }
+                    @for (rol of sugerencia.roles; track rol) {
+                      <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+                    }
+                  </span>
                 }
               </span>
             </button>
@@ -115,7 +117,7 @@
           <mat-icon class="vit-icono-mensaje" aria-hidden="true">how_to_reg</mat-icon>{{ mensajes.yaRegistrada }}
         </p>
         <div class="flex items-center gap-3">
-          <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-menta-suave text-xs font-medium text-sobre-superficie" aria-hidden="true">{{ vista.iniciales }}</span>
+          <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ vista.iniciales }}</span>
           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
             <b class="truncate text-sm font-medium">{{ vista.denominacion }}</b>
             <span class="font-mono text-xs text-sobre-superficie-variante">{{ vista.documento }}</span>
@@ -136,7 +138,7 @@
             <mat-icon class="vit-icono-mensaje" aria-hidden="true">verified</mat-icon>{{ mensajes.datosDe(prellenado.fuente) }}
           </p>
           <div class="flex items-center gap-3">
-            <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-menta-suave text-xs font-medium text-sobre-superficie" aria-hidden="true">{{ prellenado.iniciales }}</span>
+            <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ prellenado.iniciales }}</span>
             <span class="flex min-w-0 flex-1 flex-col gap-0.5">
               <b class="truncate text-sm font-medium" data-prueba="nombre-prellenado">{{ prellenado.nombre }}</b>
               <span class="text-xs text-sobre-superficie-variante"><span class="font-mono">{{ vista.documento }}</span> · {{ mensajes.noRegistradaEnOrganizacion }}</span>

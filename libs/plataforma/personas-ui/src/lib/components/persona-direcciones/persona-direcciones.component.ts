@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SesionService } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, AvisosService, PanelLateralService, TablaComponent, type ColumnaTabla } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, AvisosService, CeldaTablaDirective, PanelLateralService, TablaComponent, type ColumnaTabla } from '@vitrina/shared/ui';
 import { firstValueFrom } from 'rxjs';
 import { TAMANO_LISTA_FICHA, type CambioFicha, type ResultadoPanelFicha } from '../../models/ficha';
 import { MENSAJES_FICHA } from '../../models/mensajes-ficha';
@@ -23,7 +23,6 @@ export interface FilaDireccion {
   principal: string;
 }
 
-const ICONO_PRINCIPAL = 'star';
 const SIN_REFERENCIA = '—';
 
 /**
@@ -32,8 +31,9 @@ const SIN_REFERENCIA = '—';
  */
 @Component({
   selector: 'vit-persona-direcciones',
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, AccionesFilaDirective, TablaComponent],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule, AccionesFilaDirective, CeldaTablaDirective, TablaComponent],
   templateUrl: './persona-direcciones.component.html',
+  styleUrl: './persona-direcciones.component.css',
 })
 export class PersonaDireccionesComponent {
   private readonly direcciones = inject(DireccionesCliente);
@@ -51,7 +51,7 @@ export class PersonaDireccionesComponent {
     { clave: 'texto', titulo: this.mensajes.direccion, movil: 'titulo' },
     { clave: 'referencia', titulo: this.mensajes.referencia },
     { clave: 'ubigeo', titulo: this.mensajes.ubigeo, movil: 'detalle' },
-    { clave: 'principal', titulo: this.mensajes.principal, icono: (fila) => (fila.direccion.principal ? ICONO_PRINCIPAL : null), movil: 'estado' },
+    { clave: 'principal', titulo: this.mensajes.principal, movil: 'estado' },
   ];
   protected readonly puedeEditar = computed(() => this.sesion.tiene(PERMISOS_PERSONAS.editar));
   protected readonly puedeLeerUbigeos = computed(() => this.sesion.tiene(PERMISOS_PERSONAS.leerCatalogos));

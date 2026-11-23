@@ -59,7 +59,7 @@
   >
     <ng-template vitCeldaTabla="persona" let-fila>
       <a class="inline-flex items-center gap-2.5 font-medium text-sobre-superficie no-underline hover:text-primario hover:underline" [routerLink]="fila.id" data-accion="abrir-ficha">
-        <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-menta-suave text-xs font-medium" aria-hidden="true">{{ fila.iniciales }}</span>
+        <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ fila.iniciales }}</span>
         {{ fila.persona }}
       </a>
     </ng-template>
@@ -72,6 +72,11 @@
           <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
         }
       </span>
+    </ng-template>
+    <ng-template vitAccionesFila let-fila>
+      <a mat-icon-button [routerLink]="fila.id" [attr.aria-label]="mensajes.abrirFichaDe(fila.persona)" data-accion="abrir-ficha-fila">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
     </ng-template>
   </vit-tabla>
 </section>

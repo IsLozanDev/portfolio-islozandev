@@ -31,7 +31,7 @@ import {
   type TipoPersona,
 } from '@vitrina/plataforma/personas-ui';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
-import { AvisosService, CeldaTablaDirective, ChipEstadoComponent, PanelLateralService, TablaComponent, type CambioPagina, type ColumnaTabla, type TonoEstado } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, AvisosService, CeldaTablaDirective, ChipEstadoComponent, PanelLateralService, TablaComponent, type CambioPagina, type ColumnaTabla, type TonoEstado } from '@vitrina/shared/ui';
 import { firstValueFrom } from 'rxjs';
 import type { Listado } from '../../models/listado';
 import { MENSAJES_PERSONAS_ADMIN } from '../../models/mensajes-personas-admin';
@@ -73,6 +73,7 @@ const COLUMNA_COINCIDENCIA: ColumnaTabla<FilaPersona> = { clave: 'coincidencia',
     MatSelectModule,
     RouterLink,
     SiPermisoDirective,
+    AccionesFilaDirective,
     CeldaTablaDirective,
     ChipEstadoComponent,
     TablaComponent,
