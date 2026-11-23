@@ -21,6 +21,8 @@ await build({
     'cli/ejecutar-auditoria': 'apps/worker/dist/tsc/cli/ejecutar-auditoria.js',
     'cli/ejecutar-cuotas': 'apps/worker/dist/tsc/cli/ejecutar-cuotas.js',
     'cli/ejecutar-reenvoltura': 'apps/worker/dist/tsc/cli/ejecutar-reenvoltura.js',
+    'cli/probar-notificacion': 'apps/worker/dist/tsc/cli/probar-notificacion.js',
+    'cli/ejecutar-avisos-fe': 'apps/worker/dist/tsc/cli/ejecutar-avisos-fe.js',
   },
   outdir: 'apps/worker/dist',
   bundle: true,

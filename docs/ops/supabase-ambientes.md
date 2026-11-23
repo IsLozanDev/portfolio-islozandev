@@ -237,6 +237,26 @@ Orden:
 - [ ] (dev, desde el 2027-01-01) Regenerar e importar `TIPO_COMPROBANTE`, `TIPO_NOTA_DEBITO` y `TIPO_OPERACION` con la RS 000048-2026.
 - [ ] (staging, prod) Migración e importación según el plan de pase.
 
+### 18. Notificaciones por correo con Resend (SPEC 42)
+
+TR-NOT envía el correo transaccional por la API de Resend (no por el SMTP de Auth de la sección 3) desde la cola `not-envios` del worker, y recibe los estados en `POST /v1/notificaciones/webhooks/resend`, firmado con Svix.
+
+- **API key propia de TR-NOT**, distinta de la del SMTP de Auth: en Resend, *API Keys → Create*, permiso *Sending access*. Va en `RESEND_API_KEY` de la api y del worker (regla 9), nunca en el repo.
+- **Remitente** en `NOT_REMITENTE` (`"Vitrina <no-responder@dominio>"`). Sin dominio verificado solo sirve `onboarding@resend.dev` y solo entrega a la dirección de la cuenta propietaria: el humo de dev va a esa dirección. **Dominio verificado en Resend es requisito de staging** (registros SPF, DKIM y DMARC en el DNS).
+- **Webhook**: en Resend, *Webhooks → Add endpoint* con la URL pública de la API (`https://<api>/v1/notificaciones/webhooks/resend`) y los eventos `email.sent`, `email.delivered`, `email.opened`, `email.bounced` y `email.complained`. El *signing secret* (`whsec_...`) va en `RESEND_WEBHOOK_SECRET` de la api. Una API local no recibe el webhook: se registra contra staging.
+- **Sal del destino** en `NOT_SAL_DESTINO` (al menos 32 caracteres, la misma en api y worker): los logs y `ntf.contacto_invalido` solo llevan el hash del correo. Cambiarla deja sin efecto los contactos inválidos ya marcados.
+- En `production` las cuatro son obligatorias: sin ellas api y worker no arrancan. En dev arrancan; el envío falla con `PROVEEDOR_NO_CONFIGURADO` (el mensaje queda `ENCOLADO`) y el webhook responde 503.
+- Límite de tasa: `LIMITE_ENVIOS` (2 por segundo) en el Worker de BullMQ; si la cuenta tiene otro, se cambia la constante. Un 429 se reintenta.
+
+Orden:
+1. `corepack pnpm db:up:remoto` (aplica `01o_not.sql`). Por el MCP: esquema `ntf` con sus cuatro tablas y la plantilla base `PRUEBA_CORREO`.
+2. Con `RESEND_API_KEY` y `NOT_REMITENTE` en `.env`, el worker local contra dev (`nx serve worker`) y Redis arriba: `corepack pnpm notificaciones:probar:remoto --tenant <uuid> --correo <dueño de la cuenta de Resend>`. Imprime el id del mensaje y `ENVIADO` antes de 30 s.
+
+- [ ] (dev) `01o_not.sql` aplicada; `PRUEBA_CORREO` visible desde cualquier tenant.
+- [ ] (dev) Humo: `notificaciones:probar:remoto` entrega el correo al dueño de la cuenta y el mensaje queda `ENVIADO` con `id_externo`.
+- [ ] (staging) Dominio verificado, remitente propio y webhook registrado; un `email.delivered` deja el mensaje `ENTREGADO`.
+- [ ] (staging, prod) Las cuatro variables en el panel de despliegue de api y worker.
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |

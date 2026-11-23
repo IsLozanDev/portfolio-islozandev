@@ -3,18 +3,22 @@ import type { DataSource } from 'typeorm';
 import { opcionesAntivirusDe, registrarEsquemasArc } from '@vitrina/plataforma/archivos';
 import { AuditoriaModule, registrarEsquemasAud } from '@vitrina/plataforma/auditoria';
 import { registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
+import { registrarEsquemasFe } from '@vitrina/plataforma/comprobantes';
 import { EventosModule } from '@vitrina/plataforma/eventos';
 import { registrarEsquemasIdn } from '@vitrina/plataforma/identidad';
+import { registrarEsquemasNot } from '@vitrina/plataforma/notificaciones';
 import { InMemoryEventSchemaValidator, KernelInfraModule } from '@vitrina/plataforma/kernel-infra';
 import { ObservabilidadModule, salDocumento } from '@vitrina/plataforma/observabilidad';
 import { registrarEsquemasOrg } from '@vitrina/plataforma/org';
 import { registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { clavesMaestrasDe, SecretosModule } from '@vitrina/plataforma/secretos';
 import { ArchivosWorkerModule } from './archivos/archivos.module.js';
+import { CertificadosFeModule } from './certificados-fe/certificados-fe.module.js';
 import { VerificacionModule } from './auditoria/verificacion.module.js';
 import type { Config } from './config/env.js';
 import { CuotasModule } from './cuotas/cuotas.module.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
+import { NotificacionesWorkerModule } from './notificaciones/notificaciones.module.js';
 import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
@@ -40,6 +44,8 @@ export class WorkerModule {
     registrarEsquemasAud(validator);
     registrarEsquemasIdn(validator);
     registrarEsquemasArc(validator);
+    registrarEsquemasNot(validator);
+    registrarEsquemasFe(validator);
     return {
       module: WorkerModule,
       imports: [
@@ -67,6 +73,8 @@ export class WorkerModule {
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
         ImportacionesModule.register({ redisUrl: config.REDIS_URL }),
         VerificacionModule.register({ dataSource, redisUrl: config.REDIS_URL, patron: config.AUD_VERIFICACION_CRON }),
+        // Spec 49: aviso diario de certificados digitales por vencer.
+        CertificadosFeModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         ArchivosWorkerModule.register({
           dataSource,
           redisUrl: config.REDIS_URL,
@@ -76,6 +84,8 @@ export class WorkerModule {
           antivirus: opcionesAntivirusDe(config),
           patronReencolado: config.ARC_REENCOLADO_CRON,
         }),
+        // Spec 42: consumidor de not.mensaje.solicitado y cola not-envios hacia Resend.
+        NotificacionesWorkerModule.register({ redisUrl: config.REDIS_URL, entorno: config }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };

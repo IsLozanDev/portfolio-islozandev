@@ -15,7 +15,7 @@ const ENV = {
 };
 
 describe('entorno de la bóveda en el worker (spec 41)', () => {
-  const produccion = { ...ENV, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32), ARC_ANTIVIRUS: 'clamav', CLAMAV_HOST: 'clamav.interno' };
+  const produccion = { ...ENV, APP_ENV: 'production', RESEND_API_KEY: 're_prueba', RESEND_WEBHOOK_SECRET: 'whsec_prueba', NOT_REMITENTE: 'Vitrina <a@vitrina.pe>', NOT_SAL_DESTINO: 'n'.repeat(32), OBS_SAL_DOCUMENTO: 's'.repeat(32), ARC_ANTIVIRUS: 'clamav', CLAMAV_HOST: 'clamav.interno' };
 
   it('en development arranca sin claves maestras', () => {
     expect(cargarConfig({ ...ENV, SEC_CLAVES_MAESTRAS: undefined, SEC_CLAVE_ACTIVA: undefined }).SEC_CLAVES_MAESTRAS).toBeUndefined();
