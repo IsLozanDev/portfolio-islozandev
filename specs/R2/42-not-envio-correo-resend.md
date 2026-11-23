@@ -1,6 +1,6 @@
 # SPEC 42 — Notificaciones: envío de correo transaccional por Resend con consentimiento, cola, reintentos y estados por webhook firmado
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 11, SPEC 21, SPEC 37, SPEC 41
 > **Date:** 2026-11-22
 > **Objective:** Crear `libs/plataforma/notificaciones` con `NotificacionPort.enviar`, que valida consentimiento y contactos inválidos, renderiza una plantilla versionada, registra el mensaje en la transacción del llamador y lo entrega por Resend desde una cola BullMQ del worker con reintentos, y actualiza su estado con el webhook firmado del proveedor.

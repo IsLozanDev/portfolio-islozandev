@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { permisoGuard } from '@vitrina/shared/auth';
+import { PERMISOS_PERSONAS } from '@vitrina/plataforma/personas-ui';
 import { PERMISOS_ADMIN } from './models/permisos-admin';
 import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
 
@@ -170,6 +171,16 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_CATALOGOS_ADMIN.feriadoGestionar)],
     data: { alcances: ALCANCES_FERIADOS_ADMIN },
     loadChildren: () => import('@vitrina/plataforma/feriados').then((modulo) => modulo.FERIADOS_ROUTES),
+  },
+  {
+    path: 'personas',
+    canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
+    loadComponent: () => import('./pages/personas-lista/personas-lista.page').then((modulo) => modulo.PersonasListaPage),
+  },
+  {
+    path: 'personas/:personaId',
+    canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
+    loadComponent: () => import('./pages/persona-detalle/persona-detalle.page').then((modulo) => modulo.PersonaDetallePage),
   },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.

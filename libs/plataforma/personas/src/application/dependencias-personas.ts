@@ -4,6 +4,7 @@ import type { CatalogoPort } from '@vitrina/plataforma/catalogos';
 import type { IdentidadPort } from '@vitrina/plataforma/identidad';
 import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { Persona } from '../domain/persona.js';
+import type { ConsultaPersonas } from './ports/consulta-personas.js';
 import type { RepositorioConsentimientos } from './ports/repositorio-consentimientos.js';
 import type { RepositorioPersonas } from './ports/repositorio-personas.js';
 import type { SuscripcionesDelTenant } from './ports/suscripciones-del-tenant.js';
@@ -15,6 +16,7 @@ export interface DependenciasPersonas {
   ids: IdGenerator;
   publicador: EventPublisher;
   personas: RepositorioPersonas;
+  consultaPersonas: ConsultaPersonas;
   suscripciones: SuscripcionesDelTenant;
   catalogo: Pick<CatalogoPort, 'validarItem'>;
   identidad: Pick<IdentidadPort, 'consultar'>;

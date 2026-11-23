@@ -1,0 +1,14 @@
+<mat-form-field appearance="outline" class="w-full">
+  <mat-label>{{ mensajes.distrito }}</mat-label>
+  <input matInput autocomplete="off" data-campo="ubigeo" [formControl]="control()" [matAutocomplete]="sugerencias" />
+  <mat-hint data-prueba="ayuda-ubigeo">{{ errorCarga() ? mensajes.errorUbigeos : ayuda() }}</mat-hint>
+  <mat-error>{{ mensajes.ubigeoObligatorio }}</mat-error>
+  <mat-autocomplete #sugerencias="matAutocomplete" autoActiveFirstOption [displayWith]="mostrar">
+    @for (ubigeo of opciones(); track ubigeo.codigo) {
+      <mat-option [value]="ubigeo" data-prueba="opcion-ubigeo">{{ formato(ubigeo) }}</mat-option>
+    }
+    @if (sinOpciones()) {
+      <mat-option disabled>{{ mensajes.sinUbigeos }}</mat-option>
+    }
+  </mat-autocomplete>
+</mat-form-field>

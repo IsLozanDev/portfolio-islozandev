@@ -21,6 +21,8 @@ import { z } from 'zod';
 import { ActualizarDatosBasicos } from '../application/actualizar-datos-basicos.js';
 import { AsignarRolPersona } from '../application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../application/buscar-persona.js';
+import { BuscarPersonas, TAMANO_PAGINA_PERSONAS } from '../application/buscar-personas.js';
+import { ListarProductosSuscritos } from '../application/listar-productos-suscritos.js';
 import { ObtenerPersona } from '../application/obtener-persona.js';
 import { RegistrarPersona } from '../application/registrar-persona.js';
 import { PERMISOS_PER } from '../domain/permisos-per.js';
@@ -39,14 +41,27 @@ import {
   AsignarRolDto,
   BusquedaDto,
   ErrorPersonaDto,
+  ListadoPersonasDto,
   PersonaDetalleDto,
+  ProductoSuscritoDto,
   RegistrarPersonaDto,
   RolAsignadoDto,
   busquedaDto,
+  listadoPersonasDto,
   personaDetalleDto,
 } from './personas.dto.js';
 import { PersonasFiltro, validar } from './personas.http.js';
 
+const LONGITUD_MAXIMA_CONSULTA = 100;
+const PRIMERA_PAGINA = 1;
+const EsquemaListado = z.object({
+  q: texto(LONGITUD_MAXIMA_CONSULTA).optional(),
+  tipo_persona: z.enum(TIPOS_PERSONA).optional(),
+  producto: z.enum(PRODUCTOS).optional(),
+  rol: z.enum(ROLES_PERSONA).optional(),
+  pagina: z.coerce.number().int().min(PRIMERA_PAGINA).default(PRIMERA_PAGINA),
+  tamano: z.coerce.number().int().min(1).max(TAMANO_PAGINA_PERSONAS.maximo).default(TAMANO_PAGINA_PERSONAS.porDefecto),
+});
 const EsquemaBusqueda = z.object({ tipo: texto(LONGITUD_MAXIMA_TIPO), numero: texto(LONGITUD_MAXIMA_NUMERO) });
 const EsquemaRegistro = z.object({
   tipo_persona: z.enum(TIPOS_PERSONA),
@@ -89,12 +104,38 @@ interface RespuestaConEstado {
 @Controller('personas')
 export class PersonasController {
   constructor(
+    @Inject(BuscarPersonas) private readonly buscarPersonas: BuscarPersonas,
+    @Inject(ListarProductosSuscritos) private readonly listarProductosSuscritos: ListarProductosSuscritos,
     @Inject(BuscarPersonaPorDocumento) private readonly buscarPorDocumento: BuscarPersonaPorDocumento,
     @Inject(RegistrarPersona) private readonly registrarPersona: RegistrarPersona,
     @Inject(ObtenerPersona) private readonly obtenerPersona: ObtenerPersona,
     @Inject(AsignarRolPersona) private readonly asignarRolPersona: AsignarRolPersona,
     @Inject(ActualizarDatosBasicos) private readonly actualizarDatosBasicos: ActualizarDatosBasicos,
   ) {}
+
+  @Get()
+  @Permiso(PERMISOS_PER.leer)
+  @ApiQuery({ name: 'q', required: false, description: 'Nombre o razón social (sin tildes, tolerante a errores y fonético), documento o celular por prefijo, o correo' })
+  @ApiQuery({ name: 'tipo_persona', required: false, enum: TIPOS_PERSONA })
+  @ApiQuery({ name: 'producto', required: false, enum: PRODUCTOS, description: 'Con un rol vigente en ese producto' })
+  @ApiQuery({ name: 'rol', required: false, enum: ROLES_PERSONA, description: 'Con ese rol vigente' })
+  @ApiQuery({ name: 'pagina', required: false, example: PRIMERA_PAGINA, description: 'Desde 1' })
+  @ApiQuery({ name: 'tamano', required: false, example: TAMANO_PAGINA_PERSONAS.porDefecto, description: `De 1 a ${TAMANO_PAGINA_PERSONAS.maximo}` })
+  @ApiOkResponse({ type: ListadoPersonasDto, description: 'Por relevancia y luego por apellidos o razón social; sin `q`, por denominación' })
+  @ApiUnprocessableEntityResponse({ type: ErrorPersonaDto, description: 'CONSULTA_MUY_CORTA: menos de 3 letras o de 4 dígitos' })
+  async listar(@Query() consulta: unknown): Promise<ListadoPersonasDto> {
+    const { q, tipo_persona: tipoPersona, producto, rol, pagina, tamano } = validar(EsquemaListado, consulta);
+    return listadoPersonasDto(await this.buscarPersonas.ejecutar({ q, tipoPersona, producto, rol, pagina, tamano }));
+  }
+
+  // Antes de `:id`, para que esa ruta no la capture.
+  @Get('productos-suscritos')
+  @Permiso(PERMISOS_PER.rol)
+  @ApiOkResponse({ type: [ProductoSuscritoDto], description: 'Productos con suscripción PRUEBA o ACTIVA: los que admite «Asignar rol»' })
+  async productosSuscritos(): Promise<ProductoSuscritoDto[]> {
+    const productos = await this.listarProductosSuscritos.ejecutar();
+    return productos.map((productoCodigo) => ({ producto_codigo: productoCodigo }));
+  }
 
   @Get('busqueda')
   @Permiso(PERMISOS_PER.leer)

@@ -633,6 +633,7 @@ describe('HTTP /v1/personas/{id}: datos básicos, contactos y direcciones (TR-RF
         '/v1/consentimientos/textos',
         '/v1/personas',
         '/v1/personas/busqueda',
+        '/v1/personas/productos-suscritos',
         '/v1/personas/{id}',
         '/v1/personas/{id}/consentimientos',
         '/v1/personas/{id}/consentimientos/{finalidad}/revocar',

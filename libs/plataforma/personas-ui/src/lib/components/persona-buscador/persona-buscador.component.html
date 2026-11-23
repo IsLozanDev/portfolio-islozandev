@@ -1,0 +1,183 @@
+<div class="flex flex-col gap-2">
+  <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+    <mat-label>{{ etiqueta() }}</mat-label>
+    @if (enSeleccion()) {
+      <button
+        matPrefix
+        mat-button
+        type="button"
+        class="ml-1"
+        data-accion="tipo"
+        [matMenuTriggerFor]="menuTipo"
+        [attr.aria-label]="mensajes.tipoDeBusqueda(textoTipo())"
+      >
+        {{ textoTipo() }}
+        <mat-icon iconPositionEnd aria-hidden="true">arrow_drop_down</mat-icon>
+      </button>
+    } @else {
+      <mat-icon matPrefix class="ml-3 text-sobre-superficie-variante" aria-hidden="true">search</mat-icon>
+    }
+    <input
+      matInput
+      type="search"
+      role="combobox"
+      autocomplete="off"
+      aria-autocomplete="list"
+      data-campo="buscador"
+      [formControl]="texto"
+      [placeholder]="mensajes.placeholder"
+      [errorStateMatcher]="errorAlEscribir"
+      [attr.aria-expanded]="conSugerencias()"
+      [attr.aria-controls]="idLista"
+      [attr.aria-activedescendant]="idActiva()"
+      (keydown)="tecla($event)"
+    />
+    @if (texto.value) {
+      <button matSuffix mat-icon-button type="button" data-accion="limpiar" [attr.aria-label]="mensajes.borrar" (click)="limpiar()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+    <mat-hint data-prueba="ayuda">{{ ayuda() }}</mat-hint>
+    <mat-error data-prueba="invalido">{{ mensajeInvalido() }}</mat-error>
+  </mat-form-field>
+
+  @if (buscando()) {
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="mensajes.buscando" />
+  }
+  <p class="sr-only" aria-live="polite">{{ anuncio() }}</p>
+
+  <mat-menu #menuTipo="matMenu">
+    @for (opcion of tipos; track opcion.codigo) {
+      <button mat-menu-item type="button" [attr.data-tipo]="opcion.codigo" (click)="elegirTipo(opcion.codigo)">
+        <span class="flex w-full items-center gap-3" [class.font-medium]="opcion.codigo === tipo()">
+          <span>{{ opcion.texto }}</span>
+          <span class="ml-auto text-xs text-sobre-superficie-variante">{{ opcion.ayuda }}</span>
+        </span>
+      </button>
+    }
+  </mat-menu>
+
+  @if (enSeleccion()) {
+    @if (conSugerencias()) {
+      <div class="overflow-hidden rounded-tarjeta border border-borde bg-superficie shadow-md">
+        <div class="flex justify-between gap-2 px-4 pt-2.5 pb-1.5 text-xs text-sobre-superficie-variante">
+          <span data-prueba="cantidad">{{ mensajes.cantidad(cantidad()) }}</span>
+          <span class="hidden sm:inline">{{ mensajes.ayudaTeclado }}</span>
+        </div>
+        <div role="listbox" [id]="idLista" [attr.aria-label]="etiqueta()">
+          @for (sugerencia of sugerencias(); track sugerencia.persona.id) {
+            <button
+              type="button"
+              role="option"
+              class="flex min-h-14 w-full items-center gap-3 border-t border-borde px-4 py-2 text-left hover:bg-superficie-contenedor"
+              data-prueba="sugerencia"
+              [id]="sugerencia.id"
+              [class.bg-superficie-contenedor]="sugerencia.activa"
+              [attr.aria-selected]="sugerencia.activa"
+              (click)="elegir(sugerencia.persona)"
+            >
+              <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ sugerencia.iniciales }}</span>
+              <span class="flex min-w-0 flex-1 flex-col gap-1">
+                <b class="truncate text-sm font-medium">{{ sugerencia.persona.denominacion }}</b>
+                <span class="truncate text-xs text-sobre-superficie-variante">
+                  <span class="font-mono">{{ sugerencia.documento }}</span>
+                  @if (sugerencia.celular) { · {{ sugerencia.celular }} }
+                </span>
+                @if (sugerencia.coincidencia || sugerencia.roles.length > 0) {
+                  <span class="flex flex-wrap gap-1">
+                    @if (sugerencia.coincidencia; as coincidencia) {
+                      <vit-chip-estado [texto]="coincidencia.texto" [tono]="coincidencia.tono" />
+                    }
+                    @for (rol of sugerencia.roles; track rol) {
+                      <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+                    }
+                  </span>
+                }
+              </span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (sinResultados()) {
+      <div class="flex flex-col gap-1 rounded-tarjeta border border-borde bg-superficie p-4 text-sm text-sobre-superficie-variante" data-prueba="sin-resultados">
+        <span>{{ mensajes.sinResultados(texto.value) }}</span>
+        <span>{{ mensajes.sugerenciaSinResultados }}</span>
+      </div>
+    }
+
+    @if (error(); as mensajeError) {
+      <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+    }
+
+    @if (encontrada(); as vista) {
+      <section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 shadow-md" data-prueba="encontrada" [attr.aria-label]="mensajes.yaRegistrada">
+        <p class="m-0 flex items-center gap-2 text-sm font-medium text-primario">
+          <mat-icon class="vit-icono-mensaje" aria-hidden="true">how_to_reg</mat-icon>{{ mensajes.yaRegistrada }}
+        </p>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ vista.iniciales }}</span>
+          <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <b class="truncate text-sm font-medium">{{ vista.denominacion }}</b>
+            <span class="font-mono text-xs text-sobre-superficie-variante">{{ vista.documento }}</span>
+          </span>
+        </div>
+        <div class="flex justify-end">
+          <button mat-flat-button type="button" data-accion="usar" (click)="usarEncontrada()">
+            <mat-icon aria-hidden="true">{{ etiquetaUsar() === mensajes.usar ? 'check' : 'open_in_new' }}</mat-icon>{{ etiquetaUsar() }}
+          </button>
+        </div>
+      </section>
+    }
+
+    @if (nueva(); as vista) {
+      <section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 shadow-md" data-prueba="nueva">
+        @if (vista.prellenado; as prellenado) {
+          <p class="m-0 flex items-center gap-2 text-sm font-medium text-sobre-chip-info">
+            <mat-icon class="vit-icono-mensaje" aria-hidden="true">verified</mat-icon>{{ mensajes.datosDe(prellenado.fuente) }}
+          </p>
+          <div class="flex items-center gap-3">
+            <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ prellenado.iniciales }}</span>
+            <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <b class="truncate text-sm font-medium" data-prueba="nombre-prellenado">{{ prellenado.nombre }}</b>
+              <span class="text-xs text-sobre-superficie-variante"><span class="font-mono">{{ vista.documento }}</span> · {{ mensajes.noRegistradaEnOrganizacion }}</span>
+            </span>
+          </div>
+          @if (puedeRegistrar()) {
+            <div class="flex justify-end">
+              <button mat-flat-button type="button" data-accion="registrar" (click)="pedirAlta(vista.pedido)">
+                <mat-icon aria-hidden="true">person_add</mat-icon>{{ mensajes.registrarA(prellenado.nombre) }}
+              </button>
+            </div>
+          }
+        } @else {
+          <p class="m-0 flex items-center gap-2 text-sm font-medium">
+            <mat-icon class="vit-icono-mensaje" aria-hidden="true">person_search</mat-icon>
+            <span>{{ mensajes.documentoNoRegistrado(vista.documento) }}</span>
+          </p>
+          @if (vista.aviso; as aviso) {
+            <p
+              class="m-0 flex items-start gap-2 rounded-tarjeta p-3 text-sm"
+              data-prueba="aviso"
+              [class.bg-chip-advertencia]="aviso.advertencia"
+              [class.text-sobre-chip-advertencia]="aviso.advertencia"
+              [class.bg-chip-info]="!aviso.advertencia"
+              [class.text-sobre-chip-info]="!aviso.advertencia"
+            >
+              <mat-icon class="shrink-0 vit-icono-mensaje" aria-hidden="true">{{ aviso.advertencia ? 'cloud_off' : 'info' }}</mat-icon>
+              <span>{{ aviso.texto }}</span>
+            </p>
+          }
+          @if (puedeRegistrar()) {
+            <div class="flex justify-end">
+              <button mat-stroked-button type="button" data-accion="registrar" (click)="pedirAlta(vista.pedido)">
+                <mat-icon aria-hidden="true">edit_note</mat-icon>{{ mensajes.registrarAMano }}
+              </button>
+            </div>
+          }
+        }
+      </section>
+    }
+  }
+</div>

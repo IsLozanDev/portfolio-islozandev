@@ -1,6 +1,6 @@
 # SPEC 49 — Facturación electrónica: emisor por empresa con credenciales y certificado en la bóveda, validación del RUC y alerta de vencimiento
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 09, SPEC 19a, SPEC 20a, SPEC 41, SPEC 48, SPEC 17a
 > **Date:** 2026-11-22
 > **Objective:** Crear `libs/plataforma/comprobantes` con el emisor electrónico de cada empresa (`/v1/fe/emisores/{empresaId}`), que guarda el proveedor PSE, sus credenciales y el certificado `.pfx` en la bóveda de secretos tras validar que es del RUC de la empresa y está vigente, y una tarea diaria que publica `fe.certificado.por_vencer` una vez por certificado.

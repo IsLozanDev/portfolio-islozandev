@@ -1,0 +1,34 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="titulo">
+    <div class="flex flex-col gap-3">
+      @if (error(); as mensajeError) {
+        <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.tipo }}</mat-label>
+        <mat-select formControlName="tipo" data-campo="tipo">
+          @for (tipo of tipos; track tipo.codigo) {
+            <mat-option [value]="tipo.codigo">{{ tipo.texto }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ etiquetaTipo() }}</mat-label>
+        <input matInput formControlName="valor" autocomplete="off" data-campo="valor" [attr.inputmode]="reglas().teclado" />
+        <mat-hint>{{ reglas().ayuda }}</mat-hint>
+        <mat-error data-prueba="error-valor">
+          {{ formulario.controls.valor.hasError('formatoContacto') ? reglas().invalido : (formulario.controls.valor.errors | mensajeValidacion) }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="principal" data-campo="principal">{{ mensajes.casillaPrincipal }}</mat-checkbox>
+      <p class="m-0 flex items-start gap-2 text-sm text-sobre-superficie-variante">
+        <mat-icon class="shrink-0" aria-hidden="true">info</mat-icon>
+        <span>{{ notaPrincipal() }}</span>
+      </p>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

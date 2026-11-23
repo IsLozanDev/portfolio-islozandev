@@ -4,6 +4,8 @@ import { SuscripcionesDelTenantOrg } from '../src/infrastructure/suscripciones-d
 function adaptadorCon(suscripciones: Partial<Record<ProductoCodigo, { vigente: boolean }>>): SuscripcionesDelTenantOrg {
   return new SuscripcionesDelTenantOrg({
     buscar: async (productoCodigo) => (suscripciones[productoCodigo] as Suscripcion | undefined) ?? null,
+    listar: async () =>
+      Object.entries(suscripciones).map(([productoCodigo, { vigente }]) => ({ productoCodigo, vigente }) as unknown as Suscripcion),
   });
 }
 
@@ -18,5 +20,10 @@ describe('SuscripcionesDelTenantOrg', () => {
 
   it('TR-CA-104: sin suscripción el producto no está vigente', async () => {
     expect(await adaptadorCon({}).estaVigente('ECO')).toBe(false);
+  });
+
+  it('lista solo los productos con suscripción vigente', async () => {
+    const adaptador = adaptadorCon({ CLI: { vigente: true }, ECO: { vigente: false }, GYM: { vigente: true } });
+    expect(await adaptador.listarVigentes()).toEqual(['CLI', 'GYM']);
   });
 });

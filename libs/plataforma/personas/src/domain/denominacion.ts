@@ -58,6 +58,13 @@ export function esMismaDenominacion(una: DenominacionPersona, otra: Denominacion
   );
 }
 
+/** Natural: «Quispe Mamani, Juana»; jurídica: la razón social. Para listas y sugerencias. */
+export function denominacionVisible(denominacion: DenominacionPersona): string {
+  if (denominacion.razonSocial !== null) return denominacion.razonSocial;
+  const apellidos = [denominacion.apellidoPaterno, denominacion.apellidoMaterno].filter((apellido) => apellido !== null).join(' ');
+  return `${apellidos}, ${denominacion.nombres ?? ''}`;
+}
+
 /** Vacío tras recortar cuenta como ausente. */
 function recortar(texto: TextoOpcional): string | null {
   const recortado = texto?.trim() ?? '';

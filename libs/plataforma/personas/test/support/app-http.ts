@@ -8,12 +8,14 @@ import { AgregarContacto } from '../../src/application/agregar-contacto.js';
 import { AgregarDireccion } from '../../src/application/agregar-direccion.js';
 import { AsignarRolPersona } from '../../src/application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../../src/application/buscar-persona.js';
+import { BuscarPersonas } from '../../src/application/buscar-personas.js';
 import { ConsultarConsentimientos } from '../../src/application/consentimientos/consultar-consentimientos.js';
 import { ConsultarTextos } from '../../src/application/consentimientos/consultar-textos.js';
 import { PublicarTextoFinalidad } from '../../src/application/consentimientos/publicar-texto-finalidad.js';
 import { RegistrarConsentimientos } from '../../src/application/consentimientos/registrar-consentimientos.js';
 import { RevocarConsentimiento } from '../../src/application/consentimientos/revocar-consentimiento.js';
 import { EditarContacto } from '../../src/application/editar-contacto.js';
+import { ListarProductosSuscritos } from '../../src/application/listar-productos-suscritos.js';
 import { EditarDireccion } from '../../src/application/editar-direccion.js';
 import { EliminarContacto } from '../../src/application/eliminar-contacto.js';
 import { EliminarDireccion } from '../../src/application/eliminar-direccion.js';
@@ -31,6 +33,8 @@ export const SUCURSAL = '0193f3a0-0000-7000-8000-000000000102';
 const MFA_MAX_EDAD_SEG = 900;
 
 const CASOS_DE_USO = [
+  BuscarPersonas,
+  ListarProductosSuscritos,
   BuscarPersonaPorDocumento,
   RegistrarPersona,
   ObtenerPersona,

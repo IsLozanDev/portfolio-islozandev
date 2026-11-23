@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.25.0",
+  "version": "1.26.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -26,6 +26,7 @@
     { "codigo": "plat.organizacion.empresas", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Empresas", "ruta": "/admin/empresas", "icono": "business", "orden": 1, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.organizacion.sucursales", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Sucursales", "ruta": "/admin/sucursales", "icono": "store", "orden": 2, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.organizacion.unidades", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Unidades", "ruta": "/admin/unidades", "icono": "view_module", "orden": 3, "permisos": ["plat.organizacion.consultar"] },
+    { "codigo": "plat.organizacion.personas", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Personas", "ruta": "/admin/personas", "icono": "contacts", "orden": 4, "permisos": ["plat.persona.leer"] },
     { "codigo": "plat.consola", "modulo": "consola", "padre": null, "nombre": "Consola", "icono": "dns", "orden": 4, "permisos": [] },
     { "codigo": "plat.consola.tenants", "modulo": "consola", "padre": "plat.consola", "nombre": "Tenants", "ruta": "/consola/tenants", "icono": "apartment", "orden": 1, "permisos": ["plat.tenant.consultar"] },
     { "codigo": "plat.consola.soporte", "modulo": "consola", "padre": "plat.consola", "nombre": "Soporte", "ruta": "/consola/soporte", "icono": "support_agent", "orden": 2, "permisos": ["plat.soporte.solicitar"] },

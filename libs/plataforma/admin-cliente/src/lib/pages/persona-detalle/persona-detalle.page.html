@@ -1,0 +1,37 @@
+<section class="flex flex-col gap-4">
+  <nav [attr.aria-label]="mensajes.volver">
+    <a class="inline-flex items-center gap-1 text-sm font-medium text-primario no-underline" routerLink=".." data-accion="volver">
+      <mat-icon class="vit-icono-migas" aria-hidden="true">arrow_back</mat-icon>{{ mensajes.volver }}
+    </a>
+  </nav>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (cargando()) {
+    <vit-cargando />
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="person_off" [titulo]="mensajes.noExiste" data-prueba="no-existe" />
+  } @else if (persona(); as ficha) {
+    @if (cabecera(); as datos) {
+      <header class="flex flex-wrap items-center gap-4">
+        <span class="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xl font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ datos.iniciales }}</span>
+        <div class="flex min-w-0 flex-[1_1_260px] flex-col gap-1.5">
+          <h1 class="m-0 text-2xl font-medium" data-prueba="denominacion">{{ datos.denominacion }}</h1>
+          <p class="m-0 text-sm text-sobre-superficie-variante"><span class="font-mono">{{ datos.documento }}</span> · {{ datos.tipoPersona }}</p>
+        </div>
+        <div class="flex flex-wrap gap-1.5" data-prueba="roles-cabecera">
+          @for (rol of datos.roles; track rol) {
+            <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+          }
+        </div>
+      </header>
+    }
+    <vit-persona-datos-basicos [persona]="ficha" (cambio)="alCambiar($event)" />
+    <vit-persona-contactos [persona]="ficha" (cambio)="alCambiar($event)" />
+    <vit-persona-direcciones [persona]="ficha" (cambio)="alCambiar($event)" />
+    <vit-persona-roles [persona]="ficha" (cambio)="alCambiar($event)" />
+    <vit-persona-consentimientos [personaId]="ficha.id" />
+  }
+</section>

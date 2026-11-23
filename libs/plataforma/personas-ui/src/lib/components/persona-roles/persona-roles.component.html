@@ -1,0 +1,14 @@
+<section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 sm:p-6" aria-labelledby="titulo-roles">
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
+      <h2 id="titulo-roles" class="m-0 text-lg font-medium">{{ mensajes.titulo }}</h2>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+    </div>
+    @if (puedeAsignar()) {
+      <button matButton="tonal" type="button" data-accion="asignar-rol" (click)="asignar()">
+        <mat-icon aria-hidden="true">add_moderator</mat-icon>{{ mensajes.asignar }}
+      </button>
+    }
+  </div>
+  <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="filas().length" [tamanosPagina]="tamanosPagina" [textoVacio]="mensajes.sinRoles" />
+</section>

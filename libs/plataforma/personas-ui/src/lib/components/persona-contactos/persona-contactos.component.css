@@ -1,0 +1,7 @@
+/* El principal se distingue de «Marcar principal» por el color de advertencia. FILL rellena la estrella cuando
+   la app cargue Material Symbols con ese eje; con la fuente estática de hoy queda el contorno. El color va aquí
+   y no como utilidad de Tailwind: el estilo de mat-icon gana a las utilidades. */
+.vit-estrella-principal {
+  font-variation-settings: 'FILL' 1;
+  color: var(--color-sobre-chip-advertencia);
+}

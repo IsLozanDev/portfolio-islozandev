@@ -1,0 +1,28 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="titulo">
+    <div class="flex flex-col gap-3">
+      @if (error(); as mensajeError) {
+        <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.direccion }}</mat-label>
+        <input matInput formControlName="direccion" maxlength="250" autocomplete="off" data-campo="direccion" />
+        <mat-hint>{{ mensajes.ayudaDireccion }}</mat-hint>
+        <mat-error>{{ formulario.controls.direccion.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ mensajes.referencia }}</mat-label>
+        <input matInput formControlName="referencia" maxlength="150" autocomplete="off" data-campo="referencia" />
+        <mat-hint>{{ mensajes.ayudaReferencia }}</mat-hint>
+        <mat-error>{{ formulario.controls.referencia.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+
+      <vit-ubigeo-autocompletar [control]="formulario.controls.ubigeo" />
+
+      <mat-checkbox formControlName="principal" data-campo="principal">{{ mensajes.casillaPrincipal }}</mat-checkbox>
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

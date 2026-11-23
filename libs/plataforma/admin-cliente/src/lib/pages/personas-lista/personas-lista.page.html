@@ -1,0 +1,82 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div class="flex min-w-0 flex-[1_1_280px] flex-col gap-1.5">
+      <h1 class="m-0 text-2xl font-medium">{{ mensajes.titulo }}</h1>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+    </div>
+    <button *siPermiso="permisos.registrar" mat-flat-button type="button" data-accion="nueva-persona" (click)="nuevaPersona()">
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      {{ mensajes.nueva }}
+    </button>
+  </header>
+
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start" role="search">
+    <div class="min-w-0 sm:flex-[1_1_360px]">
+      <vit-persona-buscador modo="lista" [etiqueta]="mensajes.buscar" [consultaInicial]="filtro().q" (consulta)="buscar($event)" />
+    </div>
+    <mat-form-field class="sm:w-44" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ mensajes.tipo }}</mat-label>
+      <mat-select [value]="filtro().tipoPersona" (selectionChange)="elegirTipo($event.value)" data-filtro="tipo">
+        <mat-option [value]="null">{{ mensajes.todas }}</mat-option>
+        @for (tipo of tiposPersona; track tipo.codigo) {
+          <mat-option [value]="tipo.codigo">{{ tipo.texto }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="sm:w-40" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ mensajes.producto }}</mat-label>
+      <mat-select [value]="filtro().producto" (selectionChange)="elegirProducto($event.value)" data-filtro="producto">
+        <mat-option [value]="null">{{ mensajes.todos }}</mat-option>
+        @for (producto of productos; track producto) {
+          <mat-option [value]="producto">{{ producto }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="sm:w-44" appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ mensajes.rol }}</mat-label>
+      <mat-select [value]="filtro().rol" (selectionChange)="elegirRol($event.value)" data-filtro="rol">
+        <mat-option [value]="null">{{ mensajes.todos }}</mat-option>
+        @for (rol of roles; track rol.codigo) {
+          <mat-option [value]="rol.codigo">{{ rol.texto }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas()"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="mensajes.sinPersonas"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitCeldaTabla="persona" let-fila>
+      <a class="inline-flex items-center gap-2.5 font-medium text-sobre-superficie no-underline hover:text-primario hover:underline" [routerLink]="fila.id" data-accion="abrir-ficha">
+        <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-contenedor-secundario text-xs font-medium text-sobre-contenedor-secundario" aria-hidden="true">{{ fila.iniciales }}</span>
+        {{ fila.persona }}
+      </a>
+    </ng-template>
+    <ng-template vitCeldaTabla="documento" let-fila>
+      <span class="font-mono text-[13px]">{{ fila.documento }}</span>
+    </ng-template>
+    <ng-template vitCeldaTabla="roles" let-fila>
+      <span class="flex flex-wrap gap-1">
+        @for (rol of fila.listaRoles; track rol) {
+          <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+        }
+      </span>
+    </ng-template>
+    <ng-template vitAccionesFila let-fila>
+      <a mat-icon-button [routerLink]="fila.id" [attr.aria-label]="mensajes.abrirFichaDe(fila.persona)" data-accion="abrir-ficha-fila">
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+      </a>
+    </ng-template>
+  </vit-tabla>
+</section>

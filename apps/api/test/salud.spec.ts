@@ -294,6 +294,16 @@ describe('api', () => {
     expect(paths['/v1/personas/{id}/roles'].post.security).toEqual([{ bearer: [] }]);
   });
 
+  it('el listado de personas y los productos suscritos piden token y están en OpenAPI con bearer auth (spec 38)', async () => {
+    const sinToken = await request(app.getHttpServer()).get('/v1/personas?q=quispe');
+    expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);
+    const { paths } = (await request(app.getHttpServer()).get('/v1/docs-json')).body;
+    expect(paths['/v1/personas'].get.security).toEqual([{ bearer: [] }]);
+    expect(paths['/v1/personas/productos-suscritos'].get.security).toEqual([{ bearer: [] }]);
+    const productosSinToken = await request(app.getHttpServer()).get('/v1/personas/productos-suscritos');
+    expect(productosSinToken.status).toBe(401);
+  });
+
   it('las siete rutas de edición de personas están en OpenAPI con bearer auth y piden token (spec 32)', async () => {
     const sinToken = await request(app.getHttpServer()).post('/v1/personas/0193f3a0-0000-7000-8000-000000000001/contactos').send({});
     expect([sinToken.status, sinToken.body]).toEqual([401, { codigo: 'TOKEN_INVALIDO' }]);

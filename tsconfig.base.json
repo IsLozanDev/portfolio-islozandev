@@ -117,6 +117,9 @@
       "@vitrina/plataforma/archivos-ui": [
         "./libs/plataforma/archivos-ui/src/index.ts"
       ],
+      "@vitrina/plataforma/personas-ui": [
+        "./libs/plataforma/personas-ui/src/index.ts"
+      ],
       "@vitrina/plataforma/feriados": [
         "./libs/plataforma/feriados/src/index.ts"
       ],
