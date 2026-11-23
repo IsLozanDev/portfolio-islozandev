@@ -401,6 +401,7 @@ Ficha (piezas de `personas-ui`, compuestas en `persona-detalle` de `admin-client
 - **Sí (en la implementación):** cada sección de la ficha recibe la persona y emite `cambio`: `actualizada` con la persona nueva (la página la reemplaza sin releer) o `recargar` con un aviso opcional (tras un borrado, que responde 204, tras asignar un rol, cuya respuesta no trae la persona, o tras `VERSION_OBSOLETA`). Los formularios son paneles (`vit-panel-datos-basicos`, `vit-panel-contacto`, `vit-panel-direccion`, `vit-panel-rol`).
 - **No (en la implementación):** el dato «Registrada» del canvas en Datos básicos. `GET /v1/personas/{id}` no devuelve la fecha de creación; agregarla es tocar el contrato del 31, fuera de este spec.
 - **Sí (en la implementación):** sin `plat.catalogo.leer` tampoco se edita una dirección (el panel usa el autocompletar de ubigeo); marcar principal y borrar sí.
+- **Sí (en la implementación):** en la lista, la ficha se abre con el enlace del nombre (con sus iniciales), no con un clic en toda la fila: `vit-tabla` no tiene evento de fila y un enlace es accesible por teclado y se abre en otra pestaña.
 - **Sí:** piezas en `personas-ui` y páginas en `admin-cliente`. SazónPOS y otros productos reutilizan el buscador y las piezas sin las páginas de admin.
 - **Sí:** autocompletar de ubigeo sobre `GET /v1/catalogos/UBIGEO/items` con `plat.catalogo.leer`, filtrado en el navegador. Decisión del usuario. Sin back nuevo; la lista se cachea con `ETag`.
 - **No:** ruta propia de ubigeos en PER. Decisión del usuario.

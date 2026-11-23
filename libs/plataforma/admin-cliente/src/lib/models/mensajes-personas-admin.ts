@@ -1,0 +1,21 @@
+/** Textos de las páginas de personas en admin (spec 38). Los de las piezas vienen de `personas-ui`. */
+export const MENSAJES_PERSONAS_ADMIN = {
+  titulo: 'Personas',
+  subtitulo: 'Clientes, pacientes, socios y proveedores de tu organización. Una sola ficha por documento, compartida entre tus productos.',
+  nueva: 'Nueva persona',
+  abrirFicha: 'Abrir ficha',
+  registrada: 'Persona registrada',
+  buscar: 'Buscar persona',
+  tipo: 'Tipo',
+  producto: 'Producto',
+  rol: 'Rol',
+  todas: 'Todas',
+  todos: 'Todos',
+  columnas: { persona: 'Persona', documento: 'Documento', celular: 'Celular', roles: 'Roles', coincidencia: 'Coincide por' },
+  sinCelular: '—',
+  sinPersonas: 'No hay personas que coincidan',
+  textoSinPersonas: 'Cambia la búsqueda o los filtros, o registra a la persona con «Nueva persona».',
+  volver: 'Personas',
+  noExiste: 'La persona no existe o no es de su organización',
+  errorCarga: 'No se pudo cargar. Inténtelo de nuevo.',
+} as const;
