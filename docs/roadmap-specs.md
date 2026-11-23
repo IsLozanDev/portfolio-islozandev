@@ -99,14 +99,14 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 40 | per-fusion-ui | UI de 042 | 6 | 39, 17c | `tr-per/per-duplicados-fusion.md` | Pendiente |
 | 41 | boveda-secretos | TR-RNF-113: secretos por tenant con cifrado por sobre (FE, PAG, NOT) | 4-5 | kernel-infra | `tr-fe/fe-emisor-y-puerto-pse.md`, `tr-pag/README.md` | Implementado |
 | 42 | not-envio-correo-resend | R2-09: TR-RF-075, 079 (correo) | 9 | 11, 21, 37 | `tr-not/not-correo-plantillas-estados.md` | Implementado |
-| 43 | not-plantillas-personalizacion | R2-09: TR-RF-074 (back) | 5 | 42, 07 | `tr-not/not-correo-plantillas-estados.md` | Pendiente |
+| 43 | not-plantillas-personalizacion | R2-09: TR-RF-074 (back) | 5 | 42, 07 | `tr-not/not-correo-plantillas-estados.md` | Aprobado |
 | 44 | not-consumidores-plataforma | Correos de eventos ya publicados (vencimiento, suspensión, integridad, soporte) | 3 | 42, 43 | `tr-not/not-correo-plantillas-estados.md` | Pendiente |
 | 45 | not-recordatorios | R2-10: TR-RF-076 | 4 | 42 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
 | 46 | not-preferencias-bajas | R2-10: TR-RF-077 | 6 | 45, 31 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
 | 47 | not-plantillas-ui | R2-11: UI de 074 | 4-5 | 43, 15, 17c, 19e | `tr-not/not-plantillas-ui.md` | Pendiente |
 | 48 | cat-tablas-sunat-fe | Catálogos SUNAT 05, 09, 10, 16, 51, 52 y regenerar 01, 06, 07 | 3-4 | 19b | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
 | 49 | fe-emisor-configuracion | R2-04: TR-RF-052 (pasos 1-3, alerta de vencimiento) | 7-8 | 41, 09, 19a, 20a | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
-| 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Pendiente |
+| 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Aprobado |
 | 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 51b | fe-ubl-firma | UBL 2.1 y firma propios; solo si se elige OSE o SUNAT directo | 8-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Condicional |
 | 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
