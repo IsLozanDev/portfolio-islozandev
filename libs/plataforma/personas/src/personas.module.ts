@@ -20,6 +20,7 @@ import { RevocarConsentimiento } from './application/consentimientos/revocar-con
 import { ServicioConsentimientos } from './application/consentimientos/servicio-consentimientos.js';
 import type { DependenciasPersonas } from './application/dependencias-personas.js';
 import { EditarContacto } from './application/editar-contacto.js';
+import { ListarProductosSuscritos } from './application/listar-productos-suscritos.js';
 import { EditarDireccion } from './application/editar-direccion.js';
 import { EliminarContacto } from './application/eliminar-contacto.js';
 import { EliminarDireccion } from './application/eliminar-direccion.js';
@@ -44,6 +45,7 @@ type CasoDeUso = new (dependencias: DependenciasPersonas) => unknown;
 
 const CASOS_DE_USO: CasoDeUso[] = [
   BuscarPersonas,
+  ListarProductosSuscritos,
   BuscarPersonaPorDocumento,
   RegistrarPersona,
   ObtenerPersona,

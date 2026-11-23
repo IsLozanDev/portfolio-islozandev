@@ -6,6 +6,7 @@ import { crearAppPersonas, SUCURSAL } from './support/app-http.js';
 import { crearDobles, type Dobles } from './support/dobles.js';
 
 const LEER = 'plat.persona.leer';
+const ROL = 'plat.persona.rol';
 
 const JUANA: PersonaListada = {
   id: '38000000-0000-4000-8000-0000000000a1',
@@ -22,7 +23,7 @@ const JUANA: PersonaListada = {
   coincidencia: 'NOMBRE',
 };
 
-describe('HTTP GET /v1/personas (listado y búsqueda, spec 38)', () => {
+describe('HTTP GET /v1/personas y /v1/personas/productos-suscritos (spec 38)', () => {
   let app: INestApplication;
   let dobles: Dobles;
   let permisosDelActor: string[];
@@ -104,8 +105,32 @@ describe('HTTP GET /v1/personas (listado y búsqueda, spec 38)', () => {
     expect(respuesta.status).toBe(403);
   });
 
+  describe('GET /v1/personas/productos-suscritos', () => {
+    const productos = () => request(app.getHttpServer()).get('/v1/personas/productos-suscritos').set('X-Sucursal-Id', SUCURSAL);
+
+    it('TR-CA-104: devuelve solo los productos vigentes del tenant; ECO no está', async () => {
+      permisosDelActor = [ROL];
+      dobles.suscripciones.vigentes = ['CLI', 'GYM'];
+      const respuesta = await productos();
+      expect([respuesta.status, respuesta.body]).toEqual([200, [{ producto_codigo: 'CLI' }, { producto_codigo: 'GYM' }]]);
+    });
+
+    it('no la captura la ruta /{id}', async () => {
+      permisosDelActor = [ROL, LEER];
+      const respuesta = await productos();
+      expect(respuesta.status).toBe(200);
+      expect(Array.isArray(respuesta.body)).toBe(true);
+    });
+
+    it('sin plat.persona.rol → 403, aunque tenga plat.persona.leer', async () => {
+      permisosDelActor = [LEER];
+      expect((await productos()).status).toBe(403);
+    });
+  });
+
   it('está en OpenAPI bajo /v1 con sus respuestas', () => {
     const documento = SwaggerModule.createDocument(app, new DocumentBuilder().addBearerAuth().build());
     expect(Object.keys(documento.paths['/v1/personas']?.get?.responses ?? {}).sort()).toEqual(['200', '400', '401', '403', '422']);
+    expect(Object.keys(documento.paths['/v1/personas/productos-suscritos']?.get?.responses ?? {}).sort()).toEqual(['200', '400', '401', '403']);
   });
 });

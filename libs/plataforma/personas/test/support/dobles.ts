@@ -110,6 +110,9 @@ export class SuscripcionesFijas implements SuscripcionesDelTenant {
   async estaVigente(productoCodigo: ProductoCodigo): Promise<boolean> {
     return this.vigentes.includes(productoCodigo);
   }
+  async listarVigentes(): Promise<ProductoCodigo[]> {
+    return [...this.vigentes];
+  }
 }
 
 /** Guarda los criterios que recibe y devuelve la página fijada por la prueba. */

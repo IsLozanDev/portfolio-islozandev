@@ -15,6 +15,7 @@ import { PublicarTextoFinalidad } from '../../src/application/consentimientos/pu
 import { RegistrarConsentimientos } from '../../src/application/consentimientos/registrar-consentimientos.js';
 import { RevocarConsentimiento } from '../../src/application/consentimientos/revocar-consentimiento.js';
 import { EditarContacto } from '../../src/application/editar-contacto.js';
+import { ListarProductosSuscritos } from '../../src/application/listar-productos-suscritos.js';
 import { EditarDireccion } from '../../src/application/editar-direccion.js';
 import { EliminarContacto } from '../../src/application/eliminar-contacto.js';
 import { EliminarDireccion } from '../../src/application/eliminar-direccion.js';
@@ -33,6 +34,7 @@ const MFA_MAX_EDAD_SEG = 900;
 
 const CASOS_DE_USO = [
   BuscarPersonas,
+  ListarProductosSuscritos,
   BuscarPersonaPorDocumento,
   RegistrarPersona,
   ObtenerPersona,

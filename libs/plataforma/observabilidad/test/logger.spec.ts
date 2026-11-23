@@ -10,6 +10,8 @@ const CORREO = 'ana@ejemplo.pe';
 const TOKEN = 'eyJhbGciOiJFUzI1NiJ9.token-de-prueba.firma';
 const CONTRASENA = 'Contrasena-Secreta-1';
 const COOKIE = 'sb-sesion=valor-de-cookie';
+/** Lo que se busca en /v1/personas?q= (spec 38): nombres o un documento, en el query string. */
+const BUSQUEDA_PERSONA = 'Quispe Mamani';
 const ALCANCE = {
   tenantId: '0190a000-0000-7000-8000-000000000001',
   branchId: '0190a000-0000-7000-8000-000000000002',
@@ -57,6 +59,7 @@ describe('logger de observabilidad (TR-RNF-026, TR-RNF-111)', () => {
       .set('Cookie', COOKIE)
       .send({ dni: DNI, password: CONTRASENA })
       .expect(201);
+    await request(app.getHttpServer()).get(`/prueba?q=${encodeURIComponent(BUSQUEDA_PERSONA)}&numero=${DNI}`).expect(404);
   });
 
   afterAll(() => app.close());
@@ -75,6 +78,12 @@ describe('logger de observabilidad (TR-RNF-026, TR-RNF-111)', () => {
     for (const secreto of [DNI, CORREO, encodeURIComponent(CORREO), TOKEN, CONTRASENA, COOKIE]) {
       expect(salida()).not.toContain(secreto);
     }
+  });
+
+  test('el texto buscado en ?q= y el documento en ?numero= no salen en ningún log (spec 38)', () => {
+    for (const buscado of [BUSQUEDA_PERSONA, encodeURIComponent(BUSQUEDA_PERSONA), 'Quispe', DNI]) expect(salida()).not.toContain(buscado);
+    const rutas = registros().filter((registro) => registro.msg === 'request completed').map((registro) => registro.req);
+    expect(rutas).toEqual(expect.arrayContaining([{ metodo: 'GET', ruta: '/prueba' }]));
   });
 
   test('el log manual de un Logger de Nest sale en JSON con el contexto del tenant y el documento como hash', () => {

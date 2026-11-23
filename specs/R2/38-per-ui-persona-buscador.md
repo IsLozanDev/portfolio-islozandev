@@ -76,7 +76,7 @@ Historias del backlog: ninguna propia (el plan 6.1 no lista pantallas de persona
 | `personas` (controladores, `PersonasFiltro`, `validar`, `RepositorioPersonasTypeOrm`, `SuscripcionesDelTenant`, `vista-persona.ts`) | Se amplía: caso de uso `BuscarPersonas`, método de lectura `buscar` en un adaptador de consulta, `listarVigentes` en `SuscripcionesDelTenant`, dos rutas. Los contratos existentes no cambian. |
 | `db/01l_per*.sql` | No se tocan. Lo nuevo va en `01l_per_busqueda.sql`. |
 | `catalogos` (`GET /v1/catalogos/UBIGEO/items` con `ETag`) | Se consume desde el autocompletar. Sin cambios. |
-| `shared/util` (`validarDocumento`, `validarCelular`, `validarCorreo`, `validarTelefonoFijo`, `validarWhatsapp`) | Validación en el front antes de llamar. Sin cambios. |
+| `shared/util` (`validarDocumento`, `validarCelular`, `validarCorreo`, `validarTelefonoFijo`, `validarWhatsapp`) | Sin cambios. `personas-ui` usa copias comentadas en `utils/` (ver Decisiones); el servidor valida con los originales. |
 | `shared/ui` (`vit-tabla`, `vit-filtros`, `vit-chip-estado`, `vit-estado-vacio`, `vit-cargando`, `vit-acciones-formulario`, `PanelLateralService`, `AvisosService`, `MensajeValidacionPipe`, `vit-destructivo`) | Lista, tablas de la ficha, paneles y confirmaciones. |
 | `shared/auth` (`SesionService`, `CONFIG_AUTH`, `SiPermisoDirective`, `permisoGuard`) | URL de la API y acciones ocultas sin permiso. |
 | `archivos-ui` | Molde de estructura de lib `type:feature`. |
@@ -239,17 +239,19 @@ Lo que fijó el diseño y no estaba arriba:
 
 ```
 src/lib/
-  models/      persona.ts (DTO y mapeos), busqueda.ts, error-personas.ts, mensajes-personas.ts,
-               permisos-personas.ts, tonos-personas.ts, consentimiento.ts, ubigeo.ts
+  models/      persona.ts (DTO y mapeos), solicitudes-persona.ts (cuerpos), busqueda.ts, error-personas.ts,
+               mensajes-personas.ts, etiquetas-personas.ts, permisos-personas.ts, tonos-personas.ts,
+               consentimiento.ts, ubigeo.ts
   services/    personas.cliente.ts, contactos.cliente.ts, direcciones.cliente.ts,
                consentimientos.cliente.ts, ubigeos.service.ts
-  utils/       clasificar-entrada.ts, denominacion.ts, formato-ubigeo.ts, filtrar-ubigeos.ts
+  utils/       clasificar-entrada.ts, denominacion.ts, formato-ubigeo.ts, filtrar-ubigeos.ts, formato-contacto.ts,
+               normalizar-texto.ts, solicitar.ts, validar-documento.ts y validar-contacto.ts (copias de shared/util)
   components/  persona-buscador/, persona-alta/, persona-datos-basicos/, persona-contactos/,
                persona-direcciones/, ubigeo-autocompletar/, persona-roles/, persona-consentimientos/
-src/testing/   dobles de los clientes
+src/testing/   http-de-prueba.ts, persona-de-prueba.ts y, desde el paso 6, dobles de los clientes
 ```
 
-- `clasificar-entrada.ts`: `clasificarEntrada(texto, tipoElegido?) → { clase: 'DNI' | 'RUC' | 'CE' | 'PASAPORTE' | 'NUMERO' | 'CORREO' | 'TEXTO' | 'CORTA'; valor }`. Con tipo elegido manda el tipo. Sin tipo: 8 dígitos → `DNI`; 11 dígitos → `RUC`; otros dígitos (≥ 4) → `NUMERO`; con `@` → `CORREO`; texto ≥ 3 → `TEXTO`; lo demás → `CORTA`. `DNI` y `RUC` se validan con `validarDocumento`; inválido → mensaje con el motivo y sin llamada.
+- `clasificar-entrada.ts`: `clasificarEntrada(texto, tipoElegido?)` → `VACIA`, `CORTA` (con mensaje), `INVALIDA` (tipo, motivo y mensaje), `DOCUMENTO` (tipo y número: búsqueda exacta con prellenado) o `NUMERO` / `CORREO` / `TEXTO` (valor: búsqueda en el listado). Con tipo elegido manda el tipo; con DNI o RUC elegido, mientras faltan dígitos es `CORTA`. Sin tipo: 8 dígitos → DNI; 11 dígitos → RUC; otros dígitos (≥ 4) → `NUMERO`; con `@` → `CORREO`; texto ≥ 3 → `TEXTO`; lo demás → `CORTA`. Los documentos se validan con `validarDocumento`; inválido → mensaje con el motivo y sin llamada.
 - `ubigeos.service.ts`: pide `GET /v1/catalogos/UBIGEO/items` una vez por sesión (el navegador revalida con `ETag`) y lo guarda en un signal. `filtrar-ubigeos.ts` busca por distrito, provincia o departamento sin tildes, máximo 20 opciones.
 - `formato-ubigeo.ts`: `formatoUbigeo({ departamento, provincia, distrito }) → 'AREQUIPA / AREQUIPA / CAYMA'`, con el texto como está en el catálogo. Se usa en el autocompletar, en la tabla de direcciones y en la respuesta de la API.
 - `denominacion.ts`: natural «Quispe Mamani, Juana»; jurídica la razón social.
@@ -390,6 +392,7 @@ Ficha (piezas de `personas-ui`, compuestas en `persona-detalle` de `admin-client
 - **Sí:** un campo inteligente que clasifica la entrada, con selector de tipo para CE y pasaporte. Decisión del usuario. 8 dígitos se toman como DNI y 11 como RUC; un CE de 9 dígitos sin tipo elegido se busca como número (prefijo), no como CE.
 - **Sí:** el buscador usa `/busqueda` para documentos completos (encontrada o prellenado de IDN) y `GET /v1/personas` para todo lo demás. Reutiliza el prellenado del 31 sin duplicarlo.
 - **Sí:** prefijo `vit-` (`vit-persona-buscador`). El SRS lo llama `<ui-persona-buscador>`; manda el prefijo del repo (mismo criterio del 36).
+- **Sí (en la implementación):** copias comentadas de `validarDocumento` y de los validadores de contacto en `personas-ui/src/lib/utils/`. La lib se empaqueta con ng-packagr y no puede importar `shared/util`, que no es buildable: mismo criterio que la copia de `validarRuc` en `admin-cliente` (specs 17b y 17c). El servidor valida con los originales.
 - **Sí:** `personas-ui` con `type:feature`. Llama a la API y usa `shared/auth` (`type:data-access`), que una lib `type:ui` no puede importar (mismo criterio del 36).
 - **Sí:** piezas en `personas-ui` y páginas en `admin-cliente`. SazónPOS y otros productos reutilizan el buscador y las piezas sin las páginas de admin.
 - **Sí:** autocompletar de ubigeo sobre `GET /v1/catalogos/UBIGEO/items` con `plat.catalogo.leer`, filtrado en el navegador. Decisión del usuario. Sin back nuevo; la lista se cachea con `ETag`.

@@ -219,6 +219,11 @@ export class ListadoPersonasDto {
   tamano!: number;
 }
 
+export class ProductoSuscritoDto {
+  @ApiProperty({ enum: PRODUCTOS })
+  producto_codigo!: ProductoCodigo;
+}
+
 export class ErrorPersonaDto {
   @ApiProperty({ example: 'PERSONA_DUPLICADA' })
   codigo!: string;

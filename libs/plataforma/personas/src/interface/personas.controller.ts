@@ -22,6 +22,7 @@ import { ActualizarDatosBasicos } from '../application/actualizar-datos-basicos.
 import { AsignarRolPersona } from '../application/asignar-rol.js';
 import { BuscarPersonaPorDocumento } from '../application/buscar-persona.js';
 import { BuscarPersonas, TAMANO_PAGINA_PERSONAS } from '../application/buscar-personas.js';
+import { ListarProductosSuscritos } from '../application/listar-productos-suscritos.js';
 import { ObtenerPersona } from '../application/obtener-persona.js';
 import { RegistrarPersona } from '../application/registrar-persona.js';
 import { PERMISOS_PER } from '../domain/permisos-per.js';
@@ -42,6 +43,7 @@ import {
   ErrorPersonaDto,
   ListadoPersonasDto,
   PersonaDetalleDto,
+  ProductoSuscritoDto,
   RegistrarPersonaDto,
   RolAsignadoDto,
   busquedaDto,
@@ -103,6 +105,7 @@ interface RespuestaConEstado {
 export class PersonasController {
   constructor(
     @Inject(BuscarPersonas) private readonly buscarPersonas: BuscarPersonas,
+    @Inject(ListarProductosSuscritos) private readonly listarProductosSuscritos: ListarProductosSuscritos,
     @Inject(BuscarPersonaPorDocumento) private readonly buscarPorDocumento: BuscarPersonaPorDocumento,
     @Inject(RegistrarPersona) private readonly registrarPersona: RegistrarPersona,
     @Inject(ObtenerPersona) private readonly obtenerPersona: ObtenerPersona,
@@ -123,6 +126,15 @@ export class PersonasController {
   async listar(@Query() consulta: unknown): Promise<ListadoPersonasDto> {
     const { q, tipo_persona: tipoPersona, producto, rol, pagina, tamano } = validar(EsquemaListado, consulta);
     return listadoPersonasDto(await this.buscarPersonas.ejecutar({ q, tipoPersona, producto, rol, pagina, tamano }));
+  }
+
+  // Antes de `:id`, para que esa ruta no la capture.
+  @Get('productos-suscritos')
+  @Permiso(PERMISOS_PER.rol)
+  @ApiOkResponse({ type: [ProductoSuscritoDto], description: 'Productos con suscripción PRUEBA o ACTIVA: los que admite «Asignar rol»' })
+  async productosSuscritos(): Promise<ProductoSuscritoDto[]> {
+    const productos = await this.listarProductosSuscritos.ejecutar();
+    return productos.map((productoCodigo) => ({ producto_codigo: productoCodigo }));
   }
 
   @Get('busqueda')
