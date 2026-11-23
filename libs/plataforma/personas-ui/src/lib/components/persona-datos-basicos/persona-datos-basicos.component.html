@@ -1,0 +1,42 @@
+<section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 sm:p-6" aria-labelledby="titulo-datos-basicos">
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
+      <h2 id="titulo-datos-basicos" class="m-0 text-lg font-medium">{{ mensajes.titulo }}</h2>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+    </div>
+    @if (puedeEditar()) {
+      <button matButton="tonal" type="button" data-accion="editar-datos" (click)="editar()">
+        <mat-icon aria-hidden="true">edit</mat-icon>{{ mensajes.editar }}
+      </button>
+    }
+  </div>
+  <dl class="m-0 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+    @if (juridica()) {
+      <div class="col-span-2 sm:col-span-3">
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.razonSocial }}</dt>
+        <dd class="m-0" data-prueba="razon-social">{{ persona().razonSocial }}</dd>
+      </div>
+    } @else {
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.nombres }}</dt>
+        <dd class="m-0" data-prueba="nombres">{{ persona().nombres }}</dd>
+      </div>
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.apellidoPaterno }}</dt>
+        <dd class="m-0" data-prueba="apellido-paterno">{{ persona().apellidoPaterno }}</dd>
+      </div>
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.apellidoMaterno }}</dt>
+        <dd class="m-0" data-prueba="apellido-materno">{{ persona().apellidoMaterno ?? '—' }}</dd>
+      </div>
+    }
+    <div>
+      <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.tipoDocumento }}</dt>
+      <dd class="m-0">{{ tipoDocumento() }}</dd>
+    </div>
+    <div>
+      <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.numero }}</dt>
+      <dd class="m-0 font-mono">{{ persona().numeroDocumento }}</dd>
+    </div>
+  </dl>
+</section>

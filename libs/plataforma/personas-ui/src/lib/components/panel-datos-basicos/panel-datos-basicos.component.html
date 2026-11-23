@@ -1,0 +1,40 @@
+<form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+  <vit-panel-lateral [titulo]="mensajes.tituloPanel">
+    <div class="flex flex-col gap-3">
+      <p class="m-0 flex items-center gap-3 rounded-tarjeta bg-superficie-contenedor px-4 py-3 text-sm">
+        <mat-icon class="shrink-0 text-sobre-superficie-variante" aria-hidden="true">lock</mat-icon>
+        <span><span class="font-mono">{{ documento }}</span> · {{ tipoPersona }}</span>
+      </p>
+
+      @if (error(); as mensajeError) {
+        <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+      }
+
+      @if (juridica) {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.razonSocial }}</mat-label>
+          <input matInput formControlName="razonSocial" maxlength="200" autocomplete="off" data-campo="razon-social" />
+          <mat-error>{{ formulario.controls.razonSocial.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.nombres }}</mat-label>
+          <input matInput formControlName="nombres" maxlength="100" autocomplete="off" data-campo="nombres" />
+          <mat-error>{{ formulario.controls.nombres.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.apellidoPaterno }}</mat-label>
+          <input matInput formControlName="apellidoPaterno" maxlength="60" autocomplete="off" data-campo="apellido-paterno" />
+          <mat-error>{{ formulario.controls.apellidoPaterno.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ mensajes.apellidoMaterno }}</mat-label>
+          <input matInput formControlName="apellidoMaterno" maxlength="60" autocomplete="off" data-campo="apellido-materno" />
+          <mat-hint>{{ mensajes.opcional }}</mat-hint>
+          <mat-error>{{ formulario.controls.apellidoMaterno.errors | mensajeValidacion }}</mat-error>
+        </mat-form-field>
+      }
+    </div>
+    <vit-acciones-formulario accionesPanel [guardando]="guardando()" (cancelar)="cerrar()" />
+  </vit-panel-lateral>
+</form>

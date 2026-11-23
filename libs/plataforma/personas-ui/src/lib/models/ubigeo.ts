@@ -6,6 +6,9 @@ export interface Ubigeo {
   departamento: string;
 }
 
+/** Lo que tiene el campo de distrito: el elegido de la lista o lo que se va escribiendo. */
+export type ValorUbigeo = Ubigeo | string | null;
+
 /** `GET /v1/catalogos/UBIGEO/items`: el distrito es el nombre; provincia y departamento, atributos. */
 export interface ItemUbigeoRespuesta {
   codigo: string;

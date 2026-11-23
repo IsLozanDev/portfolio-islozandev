@@ -1,5 +1,6 @@
 import type { AvisoIdentidad, Coincidencia } from './busqueda';
 import { MENSAJE_ERROR_DESCONOCIDO, type ErrorPersonas } from './error-personas';
+import { MENSAJES_CONTACTO } from './mensajes-contacto';
 import type { TipoDocumento } from './persona';
 
 /** Textos propios del front por código de la API. Los que no están aquí usan el `mensaje` de la API. */
@@ -40,12 +41,7 @@ export function textoAvisoIdentidad(aviso: AvisoIdentidad, tipo: TipoDocumento):
 
 export const TEXTO_SIN_CONSULTA_EN_LINEA = 'Los carnés de extranjería y los pasaportes no se consultan en línea: completa los datos a mano.';
 
-export const MENSAJES_CELULAR = {
-  ayuda: '9 dígitos, empieza con 9',
-  invalido: 'El celular debe tener 9 dígitos e iniciar con 9',
-} as const;
+export const MENSAJES_CELULAR = MENSAJES_CONTACTO.CELULAR;
 
-export const MENSAJES_CORREO = {
-  ayuda: 'Opcional',
-  invalido: 'El correo no tiene un formato válido',
-} as const;
+/** En el alta el correo es opcional: la ayuda lo dice en vez del formato. */
+export const MENSAJES_CORREO = { ayuda: 'Opcional', invalido: MENSAJES_CONTACTO.CORREO.invalido } as const;

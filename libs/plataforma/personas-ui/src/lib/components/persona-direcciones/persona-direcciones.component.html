@@ -1,0 +1,77 @@
+<section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 sm:p-6" aria-labelledby="titulo-direcciones">
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="flex min-w-0 flex-[1_1_220px] flex-col gap-0.5">
+      <h2 id="titulo-direcciones" class="m-0 text-lg font-medium">{{ mensajes.titulo }}</h2>
+      <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+    </div>
+    @if (puedeEditar()) {
+      <button
+        matButton="tonal"
+        type="button"
+        data-accion="agregar-direccion"
+        [disabled]="ocupado() || !puedeLeerUbigeos()"
+        [attr.aria-describedby]="puedeLeerUbigeos() ? null : 'aviso-catalogo-ubigeo'"
+        (click)="agregar()"
+      >
+        <mat-icon aria-hidden="true">add_location_alt</mat-icon>{{ mensajes.agregar }}
+      </button>
+    }
+  </div>
+
+  @if (puedeEditar() && !puedeLeerUbigeos()) {
+    <p id="aviso-catalogo-ubigeo" class="m-0 flex items-center gap-2 text-sm text-sobre-superficie-variante" data-prueba="sin-catalogo">
+      <mat-icon aria-hidden="true">lock</mat-icon>{{ mensajes.sinPermisoCatalogo }}
+    </p>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla [columnas]="columnas" [filas]="filas()" [total]="filas().length" [tamanosPagina]="tamanosPagina" [textoVacio]="mensajes.sinDirecciones">
+    @if (puedeEditar()) {
+      <ng-template vitAccionesFila let-fila>
+        <span class="flex justify-end">
+          @if (!fila.direccion.principal) {
+            <button
+              mat-icon-button
+              type="button"
+              data-accion="marcar-principal-direccion"
+              [disabled]="ocupado()"
+              [attr.aria-label]="etiquetaAccion(accionesTexto.marcarPrincipal, fila)"
+              [matTooltip]="accionesTexto.marcarPrincipal"
+              (click)="marcarPrincipal(fila)"
+            >
+              <mat-icon>star_outline</mat-icon>
+            </button>
+          }
+          @if (puedeLeerUbigeos()) {
+            <button
+              mat-icon-button
+              type="button"
+              data-accion="editar-direccion"
+              [disabled]="ocupado()"
+              [attr.aria-label]="etiquetaAccion(accionesTexto.editar, fila)"
+              [matTooltip]="accionesTexto.editar"
+              (click)="editar(fila)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          }
+          <button
+            mat-icon-button
+            type="button"
+            class="vit-destructivo"
+            data-accion="eliminar-direccion"
+            [disabled]="ocupado()"
+            [attr.aria-label]="etiquetaAccion(accionesTexto.eliminar, fila)"
+            [matTooltip]="accionesTexto.eliminar"
+            (click)="eliminar(fila)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </span>
+      </ng-template>
+    }
+  </vit-tabla>
+</section>
