@@ -16,7 +16,7 @@ interface Manifiesto {
   parametros: { codigo: string; tipo: string; valor_defecto: unknown; alcance_maximo: string }[];
 }
 
-describe('Manifiesto PLAT 1.24.0: parte de org (specs 12 y 17a)', () => {
+describe('Manifiesto PLAT 1.25.0: parte de org (specs 12 y 17a)', () => {
   let manifiesto: Manifiesto;
   const permisosDe = (codigo: string) => manifiesto.roles_predefinidos.find((rol) => rol.codigo === codigo)?.permisos ?? [];
   const permiso = (codigo: string) => manifiesto.permisos.find((declarado) => declarado.codigo === codigo);
@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.24.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.24.0');
+    expect(manifiesto.version).toBe('1.25.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -52,7 +52,8 @@ describe('Manifiesto PLAT 1.24.0: parte de org (specs 12 y 17a)', () => {
     // plat.soporte.autorizar es del cliente (spec 18): solo lo tiene el propietario. Los dos sensibles de
     // catálogos también (spec 19a), y el de importar tablas oficiales (spec 19b); solo sirven en el tenant operador.
     // También lo del auditor de datos personales (spec 20b), el padrón RUC del registro de empresa (spec 28b)
-    // y ver la cuota propia de consultas de identidad (spec 29).
+    // y ver la cuota propia de consultas de identidad (spec 29). El emisor electrónico lo comparte con
+    // PLAT_ENCARGADO_FACTURACION (spec 49).
     const soloPropietario = [
       'plat.soporte.autorizar',
       'plat.catalogo.gestionar',
@@ -61,6 +62,8 @@ describe('Manifiesto PLAT 1.24.0: parte de org (specs 12 y 17a)', () => {
       'plat.identidad.validar',
       'plat.identidad.consultar',
       'plat.identidad.cuota',
+      'plat.fe.configurar',
+      'plat.fe.consultar',
     ];
     const esperados = new Set([...ROLES_ADMIN.flatMap(permisosDe), ...permisosDe('PLAT_AUDITOR'), ...PERMISOS_ORGANIZACION, ...soloPropietario]);
     expect(new Set(permisosDe('PLAT_PROPIETARIO'))).toEqual(esperados);

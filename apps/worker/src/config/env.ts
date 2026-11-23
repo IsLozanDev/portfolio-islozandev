@@ -1,4 +1,5 @@
 import { camposEntornoAntivirus, exigirAntivirusReal } from '@vitrina/plataforma/archivos';
+import { camposEntornoNotificaciones, exigirProveedorCorreoEnProduccion } from '@vitrina/plataforma/notificaciones';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { camposEntornoSecretos, exigirClaveMaestraEnProduccion } from '@vitrina/plataforma/secretos';
 import { z } from 'zod';
@@ -40,10 +41,13 @@ const esquema = z.object({
   ...camposEntornoObservabilidad,
   // Spec 41: claves maestras de la bóveda, las mismas que la api; obligatorias en producción.
   ...camposEntornoSecretos,
+  // Spec 42: Resend (RESEND_API_KEY, RESEND_WEBHOOK_SECRET), remitente y sal del destino; obligatorias en producción.
+  ...camposEntornoNotificaciones,
 })
   .superRefine(exigirSalFueraDeLocal)
   .superRefine(exigirAntivirusReal)
-  .superRefine(exigirClaveMaestraEnProduccion);
+  .superRefine(exigirClaveMaestraEnProduccion)
+  .superRefine(exigirProveedorCorreoEnProduccion);
 
 export type Config = z.infer<typeof esquema>;
 

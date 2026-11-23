@@ -64,6 +64,12 @@ export default [
             comp('arc', 'kernel', 'seg', 'aud', 'evt'),
             // R2: la bóveda audita sus escrituras (spec 41).
             comp('sec', 'kernel', 'aud'),
+            // R2: notificaciones publica por outbox y consume en el worker (EVT), lee persona y consentimiento (PER),
+            // hashea el destino (OBS), marca el webhook @Publico (SEG) y toma la zona de Lima (ORG) (spec 42).
+            comp('not', 'kernel', 'seg', 'org', 'evt', 'per', 'obs'),
+            // R2: el emisor electrónico lee la empresa, guarda sus secretos en la bóveda, valida el proveedor en
+            // catálogos, lee el parámetro de aviso, audita y autoriza (spec 49).
+            comp('fe', 'kernel', 'org', 'sec', 'cat', 'cfg', 'aud', 'seg'),
           ],
         },
       ],

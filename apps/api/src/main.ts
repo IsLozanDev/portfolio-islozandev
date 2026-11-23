@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { ENTIDADES_AUDITORIA } from '@vitrina/plataforma/auditoria';
 import { ENTIDADES_CAT, registrarEsquemasCat } from '@vitrina/plataforma/catalogos';
+import { ENTIDADES_FE, registrarEsquemasFe } from '@vitrina/plataforma/comprobantes';
 import { ENTIDADES_SEQ, registrarEsquemasSeq } from '@vitrina/plataforma/correlativos';
 import { ENTIDADES_EVT } from '@vitrina/plataforma/eventos';
 import { ENTIDADES_IDN, registrarEsquemasIdn } from '@vitrina/plataforma/identidad';
@@ -14,6 +15,7 @@ import { ENTIDADES_PER, registrarEsquemasPer } from '@vitrina/plataforma/persona
 import { ENTIDADES_ARC, registrarEsquemasArc } from '@vitrina/plataforma/archivos';
 import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE, registrarEsquemasSeg } from '@vitrina/plataforma/seguridad';
 import { clavesMaestrasDe, ENTIDADES_SEC } from '@vitrina/plataforma/secretos';
+import { ENTIDADES_NOT, registrarEsquemasNot } from '@vitrina/plataforma/notificaciones';
 import { AppModule } from './app.module.js';
 import { configurarApp } from './app.setup.js';
 import { cargarConfig } from './config/env.js';
@@ -28,7 +30,7 @@ const salDocumentos = salDocumento(config);
 const dataSource = new DataSource({
   type: 'postgres',
   url: config.DATABASE_URL,
-  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_PER, ...ENTIDADES_ARC, ...ENTIDADES_SEC],
+  entities: [...ENTIDADES_CFG, ...ENTIDADES_SEQ, ...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_PER, ...ENTIDADES_ARC, ...ENTIDADES_SEC, ...ENTIDADES_NOT, ...ENTIDADES_FE],
 });
 await dataSource.initialize();
 
@@ -41,6 +43,8 @@ registrarEsquemasCat(validator);
 registrarEsquemasIdn(validator);
 registrarEsquemasPer(validator);
 registrarEsquemasArc(validator);
+registrarEsquemasNot(validator);
+registrarEsquemasFe(validator);
 
 const app = await NestFactory.create(
   AppModule.register({
@@ -57,8 +61,10 @@ const app = await NestFactory.create(
     identidad: { proveedor: config.IDN_PROVEEDOR, decolectaToken: config.IDN_DECOLECTA_TOKEN, salDocumento: salDocumentos },
     archivos: { bucket: config.ARC_BUCKET },
     clavesMaestras: clavesMaestrasDe(config),
+    notificaciones: config,
   }),
-  { bufferLogs: true },
+  // Spec 42: el webhook de Resend verifica la firma sobre el cuerpo crudo; el JSON del resto de rutas no cambia.
+  { bufferLogs: true, rawBody: true },
 );
 usarLoggerDeObservabilidad(app);
 configurarApp(app);
