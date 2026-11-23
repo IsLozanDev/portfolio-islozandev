@@ -1,6 +1,6 @@
 # SPEC 36 — Archivos: componentes de carga y versiones con arrastrar y soltar, progreso y resultado del análisis por SSE
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 33, SPEC 35, SPEC 13, SPEC 15, SPEC 15b, SPEC 15c, SPEC 15d, SPEC 19b
 > **Date:** 2026-11-20
 > **Objective:** Crear `libs/plataforma/archivos-ui` con `vit-archivo-carga` (un archivo por arrastrar y soltar o elegir, validado contra su categoría, subido directo a Storage con barra de progreso y con el resultado del análisis empujado por SSE) y `vit-archivo-versiones` (lista, subir versión, marcar vigente y descargar), más las dos piezas de back que necesitan: la lista de categorías y el SSE del análisis.
