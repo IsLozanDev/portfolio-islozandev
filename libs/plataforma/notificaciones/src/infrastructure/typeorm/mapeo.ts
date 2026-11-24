@@ -17,11 +17,20 @@ export function plantillaDesdeFila(fila: FilaPlantilla): Plantilla {
     tenantId: fila.tenantId,
     codigo: fila.codigo,
     canal: fila.canal as CanalNotificacion,
+    idioma: fila.idioma,
     version: fila.version,
     asunto: fila.asunto,
     cuerpo: fila.cuerpo,
     variables: fila.variables,
+    plantillaBaseId: fila.plantillaBaseId,
+    activa: fila.activa,
+    creadoPor: fila.creadoPor,
+    creadoEn: fila.creadoEn,
   };
+}
+
+export function filaDesdePlantilla(plantilla: Plantilla): FilaPlantilla {
+  return { ...plantilla, variables: plantilla.variables.map((variable) => ({ ...variable })) };
 }
 
 export function mensajeDesdeFila(fila: FilaMensaje): Mensaje {
