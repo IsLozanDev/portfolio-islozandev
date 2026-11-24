@@ -1,14 +1,21 @@
-import { Logger, Module, type DynamicModule, type ModuleMetadata, type OnModuleDestroy } from '@nestjs/common';
+import { Logger, Module, type DynamicModule, type ModuleMetadata, type OnModuleDestroy, type Provider } from '@nestjs/common';
+import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { hashDocumento } from '@vitrina/plataforma/observabilidad';
 import { ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
 import { CONSENTIMIENTO_PORT, PERSONA_PORT, type ConsentimientoPort, type PersonaPort } from '@vitrina/plataforma/personas';
 import { Resend } from 'resend';
-import type { HashearDestino, Registrar } from './application/dependencias.js';
+import type { DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
 import { EncolarEnvio } from './application/encolar-envio.js';
 import { EntregarMensaje } from './application/entregar-mensaje.js';
 import { EnviarNotificacion } from './application/enviar-notificacion.js';
+import { ConsultarPlantilla } from './application/plantillas/consultar-plantilla.js';
+import { ListarPlantillas } from './application/plantillas/listar-plantillas.js';
+import { ListarVersionesPlantilla } from './application/plantillas/listar-versiones-plantilla.js';
+import { PersonalizarPlantilla } from './application/plantillas/personalizar-plantilla.js';
+import { RestaurarPlantillaBase } from './application/plantillas/restaurar-plantilla-base.js';
+import { VistaPreviaPlantilla } from './application/plantillas/vista-previa-plantilla.js';
 import { NOTIFICACION_PORT, type NotificacionPort } from './application/ports/notificacion.port.js';
 import type { ProveedorCorreo } from './application/ports/proveedor-correo.js';
 import type { VerificadorWebhook } from './application/ports/verificador-webhook.js';
@@ -18,18 +25,21 @@ import { CircuitBreaker } from './infrastructure/resend/circuit-breaker.js';
 import { PROVEEDOR_NO_CONFIGURADO, VERIFICADOR_NO_CONFIGURADO } from './infrastructure/resend/no-configurado.js';
 import { ProveedorCorreoResend } from './infrastructure/resend/proveedor-correo.resend.js';
 import { VerificadorWebhookResend } from './infrastructure/resend/verificador-webhook.resend.js';
+import { SaneadorHtmlSanitize } from './infrastructure/sanitize-html/saneador-html.sanitize.js';
 import { RepositorioContactosInvalidosTypeOrm } from './infrastructure/typeorm/contactos-invalidos.repositorio.js';
 import { MensajePorIdExternoSql, type EjecutorSql } from './infrastructure/typeorm/mensaje-por-id-externo.sql.js';
 import { RepositorioMensajesTypeOrm } from './infrastructure/typeorm/mensajes.repositorio.js';
 import { RepositorioPlantillasTypeOrm } from './infrastructure/typeorm/plantillas.repositorio.js';
 import type { EntornoNotificaciones } from './interface/entorno-notificaciones.js';
 import { NotificacionesConsumidor } from './interface/notificaciones.consumidor.js';
+import { PlantillasController } from './interface/plantillas.controller.js';
 import { WebhooksController } from './interface/webhooks.controller.js';
 
 const CONTEXTO_LOG = 'Notificaciones';
 /** Solo fuera de producción (allí NOT_SAL_DESTINO es obligatoria): el hash sigue siendo estable entre reinicios. */
 const SAL_DESTINO_SIN_CONFIGURAR = 'not-sal-destino-local-no-apta-para-produccion';
 const COLA_ENVIOS_ABIERTA = Symbol('ColaEnviosAbierta');
+const DEPENDENCIAS_PLANTILLAS = Symbol('DependenciasPlantillas');
 
 export interface NotificacionesOpciones {
   entorno: EntornoNotificaciones;
@@ -66,6 +76,11 @@ function crearVerificador(entorno: EntornoNotificaciones): VerificadorWebhook {
   return new VerificadorWebhookResend(new Resend(entorno.RESEND_API_KEY).webhooks, entorno.RESEND_WEBHOOK_SECRET);
 }
 
+/** Los casos de uso de plantillas reciben las mismas dependencias. */
+function casoDeUsoDePlantillas<CasoDeUso>(clase: new (dependencias: DependenciasPlantillas) => CasoDeUso): Provider {
+  return { provide: clase, useFactory: (dependencias: DependenciasPlantillas) => new clase(dependencias), inject: [DEPENDENCIAS_PLANTILLAS] };
+}
+
 /** Cierra la cola de envíos con la app (app.close() en pruebas y apagado). */
 class CierreColaEnvios implements OnModuleDestroy {
   constructor(private readonly abierta: ColaEnviosAbierta) {}
@@ -75,18 +90,44 @@ class CierreColaEnvios implements OnModuleDestroy {
   }
 }
 
-// Usa los tokens de KernelInfraModule (global), que la app debe importar con registrarEsquemasNot.
+// Usa los tokens de KernelInfraModule y AUDITORIA de AuditoriaModule (globales), que la app debe importar con
+// registrarEsquemasNot.
 // Las entidades ENTIDADES_NOT van en el DataSource de la app.
 @Module({})
 export class NotificacionesModule {
-  /** `NOTIFICACION_PORT` en proceso y el webhook del proveedor, para apps/api. */
+  /** `NOTIFICACION_PORT` en proceso, el webhook del proveedor y las plantillas por HTTP, para apps/api. */
   static register({ entorno, dataSource, imports }: NotificacionesOpciones): DynamicModule {
     const avisar = crearAviso();
     return {
       module: NotificacionesModule,
       imports,
-      controllers: [WebhooksController],
+      controllers: [WebhooksController, PlantillasController],
       providers: [
+        {
+          provide: DEPENDENCIAS_PLANTILLAS,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            reloj: Clock,
+            ids: IdGenerator,
+            auditoria: AuditoriaPort,
+          ): DependenciasPlantillas => ({
+            unidadDeTrabajo,
+            contexto,
+            reloj,
+            ids,
+            auditoria,
+            plantillas: new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto),
+            saneador: new SaneadorHtmlSanitize(),
+          }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, AUDITORIA],
+        },
+        casoDeUsoDePlantillas(ListarPlantillas),
+        casoDeUsoDePlantillas(ConsultarPlantilla),
+        casoDeUsoDePlantillas(ListarVersionesPlantilla),
+        casoDeUsoDePlantillas(VistaPreviaPlantilla),
+        casoDeUsoDePlantillas(PersonalizarPlantilla),
+        casoDeUsoDePlantillas(RestaurarPlantillaBase),
         {
           provide: NOTIFICACION_PORT,
           useFactory: (

@@ -17,16 +17,22 @@ export {
   AsuntoDemasiadoLargoError,
   CanalNoHabilitadoError,
   ClaveIdempotenciaInvalidaError,
+  ContenidoPlantillaInvalidoError,
   DestinoInvalidoError,
   FirmaWebhookInvalidaError,
   MensajeModificadoError,
   PersonaSinCorreoError,
+  PlantillaBaseNoEncontradaError,
   PlantillaNoEncontradaError,
   PromocionalSinPersonaError,
   ProveedorNoConfiguradoError,
+  SinPersonalizacionError,
   VariableNoPermitidaError,
   VariablesIncompletasError,
+  VersionObsoletaPlantillaError,
 } from './domain/errores.js';
+// Plantillas personalizables por tenant (spec 43).
+export { PERMISOS_PLANTILLAS } from './domain/permisos-not.js';
 export { INTENTOS_ENVIO, LIMITE_ENVIOS, NOMBRE_COLA_ENVIOS } from './infrastructure/bullmq/cola-envios.js';
 export { ESQUEMAS_NOT, registrarEsquemasNot } from './infrastructure/event-schemas.js';
 export { ENTIDADES_NOT } from './infrastructure/typeorm/entidades.js';

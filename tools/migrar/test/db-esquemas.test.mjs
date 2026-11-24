@@ -62,7 +62,7 @@ afterAll(async () => {
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
   for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', 'arc_fk_test_dueno', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
   for (const rol of ['sec_test_app', 'sec_test_sin_permiso']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
-  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'fe_test_app', 'fe_prueba_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'not_plantillas_test_app', 'fe_test_app', 'fe_prueba_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -102,6 +102,7 @@ const CASOS = [
   { migracion: '01n_sec.sql', esquema: 'sec', prueba: 'tests/01n_sec.test.sql' },
   { migracion: '01o_not.sql', esquema: 'ntf', prueba: 'tests/01o_not.test.sql' },
   { migracion: '01p_fe.sql', esquema: 'fe', prueba: 'tests/01p_fe.test.sql' },
+  { migracion: '01q_not_plantillas.sql', esquema: 'ntf', prueba: 'tests/01q_not_plantillas.test.sql' },
   { migracion: '01r_fe_prueba.sql', esquema: 'fe', prueba: 'tests/01r_fe_prueba.test.sql' },
 ];
 
@@ -235,6 +236,41 @@ async function inversoNotificacionesConEncolados() {
     await c.end();
   }
 }
+
+// Con una plantilla personalizada por un tenant el inverso de 01q_not_plantillas se niega (spec 43); la transacción se revierte.
+async function inversoPlantillasConPersonalizacion() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '43000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id)
+       VALUES (gen_random_uuid(), '${tenantId}', 'PRUEBA_CORREO', 'CORREO', 1, 'Prueba', '<p>Prueba</p>', '42000000-0000-0000-0000-000000000001')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01q_not_plantillas.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Columna, índice y ejemplos de PRUEBA_CORREO que agrega 01q_not_plantillas (3 en total).
+const objetosPlantillas = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'plantilla.creado_por' AS o FROM information_schema.columns
+        WHERE table_schema = 'ntf' AND table_name = 'plantilla' AND column_name = 'creado_por'
+       UNION ALL SELECT indexname FROM pg_indexes WHERE schemaname = 'ntf' AND indexname = 'uq_plantilla_activa_tenant'
+       UNION ALL SELECT 'ejemplos' FROM ntf.plantilla
+        WHERE id = '42000000-0000-0000-0000-000000000001' AND variables @> '[{"ejemplo":"María Quispe"}]'`,
+    )
+  ).rows.map((r) => r.o);
 
 // Con un emisor que guarda ids de secretos el inverso de 01p_fe se niega (spec 49); la transacción se revierte.
 async function inversoFeConSecretos() {
@@ -719,6 +755,16 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await columnasPruebaFe()).toBe(0);
     expect(await proveedoresFe()).toEqual(['SIMULADO']);
 
+    // El inverso de 01q_not_plantillas se niega con personalizaciones; sin ellas deja ntf.plantilla como la dejó
+    // 01o_not y se puede reaplicar. Va después del de 01r_fe_prueba. Queda revertida hasta reaplicar 01o_not.
+    expect(await objetosPlantillas()).toHaveLength(3);
+    expect(await inversoPlantillasConPersonalizacion()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01q_not_plantillas.sql'), 'utf8'));
+    expect(await objetosPlantillas()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01q_not_plantillas.sql'), 'utf8'));
+    expect(await objetosPlantillas()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01q_not_plantillas.sql'), 'utf8'));
+
     // El inverso de 01p_fe se niega con emisores que guardan secretos; sin ellos borra fe y la semilla de
     // PROVEEDOR_FE, y se puede reaplicar junto con 01r_fe_prueba.
     expect(await inversoFeConSecretos()).toBe('55006');
@@ -739,6 +785,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('ntf')).toBe(false);
     await ejecutar(urlDb, await readFile(rutaDb('01o_not.sql'), 'utf8'));
     expect(await existeEsquema('ntf')).toBe(true);
+    await ejecutar(urlDb, await readFile(rutaDb('01q_not_plantillas.sql'), 'utf8'));
+    expect(await objetosPlantillas()).toHaveLength(3);
 
     // El inverso de 01n_sec se niega con secretos guardados; sin ellos borra sec y se puede reaplicar.
     expect(await inversoSecretosConFilas()).toBe('55006');

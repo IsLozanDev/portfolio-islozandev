@@ -1,13 +1,52 @@
 import type { CanalNotificacion } from '../../domain/canal.js';
 import type { IntentoEntrega } from '../../domain/intento-entrega.js';
 import type { Mensaje } from '../../domain/mensaje.js';
-import type { Plantilla } from '../../domain/plantilla.js';
+import type { OrigenPlantilla, Plantilla } from '../../domain/plantilla.js';
 
 // Todos corren en la transacción activa y filtran por el tenant del contexto además de la RLS (regla 3).
+
+/** Una fila por código: la personalizada vigente si existe; si no, la base. */
+export interface ResumenPlantilla {
+  codigo: string;
+  canal: CanalNotificacion;
+  idioma: string;
+  origen: OrigenPlantilla;
+  version: number;
+  asunto: string | null;
+  actualizadoEn: Date;
+}
+
+export interface FiltroPlantillas {
+  canal?: CanalNotificacion;
+  /** Busca en código y asunto, sin distinguir mayúsculas. */
+  texto?: string;
+  /** Desde 1. */
+  pagina: number;
+  tamano: number;
+}
+
+export interface Pagina<Elemento> {
+  items: Elemento[];
+  total: number;
+  pagina: number;
+  tamano: number;
+}
 
 export interface RepositorioPlantillas {
   /** La del tenant activa de mayor versión; si no hay, la base activa de mayor versión. */
   vigente(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
+  /** La base activa de mayor versión. */
+  base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
+  vigenteDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
+  /** 0 si el tenant nunca personalizó el código; cuenta las activas y las inactivas. */
+  mayorVersionDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<number>;
+  listar(filtro: FiltroPlantillas): Promise<Pagina<ResumenPlantilla>>;
+  /** Las del tenant, de mayor a menor versión. */
+  versiones(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla[]>;
+  /** Desactiva la vigente del tenant e inserta la nueva; conflicto del índice → VersionObsoletaPlantillaError. */
+  guardarVersion(nueva: Plantilla, versionEsperada: number | null): Promise<void>;
+  /** Pone activa = false en todas las del tenant; devuelve cuántas desactivó. */
+  desactivarPersonalizacion(codigo: string, canal: CanalNotificacion, idioma: string): Promise<number>;
 }
 
 export interface RepositorioMensajes {

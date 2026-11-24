@@ -2,6 +2,7 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DataSource } from 'typeorm';
 import { z } from 'zod';
+import { AUDITORIA } from '@vitrina/plataforma/auditoria';
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator, KernelInfraModule, TENANT_CONTEXT, TypeOrmUnitOfWork, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import {
@@ -106,13 +107,16 @@ async function esperarEstadoFinal(probador: Probador, tenantId: string, mensajeI
 
 /** El CLI envía solo a un correo directo: TR-PER no está en el worker. */
 const personaNoDisponible = () => Promise.reject(new Error('TR-PER no está disponible en el CLI de notificaciones'));
+/** Solo las plantillas por HTTP auditan (spec 43); el CLI no las usa. */
+const auditoriaNoDisponible = () => Promise.reject(new Error('TR-AUD no está disponible en el CLI de notificaciones'));
 
 @Module({
   providers: [
     { provide: PERSONA_PORT, useValue: { obtener: personaNoDisponible } },
     { provide: CONSENTIMIENTO_PORT, useValue: { vigente: personaNoDisponible } },
+    { provide: AUDITORIA, useValue: { registrar: auditoriaNoDisponible, registrarAccesoSensible: auditoriaNoDisponible } },
   ],
-  exports: [PERSONA_PORT, CONSENTIMIENTO_PORT],
+  exports: [PERSONA_PORT, CONSENTIMIENTO_PORT, AUDITORIA],
 })
 class SinPersonasModule {}
 

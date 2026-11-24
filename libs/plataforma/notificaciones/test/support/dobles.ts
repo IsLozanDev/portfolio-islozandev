@@ -1,21 +1,26 @@
+import type { AuditoriaPort, EntradaAuditoria } from '@vitrina/plataforma/auditoria';
 import type { Clock, DomainEvent, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import type { ConsentimientoPort, PersonaDetalle, PersonaPort } from '@vitrina/plataforma/personas';
-import type { DependenciasEntrega, DependenciasEnvio, DependenciasWebhook, Registrar } from '../../src/application/dependencias.js';
+import type { DependenciasEntrega, DependenciasEnvio, DependenciasPlantillas, DependenciasWebhook, Registrar } from '../../src/application/dependencias.js';
 import type { ColaEnvios, TrabajoEnvio } from '../../src/application/ports/cola-envios.js';
 import type { CorreoSaliente, ProveedorCorreo } from '../../src/application/ports/proveedor-correo.js';
 import type {
+  FiltroPlantillas,
   LocalizadorMensajes,
+  Pagina,
   RepositorioContactosInvalidos,
   RepositorioMensajes,
   RepositorioPlantillas,
+  ResumenPlantilla,
 } from '../../src/application/ports/repositorios.js';
 import type { EventoProveedor, VerificadorWebhook } from '../../src/application/ports/verificador-webhook.js';
-import type { CanalNotificacion } from '../../src/domain/canal.js';
-import { MensajeModificadoError } from '../../src/domain/errores.js';
+import { CANAL_CORREO, type CanalNotificacion } from '../../src/domain/canal.js';
+import { MensajeModificadoError, VersionObsoletaPlantillaError } from '../../src/domain/errores.js';
 import type { IntentoEntrega } from '../../src/domain/intento-entrega.js';
 import { Mensaje } from '../../src/domain/mensaje.js';
-import type { Plantilla } from '../../src/domain/plantilla.js';
+import { IDIOMA_POR_DEFECTO, origenDe, type Plantilla } from '../../src/domain/plantilla.js';
+import { SaneadorHtmlSanitize } from '../../src/infrastructure/sanitize-html/saneador-html.sanitize.js';
 
 export const TENANT_A = '42000000-0000-7000-8000-00000000000a';
 export const TENANT_B = '42000000-0000-7000-8000-00000000000b';
@@ -27,13 +32,18 @@ export const PLANTILLA_PRUEBA: Plantilla = {
   tenantId: null,
   codigo: 'PRUEBA_CORREO',
   canal: 'CORREO',
+  idioma: 'es',
   version: 1,
   asunto: 'Prueba de correo de {{producto}}',
   cuerpo: '<p>Hola {{nombre}}:</p><p>Prueba de {{producto}}.</p>',
   variables: [
-    { nombre: 'nombre', tipo: 'texto' },
-    { nombre: 'producto', tipo: 'texto' },
+    { nombre: 'nombre', tipo: 'texto', ejemplo: 'María Quispe' },
+    { nombre: 'producto', tipo: 'texto', ejemplo: 'SazónPOS' },
   ],
+  plantillaBaseId: null,
+  activa: true,
+  creadoPor: null,
+  creadoEn: new Date('2026-11-01T00:00:00.000Z'),
 };
 
 export class RelojFijo implements Clock {
@@ -65,11 +75,76 @@ export class PublicadorMemoria implements EventPublisher {
   }
 }
 
+/** Base y personalizadas de todos los tenants; cada lectura filtra por el tenant del contexto, como la RLS. */
 export class PlantillasMemoria implements RepositorioPlantillas {
   plantillas: Plantilla[] = [PLANTILLA_PRUEBA];
 
-  async vigente(codigo: string, canal: CanalNotificacion): Promise<Plantilla | null> {
-    return this.plantillas.find((plantilla) => plantilla.codigo === codigo && plantilla.canal === canal) ?? null;
+  constructor(private readonly contexto: TenantContext) {}
+
+  async vigente(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    return (await this.vigenteDelTenant(codigo, canal, idioma)) ?? this.base(codigo, canal, idioma);
+  }
+
+  async base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    return this.mayor(this.delCodigo(codigo, canal, idioma).filter((plantilla) => plantilla.tenantId === null && plantilla.activa));
+  }
+
+  async vigenteDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    return this.mayor(this.delTenant(codigo, canal, idioma).filter((plantilla) => plantilla.activa));
+  }
+
+  async mayorVersionDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<number> {
+    return this.mayor(this.delTenant(codigo, canal, idioma))?.version ?? 0;
+  }
+
+  async listar(filtro: FiltroPlantillas): Promise<Pagina<ResumenPlantilla>> {
+    const codigos = [...new Set(this.plantillas.filter((plantilla) => plantilla.tenantId === null).map((plantilla) => plantilla.codigo))].sort();
+    const vigentes: Plantilla[] = [];
+    for (const codigo of codigos) {
+      const vigente = await this.vigente(codigo, CANAL_CORREO, IDIOMA_POR_DEFECTO);
+      if (vigente) vigentes.push(vigente);
+    }
+    const texto = filtro.texto?.toLowerCase();
+    const filtradas = vigentes.filter(
+      (plantilla) => !texto || plantilla.codigo.toLowerCase().includes(texto) || (plantilla.asunto ?? '').toLowerCase().includes(texto),
+    );
+    const desde = (filtro.pagina - 1) * filtro.tamano;
+    const items = filtradas.slice(desde, desde + filtro.tamano).map(resumenDe);
+    return { items, total: filtradas.length, pagina: filtro.pagina, tamano: filtro.tamano };
+  }
+
+  async versiones(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla[]> {
+    return this.delTenant(codigo, canal, idioma).sort((una, otra) => otra.version - una.version);
+  }
+
+  async guardarVersion(nueva: Plantilla, versionEsperada: number | null): Promise<void> {
+    const vigente = await this.vigenteDelTenant(nueva.codigo, nueva.canal, nueva.idioma);
+    if ((vigente?.version ?? null) !== versionEsperada) throw new VersionObsoletaPlantillaError();
+    if (vigente) this.reemplazar({ ...vigente, activa: false });
+    this.plantillas.push(nueva);
+  }
+
+  async desactivarPersonalizacion(codigo: string, canal: CanalNotificacion, idioma: string): Promise<number> {
+    const activas = this.delTenant(codigo, canal, idioma).filter((plantilla) => plantilla.activa);
+    for (const activa of activas) this.reemplazar({ ...activa, activa: false });
+    return activas.length;
+  }
+
+  private delCodigo(codigo: string, canal: CanalNotificacion, idioma: string): Plantilla[] {
+    return this.plantillas.filter((plantilla) => plantilla.codigo === codigo && plantilla.canal === canal && plantilla.idioma === idioma);
+  }
+
+  private delTenant(codigo: string, canal: CanalNotificacion, idioma: string): Plantilla[] {
+    const { tenantId } = this.contexto.current();
+    return this.delCodigo(codigo, canal, idioma).filter((plantilla) => plantilla.tenantId === tenantId);
+  }
+
+  private mayor(plantillas: Plantilla[]): Plantilla | null {
+    return plantillas.reduce<Plantilla | null>((mayor, plantilla) => (!mayor || plantilla.version > mayor.version ? plantilla : mayor), null);
+  }
+
+  private reemplazar(cambiada: Plantilla): void {
+    this.plantillas = this.plantillas.map((plantilla) => (plantilla.id === cambiada.id ? cambiada : plantilla));
   }
 }
 
@@ -214,6 +289,19 @@ export class LocalizadorMemoria implements LocalizadorMensajes {
   }
 }
 
+function resumenDe(plantilla: Plantilla): ResumenPlantilla {
+  const { codigo, canal, idioma, version, asunto } = plantilla;
+  return { codigo, canal, idioma, origen: origenDe(plantilla), version, asunto, actualizadoEn: plantilla.creadoEn };
+}
+
+export class AuditoriaMemoria implements Pick<AuditoriaPort, 'registrar'> {
+  readonly entradas: EntradaAuditoria[] = [];
+
+  async registrar(entrada: EntradaAuditoria): Promise<void> {
+    this.entradas.push(entrada);
+  }
+}
+
 export function registro(): Registrar & { llamadas: { mensaje: string; datos: Record<string, unknown> }[] } {
   const llamadas: { mensaje: string; datos: Record<string, unknown> }[] = [];
   const registrar = ((mensaje: string, datos: Record<string, unknown>) => llamadas.push({ mensaje, datos })) as Registrar & { llamadas: typeof llamadas };
@@ -232,11 +320,13 @@ export function escenario() {
   const consentimientos = new ConsentimientosMemoria();
   const proveedor = new ProveedorFalso();
   const avisos = registro();
+  const plantillas = new PlantillasMemoria(contexto);
+  const auditoria = new AuditoriaMemoria();
   const comun = { unidadDeTrabajo: UNIDAD_DE_TRABAJO, contexto, reloj, ids: new IdsSecuenciales(), mensajes };
   const envio: DependenciasEnvio = {
     ...comun,
     publicador,
-    plantillas: new PlantillasMemoria(),
+    plantillas,
     contactosInvalidos,
     personas,
     consentimientos,
@@ -246,6 +336,25 @@ export function escenario() {
   const entrega: DependenciasEntrega = { ...comun, proveedor, remitente: 'Vitrina <no-responder@vitrina.pe>', avisar: avisos };
   const verificador = new VerificadorFalso({ tipo: 'IGNORADO' });
   const webhook: DependenciasWebhook = { ...comun, verificador, localizador: new LocalizadorMemoria(mensajes), contactosInvalidos, avisar: avisos };
-  const enTenant = <T>(tenantId: string, trabajo: () => Promise<T>) => contexto.run({ tenantId }, trabajo);
-  return { contexto, reloj, mensajes, contactosInvalidos, publicador, personas, consentimientos, proveedor, verificador, avisos, envio, entrega, webhook, enTenant };
+  const gestionPlantillas: DependenciasPlantillas = { ...comun, plantillas, saneador: new SaneadorHtmlSanitize(), auditoria };
+  const enTenant = <T>(tenantId: string, trabajo: () => Promise<T>, actorId?: string) => contexto.run({ tenantId, actorId }, trabajo);
+  return {
+    contexto,
+    reloj,
+    mensajes,
+    contactosInvalidos,
+    publicador,
+    personas,
+    consentimientos,
+    proveedor,
+    verificador,
+    avisos,
+    plantillas,
+    auditoria,
+    envio,
+    entrega,
+    webhook,
+    gestionPlantillas,
+    enTenant,
+  };
 }

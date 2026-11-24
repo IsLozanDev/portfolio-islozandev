@@ -101,3 +101,38 @@ export class MensajeModificadoError extends ConflictError {
     super('El mensaje cambió mientras se procesaba');
   }
 }
+
+/** Spec 43: el código no tiene plantilla base en el canal; solo se personalizan códigos con base. */
+export class PlantillaBaseNoEncontradaError extends NotFoundError {
+  override readonly code = 'PLANTILLA_NO_ENCONTRADA';
+
+  constructor(codigo: string) {
+    super(`No hay una plantilla base ${codigo} para el canal`);
+  }
+}
+
+/** Asunto o cuerpo fuera de sus límites. El mensaje dice qué campo, nunca su contenido. */
+export class ContenidoPlantillaInvalidoError extends ValidationError {
+  override readonly code = 'CONTENIDO_PLANTILLA_INVALIDO';
+
+  constructor(motivo: string) {
+    super(motivo);
+  }
+}
+
+/** Otra personalización se guardó desde que el cliente leyó la plantilla. */
+export class VersionObsoletaPlantillaError extends ConflictError {
+  override readonly code = 'VERSION_OBSOLETA';
+
+  constructor() {
+    super('La plantilla cambió desde que la abrió; recárguela y vuelva a intentar');
+  }
+}
+
+export class SinPersonalizacionError extends NotFoundError {
+  override readonly code = 'SIN_PERSONALIZACION';
+
+  constructor(codigo: string) {
+    super(`La plantilla ${codigo} no está personalizada`);
+  }
+}
