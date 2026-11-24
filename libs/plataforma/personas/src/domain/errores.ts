@@ -253,3 +253,11 @@ export class MotivoFusionInvalidoError extends ValidationError {
 export class CampoElegidoInvalidoError extends ValidationError {
   override readonly code = 'CAMPO_ELEGIDO_INVALIDO';
 }
+
+export class DescarteNoEncontradoError extends NotFoundError {
+  override readonly code = 'DESCARTE_NO_ENCONTRADO';
+
+  constructor() {
+    super('El par no estaba descartado');
+  }
+}

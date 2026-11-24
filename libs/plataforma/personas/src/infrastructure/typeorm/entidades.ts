@@ -192,6 +192,54 @@ export const ConsentimientoEntidad = new EntitySchema<FilaConsentimiento>({
   },
 });
 
+export interface FilaFusion {
+  id: string;
+  tenantId: string;
+  personaConservadaId: string;
+  personaAbsorbidaId: string;
+  camposElegidos: unknown;
+  motivo: string;
+  fusionadoPor: string;
+  fusionadoEn: Date;
+}
+
+export interface FilaParDescartado {
+  tenantId: string;
+  personaMenorId: string;
+  personaMayorId: string;
+  descartadoPor: string;
+  descartadoEn: Date;
+}
+
+export const FusionEntidad = new EntitySchema<FilaFusion>({
+  name: 'Fusion',
+  schema: 'per',
+  tableName: 'fusion',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    personaConservadaId: { name: 'persona_conservada_id', type: 'uuid' },
+    personaAbsorbidaId: { name: 'persona_absorbida_id', type: 'uuid' },
+    camposElegidos: { name: 'campos_elegidos', type: 'jsonb' },
+    motivo: { type: 'varchar', length: 300 },
+    fusionadoPor: { name: 'fusionado_por', type: 'uuid' },
+    fusionadoEn: { name: 'fusionado_en', type: 'timestamptz' },
+  },
+});
+
+export const ParDescartadoEntidad = new EntitySchema<FilaParDescartado>({
+  name: 'ParDescartado',
+  schema: 'per',
+  tableName: 'par_descartado',
+  columns: {
+    tenantId: { name: 'tenant_id', type: 'uuid', primary: true },
+    personaMenorId: { name: 'persona_menor_id', type: 'uuid', primary: true },
+    personaMayorId: { name: 'persona_mayor_id', type: 'uuid', primary: true },
+    descartadoPor: { name: 'descartado_por', type: 'uuid' },
+    descartadoEn: { name: 'descartado_en', type: 'timestamptz' },
+  },
+});
+
 export const ENTIDADES_PER = [
   PersonaEntidad,
   PersonaRolEntidad,
@@ -199,4 +247,6 @@ export const ENTIDADES_PER = [
   DireccionEntidad,
   TextoFinalidadEntidad,
   ConsentimientoEntidad,
+  FusionEntidad,
+  ParDescartadoEntidad,
 ];

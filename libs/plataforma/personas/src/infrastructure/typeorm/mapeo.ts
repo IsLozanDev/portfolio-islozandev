@@ -39,6 +39,16 @@ export function columnasEditablesDePersona(persona: Persona): ColumnasEditablesP
   };
 }
 
+/** Lo que escribe la fusión en la absorbida, además de la versión. */
+export function columnasDeAlias(persona: Persona): Pick<FilaPersona, 'activo' | 'fusionadaEnId' | 'fusionadaEn' | 'version'> {
+  return {
+    activo: persona.activo,
+    fusionadaEnId: persona.fusion?.conservadaId ?? null,
+    fusionadaEn: persona.fusion?.fusionadaEn ?? null,
+    version: persona.version,
+  };
+}
+
 export function filaDesdeRol(persona: Persona, rolAsignado: RolAsignado): FilaPersonaRol {
   return { personaId: persona.id, tenantId: persona.tenantId, ...rolAsignado };
 }

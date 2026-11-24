@@ -7,6 +7,7 @@ import {
 } from '@vitrina/plataforma/identidad';
 import { DocumentoIdentidad } from '../domain/documento-identidad.js';
 import type { DenominacionPersona } from '../domain/denominacion.js';
+import { resolverAlias } from './alias-personas.js';
 import type { DependenciasPersonas } from './dependencias-personas.js';
 import type { PersonaResumen } from './ports/persona.port.js';
 import { resumenDe } from './vista-persona.js';
@@ -31,7 +32,7 @@ const MOTIVO_CONSULTA = 'REGISTRO_CLIENTE';
 
 /**
  * Devuelve la persona del tenant (TR-CA-101) o, si no existe y el documento es DNI o RUC, los datos de
- * TR-IDN para prellenar (TR-CA-100). La consulta al proveedor va fuera de la transacción y su fallo nunca
+ * TR-IDN para prellenar (TR-CA-100). El documento de una absorbida devuelve su conservada. La consulta al proveedor va fuera de la transacción y su fallo nunca
  * falla la búsqueda (TR-RNF-007): vuelve como aviso y el registro sigue a mano.
  */
 export class BuscarPersonaPorDocumento {
@@ -41,7 +42,10 @@ export class BuscarPersonaPorDocumento {
     const { unidadDeTrabajo, personas } = this.dependencias;
     const documento = DocumentoIdentidad.crear(busqueda.tipo, busqueda.numero);
 
-    const persona = await unidadDeTrabajo.run(() => personas.buscarPorDocumento(documento.tipo, documento.numero));
+    const persona = await unidadDeTrabajo.run(async () => {
+      const encontrada = await personas.buscarPorDocumento(documento.tipo, documento.numero);
+      return encontrada ? (await resolverAlias(personas, encontrada)).persona : null;
+    });
     if (persona) return { encontrada: true, persona: resumenDe(persona) };
     if (!documento.esConsultable() || !busqueda.puedePrellenar) return { encontrada: false, prellenado: null };
     return this.prellenarDesdeIdentidad(documento);

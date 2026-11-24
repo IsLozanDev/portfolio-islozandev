@@ -1,5 +1,6 @@
 import { fechaCalendarioDe } from '@vitrina/plataforma/org';
 import { PersonaNoEncontradaError, ProductoNoSuscritoError } from '../domain/errores.js';
+import { exigirSinFusionar } from './alias-personas.js';
 import { publicarEventosDe, type DependenciasPersonas } from './dependencias-personas.js';
 import type { AsignarRolComando } from './ports/persona.port.js';
 
@@ -16,6 +17,7 @@ export class AsignarRolPersona {
     return unidadDeTrabajo.run(async () => {
       const persona = await personas.obtener(comando.personaId);
       if (!persona) throw new PersonaNoEncontradaError();
+      exigirSinFusionar(persona);
       if (!(await suscripciones.estaVigente(comando.productoCodigo))) throw new ProductoNoSuscritoError();
 
       const asignado = persona.asignarRol(comando.productoCodigo, comando.rol, fechaCalendarioDe(reloj.now()));

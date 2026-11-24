@@ -14,14 +14,23 @@ import {
 } from '@vitrina/plataforma/kernel';
 import type { ProductoCodigo } from '@vitrina/plataforma/org';
 import type { DependenciasPersonas } from '../../src/application/dependencias-personas.js';
+import type {
+  ConsultaDuplicados,
+  CriteriosDuplicados,
+  EvaluacionPar,
+  PaginaDuplicados,
+} from '../../src/application/ports/consulta-duplicados.js';
 import type { ConsultaPersonas, CriteriosConsultaPersonas, PaginaPersonas } from '../../src/application/ports/consulta-personas.js';
 import type { RepositorioConsentimientos } from '../../src/application/ports/repositorio-consentimientos.js';
+import type { RegistroFusion, RepositorioFusiones } from '../../src/application/ports/repositorio-fusiones.js';
 import type { RepositorioPersonas } from '../../src/application/ports/repositorio-personas.js';
 import type { SuscripcionesDelTenant } from '../../src/application/ports/suscripciones-del-tenant.js';
 import type { Consentimiento, Finalidad } from '../../src/domain/consentimiento.js';
 import type { TipoDocumentoPersona } from '../../src/domain/documento-identidad.js';
+import type { ParPersonas } from '../../src/domain/duplicados.js';
+import type { ResultadoAbsorcion } from '../../src/domain/fusion.js';
 import { VersionTextoDuplicadaError } from '../../src/domain/errores.js';
-import type { Persona } from '../../src/domain/persona.js';
+import { Persona } from '../../src/domain/persona.js';
 import type { TextoFinalidad } from '../../src/domain/texto-finalidad.js';
 
 export const TENANT_A = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -100,8 +109,103 @@ export class RepositorioPersonasMemoria implements RepositorioPersonas {
     if (!this.guardadas.includes(persona)) this.guardadas.push(persona);
   }
 
-  private delTenant(): Persona[] {
+  readonly fusionesGuardadas: { conservadaId: string; absorbidaId: string; movimientos: ResultadoAbsorcion }[] = [];
+
+  async guardarFusion(conservada: Persona, absorbida: Persona, movimientos: ResultadoAbsorcion): Promise<void> {
+    await this.guardar(conservada);
+    await this.guardar(absorbida);
+    this.fusionesGuardadas.push({ conservadaId: conservada.id, absorbidaId: absorbida.id, movimientos });
+  }
+
+  async aliasDe(personaId: string): Promise<string[]> {
+    return this.delTenant()
+      .filter((persona) => persona.fusion?.conservadaId === personaId)
+      .map((persona) => persona.id);
+  }
+
+  /** Como un UPDATE de la fila: cambia a quién apunta un alias y sube su versión. */
+  reapuntar(alias: Persona, conservadaId: string): void {
+    const fusion = alias.fusion;
+    if (!fusion) return;
+    const reapuntada = Persona.reconstituir(alias.id, alias.version + 1, {
+      tenantId: alias.tenantId,
+      tipoPersona: alias.tipoPersona,
+      documento: alias.documento,
+      nombres: alias.nombres,
+      apellidoPaterno: alias.apellidoPaterno,
+      apellidoMaterno: alias.apellidoMaterno,
+      razonSocial: alias.razonSocial,
+      activo: alias.activo,
+      roles: [...alias.roles],
+      contactos: [...alias.contactos],
+      direcciones: [...alias.direcciones],
+      fusion: { conservadaId, fusionadaEn: fusion.fusionadaEn },
+    });
+    this.guardadas.splice(this.guardadas.indexOf(alias), 1, reapuntada);
+  }
+
+  delTenant(): Persona[] {
     return this.guardadas.filter((persona) => persona.tenantId === this.contexto.current().tenantId);
+  }
+}
+
+/** Registra las fusiones y los descartes por tenant; re-apunta los alias en el repositorio de personas en memoria. */
+export class RepositorioFusionesMemoria implements RepositorioFusiones {
+  readonly fusiones: RegistroFusion[] = [];
+  private descartes: { tenantId: string; menor: string; mayor: string; usuarioId: string }[] = [];
+  constructor(
+    private readonly contexto: TenantContext,
+    private readonly personas: RepositorioPersonasMemoria,
+  ) {}
+
+  async registrar(fusion: RegistroFusion): Promise<void> {
+    if (this.fusiones.some((registrada) => registrada.absorbidaId === fusion.absorbidaId)) throw new ConflictError('uq_fusion_absorbida');
+    this.fusiones.push(fusion);
+  }
+
+  async reapuntarAlias(anteriorConservadaId: string, nuevaConservadaId: string): Promise<number> {
+    const alias = this.personas.delTenant().filter((persona) => persona.fusion?.conservadaId === anteriorConservadaId);
+    for (const persona of alias) this.personas.reapuntar(persona, nuevaConservadaId);
+    return alias.length;
+  }
+
+  async descartar(par: ParPersonas, usuarioId: string): Promise<void> {
+    if (await this.estaDescartado(par)) return;
+    this.descartes.push({ tenantId: this.tenantId, menor: par.menor, mayor: par.mayor, usuarioId });
+  }
+
+  async quitarDescarte(par: ParPersonas): Promise<boolean> {
+    const antes = this.descartes.length;
+    this.descartes = this.descartes.filter((descarte) => !this.esElPar(descarte, par));
+    return this.descartes.length < antes;
+  }
+
+  async estaDescartado(par: ParPersonas): Promise<boolean> {
+    return this.descartes.some((descarte) => this.esElPar(descarte, par));
+  }
+
+  private esElPar(descarte: { tenantId: string; menor: string; mayor: string }, par: ParPersonas): boolean {
+    return descarte.tenantId === this.tenantId && descarte.menor === par.menor && descarte.mayor === par.mayor;
+  }
+
+  private get tenantId(): string {
+    return this.contexto.current().tenantId;
+  }
+}
+
+/** Devuelve la página y la evaluación fijadas por la prueba, y recuerda lo que recibe. */
+export class ConsultaDuplicadosEspia implements ConsultaDuplicados {
+  readonly criterios: CriteriosDuplicados[] = [];
+  pagina: PaginaDuplicados = { items: [], total: 0 };
+  evaluacion: EvaluacionPar | null = null;
+
+  async buscar(criterios: CriteriosDuplicados): Promise<PaginaDuplicados> {
+    this.criterios.push(criterios);
+    return this.pagina;
+  }
+
+  async evaluar(): Promise<EvaluacionPar | null> {
+    return this.evaluacion;
   }
 }
 
@@ -274,19 +378,22 @@ export interface Dobles extends DependenciasPersonas {
   consentimientos: RepositorioConsentimientosMemoria;
   auditoria: AuditoriaEspia;
   archivos: ArchivosFijos;
+  consultaDuplicados: ConsultaDuplicadosEspia;
+  fusiones: RepositorioFusionesMemoria;
 }
 
 export const USUARIO_DEL_CONTEXTO = 'cccccccc-0000-4000-8000-000000000003';
 
 export function crearDobles(): Dobles {
   const contexto = new ContextoFijo({ tenantId: TENANT_A, actorId: USUARIO_DEL_CONTEXTO });
+  const personas = new RepositorioPersonasMemoria(contexto);
   return {
     unidadDeTrabajo: new UnidadDeTrabajoDirecta(),
     contexto,
     reloj: new RelojFalso(),
     ids: new IdsEnOrden(),
     publicador: new PublicadorMemoria(),
-    personas: new RepositorioPersonasMemoria(contexto),
+    personas,
     consultaPersonas: new ConsultaPersonasEspia(),
     suscripciones: new SuscripcionesFijas(['CLI', 'GYM']),
     catalogo: new CatalogoFijo(),
@@ -294,5 +401,7 @@ export function crearDobles(): Dobles {
     consentimientos: new RepositorioConsentimientosMemoria(contexto),
     auditoria: new AuditoriaEspia(),
     archivos: new ArchivosFijos(),
+    consultaDuplicados: new ConsultaDuplicadosEspia(),
+    fusiones: new RepositorioFusionesMemoria(contexto, personas),
   };
 }

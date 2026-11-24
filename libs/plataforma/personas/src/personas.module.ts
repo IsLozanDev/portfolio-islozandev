@@ -31,7 +31,9 @@ import { RegistrarPersona } from './application/registrar-persona.js';
 import { ServicioPersonas } from './application/servicio-personas.js';
 import { SuscripcionesDelTenantOrg } from './infrastructure/suscripciones-del-tenant.org.js';
 import { RepositorioConsentimientosTypeOrm } from './infrastructure/typeorm/consentimientos.repositorio.js';
+import { ConsultaDuplicadosTypeOrm } from './infrastructure/typeorm/consulta-duplicados.typeorm.js';
 import { ConsultaPersonasTypeOrm } from './infrastructure/typeorm/consulta-personas.typeorm.js';
+import { RepositorioFusionesTypeOrm } from './infrastructure/typeorm/fusiones.repositorio.js';
 import { RepositorioPersonasTypeOrm } from './infrastructure/typeorm/personas.repositorio.js';
 import { ConsentimientosPersonaController } from './interface/consentimientos.controller.js';
 import { ContactosPersonaController } from './interface/contactos.controller.js';
@@ -120,6 +122,8 @@ export class PersonasModule {
             consentimientos: new RepositorioConsentimientosTypeOrm(unidadDeTrabajo, contexto),
             auditoria,
             archivos,
+            consultaDuplicados: new ConsultaDuplicadosTypeOrm(unidadDeTrabajo, contexto),
+            fusiones: new RepositorioFusionesTypeOrm(unidadDeTrabajo, contexto),
           }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, CATALOGO_PORT, IDENTIDAD, AUDITORIA, ARCHIVO_PORT],
         },
