@@ -7,6 +7,7 @@ export default {
     '^@vitrina/plataforma/kernel$': '<rootDir>/../kernel/src/index.ts',
     '^@vitrina/plataforma/kernel-infra$': '<rootDir>/../kernel-infra/src/index.ts',
     '^@vitrina/plataforma/seguridad$': '<rootDir>/../seguridad/src/index.ts',
+    '^@vitrina/plataforma/auditoria$': '<rootDir>/../auditoria/src/index.ts',
     '^@vitrina/plataforma/org$': '<rootDir>/../org/src/index.ts',
     '^@vitrina/plataforma/eventos$': '<rootDir>/../eventos/src/index.ts',
     '^@vitrina/plataforma/observabilidad$': '<rootDir>/../observabilidad/src/index.ts',

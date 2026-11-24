@@ -1,6 +1,6 @@
 import type { AvisoCertificado } from '../../domain/aviso-certificado.js';
-import { Emisor, type CertificadoEmisor } from '../../domain/emisor.js';
-import type { AmbienteEmisor, EstadoEmisor } from '../../domain/estado-emisor.js';
+import { Emisor, type CertificadoEmisor, type PruebaEmisor } from '../../domain/emisor.js';
+import type { AmbienteEmisor, EstadoEmisor, EstadoPrueba } from '../../domain/estado-emisor.js';
 import type { RegimenIgv } from '../../domain/regimen-igv.js';
 import type { FilaAvisoCertificado, FilaEmisor } from './entidades.js';
 
@@ -8,6 +8,20 @@ function certificadoDesdeFila(fila: FilaEmisor): CertificadoEmisor | null {
   const { certificadoRuc, certificadoVenceEn, certificadoHuellaSha256 } = fila;
   if (certificadoRuc === null || certificadoVenceEn === null || certificadoHuellaSha256 === null) return null;
   return { ruc: certificadoRuc, venceEn: certificadoVenceEn, huellaSha256: certificadoHuellaSha256 };
+}
+
+/** Sin estado no hubo prueba (o se limpió al cambiar la configuración); su número es el último correlativo. */
+function pruebaDesdeFila(fila: FilaEmisor): PruebaEmisor | null {
+  const { pruebaEstado, pruebaSolicitadaEn } = fila;
+  if (pruebaEstado === null || pruebaSolicitadaEn === null) return null;
+  return {
+    estado: pruebaEstado as EstadoPrueba,
+    numero: fila.pruebasEnviadas,
+    solicitadaEn: pruebaSolicitadaEn,
+    resultadoEn: fila.pruebaResultadoEn,
+    codigo: fila.pruebaCodigo,
+    descripcion: fila.pruebaDescripcion,
+  };
 }
 
 /** Los CHECK de la tabla garantizan los valores de estado, ambiente y régimen. */
@@ -26,6 +40,11 @@ export function emisorDesdeFila(fila: FilaEmisor): Emisor {
     secretoCertificadoId: fila.secretoCertificadoId,
     secretoClaveCertificadoId: fila.secretoClaveCertificadoId,
     certificado: certificadoDesdeFila(fila),
+    urlProveedor: fila.urlProveedor,
+    pruebasEnviadas: fila.pruebasEnviadas,
+    prueba: pruebaDesdeFila(fila),
+    produccionHabilitadaEn: fila.produccionHabilitadaEn,
+    produccionHabilitadaPor: fila.produccionHabilitadaPor,
     version: fila.version,
     creadoPor: fila.creadoPor,
     creadoEn: fila.creadoEn,
@@ -35,12 +54,17 @@ export function emisorDesdeFila(fila: FilaEmisor): Emisor {
 }
 
 export function filaDesdeEmisor(emisor: Emisor): FilaEmisor {
-  const { certificado, ...datos } = emisor.datos;
+  const { certificado, prueba, ...datos } = emisor.datos;
   return {
     ...datos,
     certificadoRuc: certificado?.ruc ?? null,
     certificadoVenceEn: certificado?.venceEn ?? null,
     certificadoHuellaSha256: certificado?.huellaSha256 ?? null,
+    pruebaEstado: prueba?.estado ?? null,
+    pruebaSolicitadaEn: prueba?.solicitadaEn ?? null,
+    pruebaResultadoEn: prueba?.resultadoEn ?? null,
+    pruebaCodigo: prueba?.codigo ?? null,
+    pruebaDescripcion: prueba?.descripcion ?? null,
   };
 }
 
@@ -60,6 +84,15 @@ export function cambiosDeEmisor(emisor: Emisor): Omit<FilaEmisor, 'id' | 'tenant
     certificadoRuc: fila.certificadoRuc,
     certificadoVenceEn: fila.certificadoVenceEn,
     certificadoHuellaSha256: fila.certificadoHuellaSha256,
+    urlProveedor: fila.urlProveedor,
+    pruebasEnviadas: fila.pruebasEnviadas,
+    pruebaEstado: fila.pruebaEstado,
+    pruebaSolicitadaEn: fila.pruebaSolicitadaEn,
+    pruebaResultadoEn: fila.pruebaResultadoEn,
+    pruebaCodigo: fila.pruebaCodigo,
+    pruebaDescripcion: fila.pruebaDescripcion,
+    produccionHabilitadaEn: fila.produccionHabilitadaEn,
+    produccionHabilitadaPor: fila.produccionHabilitadaPor,
     version: fila.version,
     modificadoPor: fila.modificadoPor,
     modificadoEn: fila.modificadoEn,

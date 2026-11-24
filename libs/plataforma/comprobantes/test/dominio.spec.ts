@@ -28,7 +28,7 @@ const leido = (cambios: Partial<{ ruc: string; venceEn: Date; emitidoEn: Date; h
   );
 
 const nuevo = () => Emisor.crear({ id: 'emisor-1', tenantId: 'tenant-1', empresaId: 'empresa-1', creadoPor: 'usuario-1', ahora: AHORA });
-const configuracion = { proveedor: 'SIMULADO', usuarioProveedor: 'MODDATOS', regimenIgv: 'GENERAL', leyendaPie: null };
+const configuracion = { proveedor: 'SIMULADO', usuarioProveedor: 'MODDATOS', regimenIgv: 'GENERAL', leyendaPie: null, urlProveedor: null };
 
 describe('extraerRuc: serialNumber, OU, CN y O, en ese orden', () => {
   it('RUC en serialNumber', () => {

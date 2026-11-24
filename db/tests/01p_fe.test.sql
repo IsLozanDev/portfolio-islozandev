@@ -29,19 +29,17 @@ $$;
 GRANT USAGE ON SCHEMA fe_test TO fe_test_app;
 
 -- ---------------------------------------------------------------------
--- Semilla del catálogo GLOBAL PROVEEDOR_FE con el simulador.
+-- Semilla del catálogo GLOBAL PROVEEDOR_FE con el simulador. 01r_fe_prueba (spec 50) le suma NUBEFACT y
+-- atributos nuevos al simulador, y sube la versión: aquí solo se exige lo que siembra 01p.
 -- ---------------------------------------------------------------------
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM cat.catalogo c JOIN cat.catalogo_item i ON i.catalogo_id = c.id
      WHERE c.codigo = 'PROVEEDOR_FE' AND c.alcance = 'GLOBAL' AND c.fuente = 'Plataforma' AND NOT c.editable_por_tenant
-       AND c.version = 1 AND i.codigo = 'SIMULADO' AND i.tenant_id IS NULL AND i.activo
-       AND i.atributos = '{"requiere_certificado": true, "soporta_resumen": true, "url_beta": null}'::jsonb
+       AND i.codigo = 'SIMULADO' AND i.tenant_id IS NULL AND i.activo
+       AND i.atributos @> '{"requiere_certificado": true, "soporta_resumen": true, "url_beta": null}'::jsonb
   ) THEN
     RAISE EXCEPTION 'PROVEEDOR_FE debía nacer GLOBAL con el ítem SIMULADO y sus atributos';
-  END IF;
-  IF (SELECT count(*) FROM cat.catalogo_item i JOIN cat.catalogo c ON c.id = i.catalogo_id WHERE c.codigo = 'PROVEEDOR_FE') <> 1 THEN
-    RAISE EXCEPTION 'PROVEEDOR_FE debía tener solo el simulador';
   END IF;
 END $$;
 

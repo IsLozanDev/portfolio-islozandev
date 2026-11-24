@@ -108,3 +108,61 @@ export class ActorRequeridoFeError extends ForbiddenError {
     super('Configurar el emisor exige un usuario en el contexto');
   }
 }
+
+/** En producción se rotan la credencial o el certificado, pero no se cambia de proveedor ni de URL. */
+export class EmisorEnProduccionError extends ConflictError {
+  override readonly code = 'EMISOR_EN_PRODUCCION';
+
+  constructor() {
+    super('El emisor está en producción: no se puede cambiar el proveedor ni su URL');
+  }
+}
+
+export class EstadoEmisorInvalidoError extends ConflictError {
+  override readonly code = 'ESTADO_EMISOR_INVALIDO';
+
+  constructor() {
+    super('La prueba en beta exige un emisor CONFIGURADO o VERIFICADO');
+  }
+}
+
+export class PruebaEnCursoError extends ConflictError {
+  override readonly code = 'PRUEBA_EN_CURSO';
+
+  constructor() {
+    super('Ya hay una prueba en beta en curso; espere su resultado');
+  }
+}
+
+export class ProduccionNoPermitidaError extends ConflictError {
+  override readonly code = 'PRODUCCION_NO_PERMITIDA';
+
+  constructor() {
+    super('Este ambiente no permite pasar emisores a producción');
+  }
+}
+
+export class ProveedorSimuladoEnProduccionError extends ConflictError {
+  override readonly code = 'PROVEEDOR_SIMULADO_EN_PRODUCCION';
+
+  constructor() {
+    super('El simulador no puede pasar a producción');
+  }
+}
+
+export class PruebaBetaRequeridaError extends ConflictError {
+  override readonly code = 'PRUEBA_BETA_REQUERIDA';
+
+  constructor() {
+    super('Pasar a producción exige una prueba en beta aceptada en las últimas 24 horas');
+  }
+}
+
+/** Sin la URL en el mensaje: puede traer credenciales (TR-RNF-026). */
+export class UrlProveedorNoPermitidaError extends ValidationError {
+  override readonly code = 'URL_PROVEEDOR_NO_PERMITIDA';
+
+  constructor() {
+    super('La URL del proveedor debe ser https, sin credenciales ni otro puerto, y de un dominio permitido para el proveedor');
+  }
+}

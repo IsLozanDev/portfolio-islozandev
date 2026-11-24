@@ -12,9 +12,10 @@ export interface FilaPlantilla {
   version: number;
   asunto: string | null;
   cuerpo: string;
-  variables: { nombre: string; tipo: string }[];
+  variables: { nombre: string; tipo: string; ejemplo?: string }[];
   plantillaBaseId: string | null;
   activa: boolean;
+  creadoPor: string | null;
   creadoEn: Date;
 }
 
@@ -77,6 +78,7 @@ export const PlantillaEntidad = new EntitySchema<FilaPlantilla>({
     variables: { type: 'jsonb' },
     plantillaBaseId: { name: 'plantilla_base_id', type: 'uuid', nullable: true },
     activa: { type: 'boolean' },
+    creadoPor: { name: 'creado_por', type: 'uuid', nullable: true },
     creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },
   },
 });

@@ -4,7 +4,7 @@ import { PARAMETRO_DIAS_AVISO_CERTIFICADO, PERMISOS_FE } from '../src/domain/per
 
 const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json', import.meta.url);
 
-describe('Manifiesto PLAT 1.26.0: parte de fe (spec 49)', () => {
+describe('Manifiesto PLAT 1.27.0: parte de fe (spec 49)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; descripcion: string; alcance_minimo: string; sensible: boolean }[];
@@ -20,8 +20,8 @@ describe('Manifiesto PLAT 1.26.0: parte de fe (spec 49)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.26.0; plat.fe.configurar es sensible y plat.fe.consultar no, los dos con alcance TENANT', () => {
-    expect(manifiesto.version).toBe('1.26.0');
+  it('está en la versión 1.27.0; plat.fe.configurar es sensible y plat.fe.consultar no, los dos con alcance TENANT', () => {
+    expect(manifiesto.version).toBe('1.27.0');
     const deFe = manifiesto.permisos.filter((permiso) => esDeFe(permiso.codigo));
     expect(deFe.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_FE.configurar, 'Configurar el emisor electrónico', 'TENANT', true],

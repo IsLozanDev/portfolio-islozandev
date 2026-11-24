@@ -19,6 +19,15 @@ export interface FilaEmisor {
   certificadoRuc: string | null;
   certificadoVenceEn: Date | null;
   certificadoHuellaSha256: string | null;
+  urlProveedor: string | null;
+  pruebasEnviadas: number;
+  pruebaEstado: string | null;
+  pruebaSolicitadaEn: Date | null;
+  pruebaResultadoEn: Date | null;
+  pruebaCodigo: string | null;
+  pruebaDescripcion: string | null;
+  produccionHabilitadaEn: Date | null;
+  produccionHabilitadaPor: string | null;
   version: number;
   creadoPor: string;
   creadoEn: Date;
@@ -57,6 +66,15 @@ export const EmisorEntidad = new EntitySchema<FilaEmisor>({
     certificadoRuc: { name: 'certificado_ruc', type: 'char', length: 11, nullable: true },
     certificadoVenceEn: { name: 'certificado_vence_en', type: 'timestamptz', nullable: true },
     certificadoHuellaSha256: { name: 'certificado_huella_sha256', type: 'char', length: 64, nullable: true },
+    urlProveedor: { name: 'url_proveedor', type: 'varchar', length: 255, nullable: true },
+    pruebasEnviadas: { name: 'pruebas_enviadas', type: 'integer' },
+    pruebaEstado: { name: 'prueba_estado', type: 'varchar', length: 12, nullable: true },
+    pruebaSolicitadaEn: { name: 'prueba_solicitada_en', type: 'timestamptz', nullable: true },
+    pruebaResultadoEn: { name: 'prueba_resultado_en', type: 'timestamptz', nullable: true },
+    pruebaCodigo: { name: 'prueba_codigo', type: 'varchar', length: 20, nullable: true },
+    pruebaDescripcion: { name: 'prueba_descripcion', type: 'varchar', length: 500, nullable: true },
+    produccionHabilitadaEn: { name: 'produccion_habilitada_en', type: 'timestamptz', nullable: true },
+    produccionHabilitadaPor: { name: 'produccion_habilitada_por', type: 'uuid', nullable: true },
     // La escribe el agregado: el UPDATE filtra por la anterior (bloqueo optimista).
     version: { type: 'integer' },
     creadoPor: { name: 'creado_por', type: 'uuid' },

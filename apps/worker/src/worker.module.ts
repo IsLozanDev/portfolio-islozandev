@@ -19,6 +19,7 @@ import type { Config } from './config/env.js';
 import { CuotasModule } from './cuotas/cuotas.module.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
 import { NotificacionesWorkerModule } from './notificaciones/notificaciones.module.js';
+import { PruebasFeModule } from './pruebas-fe/pruebas-fe.module.js';
 import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
 import { VencimientosModule } from './vencimientos/vencimientos.module.js';
@@ -46,6 +47,8 @@ export class WorkerModule {
     registrarEsquemasArc(validator);
     registrarEsquemasNot(validator);
     registrarEsquemasFe(validator);
+    // La misma referencia en WorkerModule y PruebasFeModule: una sola bóveda.
+    const secretosModulo = SecretosModule.register({ claves: clavesMaestrasDe(config) });
     return {
       module: WorkerModule,
       imports: [
@@ -65,9 +68,9 @@ export class WorkerModule {
           concurrencia: config.EVT_CONCURRENCIA,
         }),
         AuditoriaModule.registrarWorker(),
-        // Spec 41: la bóveda audita sus escrituras; ningún trabajo la usa todavía (NOT la integra en su spec).
+        // Spec 41: la bóveda audita sus escrituras; la lee la prueba del emisor electrónico (spec 50).
         AuditoriaModule.registrarPuerto(),
-        SecretosModule.register({ claves: clavesMaestrasDe(config) }),
+        secretosModulo,
         VencimientosModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         CuotasModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
         SoporteModule.register({ dataSource, redisUrl: config.REDIS_URL, cadaMs: config.SOPORTE_VENCIMIENTO_CADA_MS, programar: true }),
@@ -86,6 +89,8 @@ export class WorkerModule {
         }),
         // Spec 42: consumidor de not.mensaje.solicitado y cola not-envios hacia Resend.
         NotificacionesWorkerModule.register({ redisUrl: config.REDIS_URL, entorno: config }),
+        // Spec 50: consumidor de fe.prueba.solicitada y cola fe-pruebas hacia el PSE.
+        PruebasFeModule.register({ redisUrl: config.REDIS_URL, entorno: config, secretos: secretosModulo }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };

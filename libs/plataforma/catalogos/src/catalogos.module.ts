@@ -1,4 +1,4 @@
-import { Logger, Module, type DynamicModule, type InjectionToken, type ModuleMetadata, type OnModuleDestroy } from '@nestjs/common';
+import { Logger, Module, type DynamicModule, type InjectionToken, type ModuleMetadata, type OnModuleDestroy, type Provider } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
@@ -103,6 +103,32 @@ class CierreColaImportaciones implements OnModuleDestroy {
 
 const sinReferencias: FabricaDe<VerificadorReferencias[]> = { useFactory: () => [] };
 
+type Avisar = (mensaje: string, datos: Record<string, unknown>) => void;
+
+/** Caché de ítems en Redis, su cierre, LectorItems y CATALOGO_PORT: lo que comparten register y registrarLectura. */
+function proveedoresDeValidacion(redisUrl: string, logger: Logger, avisar: Avisar): Provider[] {
+  return [
+    {
+      provide: CLIENTE_REDIS_CAT,
+      // Solo el nombre del error: el mensaje puede traer la URL con la clave (TR-RNF-026).
+      useFactory: (): Redis => crearClienteRedis(redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_CACHE, error: error.name })),
+    },
+    { provide: CierreRedisCat, useFactory: (redis: Redis) => new CierreRedisCat(redis), inject: [CLIENTE_REDIS_CAT] },
+    {
+      provide: LectorItems,
+      useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, reloj: Clock, redis: Redis) =>
+        new LectorItems({ lectura: new LecturaItemsTypeOrm(unidadDeTrabajo), cache: new CacheItemsRedis(redis), reloj, aviso: avisar }),
+      inject: [TypeOrmUnitOfWork, CLOCK, CLIENTE_REDIS_CAT],
+    },
+    {
+      provide: CATALOGO_PORT,
+      useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, lector: LectorItems): CatalogoPort =>
+        new ValidarItem({ unidadDeTrabajo, contexto, lector }),
+      inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, LectorItems],
+    },
+  ];
+}
+
 // register usa los tokens de KernelInfraModule y SeguridadModule (ambos globales), que la app debe importar.
 // Las entidades ENTIDADES_CAT van en el DataSource de la app.
 @Module({})
@@ -171,12 +197,7 @@ export class CatalogosModule {
         casoDeImportacion(DescargarErrores),
         casoDeImportacion(AplicarImportacion),
         casoDeImportacion(SeguirImportacion),
-        {
-          provide: CLIENTE_REDIS_CAT,
-          // Solo el nombre del error: el mensaje puede traer la URL con la clave (TR-RNF-026).
-          useFactory: (): Redis => crearClienteRedis(opciones.redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_CACHE, error: error.name })),
-        },
-        { provide: CierreRedisCat, useFactory: (redis: Redis) => new CierreRedisCat(redis), inject: [CLIENTE_REDIS_CAT] },
+        ...proveedoresDeValidacion(opciones.redisUrl, logger, avisar),
         { provide: VERIFICADOR_OPERADOR, useFactory: opciones.verificadorOperador.useFactory, inject: opciones.verificadorOperador.inject ?? [] },
         { provide: VERIFICADORES_REFERENCIAS, useFactory: referencias.useFactory, inject: referencias.inject ?? [] },
         {
@@ -205,12 +226,6 @@ export class CatalogosModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, CLOCK, EVENT_PUBLISHER, VERIFICADOR_OPERADOR, VERIFICADORES_REFERENCIAS],
         },
         {
-          provide: LectorItems,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, reloj: Clock, redis: Redis) =>
-            new LectorItems({ lectura: new LecturaItemsTypeOrm(unidadDeTrabajo), cache: new CacheItemsRedis(redis), reloj, aviso: avisar }),
-          inject: [TypeOrmUnitOfWork, CLOCK, CLIENTE_REDIS_CAT],
-        },
-        {
           provide: ListarCatalogos,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork) => new ListarCatalogos({ unidadDeTrabajo, catalogos: new CatalogosRepositorioTypeOrm(unidadDeTrabajo) }),
           inject: [TypeOrmUnitOfWork],
@@ -230,12 +245,6 @@ export class CatalogosModule {
         {
           provide: ConsultarItems,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, lector: LectorItems) => new ConsultarItems({ unidadDeTrabajo, contexto, lector }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, LectorItems],
-        },
-        {
-          provide: CATALOGO_PORT,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, lector: LectorItems): CatalogoPort =>
-            new ValidarItem({ unidadDeTrabajo, contexto, lector }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, LectorItems],
         },
         casoDeUso(CrearCatalogo),
@@ -297,5 +306,15 @@ export class CatalogosModule {
       ],
       exports: [CATALOGO_PORT, CALENDARIO_PORT],
     };
+  }
+
+  /**
+   * Solo CATALOGO_PORT, sin rutas, importaciones ni dependencias de seguridad: para apps/worker (spec 50, prueba del
+   * emisor electrónico). Necesita KernelInfraModule.
+   */
+  static registrarLectura({ redisUrl }: Pick<CatalogosOpciones, 'redisUrl'>): DynamicModule {
+    const logger = new Logger('Catalogos');
+    const avisar: Avisar = (mensaje, datos) => logger.warn({ mensaje, ...datos });
+    return { module: CatalogosModule, providers: proveedoresDeValidacion(redisUrl, logger, avisar), exports: [CATALOGO_PORT] };
   }
 }

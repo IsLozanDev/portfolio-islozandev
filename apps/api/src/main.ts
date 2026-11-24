@@ -62,6 +62,7 @@ const app = await NestFactory.create(
     archivos: { bucket: config.ARC_BUCKET },
     clavesMaestras: clavesMaestrasDe(config),
     notificaciones: config,
+    facturacion: config,
   }),
   // Spec 42: el webhook de Resend verifica la firma sobre el cuerpo crudo; el JSON del resto de rutas no cambia.
   { bufferLogs: true, rawBody: true },

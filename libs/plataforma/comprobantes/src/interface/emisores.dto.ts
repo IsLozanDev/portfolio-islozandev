@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { VistaEmisor } from '../application/vista-emisor.js';
-import { AMBIENTES_EMISOR, ESTADOS_EMISOR } from '../domain/estado-emisor.js';
+import { AMBIENTES_EMISOR, ESTADOS_EMISOR, ESTADOS_PRUEBA } from '../domain/estado-emisor.js';
 import { REGIMENES_IGV } from '../domain/regimen-igv.js';
 
 export class ConfigurarEmisorDto {
@@ -23,6 +23,16 @@ export class ConfigurarEmisorDto {
 
   @ApiPropertyOptional({ maxLength: 300, nullable: true, example: 'Representación impresa de la factura electrónica' })
   leyenda_pie?: string | null;
+
+  @ApiPropertyOptional({
+    maxLength: 255,
+    nullable: true,
+    example: 'https://api.nubefact.com/api/v1/48239908-7ae7-4353-824d-071765d4',
+    description:
+      'Ruta del proveedor. Obligatoria si el proveedor declara dominios permitidos: https, de uno de ellos, sin credenciales ni otro puerto. ' +
+      'Ausente es null. En producción no se puede cambiar',
+  })
+  url_proveedor?: string | null;
 
   @ApiPropertyOptional({ example: 1, minimum: 1, description: 'Obligatoria si el emisor ya existe (bloqueo optimista)' })
   version?: number;
@@ -47,6 +57,26 @@ class CertificadoEmisorDto {
   huella_sha256!: string;
 }
 
+class PruebaEmisorDto {
+  @ApiProperty({ enum: ESTADOS_PRUEBA, description: 'EN_PROCESO hasta que el worker registra el resultado del PSE' })
+  estado!: string;
+
+  @ApiProperty({ example: 1, description: 'Correlativo de prueba del emisor: el número de la boleta de prueba' })
+  numero!: number;
+
+  @ApiProperty({ format: 'date-time' })
+  solicitada_en!: string;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  resultado_en!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: '0', description: 'Código del PSE o de SUNAT' })
+  codigo!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'La Boleta numero B001-1, ha sido aceptada' })
+  descripcion!: string | null;
+}
+
 /** Sin campos para la clave del proveedor ni la del certificado, ni los ids de la bóveda. */
 export class EmisorDto {
   @ApiProperty({ format: 'uuid' })
@@ -61,7 +91,7 @@ export class EmisorDto {
   @ApiProperty({ enum: AMBIENTES_EMISOR })
   ambiente!: string;
 
-  @ApiProperty({ enum: ESTADOS_EMISOR, description: 'En este spec, BORRADOR o CONFIGURADO' })
+  @ApiProperty({ enum: ESTADOS_EMISOR, description: 'VERIFICADO tras una prueba en beta aceptada; PRODUCCION tras habilitarla' })
   estado!: string;
 
   @ApiProperty({ enum: REGIMENES_IGV })
@@ -78,6 +108,15 @@ export class EmisorDto {
 
   @ApiProperty({ type: CertificadoEmisorDto, nullable: true })
   certificado!: CertificadoEmisorDto | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Ruta del proveedor; el token está en la bóveda' })
+  url_proveedor!: string | null;
+
+  @ApiProperty({ type: PruebaEmisorDto, nullable: true, description: 'La última prueba en beta' })
+  prueba!: PruebaEmisorDto | null;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  produccion_habilitada_en!: string | null;
 
   @ApiProperty({ example: 2 })
   version!: number;
@@ -107,6 +146,16 @@ export function emisorDto(vista: VistaEmisor): EmisorDto {
       vence_en: vista.certificado.venceEn.toISOString(),
       huella_sha256: vista.certificado.huellaSha256,
     },
+    url_proveedor: vista.urlProveedor,
+    prueba: vista.prueba && {
+      estado: vista.prueba.estado,
+      numero: vista.prueba.numero,
+      solicitada_en: vista.prueba.solicitadaEn.toISOString(),
+      resultado_en: vista.prueba.resultadoEn?.toISOString() ?? null,
+      codigo: vista.prueba.codigo,
+      descripcion: vista.prueba.descripcion,
+    },
+    produccion_habilitada_en: vista.produccionHabilitadaEn?.toISOString() ?? null,
     version: vista.version,
   };
 }

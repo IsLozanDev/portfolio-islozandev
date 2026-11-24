@@ -1,4 +1,5 @@
 import { camposEntornoAntivirus, exigirAntivirusReal } from '@vitrina/plataforma/archivos';
+import { camposEntornoFe } from '@vitrina/plataforma/comprobantes';
 import { camposEntornoNotificaciones, exigirProveedorCorreoEnProduccion } from '@vitrina/plataforma/notificaciones';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
 import { camposEntornoSecretos, exigirClaveMaestraEnProduccion } from '@vitrina/plataforma/secretos';
@@ -43,6 +44,8 @@ const esquema = z.object({
   ...camposEntornoSecretos,
   // Spec 42: Resend (RESEND_API_KEY, RESEND_WEBHOOK_SECRET), remitente y sal del destino; obligatorias en producción.
   ...camposEntornoNotificaciones,
+  // Spec 50: FE_PRODUCCION_PERMITIDA y FE_SIMULADO_PERMITIDO (por defecto false; ver docs/ops/supabase-ambientes.md).
+  ...camposEntornoFe,
 })
   .superRefine(exigirSalFueraDeLocal)
   .superRefine(exigirAntivirusReal)

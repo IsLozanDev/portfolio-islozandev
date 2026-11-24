@@ -1,4 +1,5 @@
 import { AsuntoDemasiadoLargoError, VariableNoPermitidaError, VariablesIncompletasError } from './errores.js';
+import { MARCADOR, marcadoresUsados } from './marcadores-plantilla.js';
 import type { Plantilla } from './plantilla.js';
 
 export type ValoresVariables = Readonly<Record<string, string | number>>;
@@ -11,8 +12,6 @@ export interface ContenidoRenderizado {
 /** Largo de `ntf.mensaje.asunto`. */
 export const LARGO_MAXIMO_ASUNTO = 150;
 
-/** `{{nombre}}` con espacios opcionales dentro de las llaves. */
-const MARCADOR = /\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g;
 const SALTOS_DE_LINEA = /[\r\n]+/g;
 const ESPACIO = ' ';
 
@@ -46,7 +45,7 @@ function exigirSoloDeclaradas(plantilla: Plantilla, variables: ValoresVariables)
 }
 
 function exigirLasUsadas(textos: readonly string[], variables: ValoresVariables): void {
-  const usadas = new Set(textos.flatMap((texto) => [...texto.matchAll(MARCADOR)].map((coincidencia) => coincidencia[1])));
+  const usadas = new Set(textos.flatMap(marcadoresUsados));
   const faltantes = [...usadas].filter((nombre) => !(nombre in variables));
   if (faltantes.length > 0) throw new VariablesIncompletasError(faltantes);
 }
