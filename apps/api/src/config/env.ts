@@ -1,3 +1,4 @@
+import { camposEntornoFe } from '@vitrina/plataforma/comprobantes';
 import { camposEntornoIdentidad, exigirProveedorReal } from '@vitrina/plataforma/identidad';
 import { camposEntornoNotificaciones, exigirProveedorCorreoEnProduccion } from '@vitrina/plataforma/notificaciones';
 import { camposEntornoObservabilidad, exigirSalFueraDeLocal } from '@vitrina/plataforma/observabilidad';
@@ -38,6 +39,8 @@ const esquema = z.object({
   ...camposEntornoSecretos,
   // Spec 42: Resend (RESEND_API_KEY, RESEND_WEBHOOK_SECRET), remitente y sal del destino; obligatorias en producción.
   ...camposEntornoNotificaciones,
+  // Spec 50: FE_PRODUCCION_PERMITIDA y FE_SIMULADO_PERMITIDO (por defecto false; ver docs/ops/supabase-ambientes.md).
+  ...camposEntornoFe,
 })
   .superRefine(exigirSalFueraDeLocal)
   .superRefine(exigirProveedorReal)

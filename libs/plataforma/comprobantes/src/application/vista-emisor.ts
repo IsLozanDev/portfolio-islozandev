@@ -1,4 +1,4 @@
-import type { CertificadoEmisor, Emisor } from '../domain/emisor.js';
+import type { CertificadoEmisor, Emisor, PruebaEmisor } from '../domain/emisor.js';
 import type { AmbienteEmisor, EstadoEmisor } from '../domain/estado-emisor.js';
 import type { RegimenIgv } from '../domain/regimen-igv.js';
 
@@ -14,6 +14,11 @@ export interface VistaEmisor {
   usuarioProveedor: string | null;
   tieneCredencial: boolean;
   certificado: CertificadoEmisor | null;
+  /** La ruta del proveedor no es secreta; el token sí y vive en la bóveda. */
+  urlProveedor: string | null;
+  /** La última prueba en beta; la UI consulta hasta que deja EN_PROCESO. */
+  prueba: PruebaEmisor | null;
+  produccionHabilitadaEn: Date | null;
   version: number;
 }
 
@@ -30,6 +35,9 @@ export function vistaDe(emisor: Emisor): VistaEmisor {
     usuarioProveedor: datos.usuarioProveedor,
     tieneCredencial: datos.secretoCredencialId !== null,
     certificado: datos.certificado,
+    urlProveedor: datos.urlProveedor,
+    prueba: datos.prueba,
+    produccionHabilitadaEn: datos.produccionHabilitadaEn,
     version: datos.version,
   };
 }

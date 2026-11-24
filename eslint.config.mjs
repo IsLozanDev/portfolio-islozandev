@@ -68,8 +68,9 @@ export default [
             // hashea el destino (OBS), marca el webhook @Publico (SEG) y toma la zona de Lima (ORG) (spec 42).
             comp('not', 'kernel', 'seg', 'org', 'evt', 'per', 'obs'),
             // R2: el emisor electrónico lee la empresa, guarda sus secretos en la bóveda, valida el proveedor en
-            // catálogos, lee el parámetro de aviso, audita y autoriza (spec 49).
-            comp('fe', 'kernel', 'org', 'sec', 'cat', 'cfg', 'aud', 'seg'),
+            // catálogos, lee el parámetro de aviso, audita y autoriza (spec 49); consume su prueba en beta en el
+            // worker (EVT, spec 50).
+            comp('fe', 'kernel', 'org', 'sec', 'cat', 'cfg', 'aud', 'seg', 'evt'),
           ],
         },
       ],

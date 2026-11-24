@@ -2,7 +2,7 @@ import { Logger, Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AuditoriaModule } from '@vitrina/plataforma/auditoria';
 import { CatalogosModule } from '@vitrina/plataforma/catalogos';
-import { ComprobantesModule } from '@vitrina/plataforma/comprobantes';
+import { ComprobantesModule, type EntornoFe } from '@vitrina/plataforma/comprobantes';
 import type { Clock, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CorrelativosModule, SembrarSeriesIniciales } from '@vitrina/plataforma/correlativos';
 import { EventosModule, type PoliticaReintentos } from '@vitrina/plataforma/eventos';
@@ -73,12 +73,16 @@ export type AppOpciones = KernelInfraOptions &
     clavesMaestras?: ClavesMaestras;
     /** Spec 42: Resend, remitente y sal del destino. Sin ellos (dev, pruebas) el webhook responde 503 y los envíos quedan ENCOLADO. */
     notificaciones?: EntornoNotificaciones;
+    /** Spec 50: FE_PRODUCCION_PERMITIDA y FE_SIMULADO_PERMITIDO. Sin ellos (pruebas) ni producción ni simulador. */
+    facturacion?: EntornoFe;
   };
+
+const FACTURACION_SIN_PERMISOS: EntornoFe = { FE_PRODUCCION_PERMITIDA: 'false', FE_SIMULADO_PERMITIDO: 'false' };
 
 @Module({})
 export class AppModule {
   /** El DataSource llega ya inicializado desde main.ts; en pruebas puede no estarlo. */
-  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, clavesMaestras, notificaciones = {}, ...seguridad }: AppOpciones): DynamicModule {
+  static register({ dataSource, validator, reintentosEventos, tenantOperador, observabilidad, identidad, archivos, clavesMaestras, notificaciones = {}, facturacion = FACTURACION_SIN_PERMISOS, ...seguridad }: AppOpciones): DynamicModule {
     // La misma referencia en AppModule y CatalogosModule: Nest crea una sola instancia (un solo Redis de cfg).
     const parametros = ParametrosModule.register({ redisUrl: seguridad.redisUrl });
     const registroCuota = new Logger(CONTEXTO_LOG_CUOTA);
@@ -169,7 +173,7 @@ export class AppModule {
         archivosModulo,
         // Spec 41: la bóveda de secretos; FE la usa desde el spec 49, PAG y NOT la integran en sus specs.
         secretosModulo,
-        ComprobantesModule.register({ imports: [orgModulo, catalogosModulo, secretosModulo] }),
+        ComprobantesModule.register({ imports: [orgModulo, catalogosModulo, secretosModulo], entorno: facturacion }),
         // Spec 42: NotificacionPort en proceso y el webhook de Resend.
         NotificacionesModule.register({ entorno: notificaciones, dataSource, imports: [personasModulo] }),
       ],

@@ -8,17 +8,38 @@ import request from 'supertest';
 import { BYTES_MAXIMOS_CERTIFICADO, CargarCertificado } from '../src/application/cargar-certificado.js';
 import { ConfigurarEmisor } from '../src/application/configurar-emisor.js';
 import { ConsultarEmisor } from '../src/application/consultar-emisor.js';
+import { HabilitarProduccion } from '../src/application/habilitar-produccion.js';
+import { SolicitarPruebaEmisor } from '../src/application/solicitar-prueba-emisor.js';
+import { Emisor } from '../src/domain/emisor.js';
 import { PERMISOS_FE } from '../src/domain/permisos-fe.js';
 import { EmisoresController } from '../src/interface/emisores.controller.js';
 import { bytesAleatorios, CLAVE_PFX, crearPfx, enDias, OTRO_RUC, sujetoConRuc, textoPlano } from './support/certificados.js';
-import { AHORA, crearDobles, EMPRESA, EMPRESA_DE_B, EMPRESA_INACTIVA, TENANT_A, USUARIO, type Dobles } from './support/dobles.js';
+import {
+  AHORA,
+  crearDobles,
+  EMPRESA,
+  EMPRESA_DE_B,
+  EMPRESA_INACTIVA,
+  NUBEFACT,
+  TENANT_A,
+  URL_NUBEFACT,
+  URL_SIMULADOR,
+  USUARIO,
+  type Dobles,
+} from './support/dobles.js';
 
 const SUCURSAL = '0193f3a0-0000-7000-8000-000000000102';
 const MFA_MAX_EDAD_SEG = 900;
 const CLAVE_PROVEEDOR = 'clave-del-proveedor-sol';
 const RUTA = `/v1/fe/emisores/${EMPRESA}`;
 const ahora = new Date(AHORA);
-const cuerpoConfigurar = { proveedor: 'SIMULADO', usuario_proveedor: 'MODDATOS', clave: CLAVE_PROVEEDOR, regimen_igv: 'GENERAL' };
+const cuerpoConfigurar = {
+  proveedor: 'SIMULADO',
+  usuario_proveedor: 'MODDATOS',
+  clave: CLAVE_PROVEEDOR,
+  regimen_igv: 'GENERAL',
+  url_proveedor: URL_SIMULADOR,
+};
 
 /** Hace lo que deja AutenticacionGuard. `x-prueba-aal: aal1` simula un token sin MFA. */
 class PrincipalDePrueba implements CanActivate {
@@ -33,7 +54,7 @@ class PrincipalDePrueba implements CanActivate {
 
 type DependenciasGuard = ConstructorParameters<typeof PermisoGuard>;
 
-describe('HTTP /v1/fe/emisores (TR-RF-052, pasos 1 a 3)', () => {
+describe('HTTP /v1/fe/emisores (TR-RF-052)', () => {
   let app: INestApplication;
   let dobles: Dobles;
   let permisosDelActor: string[];
@@ -51,6 +72,8 @@ describe('HTTP /v1/fe/emisores (TR-RF-052, pasos 1 a 3)', () => {
         { provide: ConsultarEmisor, useValue: new ConsultarEmisor(dobles) },
         { provide: ConfigurarEmisor, useValue: new ConfigurarEmisor(dobles) },
         { provide: CargarCertificado, useValue: new CargarCertificado(dobles) },
+        { provide: SolicitarPruebaEmisor, useValue: new SolicitarPruebaEmisor(dobles) },
+        { provide: HabilitarProduccion, useValue: new HabilitarProduccion(dobles) },
       ],
     }).compile();
     app = modulo.createNestApplication({ logger: false });
@@ -111,7 +134,7 @@ describe('HTTP /v1/fe/emisores (TR-RF-052, pasos 1 a 3)', () => {
     expect((await put(cuerpoConfigurar, `/v1/fe/emisores/${EMPRESA_DE_B}`)).status).toBe(404);
     const inactiva = await put(cuerpoConfigurar, `/v1/fe/emisores/${EMPRESA_INACTIVA}`);
     expect([inactiva.status, inactiva.body.codigo]).toEqual([409, 'EMPRESA_INACTIVA']);
-    const proveedor = await put({ ...cuerpoConfigurar, proveedor: 'NUBEFACT' });
+    const proveedor = await put({ ...cuerpoConfigurar, proveedor: 'OTRO_PSE' });
     expect([proveedor.status, proveedor.body.codigo]).toEqual([400, 'PROVEEDOR_FE_INVALIDO']);
 
     const invalido = await put({ ...cuerpoConfigurar, clave: 'x'.repeat(201), regimen_igv: 'MYPE' });
@@ -173,18 +196,95 @@ describe('HTTP /v1/fe/emisores (TR-RF-052, pasos 1 a 3)', () => {
     expect((await http().get(RUTA).set('X-Sucursal-Id', SUCURSAL)).status).toBe(403);
   });
 
-  it('OpenAPI documenta las tres rutas con sus códigos de error y la respuesta no tiene campos de clave', () => {
+  describe('spec 50: prueba en beta y producción', () => {
+    const cuerpoNubefact = { ...cuerpoConfigurar, proveedor: NUBEFACT, url_proveedor: URL_NUBEFACT };
+    const prueba = () => http().post(`${RUTA}/prueba`).set('X-Sucursal-Id', SUCURSAL);
+    const produccion = () => http().post(`${RUTA}/produccion`).set('X-Sucursal-Id', SUCURSAL);
+    /** Lo que hace el worker al recibir el ACEPTADO del PSE. */
+    const aceptarPrueba = () => {
+      const emisor = Emisor.reconstituir(dobles.emisores.filas[0].datos);
+      const numero = emisor.prueba?.numero ?? 0;
+      emisor.registrarResultadoPrueba(numero, { resultado: 'ACEPTADO', codigo: '0', descripcion: null, observaciones: [] }, dobles.reloj.now());
+      dobles.emisores.filas[0] = emisor;
+    };
+
+    it('TR-CA-133: POST .../prueba → 202 EN_PROCESO; aceptada, POST .../produccion → 200 en PRODUCCION', async () => {
+      expect((await put(cuerpoNubefact)).body.estado).toBe('CONFIGURADO');
+      const solicitada = await prueba();
+      expect(solicitada.status).toBe(202);
+      expect(solicitada.body.prueba).toMatchObject({ estado: 'EN_PROCESO', numero: 1, resultado_en: null });
+      expect((await produccion()).body.codigo).toBe('PRUEBA_BETA_REQUERIDA');
+
+      aceptarPrueba();
+      const habilitada = await produccion();
+      expect(habilitada.status).toBe(200);
+      expect(habilitada.body).toMatchObject({ estado: 'PRODUCCION', ambiente: 'PRODUCCION', url_proveedor: URL_NUBEFACT, produccion_habilitada_en: AHORA });
+      expect(JSON.stringify([solicitada.body, habilitada.body])).not.toContain(CLAVE_PROVEEDOR);
+    });
+
+    it('409 PRUEBA_EN_CURSO y ESTADO_EMISOR_INVALIDO; 409 PROVEEDOR_SIMULADO_EN_PRODUCCION; 404 sin emisor', async () => {
+      const sinEmisor = await prueba();
+      expect([sinEmisor.status, sinEmisor.body.codigo]).toEqual([404, 'EMISOR_NO_ENCONTRADO']);
+      await put(cuerpoConfigurar);
+      const borrador = await prueba();
+      expect([borrador.status, borrador.body.codigo]).toEqual([409, 'ESTADO_EMISOR_INVALIDO']);
+
+      await subir(crearPfx(ahora));
+      expect((await prueba()).status).toBe(202);
+      const enCurso = await prueba();
+      expect([enCurso.status, enCurso.body.codigo]).toEqual([409, 'PRUEBA_EN_CURSO']);
+      aceptarPrueba();
+      const simulado = await produccion();
+      expect([simulado.status, simulado.body.codigo]).toEqual([409, 'PROVEEDOR_SIMULADO_EN_PRODUCCION']);
+    });
+
+    it('PUT: URL fuera de los dominios → 400 URL_PROVEEDOR_NO_PERMITIDA; en producción cambiar la URL → 409 EMISOR_EN_PRODUCCION', async () => {
+      const otraUrl = await put({ ...cuerpoNubefact, url_proveedor: 'https://169.254.169.254/latest' });
+      expect([otraUrl.status, otraUrl.body.codigo]).toEqual([400, 'URL_PROVEEDOR_NO_PERMITIDA']);
+      expect(JSON.stringify(otraUrl.body)).not.toContain('169.254');
+
+      await put(cuerpoNubefact);
+      await prueba();
+      aceptarPrueba();
+      await produccion();
+      const version = dobles.emisores.filas[0].version;
+      const cambio = await put({ ...cuerpoNubefact, url_proveedor: `${URL_NUBEFACT}0`, version });
+      expect([cambio.status, cambio.body.codigo]).toEqual([409, 'EMISOR_EN_PRODUCCION']);
+      const rotacion = await put({ ...cuerpoNubefact, clave: 'token-rotado', version });
+      expect([rotacion.status, rotacion.body.estado]).toEqual([200, 'PRODUCCION']);
+    });
+
+    it('sin aal2 → 401 de step-up; sin plat.fe.configurar → 403', async () => {
+      await put(cuerpoNubefact);
+      for (const llamada of [prueba, produccion]) {
+        const sinMfa = await llamada().set('x-prueba-aal', 'aal1');
+        expect(sinMfa.status).toBe(401);
+        expect(sinMfa.headers['www-authenticate']).toContain('acr_values="aal2"');
+      }
+      permisosDelActor = [PERMISOS_FE.consultar];
+      expect((await prueba()).status).toBe(403);
+      expect((await produccion()).status).toBe(403);
+    });
+  });
+
+  it('OpenAPI documenta las rutas con sus códigos de error y la respuesta no tiene campos de clave', () => {
     const ruta = documento.paths['/v1/fe/emisores/{empresaId}'];
     const certificado = documento.paths['/v1/fe/emisores/{empresaId}/certificado'];
     expect(Object.keys(ruta.get?.responses ?? {}).sort()).toEqual(['200', '400', '401', '403', '404']);
     expect(Object.keys(ruta.put?.responses ?? {}).sort()).toEqual(['200', '201', '400', '401', '403', '404', '409', '503']);
     expect(Object.keys(certificado.post?.responses ?? {}).sort()).toEqual(['200', '400', '401', '403', '404', '409', '413', '422', '503']);
+    const prueba = documento.paths['/v1/fe/emisores/{empresaId}/prueba'];
+    const produccion = documento.paths['/v1/fe/emisores/{empresaId}/produccion'];
+    expect(Object.keys(prueba.post?.responses ?? {}).sort()).toEqual(['202', '400', '401', '403', '404', '409']);
+    expect(Object.keys(produccion.post?.responses ?? {}).sort()).toEqual(['200', '400', '401', '403', '404', '409', '422']);
+    expect(JSON.stringify(ruta.put?.responses)).toMatch(/URL_PROVEEDOR_NO_PERMITIDA[\s\S]*EMISOR_EN_PRODUCCION/);
 
     const esquemas = documento.components?.schemas ?? {};
     const propiedades = (nombre: string) => Object.keys((esquemas[nombre] as { properties?: object }).properties ?? {});
-    for (const nombre of ['EmisorDto', 'CertificadoEmisorDto']) {
-      expect(propiedades(nombre).filter((campo) => /clave|secreto|pfx/.test(campo))).toEqual([]);
+    for (const nombre of ['EmisorDto', 'CertificadoEmisorDto', 'PruebaEmisorDto']) {
+      expect(propiedades(nombre).filter((campo) => /clave|secreto|pfx|token/.test(campo))).toEqual([]);
     }
+    expect(propiedades('ConfigurarEmisorDto')).toContain('url_proveedor');
     expect(propiedades('ConfigurarEmisorDto')).toContain('clave');
   });
 });

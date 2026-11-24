@@ -23,7 +23,10 @@ import { CargarCertificado } from '../src/application/cargar-certificado.js';
 import { ConfigurarEmisor } from '../src/application/configurar-emisor.js';
 import { ConsultarEmisor } from '../src/application/consultar-emisor.js';
 import type { DependenciasEmisor } from '../src/application/dependencias-fe.js';
-import { EmisorNoEncontradoError, VersionObsoletaEmisorError } from '../src/domain/errores.js';
+import { EjecutarPruebaEmisor } from '../src/application/ejecutar-prueba-emisor.js';
+import { HabilitarProduccion } from '../src/application/habilitar-produccion.js';
+import { SolicitarPruebaEmisor } from '../src/application/solicitar-prueba-emisor.js';
+import { EmisorNoEncontradoError, ProveedorSimuladoEnProduccionError, VersionObsoletaEmisorError } from '../src/domain/errores.js';
 import { EVENTOS_FE } from '../src/domain/eventos-fe.js';
 import { ProveedoresFeCatalogo } from '../src/infrastructure/catalogos/proveedores-fe.catalogo.js';
 import { registrarEsquemasFe } from '../src/infrastructure/event-schemas.js';
@@ -33,10 +36,14 @@ import { RepositorioAvisosCertificadoTypeOrm } from '../src/infrastructure/typeo
 import { CertificadosConAvisoPendienteSql } from '../src/infrastructure/typeorm/certificados-con-aviso-pendiente.sql.js';
 import { RepositorioEmisoresTypeOrm } from '../src/infrastructure/typeorm/emisores.repositorio.js';
 import { ENTIDADES_FE } from '../src/infrastructure/typeorm/entidades.js';
+import { ResolutorPseMapa } from '../src/infrastructure/pse/resolutor-pse.js';
+import { PseSimulador } from '../src/infrastructure/pse/simulador/pse.simulador.js';
 import { CLAVE_PFX, crearPfx, OTRO_RUC, RUC_EMPRESA, sujetoConRuc } from './support/certificados.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const CLAVE_PROVEEDOR = 'clave-del-proveedor-sol';
+/** Dentro de los dominios_permitidos de SIMULADO en la semilla de 01r_fe_prueba. */
+const URL_SIMULADOR = 'https://simulador.invalid/api/v1/ruta-demo';
 
 interface FilaCruda {
   [columna: string]: unknown;
@@ -84,6 +91,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
         usuarioProveedor: 'MODDATOS',
         clave: CLAVE_PROVEEDOR,
         regimenIgv: 'GENERAL',
+        urlProveedor: URL_SIMULADOR,
         ...cambios,
       }),
     );
@@ -132,6 +140,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
       empresas: new EmpresaEmisoraOrg(new ConsultarEmpresa({ unidadDeTrabajo, lectura: new LecturaOrganizacionTypeOrm(unidadDeTrabajo, contexto) })),
       proveedores: new ProveedoresFeCatalogo(catalogoDeLaBase(unidadDeTrabajo)),
       lector: new LectorCertificadoForge(),
+      entorno: { produccionPermitida: true, simuladoPermitido: true },
     };
   });
 
@@ -193,7 +202,13 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
 
   it('si la transacción falla después de guardar en la bóveda (conflicto de versión) no queda secreto, cambio, auditoría ni evento', async () => {
     const otro = await enTenant(tenantB, () =>
-      new ConfigurarEmisor(dependencias).ejecutar({ empresaId: empresaB, proveedor: 'SIMULADO', usuarioProveedor: 'B', regimenIgv: 'GENERAL' }),
+      new ConfigurarEmisor(dependencias).ejecutar({
+        empresaId: empresaB,
+        proveedor: 'SIMULADO',
+        usuarioProveedor: 'B',
+        regimenIgv: 'GENERAL',
+        urlProveedor: URL_SIMULADOR,
+      }),
     );
     const antesB = (await crudo('SELECT count(*)::int AS n FROM sec.secreto WHERE tenant_id = $1', [tenantB]))[0].n;
     // Otra operación sube la versión entre la lectura y la escritura: la bóveda ya guardó cuando el UPDATE falla.
@@ -220,6 +235,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
           usuarioProveedor: 'B2',
           clave: CLAVE_PROVEEDOR,
           regimenIgv: 'GENERAL',
+          urlProveedor: URL_SIMULADOR,
           version: otro.vista.version,
         }),
       ),
@@ -273,5 +289,46 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
     expect(eventos).toEqual([{ payload: expect.objectContaining({ ruc: RUC_EMPRESA, dias_restantes: 10 }) }]);
 
     expect((await crearTarea().ejecutar(hoy)).avisados).toBe(0);
+  });
+
+  it('spec 50: prueba en beta con el simulador → VERIFICADO con un evento, auditada; producción rechazada por SIMULADO; otro tenant → 404', async () => {
+    const ejecutarPrueba = new EjecutarPruebaEmisor({
+      unidadDeTrabajo,
+      contexto,
+      reloj: new SystemClock(),
+      publicador: dependencias.publicador,
+      emisores: dependencias.emisores,
+      empresas: dependencias.empresas,
+      proveedores: dependencias.proveedores,
+      boveda: dependencias.boveda,
+      resolutor: new ResolutorPseMapa({ SIMULADO: new PseSimulador() }),
+      informar: () => undefined,
+    });
+    await expect(enTenant(tenantB, () => new SolicitarPruebaEmisor(dependencias).ejecutar(empresaA))).rejects.toBeInstanceOf(EmisorNoEncontradoError);
+
+    const solicitada = await enTenant(tenantA, () => new SolicitarPruebaEmisor(dependencias).ejecutar(empresaA));
+    expect(solicitada.prueba).toMatchObject({ estado: 'EN_PROCESO', numero: 1 });
+    const [evento] = await crudo(`SELECT payload FROM sync.outbox WHERE tenant_id = $1 AND event_type = $2`, [tenantA, EVENTOS_FE.pruebaSolicitada]);
+    expect(evento.payload).toEqual({ emisor_id: solicitada.emisorId, numero_prueba: 1 });
+
+    const trabajo = { tenantId: tenantA, emisorId: solicitada.emisorId, numeroPrueba: 1 };
+    await ejecutarPrueba.ejecutar(trabajo, { numero: 1, esUltimo: false });
+    // El mismo trabajo otra vez (evento reentregado): no cambia nada ni publica otro evento.
+    await ejecutarPrueba.ejecutar(trabajo, { numero: 1, esUltimo: false });
+
+    const [fila] = await crudo('SELECT estado, prueba_estado, pruebas_enviadas, prueba_codigo, url_proveedor FROM fe.emisor WHERE tenant_id = $1', [tenantA]);
+    expect(fila).toEqual({ estado: 'VERIFICADO', prueba_estado: 'ACEPTADA', pruebas_enviadas: 1, prueba_codigo: '0', url_proveedor: URL_SIMULADOR });
+    const verificados = await crudo(`SELECT payload FROM sync.outbox WHERE tenant_id = $1 AND event_type = $2`, [tenantA, EVENTOS_FE.emisorVerificado]);
+    expect(verificados).toHaveLength(1);
+    const auditadas = await crudo(`SELECT accion FROM aud.evento_auditoria WHERE tenant_id = $1 AND accion = 'fe.emisor.solicitar_prueba'`, [tenantA]);
+    expect(auditadas).toHaveLength(1);
+
+    await expect(enTenant(tenantA, () => new HabilitarProduccion(dependencias).ejecutar(empresaA))).rejects.toBeInstanceOf(
+      ProveedorSimuladoEnProduccionError,
+    );
+    await expect(enTenant(tenantB, () => new HabilitarProduccion(dependencias).ejecutar(empresaA))).rejects.toBeInstanceOf(EmisorNoEncontradoError);
+    const visible = JSON.stringify(await crudo(`SELECT payload FROM sync.outbox WHERE tenant_id = $1 AND event_type LIKE 'fe.%'`, [tenantA]));
+    expect(visible).not.toContain(CLAVE_PROVEEDOR);
+    expect(visible).not.toContain('simulador.invalid');
   });
 });

@@ -22,6 +22,10 @@ export const EMPRESA_DE_B = 'eeeeeeee-0000-4000-8000-000000000003';
 export const AHORA = '2026-11-22T15:00:00.000Z';
 export const SIMULADO = 'SIMULADO';
 export const SIN_CERTIFICADO = 'SIN_CERTIFICADO';
+export const NUBEFACT = 'NUBEFACT';
+/** Como la semilla de 01r_fe_prueba. */
+export const URL_SIMULADOR = 'https://simulador.invalid/api/v1/ruta-demo';
+export const URL_NUBEFACT = 'https://api.nubefact.com/api/v1/48239908-7ae7-4353-824d-071765d4';
 
 /** Lo que una transacción deshace si falla. */
 interface Transaccional {
@@ -229,8 +233,9 @@ export class EmpresasMemoria implements EmpresaEmisoraPort {
 
 export class ProveedoresMemoria implements ProveedoresFe {
   readonly proveedores = new Map<string, ProveedorFe>([
-    [SIMULADO, { codigo: SIMULADO, requiereCertificado: true }],
-    [SIN_CERTIFICADO, { codigo: SIN_CERTIFICADO, requiereCertificado: false }],
+    [SIMULADO, { codigo: SIMULADO, requiereCertificado: true, seriePrueba: 'B999', dominiosPermitidos: ['simulador.invalid'] }],
+    [SIN_CERTIFICADO, { codigo: SIN_CERTIFICADO, requiereCertificado: false, seriePrueba: 'B998', dominiosPermitidos: ['simulador.invalid'] }],
+    [NUBEFACT, { codigo: NUBEFACT, requiereCertificado: false, seriePrueba: 'B001', dominiosPermitidos: ['api.nubefact.com'] }],
   ]);
 
   obtener(codigo: string): Promise<ProveedorFe> {
@@ -302,6 +307,7 @@ export function crearDobles(): Dobles {
     empresas: new EmpresasMemoria(contexto),
     proveedores: new ProveedoresMemoria(),
     lector: new LectorCertificadoForge(),
+    entorno: { produccionPermitida: true, simuladoPermitido: true },
   };
 }
 

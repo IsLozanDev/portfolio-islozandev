@@ -28,6 +28,7 @@ import {
   SIN_CERTIFICADO,
   TENANT_A,
   TENANT_B,
+  URL_SIMULADOR,
   USUARIO,
   type Dobles,
 } from './support/dobles.js';
@@ -42,6 +43,7 @@ const comando = (cambios: Partial<ConfigurarEmisorComando> = {}): ConfigurarEmis
   clave: CLAVE_PROVEEDOR,
   regimenIgv: 'GENERAL',
   leyendaPie: 'Representación impresa',
+  urlProveedor: URL_SIMULADOR,
   ...cambios,
 });
 
@@ -129,7 +131,7 @@ describe('ConfigurarEmisor (TR-RF-052, pasos 1 y 2)', () => {
     const configurar = new ConfigurarEmisor(dobles);
     await expect(configurar.ejecutar(comando({ empresaId: EMPRESA_DE_B }))).rejects.toBeInstanceOf(EmpresaNoEncontradaError);
     await expect(configurar.ejecutar(comando({ empresaId: EMPRESA_INACTIVA }))).rejects.toBeInstanceOf(EmpresaInactivaError);
-    await expect(configurar.ejecutar(comando({ proveedor: 'NUBEFACT' }))).rejects.toBeInstanceOf(ProveedorFeInvalidoError);
+    await expect(configurar.ejecutar(comando({ proveedor: 'OTRO_PSE' }))).rejects.toBeInstanceOf(ProveedorFeInvalidoError);
     expect([dobles.boveda.secretos.size, dobles.emisores.filas.length]).toEqual([0, 0]);
   });
 
@@ -145,7 +147,22 @@ describe('ConsultarEmisor', () => {
     await new ConfigurarEmisor(dobles).ejecutar(comando());
     const vista = await new ConsultarEmisor(dobles).ejecutar(EMPRESA);
     expect(Object.keys(vista).sort()).toEqual(
-      ['ambiente', 'certificado', 'emisorId', 'empresaId', 'estado', 'leyendaPie', 'proveedor', 'regimenIgv', 'tieneCredencial', 'usuarioProveedor', 'version'].sort(),
+      [
+        'ambiente',
+        'certificado',
+        'emisorId',
+        'empresaId',
+        'estado',
+        'leyendaPie',
+        'produccionHabilitadaEn',
+        'proveedor',
+        'prueba',
+        'regimenIgv',
+        'tieneCredencial',
+        'urlProveedor',
+        'usuarioProveedor',
+        'version',
+      ].sort(),
     );
 
     dobles.contexto.alcance = { tenantId: TENANT_B, actorId: USUARIO };

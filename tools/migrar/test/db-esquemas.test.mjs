@@ -62,7 +62,7 @@ afterAll(async () => {
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
   for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', 'arc_fk_test_dueno', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
   for (const rol of ['sec_test_app', 'sec_test_sin_permiso']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
-  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'fe_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'fe_test_app', 'fe_prueba_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -102,6 +102,7 @@ const CASOS = [
   { migracion: '01n_sec.sql', esquema: 'sec', prueba: 'tests/01n_sec.test.sql' },
   { migracion: '01o_not.sql', esquema: 'ntf', prueba: 'tests/01o_not.test.sql' },
   { migracion: '01p_fe.sql', esquema: 'fe', prueba: 'tests/01p_fe.test.sql' },
+  { migracion: '01r_fe_prueba.sql', esquema: 'fe', prueba: 'tests/01r_fe_prueba.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -261,6 +262,42 @@ async function inversoFeConSecretos() {
     await c.end();
   }
 }
+
+// Con un emisor VERIFICADO el inverso de 01r_fe_prueba se niega (spec 50); la transacción se revierte.
+async function inversoFePruebaConVerificados() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '50000000-0000-0000-0000-0000000000ff';
+    const empresaId = '50000000-0000-0000-0000-0000000000fe';
+    await c.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('${tenantId}', 'fe-prueba-inverso', 'FE prueba inverso', 'ACTIVO', 1)`);
+    await c.query(
+      `INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version) VALUES ('${empresaId}', '${tenantId}', '20601234561', 'FE prueba inverso SAC', 1)`,
+    );
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO fe.emisor (id, tenant_id, empresa_id, proveedor, creado_por, estado)
+       VALUES (gen_random_uuid(), '${tenantId}', '${empresaId}', 'SIMULADO', gen_random_uuid(), 'VERIFICADO')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01r_fe_prueba.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+const columnasPruebaFe = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'fe' AND table_name = 'emisor' AND (column_name LIKE 'prueba%' OR column_name IN ('url_proveedor', 'produccion_habilitada_en', 'produccion_habilitada_por'))`,
+    )
+  ).rows.length;
 
 const proveedoresFe = async () =>
   (
@@ -674,8 +711,16 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01r_fe_prueba se niega con emisores verificados; sin ellos quita las columnas de la prueba y
+    // NUBEFACT, y se puede reaplicar. Va primero: es la última migración.
+    expect(await inversoFePruebaConVerificados()).toBe('55006');
+    expect(await columnasPruebaFe()).toBe(9);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01r_fe_prueba.sql'), 'utf8'));
+    expect(await columnasPruebaFe()).toBe(0);
+    expect(await proveedoresFe()).toEqual(['SIMULADO']);
+
     // El inverso de 01p_fe se niega con emisores que guardan secretos; sin ellos borra fe y la semilla de
-    // PROVEEDOR_FE, y se puede reaplicar. Va primero: es la última migración.
+    // PROVEEDOR_FE, y se puede reaplicar junto con 01r_fe_prueba.
     expect(await inversoFeConSecretos()).toBe('55006');
     expect(await existeEsquema('fe')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01p_fe.sql'), 'utf8'));
@@ -683,6 +728,9 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await proveedoresFe()).toEqual([]);
     await ejecutar(urlDb, await readFile(rutaDb('01p_fe.sql'), 'utf8'));
     expect(await proveedoresFe()).toEqual(['SIMULADO']);
+    await ejecutar(urlDb, await readFile(rutaDb('01r_fe_prueba.sql'), 'utf8'));
+    expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO']);
+    expect(await columnasPruebaFe()).toBe(9);
 
     // Después, el de 01o_not se niega con mensajes ENCOLADO; sin ellos borra ntf y se puede reaplicar.
     expect(await inversoNotificacionesConEncolados()).toBe('55006');

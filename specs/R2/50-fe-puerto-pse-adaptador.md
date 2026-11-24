@@ -81,7 +81,7 @@ ALTER TABLE fe.emisor
   ADD CONSTRAINT ck_emisor_produccion CHECK ((estado = 'PRODUCCION') = (ambiente = 'PRODUCCION'));
 ```
 
-- Semilla: ítem `NUBEFACT` («Nubefact (PSE)») en `PROVEEDOR_FE` con `atributos = {"requiere_certificado": false, "soporta_resumen": true, "url_beta": null, "serie_prueba": "B001", "dominios_permitidos": ["api.nubefact.com"]}`; a `SIMULADO` se le agregan `"serie_prueba": "B999"` y `"dominios_permitidos": ["simulador.invalid"]`. Dominio y serie de Nubefact se confirman con su documentación al implementar.
+- Semilla: ítem `NUBEFACT` («Nubefact (PSE)») en `PROVEEDOR_FE` con `atributos = {"requiere_certificado": false, "soporta_resumen": true, "url_beta": null, "serie_prueba": "BBB1", "dominios_permitidos": ["api.nubefact.com"]}`; a `SIMULADO` se le agregan `"serie_prueba": "B999"` y `"dominios_permitidos": ["simulador.invalid"]`. Dominio y serie de Nubefact confirmados con la cuenta demo: `B001` responde código 21 («No puedes emitir comprobantes con esta serie») y `BBB1`, la serie de boletas de las cuentas demo, se registra.
 - RLS sin cambios (las políticas del 49 cubren las columnas nuevas).
 - Inverso: quita columnas, CHECK e ítem `NUBEFACT` y los atributos nuevos de `SIMULADO`. Se niega si hay emisores en `VERIFICADO` o `PRODUCCION` (el 49 no sabe tratarlos) o con proveedor `NUBEFACT`.
 - Prueba SQL: `PRODUCCION` sin ambiente `PRODUCCION` falla y al revés; URL `http://` falla; aislamiento con dos `app.tenant_id` sobre las columnas nuevas.
@@ -122,7 +122,7 @@ export interface ResolutorPse {
 }
 
 export interface ColaPruebasFe {
-  /** jobId = `${emisorId}:${numeroPrueba}`; repetido no duplica. */
+  /** jobId = `${emisorId}-${numeroPrueba}` (BullMQ no admite `:` en un jobId propio); repetido no duplica. */
   encolar(prueba: { tenantId: string; emisorId: string; numeroPrueba: number }): Promise<void>;
 }
 ```
@@ -135,7 +135,7 @@ export interface ColaPruebasFe {
 - `CargarCertificado` (49, cambia): mismas reglas de vuelta a `CONFIGURADO` o rotación en producción.
 - `SolicitarPruebaEmisor(empresaId)`, en una transacción: `solicitarPrueba`, guarda y publica `fe.prueba.solicitada` (`{ emisorId, numeroPrueba }`) por outbox. Responde 202 con la vista. Audita.
 - `EncolarPruebaEmisor` (consumidor en el worker): idempotente por `event_id` y por `jobId`.
-- `EjecutarPruebaEmisor` (procesador de `fe-pruebas`, con el contexto del tenant): relee el emisor; si la prueba ya no es la última o no está `EN_PROCESO`, termina. Lee el token de la bóveda, arma `boletaDePrueba` con `serie_prueba` y el número, llama a `resolutor.para(proveedor).enviarComprobante`. `ERROR_TECNICO` → relanza para que BullMQ reintente (3 intentos, backoff exponencial desde 5 s); en el último → `ERROR`. Otro resultado → `registrarResultadoPrueba`; si pasó a `VERIFICADO`, publica `fe.emisor.verificado`. Log estructurado con emisor, número y resultado, sin token ni URL.
+- `EjecutarPruebaEmisor` (procesador de `fe-pruebas`, con el contexto del tenant): relee el emisor; si la prueba ya no es la última o no está `EN_PROCESO`, termina. Lee el token de la bóveda, arma `boletaDePrueba` con `serie_prueba` y el número, llama a `resolutor.para(proveedor).enviarComprobante`. `ERROR_TECNICO` → relanza para que BullMQ reintente (3 intentos, backoff exponencial desde 5 s); en el último → `ERROR`. `EN_PROCESO` (el PSE registró la boleta sin error y SUNAT aún no responde) cuenta como `ACEPTADO`: la prueba en beta comprueba ruta, credencial y formato, y Nubefact envía a SUNAT al día siguiente, según su política. Otro resultado → `registrarResultadoPrueba`; si pasó a `VERIFICADO`, publica `fe.emisor.verificado`. Log estructurado con emisor, número y resultado, sin token ni URL.
 - `HabilitarProduccion(empresaId)`, en una transacción: lee reglas (entorno, catálogo), `habilitarProduccion`, guarda, publica `fe.emisor.produccion_habilitada`. Audita.
 
 ### Eventos (outbox, con esquema en `registrarEsquemasFe`)

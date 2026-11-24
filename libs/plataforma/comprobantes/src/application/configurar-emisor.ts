@@ -1,7 +1,17 @@
 import { Emisor } from '../domain/emisor.js';
 import { EmpresaInactivaError, VersionObsoletaEmisorError } from '../domain/errores.js';
 import { emisorConfigurado } from '../domain/eventos-fe.js';
-import { ACCIONES_EMISOR, actorDe, bytesDe, ENTIDAD_EMISOR, guardarORotar, TIPOS_SECRETO_FE, type DependenciasEmisor } from './dependencias-fe.js';
+import {
+  ACCIONES_EMISOR,
+  actorDe,
+  bytesDe,
+  ENTIDAD_EMISOR,
+  exigirProveedorDelAmbiente,
+  guardarORotar,
+  TIPOS_SECRETO_FE,
+  urlDelProveedor,
+  type DependenciasEmisor,
+} from './dependencias-fe.js';
 import { vistaDe, type VistaEmisor } from './vista-emisor.js';
 
 export interface ConfigurarEmisorComando {
@@ -12,6 +22,8 @@ export interface ConfigurarEmisorComando {
   clave?: string;
   regimenIgv: string;
   leyendaPie?: string | null;
+  /** Ruta del proveedor (no es secreta). Obligatoria si el proveedor declara dominios permitidos; ausente es null. */
+  urlProveedor?: string | null;
   /** Obligatoria si el emisor ya existe (bloqueo optimista); ausente al crearlo. */
   version?: number;
 }
@@ -24,18 +36,21 @@ export interface ResultadoConfiguracion {
 /**
  * TR-RF-052, pasos 1 y 2: crea o actualiza el emisor de la empresa con su proveedor y la credencial en la bóveda,
  * en una transacción: si algo falla después de guardar en la bóveda, no queda secreto, cambio, auditoría ni evento.
+ * Tras verificar, cambiar proveedor, URL o credencial vuelve a CONFIGURADO; en producción solo se rota la credencial.
  */
 export class ConfigurarEmisor {
   constructor(private readonly dependencias: DependenciasEmisor) {}
 
   async ejecutar(comando: ConfigurarEmisorComando): Promise<ResultadoConfiguracion> {
-    const { unidadDeTrabajo, contexto, reloj, empresas, proveedores, emisores, boveda, publicador, auditoria } = this.dependencias;
+    const { unidadDeTrabajo, contexto, reloj, empresas, proveedores, emisores, boveda, publicador, auditoria, entorno } = this.dependencias;
     const actorId = actorDe(contexto);
 
     return unidadDeTrabajo.run(async () => {
       const empresa = await empresas.obtener(comando.empresaId);
       if (!empresa.activa) throw new EmpresaInactivaError();
       const proveedor = await proveedores.obtener(comando.proveedor);
+      exigirProveedorDelAmbiente(proveedor, entorno);
+      const urlProveedor = urlDelProveedor(comando.urlProveedor ?? null, proveedor);
       const ahora = reloj.now();
 
       const existente = await emisores.porEmpresa(empresa.id);
@@ -49,6 +64,7 @@ export class ConfigurarEmisor {
         usuarioProveedor: comando.usuarioProveedor,
         regimenIgv: comando.regimenIgv,
         leyendaPie: comando.leyendaPie ?? null,
+        urlProveedor,
       });
       if (comando.clave !== undefined) {
         emisor.asignarCredencial(await guardarORotar(boveda, emisor.secretoCredencialId, TIPOS_SECRETO_FE.credencial, bytesDe(comando.clave)));
