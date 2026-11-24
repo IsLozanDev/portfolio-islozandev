@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -82,6 +82,7 @@
     { "codigo": "plat.persona.editar", "descripcion": "Editar datos básicos, contactos y direcciones de una persona", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.persona.consentimiento", "descripcion": "Registrar y revocar consentimientos de una persona", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.persona.texto_finalidad", "descripcion": "Publicar textos de consentimiento por finalidad", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.persona.fusionar", "descripcion": "Descartar duplicados y fusionar personas del tenant", "alcance_minimo": "TENANT", "sensible": true },
     { "codigo": "plat.archivo.subir", "descripcion": "Subir archivos", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.archivo.descargar", "descripcion": "Ver y descargar archivos", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.archivo.versionar", "descripcion": "Subir versiones de un archivo y elegir la vigente", "alcance_minimo": "TENANT", "sensible": false },

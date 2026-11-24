@@ -21,7 +21,7 @@ describe('Manifiesto PLAT 1.27.0: parte de fe (spec 49)', () => {
   });
 
   it('está en la versión 1.27.0; plat.fe.configurar es sensible y plat.fe.consultar no, los dos con alcance TENANT', () => {
-    expect(manifiesto.version).toBe('1.27.0');
+    expect(manifiesto.version).toBe('1.28.0');
     const deFe = manifiesto.permisos.filter((permiso) => esDeFe(permiso.codigo));
     expect(deFe.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_FE.configurar, 'Configurar el emisor electrónico', 'TENANT', true],

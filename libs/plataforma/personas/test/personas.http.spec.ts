@@ -169,6 +169,8 @@ describe('HTTP /v1/personas con TR-IDN falso (TR-RF-039 y 040)', () => {
         activo: true,
         version: 1,
         direcciones: [],
+        resuelta_desde: null,
+        alias: [],
         roles: [],
         contactos: [
           { id: expect.any(String), tipo: 'CELULAR', valor: '987654321', principal: true },

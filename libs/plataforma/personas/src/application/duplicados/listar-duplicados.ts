@@ -2,6 +2,8 @@ import { PUNTAJE_MINIMO } from '../../domain/duplicados.js';
 import type { DependenciasPersonas } from '../dependencias-personas.js';
 import type { PaginaDuplicados } from '../ports/consulta-duplicados.js';
 
+export const TAMANO_PAGINA_DUPLICADOS = { porDefecto: 20, maximo: 50 } as const;
+
 export interface PedidoDuplicados {
   pagina: number;
   tamano: number;

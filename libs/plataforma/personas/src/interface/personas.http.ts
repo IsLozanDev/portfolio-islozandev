@@ -6,6 +6,7 @@ import {
   EvidenciaInvalidaError,
   FinalidadRepetidaError,
   PersonaDuplicadaError,
+  PersonaYaFusionadaError,
   TextoNoPublicadoError,
   VersionTextoNoVigenteError,
 } from '../domain/errores.js';
@@ -18,7 +19,8 @@ const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => 
   // Documento, tipo de persona, contacto, dirección, ubigeo, celular principal y producto no suscrito.
   [ValidationError, HttpStatus.UNPROCESSABLE_ENTITY],
   [NotFoundError, HttpStatus.NOT_FOUND],
-  // PERSONA_DUPLICADA, CONTACTO_DUPLICADO, VERSION_OBSOLETA y la carrera dentro de la transacción.
+  // PERSONA_DUPLICADA, CONTACTO_DUPLICADO, VERSION_OBSOLETA, PERSONA_FUSIONADA, bloqueos de fusión y la carrera
+  // dentro de la transacción.
   [ConflictError, HttpStatus.CONFLICT],
 ];
 
@@ -26,6 +28,7 @@ function cuerpoDeError(error: DomainError): Record<string, string> {
   const cuerpo = { codigo: error.code, mensaje: error.message };
   if (error instanceof DocumentoInvalidoPersonaError || error instanceof EvidenciaInvalidaError) return { ...cuerpo, motivo: error.motivo };
   if (error instanceof PersonaDuplicadaError) return { ...cuerpo, persona_id: error.personaId };
+  if (error instanceof PersonaYaFusionadaError) return { ...cuerpo, persona_conservada_id: error.conservadaId };
   if (error instanceof VersionTextoNoVigenteError) return { ...cuerpo, finalidad: error.finalidad, version_vigente: error.versionVigente };
   if (error instanceof TextoNoPublicadoError || error instanceof FinalidadRepetidaError) return { ...cuerpo, finalidad: error.finalidad };
   return cuerpo;
