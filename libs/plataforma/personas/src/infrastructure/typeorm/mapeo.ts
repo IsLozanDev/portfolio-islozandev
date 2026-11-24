@@ -2,6 +2,7 @@ import type { ProductoCodigo } from '@vitrina/plataforma/org';
 import { Contacto, type TipoContacto } from '../../domain/contacto.js';
 import { Direccion } from '../../domain/direccion.js';
 import { DocumentoIdentidad, type TipoDocumentoPersona } from '../../domain/documento-identidad.js';
+import type { AliasFusion } from '../../domain/fusion.js';
 import { Persona, type TipoPersona } from '../../domain/persona.js';
 import type { RolAsignado, RolPersona } from '../../domain/rol-persona.js';
 import type { FilaContacto, FilaDireccion, FilaPersona, FilaPersonaRol } from './entidades.js';
@@ -22,6 +23,8 @@ export function filaDesdePersona(persona: Persona): FilaPersonaNueva {
     tipoDocumento: persona.documento.tipo,
     numeroDocumento: persona.documento.numero,
     activo: persona.activo,
+    fusionadaEnId: persona.fusion?.conservadaId ?? null,
+    fusionadaEn: persona.fusion?.fusionadaEn ?? null,
     ...columnasEditablesDePersona(persona),
   };
 }
@@ -91,7 +94,13 @@ export function personaDesdeFilas({ persona, roles, contactos, direcciones }: Fi
     roles: roles.map(rolDesdeFila),
     contactos: contactos.map(contactoDesdeFila),
     direcciones: direcciones.map(direccionDesdeFila),
+    fusion: aliasDesdeFila(persona),
   });
+}
+
+function aliasDesdeFila(persona: FilaPersona): AliasFusion | null {
+  if (persona.fusionadaEnId === null || persona.fusionadaEn === null) return null;
+  return { conservadaId: persona.fusionadaEnId, fusionadaEn: persona.fusionadaEn };
 }
 
 function rolDesdeFila(fila: FilaPersonaRol): RolAsignado {

@@ -205,3 +205,51 @@ export class EvidenciaNoEncontradaError extends NotFoundError {
 export class TextoFinalidadInvalidoError extends ValidationError {
   override readonly code = 'DATOS_INVALIDOS';
 }
+
+// Duplicados y fusión (spec 39). Los mensajes no llevan nombres, documentos ni contactos.
+
+export class MismaPersonaError extends ValidationError {
+  override readonly code = 'MISMA_PERSONA';
+
+  constructor() {
+    super('No se puede fusionar una persona consigo misma');
+  }
+}
+
+/** TR-CA-108: mismo tipo de documento con distinto número. */
+export class DocumentosDistintosError extends ConflictError {
+  override readonly code = 'DOCUMENTOS_DISTINTOS';
+
+  constructor() {
+    super('Las personas tienen documentos distintos');
+  }
+}
+
+export class TipoPersonaDistintoError extends ConflictError {
+  override readonly code = 'TIPO_PERSONA_DISTINTO';
+
+  constructor() {
+    super('No se puede fusionar una persona natural con una jurídica');
+  }
+}
+
+/** La persona es alias de otra: lleva la conservada para que el cliente la cargue. */
+export class PersonaYaFusionadaError extends ConflictError {
+  override readonly code = 'PERSONA_FUSIONADA';
+
+  constructor(readonly conservadaId: string) {
+    super('La persona se fusionó con otra ficha');
+  }
+}
+
+export class MotivoFusionInvalidoError extends ValidationError {
+  override readonly code = 'MOTIVO_INVALIDO';
+
+  constructor(minimo: number, maximo: number) {
+    super(`El motivo debe tener entre ${minimo} y ${maximo} caracteres`);
+  }
+}
+
+export class CampoElegidoInvalidoError extends ValidationError {
+  override readonly code = 'CAMPO_ELEGIDO_INVALIDO';
+}

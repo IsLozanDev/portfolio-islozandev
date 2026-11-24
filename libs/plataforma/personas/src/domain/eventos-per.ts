@@ -14,6 +14,7 @@ export const EVENTOS_PER = {
   rolAsignado: 'persona.rol_asignado',
   actualizada: 'persona.actualizada',
   consentimientoRevocado: 'consentimiento.revocado',
+  fusionada: 'persona.fusionada',
 } as const;
 
 /** Qué parte de la persona cambió en un `persona.actualizada`. */
@@ -38,6 +39,13 @@ export interface PersonaRolAsignado {
 export interface PersonaActualizada {
   persona_id: string;
   cambio: CambioPersona;
+}
+
+/** Del agregado de la conservada. Los consumidores reasignan sus referencias de la absorbida a la conservada. */
+export interface PersonaFusionada {
+  persona_conservada_id: string;
+  persona_absorbida_id: string;
+  fusion_id: string;
 }
 
 /** Sin nombres, documento, contactos ni el texto legal. `canal` es el de la revocación. */

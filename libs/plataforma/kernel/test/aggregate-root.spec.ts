@@ -8,6 +8,10 @@ class Venta extends AggregateRoot {
   registrar(total: number): void {
     this.raise({ eventType: 'venta.registrada', aggregateType: 'venta', schemaVersion: 1, payload: { total } });
   }
+
+  anular(): void {
+    this.bumpVersion();
+  }
 }
 
 describe('AggregateRoot', () => {
@@ -19,6 +23,13 @@ describe('AggregateRoot', () => {
     venta.registrar(20);
     expect(venta.version).toBe(6);
     expect(venta.pullEvents().map((e) => e.aggregateVersion)).toEqual([5, 6]);
+  });
+
+  it('bumpVersion sube la versión sin levantar eventos', () => {
+    const venta = new Venta(id, 4);
+    venta.anular();
+    expect(venta.version).toBe(5);
+    expect(venta.pullEvents()).toEqual([]);
   });
 
   it('completa aggregateId, occurredAt y conserva el resto del evento', () => {

@@ -71,6 +71,11 @@ export class Direccion {
     return new Direccion(this.id, this.direccion, this.referencia, this.ubigeo, this.ubicacion, principal);
   }
 
+  /** Mismo texto (sin distinguir mayúsculas ni espacios repetidos) y mismo ubigeo: al fusionar no se duplica. */
+  esMismoLugar(otra: Direccion): boolean {
+    return this.ubigeo === otra.ubigeo && normalizarTexto(this.direccion) === normalizarTexto(otra.direccion);
+  }
+
   esIgualA(otra: Direccion): boolean {
     return (
       this.direccion === otra.direccion &&
@@ -82,6 +87,10 @@ export class Direccion {
       this.ubicacion.departamento === otra.ubicacion.departamento
     );
   }
+}
+
+function normalizarTexto(texto: string): string {
+  return texto.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 /** El formato se revisa antes de consultar el catálogo: un ubigeo mal escrito no es uno sin vigencia. */

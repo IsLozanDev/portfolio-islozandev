@@ -1,6 +1,6 @@
 # SPEC 38 — Personas: buscador con búsqueda por texto, fonética y documento, alta rápida y ficha en admin
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 31, SPEC 32, SPEC 37, SPEC 13, SPEC 15, SPEC 15b, SPEC 15c, SPEC 15d, SPEC 17c, SPEC 19a, SPEC 19b
 > **Date:** 2026-11-23
 > **Objective:** Dar a TR-PER una búsqueda de personas del tenant por nombre (sin tildes, con tolerancia a errores y fonética del español), documento, celular o correo, con filtros por rol y producto, y sobre ella crear `libs/plataforma/personas-ui` con `vit-persona-buscador` (un campo inteligente que encuentra, prellena desde TR-IDN y da de alta en el panel lateral) y la lista y la ficha de personas en `admin-cliente` (datos básicos, contactos, direcciones con ubigeo, roles y consentimientos).

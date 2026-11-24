@@ -84,6 +84,26 @@ describe('eventos de personas', () => {
     );
   });
 
+  it('persona.fusionada cumple su esquema y rechaza un dato de más', () => {
+    const fusionada: DomainEvent = {
+      eventType: EVENTOS_PER.fusionada,
+      aggregateType: 'persona',
+      aggregateId: '39000000-0000-4000-8000-0000000000a1',
+      aggregateVersion: 3,
+      schemaVersion: 1,
+      occurredAt: new Date(),
+      payload: {
+        persona_conservada_id: '39000000-0000-4000-8000-0000000000a1',
+        persona_absorbida_id: '39000000-0000-4000-8000-0000000000a2',
+        fusion_id: '39000000-0000-4000-8000-0000000000f1',
+      },
+    };
+    const conDocumento = { ...fusionada, payload: { ...(fusionada.payload as object), numero_documento: '45781236' } };
+
+    expect(() => validador.validate(fusionada)).not.toThrow();
+    expect(() => validador.validate(conDocumento)).toThrow(EventSchemaValidationError);
+  });
+
   it('el esquema rechaza un payload con datos de más', async () => {
     const [registrada] = await eventosDeRegistrarYAsignar();
     const conDocumento = { ...registrada, payload: { ...(registrada.payload as object), numero_documento: '45781236' } };

@@ -95,6 +95,7 @@ const CASOS = [
   { migracion: '01l_per.sql', esquema: 'per', prueba: 'tests/01l_per.test.sql' },
   { migracion: '01l_per_busqueda.sql', esquema: 'per', prueba: 'tests/01l_per_busqueda.test.sql' },
   { migracion: '01l_per_contactos.sql', esquema: 'per', prueba: 'tests/01l_per_contactos.test.sql' },
+  { migracion: '01l_per_fusion.sql', esquema: 'per', prueba: 'tests/01l_per_fusion.test.sql' },
   { migracion: '01m_arc.sql', esquema: 'arc', prueba: 'tests/01m_arc.test.sql' },
   { migracion: '01m_arc_analisis.sql', esquema: 'arc', prueba: 'tests/01m_arc_analisis.test.sql' },
   { migracion: '01m_arc_categoria_fk.sql', esquema: 'arc', prueba: 'tests/01m_arc_categoria_fk.test.sql' },
@@ -712,6 +713,45 @@ const objetosConsentimientos = async () =>
     )
   ).rows.map((r) => r.o);
 
+// Tablas, columnas de alias e índice que agrega 01l_per_fusion (5 en total).
+const objetosFusion = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT 'tabla:' || tablename AS o FROM pg_tables WHERE schemaname = 'per' AND tablename IN ('fusion', 'par_descartado')
+       UNION ALL SELECT 'columna:' || column_name FROM information_schema.columns
+        WHERE table_schema = 'per' AND table_name = 'persona' AND column_name IN ('fusionada_en_id', 'fusionada_en')
+       UNION ALL SELECT 'indice:' || indexname FROM pg_indexes WHERE schemaname = 'per' AND indexname = 'ix_persona_fusionada_en'
+       ORDER BY 1`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con una persona fusionada el inverso de 01l_per_fusion se niega; la transacción se revierte.
+async function inversoFusionConFilas() {
+  const tenant = '39000000-0000-0000-0000-0000000000e0';
+  const conservada = '39000000-0000-0000-0000-0000000000e1';
+  const absorbida = '39000000-0000-0000-0000-0000000000e2';
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(
+      `INSERT INTO per.persona (id, tenant_id, tipo_persona, tipo_documento, numero_documento, nombres, apellido_paterno)
+       VALUES ('${conservada}', '${tenant}', 'NATURAL', 'DNI', '45781236', 'Juana', 'Quispe');
+       INSERT INTO per.persona (id, tenant_id, tipo_persona, tipo_documento, numero_documento, nombres, apellido_paterno,
+                                activo, fusionada_en_id, fusionada_en)
+       VALUES ('${absorbida}', '${tenant}', 'NATURAL', 'PASAPORTE', 'P1234567', 'Juana', 'Quispe', false, '${conservada}', now())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01l_per_fusion.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
 // Con un consentimiento guardado el inverso de 01l_per_consentimientos se niega; la transacción se revierte.
 async function inversoConsentimientosConFilas() {
   const tenant = '37000000-0000-0000-0000-0000000000e0';
@@ -834,6 +874,16 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
     expect(await objetosVersiones()).toHaveLength(8);
 
+    // El inverso de 01l_per_fusion se niega con personas fusionadas; sin ellas quita alias, fusiones y descartes,
+    // y se puede reaplicar (spec 39). Va antes que los demás de per.
+    expect(await objetosFusion()).toHaveLength(5);
+    expect(await inversoFusionConFilas()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_fusion.sql'), 'utf8'));
+    expect(await objetosFusion()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_fusion.sql'), 'utf8'));
+    expect(await objetosFusion()).toHaveLength(5);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01l_per_fusion.sql'), 'utf8'));
+
     // El inverso de 01l_per_consentimientos se niega con consentimientos; sin ellos quita textos y decisiones,
     // y se puede reaplicar (spec 37).
     expect(await objetosConsentimientos()).toHaveLength(3);
@@ -871,6 +921,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await objetosContactos()).toHaveLength(3);
     await ejecutar(urlDb, await readFile(rutaDb('01l_per_consentimientos.sql'), 'utf8'));
     expect(await objetosConsentimientos()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('01l_per_fusion.sql'), 'utf8'));
+    expect(await objetosFusion()).toHaveLength(5);
 
     // El inverso de 01k_idn_cuota deja idn como lo dejó 01j_idn (con el proveedor sembrado) y se puede reaplicar.
     expect(await objetosCuota()).toHaveLength(6);

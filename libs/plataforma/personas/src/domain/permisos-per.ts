@@ -6,4 +6,5 @@ export const PERMISOS_PER = {
   editar: 'plat.persona.editar',
   consentimiento: 'plat.persona.consentimiento',
   textoFinalidad: 'plat.persona.texto_finalidad',
+  fusionar: 'plat.persona.fusionar',
 } as const;

@@ -14,6 +14,9 @@ export interface FilaPersona {
   apellidoMaterno: string | null;
   razonSocial: string | null;
   activo: boolean;
+  /** Conservada de una absorbida (spec 39); nula en las demás. */
+  fusionadaEnId: string | null;
+  fusionadaEn: Date | null;
   version: number;
   creadoEn: Date;
   actualizadoEn: Date;
@@ -68,6 +71,8 @@ export const PersonaEntidad = new EntitySchema<FilaPersona>({
     apellidoMaterno: { name: 'apellido_materno', type: 'varchar', length: 60, nullable: true },
     razonSocial: { name: 'razon_social', type: 'varchar', length: 200, nullable: true },
     activo: { type: 'boolean' },
+    fusionadaEnId: { name: 'fusionada_en_id', type: 'uuid', nullable: true },
+    fusionadaEn: { name: 'fusionada_en', type: 'timestamptz', nullable: true },
     // El repositorio escribe la versión del agregado; la columna de versión evita que un UPDATE la olvide.
     version: { type: 'integer', version: true },
     creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },

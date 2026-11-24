@@ -1,6 +1,6 @@
 # SPEC 43 — Notificaciones: API de plantillas con personalización por tenant, versiones, HTML saneado, vista previa y restauración de la base
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 42, SPEC 06, SPEC 20a
 > **Date:** 2026-11-23
 > **Objective:** Exponer en `libs/plataforma/notificaciones` la API `/v1/notificaciones/plantillas` para que cada tenant personalice las plantillas base de plataforma: se guarda una versión nueva con HTML saneado y solo con las variables declaradas, se ve una vista previa sin enviar y se vuelve a la base sin perderla.
