@@ -176,7 +176,8 @@ export class OrgModule {
       module: OrgModule,
       imports: opciones.imports ?? [],
       providers: [...PROVEEDORES, opciones.padronRuc ?? PADRON_RUC_POR_DEFECTO],
-      exports: CASOS_DE_USO_EXPORTADOS,
+      // PADRON_RUC: FE advierte de un adquirente no ACTIVO o NO HABIDO (spec 51, TR-RN-019).
+      exports: [...CASOS_DE_USO_EXPORTADOS, PADRON_RUC],
     };
   }
 }

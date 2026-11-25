@@ -166,3 +166,118 @@ export class UrlProveedorNoPermitidaError extends ValidationError {
     super('La URL del proveedor debe ser https, sin credenciales ni otro puerto, y de un dominio permitido para el proveedor');
   }
 }
+
+// ---------------------------------------------------------------------
+// Emisión de boleta y factura (spec 51). Sin datos del adquirente en los mensajes (TR-RNF-026).
+// ---------------------------------------------------------------------
+
+/** Formato o tamaño de un campo de la solicitud: HTTP 400, como la validación del DTO. */
+export class DatosComprobanteInvalidosError extends ValidationError {
+  override readonly code = 'DATOS_COMPROBANTE_INVALIDOS';
+}
+
+/** La solicitud se entendió pero la norma no la admite: HTTP 422. */
+export abstract class ComprobanteNoAceptadoError extends ValidationError {}
+
+export class FacturaRequiereRucError extends ComprobanteNoAceptadoError {
+  override readonly code = 'FACTURA_REQUIERE_RUC';
+
+  constructor() {
+    super('La factura requiere RUC del adquirente');
+  }
+}
+
+export class BoletaRequiereAdquirenteError extends ComprobanteNoAceptadoError {
+  override readonly code = 'BOLETA_REQUIERE_ADQUIRENTE';
+
+  /** `umbral` ya formateado: «S/ 700,00». */
+  constructor(umbral: string) {
+    super(`Boletas mayores a ${umbral} requieren documento y nombre del adquirente`);
+  }
+}
+
+export class SerieNoCorrespondeError extends ComprobanteNoAceptadoError {
+  override readonly code = 'SERIE_NO_CORRESPONDE';
+}
+
+export class SerieAmbiguaError extends ComprobanteNoAceptadoError {
+  override readonly code = 'SERIE_AMBIGUA';
+
+  constructor() {
+    super('Indique la serie');
+  }
+}
+
+export class CodigoSunatInvalidoError extends ComprobanteNoAceptadoError {
+  override readonly code = 'CODIGO_SUNAT_INVALIDO';
+
+  constructor(
+    readonly campo: string,
+    codigo: string,
+  ) {
+    super(`${campo}: el código «${codigo}» no existe, no está vigente o no se admite en el comprobante`);
+  }
+}
+
+export class CuotasInvalidasError extends ComprobanteNoAceptadoError {
+  override readonly code = 'CUOTAS_INVALIDAS';
+}
+
+export class TotalNoCoincideError extends ComprobanteNoAceptadoError {
+  override readonly code = 'TOTAL_NO_COINCIDE';
+
+  constructor(calculado: string, esperado: string) {
+    super(`El total calculado (${calculado}) difiere del esperado (${esperado}) en más de S/ 0,01`);
+  }
+}
+
+export class EmisorNoHabilitadoError extends ConflictError {
+  override readonly code = 'EMISOR_NO_HABILITADO';
+
+  constructor() {
+    super('El emisor debe estar VERIFICADO o en PRODUCCION para emitir comprobantes');
+  }
+}
+
+/** Configuración de la plataforma, no del llamador: el catálogo TASA_IGV no tiene tasa vigente para el régimen. */
+export class TasaIgvNoVigenteError extends ConflictError {
+  override readonly code = 'TASA_IGV_NO_VIGENTE';
+
+  constructor(regimen: string) {
+    super(`No hay una tasa de IGV vigente para el régimen ${regimen} en el catálogo TASA_IGV`);
+  }
+}
+
+export class IdempotenciaConflictoError extends ConflictError {
+  override readonly code = 'IDEMPOTENCIA_CONFLICTO';
+
+  constructor() {
+    super('La clave de idempotencia ya se usó con otro contenido');
+  }
+}
+
+/** Otra emisión con la misma clave confirmó primero: reintentar con la misma clave devuelve la existente. */
+export class EmisionConcurrenteError extends ConflictError {
+  override readonly code = 'EMISION_CONCURRENTE';
+
+  constructor() {
+    super('Otra emisión con la misma clave de idempotencia terminó primero; reintente para obtenerla');
+  }
+}
+
+export class ComprobanteNoEncontradoError extends NotFoundError {
+  override readonly code = 'COMPROBANTE_NO_ENCONTRADO';
+
+  constructor() {
+    super('El comprobante no existe');
+  }
+}
+
+/** También si es de otro tenant o de otra empresa. */
+export class SucursalNoEncontradaError extends NotFoundError {
+  override readonly code = 'SUCURSAL_NO_ENCONTRADA';
+
+  constructor() {
+    super('La sucursal no existe en la empresa');
+  }
+}

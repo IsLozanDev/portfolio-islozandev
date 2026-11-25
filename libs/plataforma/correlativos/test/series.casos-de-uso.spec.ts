@@ -212,7 +212,7 @@ describe('CambiarEstadoSerie', () => {
   it('un actor sin alcance sobre la sucursal de la serie da 403 y no escribe', async () => {
     const entorno = escenario();
     const serie = await crearB002(entorno);
-    entorno.dependencias.alcanceActor = { cubre: async () => false };
+    entorno.dependencias.alcanceActor = { cubre: async () => false, alcanzaTenant: async () => false };
     await expect(new CambiarEstadoSerie(entorno.dependencias).ejecutar({ serieId: serie.id, activa: false, actorId: ANA })).rejects.toThrow(ActorSinAlcanceError);
     expect(entorno.series.escrituras).toBe(0);
     expect(serie.activa).toBe(true);

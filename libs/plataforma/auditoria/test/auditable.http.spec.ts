@@ -5,7 +5,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator, KernelInfraModule, TENANT_CONTEXT, uuidV7 } from '@vitrina/plataforma/kernel-infra';
-import { ContextoTenantInterceptor, type SolicitudAutenticada } from '@vitrina/plataforma/seguridad';
+import { ContextoTenantInterceptor, type ContextoAutorizado, type Principal } from '@vitrina/plataforma/seguridad';
 import { AuditoriaModule } from '../src/auditoria.module.js';
 import { crearEntornoAuditoria, type EntornoAuditoria } from './support/entorno.js';
 import { SeguridadDePruebaModule } from './support/seguridad-de-prueba.js';
@@ -36,8 +36,8 @@ describeConDb('@Auditable (spec 20a)', () => {
     }).compile();
     app = modulo.createNestApplication({ logger: false });
     // En lugar de AutenticacionGuard y PermisoGuard: el usuario y la sucursal ya verificados.
-    app.use((solicitud: SolicitudAutenticada, _respuesta: unknown, seguir: () => void) => {
-      solicitud.principal = { usuarioId: USUARIO, tenantId: TENANT } as SolicitudAutenticada['principal'];
+    app.use((solicitud: { principal?: Principal; contexto?: ContextoAutorizado }, _respuesta: unknown, seguir: () => void) => {
+      solicitud.principal = { usuarioId: USUARIO, tenantId: TENANT } as Principal;
       solicitud.contexto = { tenantId: TENANT, sucursalId: SUCURSAL, unidadId: null, permisos: [] };
       seguir();
     });

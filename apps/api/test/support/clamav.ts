@@ -7,7 +7,7 @@ const HOST = process.env.CLAMAV_HOST ?? '';
 /** Pruebas que necesitan PostgreSQL y clamd reales. */
 export const describeConDbYClamav = HOST ? describeConDb : describe.skip;
 
-export const ANTIVIRUS_CLAMAV: OpcionesAntivirus = {
+export const ANTIVIRUS_CLAMAV: Extract<OpcionesAntivirus, { motor: 'clamav' }> = {
   motor: 'clamav',
   host: HOST,
   puerto: Number(process.env.CLAMAV_PORT ?? PUERTO_CLAMD),

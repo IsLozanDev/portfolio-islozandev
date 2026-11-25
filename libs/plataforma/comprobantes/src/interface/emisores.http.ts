@@ -3,7 +3,7 @@ import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationEr
 import { BovedaNoConfiguradaError } from '@vitrina/plataforma/secretos';
 import type { z } from 'zod';
 import { KB_MAXIMOS_CERTIFICADO } from '../application/cargar-certificado.js';
-import { CertificadoNoAceptadoError } from '../domain/errores.js';
+import { CertificadoNoAceptadoError, ComprobanteNoAceptadoError } from '../domain/errores.js';
 
 interface Respuesta {
   status(codigo: number): { json(cuerpo: unknown): unknown };
@@ -12,7 +12,9 @@ interface Respuesta {
 const ESTADOS: ReadonlyArray<readonly [abstract new (...argumentos: never[]) => DomainError, number]> = [
   // CERTIFICADO_OTRO_RUC, CERTIFICADO_VENCIDO y CERTIFICADO_NO_VIGENTE: el archivo se leyó, pero no sirve.
   [CertificadoNoAceptadoError, HttpStatus.UNPROCESSABLE_ENTITY],
-  // PROVEEDOR_FE_INVALIDO, DATOS_EMISOR_INVALIDOS, ARCHIVO_CERTIFICADO_INVALIDO, CLAVE_CERTIFICADO_INCORRECTA y CERTIFICADO_SIN_RUC.
+  // Los errores normativos de la emisión (spec 51): la solicitud se entendió, pero la norma no la admite.
+  [ComprobanteNoAceptadoError, HttpStatus.UNPROCESSABLE_ENTITY],
+  // DATOS_COMPROBANTE_INVALIDOS, PROVEEDOR_FE_INVALIDO, DATOS_EMISOR_INVALIDOS, ARCHIVO_CERTIFICADO_INVALIDO, CLAVE_CERTIFICADO_INCORRECTA y CERTIFICADO_SIN_RUC.
   [ValidationError, HttpStatus.BAD_REQUEST],
   [ForbiddenError, HttpStatus.FORBIDDEN],
   // EMISOR_NO_ENCONTRADO y EMPRESA_NO_ENCONTRADA (también si es de otro tenant).

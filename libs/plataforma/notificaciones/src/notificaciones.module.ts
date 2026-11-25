@@ -3,9 +3,15 @@ import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { hashDocumento } from '@vitrina/plataforma/observabilidad';
-import { ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
+import { TenantRepositorioTypeOrm, ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
 import { CONSENTIMIENTO_PORT, PERSONA_PORT, type ConsentimientoPort, type PersonaPort } from '@vitrina/plataforma/personas';
+import { PropietariosTenantTypeOrm } from '@vitrina/plataforma/seguridad';
 import { Resend } from 'resend';
+import { AvisarIntegridadRota } from './application/avisos/avisar-integridad-rota.js';
+import { AvisarSoporteSolicitado } from './application/avisos/avisar-soporte-solicitado.js';
+import { AvisarSuscripcionPorVencer } from './application/avisos/avisar-suscripcion-por-vencer.js';
+import { AvisarTenantSuspendido } from './application/avisos/avisar-tenant-suspendido.js';
+import { EnvioAvisos } from './application/avisos/envio-avisos.js';
 import type { DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
 import { EncolarEnvio } from './application/encolar-envio.js';
 import { EntregarMensaje } from './application/entregar-mensaje.js';
@@ -20,7 +26,19 @@ import { NOTIFICACION_PORT, type NotificacionPort } from './application/ports/no
 import type { ProveedorCorreo } from './application/ports/proveedor-correo.js';
 import type { VerificadorWebhook } from './application/ports/verificador-webhook.js';
 import { ProcesarEventoProveedor } from './application/procesar-evento-proveedor.js';
+import { BarrerProgramacionesAtrasadas } from './application/programaciones/barrer-programaciones-atrasadas.js';
+import { CancelarProgramaciones } from './application/programaciones/cancelar-programaciones.js';
+import { EjecutarProgramacion } from './application/programaciones/ejecutar-programacion.js';
+import { EncolarProgramacion } from './application/programaciones/encolar-programacion.js';
+import { ProgramarNotificacion } from './application/programaciones/programar-notificacion.js';
+import { ServicioNotificaciones } from './application/servicio-notificaciones.js';
 import { abrirColaEnvios, EVENTO_ERROR_COLA_ENVIOS, type ColaEnviosAbierta } from './infrastructure/bullmq/cola-envios.js';
+import {
+  abrirColaProgramaciones,
+  EVENTO_ERROR_COLA_PROGRAMACIONES,
+  type ColaProgramacionesAbierta,
+} from './infrastructure/bullmq/cola-programaciones.js';
+import { NombreTenantOrg } from './infrastructure/org/nombre-tenant.org.js';
 import { CircuitBreaker } from './infrastructure/resend/circuit-breaker.js';
 import { PROVEEDOR_NO_CONFIGURADO, VERIFICADOR_NO_CONFIGURADO } from './infrastructure/resend/no-configurado.js';
 import { ProveedorCorreoResend } from './infrastructure/resend/proveedor-correo.resend.js';
@@ -30,15 +48,20 @@ import { RepositorioContactosInvalidosTypeOrm } from './infrastructure/typeorm/c
 import { MensajePorIdExternoSql, type EjecutorSql } from './infrastructure/typeorm/mensaje-por-id-externo.sql.js';
 import { RepositorioMensajesTypeOrm } from './infrastructure/typeorm/mensajes.repositorio.js';
 import { RepositorioPlantillasTypeOrm } from './infrastructure/typeorm/plantillas.repositorio.js';
+import { ProgramacionesAtrasadasSql } from './infrastructure/typeorm/programaciones-atrasadas.sql.js';
+import { RepositorioProgramacionesTypeOrm } from './infrastructure/typeorm/programaciones.repositorio.js';
 import type { EntornoNotificaciones } from './interface/entorno-notificaciones.js';
+import { AvisosPlataformaConsumidor } from './interface/avisos-plataforma.consumidor.js';
 import { NotificacionesConsumidor } from './interface/notificaciones.consumidor.js';
 import { PlantillasController } from './interface/plantillas.controller.js';
+import { ProgramacionesConsumidor } from './interface/programaciones.consumidor.js';
 import { WebhooksController } from './interface/webhooks.controller.js';
 
 const CONTEXTO_LOG = 'Notificaciones';
 /** Solo fuera de producción (allí NOT_SAL_DESTINO es obligatoria): el hash sigue siendo estable entre reinicios. */
 const SAL_DESTINO_SIN_CONFIGURAR = 'not-sal-destino-local-no-apta-para-produccion';
 const COLA_ENVIOS_ABIERTA = Symbol('ColaEnviosAbierta');
+const COLA_PROGRAMACIONES_ABIERTA = Symbol('ColaProgramacionesAbierta');
 const DEPENDENCIAS_PLANTILLAS = Symbol('DependenciasPlantillas');
 
 export interface NotificacionesOpciones {
@@ -50,14 +73,23 @@ export interface NotificacionesOpciones {
 }
 
 export interface NotificacionesWorkerOpciones {
-  /** Cola `not-envios`. */
+  /** Colas `not-envios` y `not-programaciones`. */
   redisUrl: string;
   entorno: EntornoNotificaciones;
+  /** Para el barrido de programaciones atrasadas, que cruza tenants fuera de toda transacción (spec 45). */
+  dataSource: EjecutorSql;
+  /** Módulos que exportan `PERSONA_PORT` y `CONSENTIMIENTO_PORT`: la ejecución de una programación llama a `enviar`. */
+  imports: ModuleMetadata['imports'];
 }
 
 function crearAviso(): Registrar {
   const logger = new Logger(CONTEXTO_LOG);
   return (mensaje, datos) => logger.warn({ evento: mensaje, ...datos });
+}
+
+function crearInforme(): Registrar {
+  const logger = new Logger(CONTEXTO_LOG);
+  return (mensaje, datos) => logger.log({ evento: mensaje, ...datos });
 }
 
 function hasheadorDestino(entorno: EntornoNotificaciones): HashearDestino {
@@ -81,14 +113,60 @@ function casoDeUsoDePlantillas<CasoDeUso>(clase: new (dependencias: Dependencias
   return { provide: clase, useFactory: (dependencias: DependenciasPlantillas) => new clase(dependencias), inject: [DEPENDENCIAS_PLANTILLAS] };
 }
 
-/** Cierra la cola de envíos con la app (app.close() en pruebas y apagado). */
-class CierreColaEnvios implements OnModuleDestroy {
-  constructor(private readonly abierta: ColaEnviosAbierta) {}
+/**
+ * `NOTIFICACION_PORT`: enviar (spec 42), programar y cancelar (spec 45), en la transacción del llamador. Necesita
+ * `PERSONA_PORT` y `CONSENTIMIENTO_PORT` de los imports.
+ */
+function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
+  return {
+    provide: NOTIFICACION_PORT,
+    useFactory: (
+      unidadDeTrabajo: TypeOrmUnitOfWork,
+      contexto: TenantContext,
+      reloj: Clock,
+      ids: IdGenerator,
+      publicador: EventPublisher,
+      personas: PersonaPort,
+      consentimientos: ConsentimientoPort,
+    ): NotificacionPort => {
+      const plantillas = new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto);
+      const programaciones = new RepositorioProgramacionesTypeOrm(unidadDeTrabajo, contexto);
+      const dependenciasProgramacion = { unidadDeTrabajo, contexto, reloj, ids, publicador, plantillas, programaciones };
+      return new ServicioNotificaciones({
+        enviar: new EnviarNotificacion({
+          unidadDeTrabajo,
+          contexto,
+          reloj,
+          ids,
+          publicador,
+          mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
+          plantillas,
+          contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+          personas,
+          consentimientos,
+          hashearDestino: hasheadorDestino(entorno),
+          zonaHoraria: ZONA_VENCIMIENTOS,
+        }),
+        programar: new ProgramarNotificacion(dependenciasProgramacion),
+        cancelar: new CancelarProgramaciones(dependenciasProgramacion),
+      });
+    },
+    inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, PERSONA_PORT, CONSENTIMIENTO_PORT],
+  };
+}
+
+/** Cierra una cola con la app (app.close() en pruebas y apagado). */
+class CierreCola implements OnModuleDestroy {
+  constructor(private readonly abierta: { cerrar(): Promise<void> }) {}
 
   onModuleDestroy(): Promise<void> {
     return this.abierta.cerrar();
   }
 }
+
+/** Dos instancias de CierreCola en el mismo módulo: cada una con su token. */
+const CIERRE_COLA_ENVIOS = Symbol('CierreColaEnvios');
+const CIERRE_COLA_PROGRAMACIONES = Symbol('CierreColaProgramaciones');
 
 // Usa los tokens de KernelInfraModule y AUDITORIA de AuditoriaModule (globales), que la app debe importar con
 // registrarEsquemasNot.
@@ -128,33 +206,7 @@ export class NotificacionesModule {
         casoDeUsoDePlantillas(VistaPreviaPlantilla),
         casoDeUsoDePlantillas(PersonalizarPlantilla),
         casoDeUsoDePlantillas(RestaurarPlantillaBase),
-        {
-          provide: NOTIFICACION_PORT,
-          useFactory: (
-            unidadDeTrabajo: TypeOrmUnitOfWork,
-            contexto: TenantContext,
-            reloj: Clock,
-            ids: IdGenerator,
-            publicador: EventPublisher,
-            personas: PersonaPort,
-            consentimientos: ConsentimientoPort,
-          ): NotificacionPort =>
-            new EnviarNotificacion({
-              unidadDeTrabajo,
-              contexto,
-              reloj,
-              ids,
-              publicador,
-              mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
-              plantillas: new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto),
-              contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
-              personas,
-              consentimientos,
-              hashearDestino: hasheadorDestino(entorno),
-              zonaHoraria: ZONA_VENCIMIENTOS,
-            }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, PERSONA_PORT, CONSENTIMIENTO_PORT],
-        },
+        proveedorNotificacionPort(entorno),
         {
           provide: ProcesarEventoProveedor,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, ids: IdGenerator) =>
@@ -177,24 +229,85 @@ export class NotificacionesModule {
   }
 
   /**
-   * El consumidor de `not.mensaje.solicitado` (EventosModule.registrarWorker lo descubre por `@SuscribirEvento`) y
-   * `EntregarMensaje`, que procesa la cola `not-envios` desde apps/worker.
+   * Los consumidores de `not.mensaje.solicitado` y `not.programacion.registrada` (EventosModule.registrarWorker los
+   * descubre por `@SuscribirEvento`), `EntregarMensaje`, que procesa la cola `not-envios`, `EjecutarProgramacion` y
+   * `BarrerProgramacionesAtrasadas`, que usan la cola `not-programaciones`, y el consumidor de los avisos de
+   * plataforma (spec 44), que lee los propietarios de SEG y el nombre del tenant de ORG con sus adaptadores.
    */
-  static registerWorker({ redisUrl, entorno }: NotificacionesWorkerOpciones): DynamicModule {
+  static registerWorker({ redisUrl, entorno, dataSource, imports }: NotificacionesWorkerOpciones): DynamicModule {
     const avisar = crearAviso();
     return {
       module: NotificacionesModule,
+      imports,
       providers: [
         {
           provide: COLA_ENVIOS_ABIERTA,
           // Solo el nombre del error: el mensaje de Redis puede llevar la URL con su clave.
           useFactory: (): ColaEnviosAbierta => abrirColaEnvios(redisUrl, (error) => avisar(EVENTO_ERROR_COLA_ENVIOS, { error: error.name })),
         },
-        { provide: CierreColaEnvios, useFactory: (abierta: ColaEnviosAbierta) => new CierreColaEnvios(abierta), inject: [COLA_ENVIOS_ABIERTA] },
+        { provide: CIERRE_COLA_ENVIOS, useFactory: (abierta: ColaEnviosAbierta) => new CierreCola(abierta), inject: [COLA_ENVIOS_ABIERTA] },
+        {
+          provide: COLA_PROGRAMACIONES_ABIERTA,
+          useFactory: (reloj: Clock): ColaProgramacionesAbierta =>
+            abrirColaProgramaciones(redisUrl, reloj, (error) => avisar(EVENTO_ERROR_COLA_PROGRAMACIONES, { error: error.name })),
+          inject: [CLOCK],
+        },
+        {
+          provide: CIERRE_COLA_PROGRAMACIONES,
+          useFactory: (abierta: ColaProgramacionesAbierta) => new CierreCola(abierta),
+          inject: [COLA_PROGRAMACIONES_ABIERTA],
+        },
+        proveedorNotificacionPort(entorno),
+        {
+          provide: ProgramacionesConsumidor,
+          useFactory: (abierta: ColaProgramacionesAbierta) => new ProgramacionesConsumidor(new EncolarProgramacion({ cola: abierta.cola })),
+          inject: [COLA_PROGRAMACIONES_ABIERTA],
+        },
+        {
+          provide: EjecutarProgramacion,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, notificaciones: NotificacionPort) =>
+            new EjecutarProgramacion({
+              unidadDeTrabajo,
+              contexto,
+              reloj,
+              programaciones: new RepositorioProgramacionesTypeOrm(unidadDeTrabajo, contexto),
+              notificaciones,
+            }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, NOTIFICACION_PORT],
+        },
+        {
+          provide: BarrerProgramacionesAtrasadas,
+          useFactory: (reloj: Clock, abierta: ColaProgramacionesAbierta) =>
+            new BarrerProgramacionesAtrasadas({ reloj, cola: abierta.cola, localizador: new ProgramacionesAtrasadasSql(dataSource) }),
+          inject: [CLOCK, COLA_PROGRAMACIONES_ABIERTA],
+        },
         {
           provide: NotificacionesConsumidor,
           useFactory: (reloj: Clock, abierta: ColaEnviosAbierta) => new NotificacionesConsumidor(new EncolarEnvio({ reloj, cola: abierta.cola })),
           inject: [CLOCK, COLA_ENVIOS_ABIERTA],
+        },
+        {
+          provide: AvisosPlataformaConsumidor,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, notificaciones: NotificacionPort) => {
+            const envio = new EnvioAvisos({
+              unidadDeTrabajo,
+              contexto,
+              notificaciones,
+              propietarios: new PropietariosTenantTypeOrm(unidadDeTrabajo, contexto, reloj),
+              nombreTenant: new NombreTenantOrg(new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), contexto),
+              correoOperacion: entorno.NOT_CORREO_OPERACION,
+              zonaHoraria: ZONA_VENCIMIENTOS,
+              informar: crearInforme(),
+              avisar,
+            });
+            return new AvisosPlataformaConsumidor({
+              suscripcionPorVencer: new AvisarSuscripcionPorVencer(envio),
+              tenantSuspendido: new AvisarTenantSuspendido(envio),
+              soporteSolicitado: new AvisarSoporteSolicitado(envio),
+              integridadRota: new AvisarIntegridadRota(envio),
+            });
+          },
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, NOTIFICACION_PORT],
         },
         {
           provide: EntregarMensaje,
@@ -212,7 +325,7 @@ export class NotificacionesModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR],
         },
       ],
-      exports: [EntregarMensaje],
+      exports: [EntregarMensaje, EjecutarProgramacion, BarrerProgramacionesAtrasadas],
     };
   }
 }

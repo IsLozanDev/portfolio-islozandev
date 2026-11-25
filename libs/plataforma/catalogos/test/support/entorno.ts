@@ -36,6 +36,7 @@ export interface Tenants {
 /** Pila real de los casos de uso de cat: base temporal con db/ aplicado, UoW, outbox y repositorios ORM. */
 export interface EntornoCatalogos {
   dataSource: DataSource;
+  unidadDeTrabajo: TypeOrmUnitOfWork;
   dependencias: DependenciasCatalogos;
   feriados: DependenciasFeriados;
   /** `sabado_habil` es un doble: ParametroPort vive en parametros, que catalogos no importa. */
@@ -133,6 +134,7 @@ export async function crearEntornoCatalogos(): Promise<EntornoCatalogos> {
 
   return {
     dataSource,
+    unidadDeTrabajo,
     dependencias,
     feriados,
     calendario,

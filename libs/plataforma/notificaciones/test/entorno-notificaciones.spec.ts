@@ -55,9 +55,19 @@ describe('esquema de not.mensaje.solicitado', () => {
   });
 
   it('acepta el id y la fecha programada opcional, y rechaza el destino', () => {
-    expect(Object.keys(ESQUEMAS_NOT)).toEqual(['not.mensaje.solicitado']);
+    expect(Object.keys(ESQUEMAS_NOT)).toEqual(['not.mensaje.solicitado', 'not.programacion.registrada']);
     expect(() => validador.validate(evento({ mensaje_id: '42000000-0000-7000-8000-0000000000a1' }))).not.toThrow();
     expect(() => validador.validate(evento({ mensaje_id: '42000000-0000-7000-8000-0000000000a1', programado_para: '2026-11-21T13:00:00.000Z' }))).not.toThrow();
     expect(() => validador.validate(evento({ mensaje_id: '42000000-0000-7000-8000-0000000000a1', destino: 'ana@ejemplo.pe' }))).toThrow();
+  });
+
+  it('not.programacion.registrada (spec 45) exige id, versión y hora, y rechaza el destinatario', () => {
+    const programacion = (payload: unknown) => ({ ...evento(payload), eventType: 'not.programacion.registrada', aggregateType: 'programacion' });
+    const valido = { programacion_id: '45000000-0000-7000-8000-0000000000a1', version: 2, enviar_en: '2026-11-21T13:00:00.000Z' };
+
+    expect(() => validador.validate(programacion(valido))).not.toThrow();
+    expect(() => validador.validate(programacion({ ...valido, version: 0 }))).toThrow();
+    expect(() => validador.validate(programacion({ programacion_id: valido.programacion_id, version: 1 }))).toThrow();
+    expect(() => validador.validate(programacion({ ...valido, destinatario: { correo: 'ana@ejemplo.pe' } }))).toThrow();
   });
 });

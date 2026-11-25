@@ -33,6 +33,21 @@ export {
 } from './domain/errores.js';
 // Plantillas personalizables por tenant (spec 43).
 export { PERMISOS_PLANTILLAS } from './domain/permisos-not.js';
+// Recordatorios programados por referencia (spec 45).
+export type { NotificacionProgramada, ProgramarNotificacionComando } from './application/ports/notificacion.port.js';
+export type { ReferenciaProgramacion } from './domain/referencia-programacion.js';
+export { ESTADOS_PROGRAMACION, HORIZONTE_MAXIMO_DIAS, type EstadoProgramacion } from './domain/programacion.js';
+export type { ProgramacionRegistrada } from './domain/eventos-not.js';
+export {
+  FechaEnvioFueraDeHorizonteError,
+  FechaEnvioNoFuturaError,
+  ProgramacionModificadaError,
+  ReferenciaInvalidaError,
+} from './domain/errores.js';
+export type { TrabajoProgramacion } from './application/ports/cola-programaciones.js';
+export { EjecutarProgramacion, type ResultadoEjecucion } from './application/programaciones/ejecutar-programacion.js';
+export { BarrerProgramacionesAtrasadas, type ResultadoBarrido } from './application/programaciones/barrer-programaciones-atrasadas.js';
+export { NOMBRE_COLA_PROGRAMACIONES, NOMBRE_TRABAJO_EJECUCION } from './infrastructure/bullmq/cola-programaciones.js';
 export { INTENTOS_ENVIO, LIMITE_ENVIOS, NOMBRE_COLA_ENVIOS } from './infrastructure/bullmq/cola-envios.js';
 export { ESQUEMAS_NOT, registrarEsquemasNot } from './infrastructure/event-schemas.js';
 export { ENTIDADES_NOT } from './infrastructure/typeorm/entidades.js';

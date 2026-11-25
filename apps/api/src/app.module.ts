@@ -156,6 +156,8 @@ export class AppModule {
       },
     });
     const secretosModulo = SecretosModule.register({ claves: clavesMaestras });
+    // Spec 51: la misma referencia en AppModule y ComprobantesModule (numeración y series activas de la emisión).
+    const correlativosModulo = CorrelativosModule.register();
     return {
       module: AppModule,
       imports: [
@@ -164,7 +166,7 @@ export class AppModule {
         orgModulo,
         SeguridadModule.register({ ...seguridad, dataSource, tenantOperador }),
         parametros,
-        CorrelativosModule.register(),
+        correlativosModulo,
         catalogosModulo,
         EventosModule.registrarApi({ redisUrl: seguridad.redisUrl, reintentos: reintentosEventos }),
         AuditoriaModule.registrarApi(),
@@ -173,7 +175,10 @@ export class AppModule {
         archivosModulo,
         // Spec 41: la bóveda de secretos; FE la usa desde el spec 49, PAG y NOT la integran en sus specs.
         secretosModulo,
-        ComprobantesModule.register({ imports: [orgModulo, catalogosModulo, secretosModulo], entorno: facturacion }),
+        ComprobantesModule.register({
+          imports: [orgModulo, catalogosModulo, secretosModulo, parametros, correlativosModulo],
+          entorno: facturacion,
+        }),
         // Spec 42: NotificacionPort en proceso y el webhook de Resend.
         NotificacionesModule.register({ entorno: notificaciones, dataSource, imports: [personasModulo] }),
       ],

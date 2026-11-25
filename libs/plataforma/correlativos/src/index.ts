@@ -1,4 +1,4 @@
-// TR-SEQ: series y correlativos (spec 10). Solo este archivo es público.
+// TR-SEQ: series y correlativos (spec 10) y series activas por sucursal para FE (spec 51). Solo este archivo es público.
 export {
   AmbitoSerieInvalidoError,
   SerieAgotadaError,
@@ -10,6 +10,7 @@ export {
 export { PERMISOS_SEQ } from './domain/permisos-seq.js';
 export type { Reinicio, TipoDocumento } from './domain/tipos.js';
 export { CORRELATIVO_PORT, type CorrelativoPort, type NumeroEmitido, type SolicitudNumero } from './application/ports/correlativo.port.js';
+export { SERIES_ACTIVAS_PORT, type SeriesActivasPort } from './application/ports/series-activas.port.js';
 export { CrearSerie, type CrearSerieComando } from './application/crear-serie.js';
 export { SembrarSeriesIniciales, type SembrarSeriesInicialesComando } from './application/sembrar-series-iniciales.js';
 export { ENTIDADES_SEQ } from './infrastructure/typeorm/entidades.js';

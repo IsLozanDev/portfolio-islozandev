@@ -10,6 +10,7 @@ import { ENTIDADES_EVT, LectorEstadoOutboxTypeOrm } from '@vitrina/plataforma/ev
 import { ENTIDADES_IDN } from '@vitrina/plataforma/identidad';
 import { ENTIDADES_NOT } from '@vitrina/plataforma/notificaciones';
 import { ENTIDADES_ORG } from '@vitrina/plataforma/org';
+import { ENTIDADES_PER } from '@vitrina/plataforma/personas';
 import { ENTIDADES_CFG } from '@vitrina/plataforma/parametros';
 import { registrarMetricasOutbox, usarLoggerDeObservabilidad } from '@vitrina/plataforma/observabilidad';
 import { ENTIDADES_SEG_LECTURA, ENTIDADES_SEG_SOPORTE } from '@vitrina/plataforma/seguridad';
@@ -19,7 +20,7 @@ import { WorkerModule } from './worker.module.js';
 
 const config = cargarConfig();
 
-const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_CFG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_ARC, ...ENTIDADES_SEC, ...ENTIDADES_NOT, ...ENTIDADES_FE] });
+const dataSource = new DataSource({ type: 'postgres', url: config.DATABASE_URL, entities: [...ENTIDADES_CAT, ...ENTIDADES_EVT, ...ENTIDADES_ORG, ...ENTIDADES_CFG, ...ENTIDADES_SEG_LECTURA, ...ENTIDADES_SEG_SOPORTE, ...ENTIDADES_AUDITORIA, ...ENTIDADES_IDN, ...ENTIDADES_ARC, ...ENTIDADES_SEC, ...ENTIDADES_NOT, ...ENTIDADES_FE, ...ENTIDADES_PER] });
 await dataSource.initialize();
 
 // Sin HTTP: relay del outbox, consumidores, tarea diaria de vencimientos, vencimiento de soporte cada minuto, importaciones de catálogos, análisis de archivos, reencolado de análisis atascados limpieza diaria de cargas pendientes, envíos de notificaciones, aviso diario de certificados por vencer y pruebas del emisor electrónico. SIGTERM detiene el ciclo y espera los trabajos en curso.

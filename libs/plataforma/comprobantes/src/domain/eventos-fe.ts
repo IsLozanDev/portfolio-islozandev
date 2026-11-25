@@ -12,7 +12,36 @@ export const EVENTOS_FE = {
   produccionHabilitada: 'fe.emisor.produccion_habilitada',
   /** Interno: lo consume el worker para encolar la prueba en `fe-pruebas`. */
   pruebaSolicitada: 'fe.prueba.solicitada',
+  /** Con el nombre del SRS (spec 51). Lo consume el envío al PSE (spec 52). */
+  comprobanteEmitido: 'cpe.emitido',
 } as const;
+
+export const AGREGADO_COMPROBANTE = 'comprobante_fe';
+
+/** Sin datos del adquirente (TR-RNF-026). `total` como texto decimal. */
+export interface ComprobanteEmitidoEvento {
+  comprobante_id: string;
+  tipo: string;
+  serie: string;
+  numero: number;
+  total: string;
+  moneda: string;
+  estado: string;
+  origen_producto: string | null;
+  origen_id: string | null;
+}
+
+export function comprobanteEmitido(version: number, carga: ComprobanteEmitidoEvento, ocurridoEn: Date): DomainEvent<ComprobanteEmitidoEvento> {
+  return {
+    eventType: EVENTOS_FE.comprobanteEmitido,
+    aggregateType: AGREGADO_COMPROBANTE,
+    aggregateId: carga.comprobante_id,
+    aggregateVersion: version,
+    schemaVersion: VERSION_ESQUEMA_FE,
+    payload: carga,
+    occurredAt: ocurridoEn,
+  };
+}
 
 /** Sin usuario ni clave del proveedor ni nada del certificado. */
 export interface EmisorConfigurado {

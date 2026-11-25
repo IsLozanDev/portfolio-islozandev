@@ -122,6 +122,9 @@ export {
   type UsuarioDirectorio,
 } from './application/ports/directorio-seg.port.js';
 export { DirectorioSegTypeOrm } from './infrastructure/typeorm/directorio-seg.typeorm.js';
+// Para notificaciones: destinatarios de los avisos de plataforma (spec 44).
+export { PROPIETARIOS_TENANT, type PropietariosTenant, type PropietarioTenant } from './application/ports/propietarios-tenant.js';
+export { PropietariosTenantTypeOrm } from './infrastructure/typeorm/propietarios-tenant.typeorm.js';
 export { ConfirmacionRequeridaError } from './domain/errores.js';
 export { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 export { crearClienteRedis } from './infrastructure/redis/cache-permisos.redis.js';

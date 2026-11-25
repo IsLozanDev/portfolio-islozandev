@@ -129,6 +129,41 @@ export class VersionObsoletaPlantillaError extends ConflictError {
   }
 }
 
+/** TR-CA-192. */
+export class FechaEnvioNoFuturaError extends ValidationError {
+  override readonly code = 'FECHA_ENVIO_NO_FUTURA';
+
+  constructor() {
+    super('La fecha de envío debe ser futura');
+  }
+}
+
+/** Spec 45: evita trabajos diferidos indefinidos en Redis. */
+export class FechaEnvioFueraDeHorizonteError extends ValidationError {
+  override readonly code = 'FECHA_ENVIO_FUERA_DE_HORIZONTE';
+
+  constructor(horizonteDias: number) {
+    super(`La fecha de envío no puede pasar de ${horizonteDias} días desde hoy`);
+  }
+}
+
+export class ReferenciaInvalidaError extends ValidationError {
+  override readonly code = 'REFERENCIA_INVALIDA';
+
+  constructor() {
+    super('La referencia debe tener un tipo en minúsculas (p. ej. psi.cita) y un id de 1 a 100 caracteres');
+  }
+}
+
+/** Otra transacción programó, canceló o ejecutó la misma programación a la vez. */
+export class ProgramacionModificadaError extends ConflictError {
+  override readonly code = 'PROGRAMACION_MODIFICADA';
+
+  constructor() {
+    super('La programación cambió mientras se procesaba');
+  }
+}
+
 export class SinPersonalizacionError extends NotFoundError {
   override readonly code = 'SIN_PERSONALIZACION';
 

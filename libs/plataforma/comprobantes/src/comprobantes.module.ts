@@ -3,13 +3,18 @@ import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import { CATALOGO_PORT, type CatalogoPort } from '@vitrina/plataforma/catalogos';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
-import { ConsultarEmpresa } from '@vitrina/plataforma/org';
+import { CORRELATIVO_PORT, SERIES_ACTIVAS_PORT, type CorrelativoPort, type SeriesActivasPort } from '@vitrina/plataforma/correlativos';
+import { ConsultarEmpresa, ConsultarSucursal, PADRON_RUC, type PadronRucPort } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { BOVEDA_SECRETOS, type BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { AvisarCertificadosPorVencer } from './application/avisar-certificados-por-vencer.js';
 import { CargarCertificado } from './application/cargar-certificado.js';
 import { ConfigurarEmisor } from './application/configurar-emisor.js';
+import { ConsultarComprobante } from './application/consultar-comprobante.js';
 import { ConsultarEmisor } from './application/consultar-emisor.js';
+import { EmitirComprobante } from './application/emitir-comprobante.js';
+import { EmitirComprobanteAuditado } from './application/emitir-comprobante-auditado.js';
+import { COMPROBANTE_PORT, type ComprobantePort } from './application/ports/comprobante.port.js';
 import type { DependenciasEmisor, ReglasEntornoFe } from './application/dependencias-fe.js';
 import { EjecutarPruebaEmisor } from './application/ejecutar-prueba-emisor.js';
 import { EncolarPruebaEmisor } from './application/encolar-prueba-emisor.js';
@@ -18,17 +23,24 @@ import type { PseOsePort } from './application/ports/pse-ose.port.js';
 import { SolicitarPruebaEmisor } from './application/solicitar-prueba-emisor.js';
 import { PROVEEDORES_CON_ADAPTADOR } from './domain/proveedores-fe.js';
 import { abrirColaPruebasFe, EVENTO_ERROR_COLA_PRUEBAS_FE, type ColaPruebasFeAbierta } from './infrastructure/bullmq/cola-pruebas.js';
+import { CatalogosSunatCatalogo } from './infrastructure/catalogos/catalogos-sunat.catalogo.js';
 import { ProveedoresFeCatalogo } from './infrastructure/catalogos/proveedores-fe.catalogo.js';
+import { TasaIgvCatalogo } from './infrastructure/catalogos/tasa-igv.catalogo.js';
 import { LectorCertificadoForge } from './infrastructure/forge/lector-certificado.forge.js';
 import { EmpresaEmisoraOrg } from './infrastructure/org/empresa-emisora.org.js';
+import { PadronAdquirenteOrg } from './infrastructure/org/padron-adquirente.org.js';
+import { SucursalesEmisorasOrg } from './infrastructure/org/sucursales-emisoras.org.js';
 import { DiasAvisoParametros } from './infrastructure/parametros/dias-aviso.parametros.js';
+import { UmbralBoletaParametros } from './infrastructure/parametros/umbral-boleta.parametros.js';
 import { CircuitBreaker } from './infrastructure/pse/circuit-breaker.js';
 import { PseNubefact } from './infrastructure/pse/nubefact/pse.nubefact.js';
 import { ResolutorPseMapa } from './infrastructure/pse/resolutor-pse.js';
 import { PseSimulador } from './infrastructure/pse/simulador/pse.simulador.js';
 import { RepositorioAvisosCertificadoTypeOrm } from './infrastructure/typeorm/avisos-certificado.repositorio.js';
 import { CertificadosConAvisoPendienteSql, type EjecutorSql } from './infrastructure/typeorm/certificados-con-aviso-pendiente.sql.js';
+import { RepositorioComprobantesTypeOrm } from './infrastructure/typeorm/comprobantes.repositorio.js';
 import { RepositorioEmisoresTypeOrm } from './infrastructure/typeorm/emisores.repositorio.js';
+import { ComprobantesController } from './interface/comprobantes.controller.js';
 import { EmisoresController } from './interface/emisores.controller.js';
 import { reglasEntornoFe, type EntornoFe } from './interface/entorno-fe.js';
 import { PruebasFeConsumidor } from './interface/pruebas-fe.consumidor.js';
@@ -38,7 +50,11 @@ const COLA_PRUEBAS_ABIERTA = Symbol('ColaPruebasFeAbierta');
 const CONTEXTO_LOG = 'Comprobantes';
 
 export interface ComprobantesOpciones {
-  /** Módulos que exportan ConsultarEmpresa (OrgModule), CATALOGO_PORT (CatalogosModule) y BOVEDA_SECRETOS (SecretosModule). */
+  /**
+   * Módulos que exportan ConsultarEmpresa, ConsultarSucursal y PADRON_RUC (OrgModule), CATALOGO_PORT (CatalogosModule),
+   * BOVEDA_SECRETOS (SecretosModule), PARAMETRO_PORT (ParametrosModule) y CORRELATIVO_PORT y SERIES_ACTIVAS_PORT
+   * (CorrelativosModule). La misma referencia que en la app: cada uno registra sus controladores.
+   */
   imports: ModuleMetadata['imports'];
   /** FE_PRODUCCION_PERMITIDA y FE_SIMULADO_PERMITIDO (spec 50). */
   entorno: EntornoFe;
@@ -86,11 +102,69 @@ export class ComprobantesModule {
   /** El emisor electrónico por HTTP (`/v1/fe/emisores`), para apps/api. */
   static register({ imports, entorno }: ComprobantesOpciones): DynamicModule {
     const reglas = reglasEntornoFe(entorno);
+    const logger = new Logger(CONTEXTO_LOG);
     return {
       module: ComprobantesModule,
       imports,
-      controllers: [EmisoresController],
+      controllers: [EmisoresController, ComprobantesController],
       providers: [
+        {
+          provide: COMPROBANTE_PORT,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            reloj: Clock,
+            ids: IdGenerator,
+            publicador: EventPublisher,
+            catalogo: CatalogoPort,
+            parametros: ParametroPort,
+            padron: PadronRucPort,
+            consultarSucursal: ConsultarSucursal,
+            series: SeriesActivasPort,
+            correlativo: CorrelativoPort,
+          ): ComprobantePort =>
+            new EmitirComprobante({
+              unidadDeTrabajo,
+              contexto,
+              reloj,
+              ids,
+              publicador,
+              emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
+              sucursales: new SucursalesEmisorasOrg(consultarSucursal),
+              series,
+              correlativo,
+              catalogos: new CatalogosSunatCatalogo(catalogo),
+              tasas: new TasaIgvCatalogo(catalogo),
+              umbral: new UmbralBoletaParametros(parametros),
+              padron: new PadronAdquirenteOrg(padron, (mensaje, datos) => logger.warn({ evento: mensaje, ...datos })),
+              comprobantes: new RepositorioComprobantesTypeOrm(unidadDeTrabajo, contexto),
+            }),
+          inject: [
+            TypeOrmUnitOfWork,
+            TENANT_CONTEXT,
+            CLOCK,
+            ID_GENERATOR,
+            EVENT_PUBLISHER,
+            CATALOGO_PORT,
+            PARAMETRO_PORT,
+            PADRON_RUC,
+            ConsultarSucursal,
+            SERIES_ACTIVAS_PORT,
+            CORRELATIVO_PORT,
+          ],
+        },
+        {
+          provide: EmitirComprobanteAuditado,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, auditoria: AuditoriaPort, emision: ComprobantePort) =>
+            new EmitirComprobanteAuditado({ unidadDeTrabajo, auditoria, emision }),
+          inject: [TypeOrmUnitOfWork, AUDITORIA, COMPROBANTE_PORT],
+        },
+        {
+          provide: ConsultarComprobante,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext) =>
+            new ConsultarComprobante({ unidadDeTrabajo, comprobantes: new RepositorioComprobantesTypeOrm(unidadDeTrabajo, contexto) }),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
         {
           provide: DEPENDENCIAS_EMISOR,
           useFactory: (
@@ -125,6 +199,8 @@ export class ComprobantesModule {
         casoDeUsoDelEmisor(SolicitarPruebaEmisor),
         casoDeUsoDelEmisor(HabilitarProduccion),
       ],
+      // COMPROBANTE_PORT: la emisión en proceso para los productos del monorepo, en su transacción (spec 51).
+      exports: [COMPROBANTE_PORT],
     };
   }
 

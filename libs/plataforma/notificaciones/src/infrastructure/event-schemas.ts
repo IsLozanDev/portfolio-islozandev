@@ -14,6 +14,12 @@ export const ESQUEMAS_NOT: Readonly<Record<string, object>> = {
     required: ['mensaje_id'],
     additionalProperties: false,
   },
+  [EVENTOS_NOT.programacionRegistrada]: {
+    type: 'object',
+    properties: { programacion_id: uuid, version: { type: 'integer', minimum: 1 }, enviar_en: instante },
+    required: ['programacion_id', 'version', 'enviar_en'],
+    additionalProperties: false,
+  },
 };
 
 export function registrarEsquemasNot(validador: Pick<InMemoryEventSchemaValidator, 'register'>): void {

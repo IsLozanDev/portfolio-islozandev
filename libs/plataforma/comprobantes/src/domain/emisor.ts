@@ -3,6 +3,7 @@ import {
   CertificadoVencidoError,
   DatosEmisorInvalidosError,
   EmisorEnProduccionError,
+  EmisorNoHabilitadoError,
   EstadoEmisorInvalidoError,
   ProduccionNoPermitidaError,
   ProveedorSimuladoEnProduccionError,
@@ -33,6 +34,7 @@ export const LARGO_MAXIMO_DESCRIPCION_PRUEBA = 500;
 const MILISEGUNDOS_POR_MINUTO = 60_000;
 const MINUTOS_POR_HORA = 60;
 const PRUEBAS_INICIALES = 0;
+const ESTADOS_QUE_EMITEN: readonly EstadoEmisor[] = ['VERIFICADO', 'PRODUCCION'];
 
 /** El certificado vigente del emisor: sus datos públicos. El .pfx y su clave están en la bóveda. */
 export interface CertificadoEmisor {
@@ -232,6 +234,15 @@ export class Emisor {
 
   get prueba(): PruebaEmisor | null {
     return this.props.prueba && { ...this.props.prueba };
+  }
+
+  get regimenIgv(): RegimenIgv {
+    return this.props.regimenIgv;
+  }
+
+  /** TR-RF-053: se emite en beta tras la prueba aceptada (VERIFICADO) o en PRODUCCION (spec 51). */
+  exigirHabilitadoParaEmitir(): void {
+    if (!ESTADOS_QUE_EMITEN.includes(this.props.estado)) throw new EmisorNoHabilitadoError();
   }
 
   /** Copia de las propiedades para el mapeo a la fila y las vistas. */

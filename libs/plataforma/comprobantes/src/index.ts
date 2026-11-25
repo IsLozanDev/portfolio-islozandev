@@ -1,5 +1,18 @@
 // TR-FE: emisor electrónico por empresa con sus secretos en la bóveda y aviso de vencimiento del certificado (spec 49),
-// prueba en beta con el PSE y paso a producción (spec 50). Solo este archivo es público.
+// prueba en beta con el PSE y paso a producción (spec 50), emisión de boleta y factura (spec 51). Solo este archivo es público.
+export {
+  COMPROBANTE_PORT,
+  type AdquirenteComando,
+  type AdvertenciaEmitida,
+  type ComprobanteEmitido,
+  type ComprobantePort,
+  type CuotaComando,
+  type EmitirComprobanteComando,
+  type LineaComando,
+  type TotalesEmitidos,
+} from './application/ports/comprobante.port.js';
+export type { EstadoComprobante, FormaPago, ModoEnvio, Moneda, TipoComprobante } from './domain/comprobante/tipo-comprobante.js';
+export type { ComprobanteEmitidoEvento } from './domain/eventos-fe.js';
 export {
   ComprobantesModule,
   type ComprobantesOpciones,
@@ -21,13 +34,28 @@ export {
   type EmisorConfigurado,
   type PruebaSolicitada,
 } from './domain/eventos-fe.js';
-export { PARAMETRO_DIAS_AVISO_CERTIFICADO, PERMISOS_FE } from './domain/permisos-fe.js';
+export { PARAMETRO_DIAS_AVISO_CERTIFICADO, PARAMETRO_UMBRAL_BOLETA, PERMISOS_FE } from './domain/permisos-fe.js';
 export { ESTADOS_EMISOR, ESTADOS_PRUEBA, type EstadoEmisor, type EstadoPrueba } from './domain/estado-emisor.js';
 export { REGIMENES_IGV, type RegimenIgv } from './domain/regimen-igv.js';
 export {
   ActorRequeridoFeError,
   ArchivoCertificadoInvalidoError,
+  BoletaRequiereAdquirenteError,
   CertificadoNoAceptadoError,
+  CodigoSunatInvalidoError,
+  ComprobanteNoAceptadoError,
+  ComprobanteNoEncontradoError,
+  CuotasInvalidasError,
+  DatosComprobanteInvalidosError,
+  EmisionConcurrenteError,
+  EmisorNoHabilitadoError,
+  FacturaRequiereRucError,
+  IdempotenciaConflictoError,
+  SerieAmbiguaError,
+  SerieNoCorrespondeError,
+  SucursalNoEncontradaError,
+  TasaIgvNoVigenteError,
+  TotalNoCoincideError,
   CertificadoNoVigenteError,
   CertificadoOtroRucError,
   CertificadoSinRucError,
