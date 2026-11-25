@@ -144,7 +144,7 @@ function resultadoPrimeraCarga(archivo: Archivo): ResultadoPublicado | null {
 }
 
 /** Un intento rechazado ya no está en el archivo: queda su rechazo, y quién lo subió llega aparte. */
-function resultadoVersion(archivo: Archivo, numero: number, subidoPor: string): ResultadoPublicado | null {
+function resultadoVersion(archivo: Archivo, numero: number, subidoPor: string | null): ResultadoPublicado | null {
   const version = archivo.versionNumero(numero);
   const base = { archivoId: archivo.id, numero, subidoPor };
   if (version !== null) return esResultadoSeguimiento(version.estado) ? { ...base, resultado: version.estado } : null;

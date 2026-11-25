@@ -10,3 +10,5 @@ export const categoriaImagen = () =>
   new CategoriaArchivo('IMAGEN', ['image/jpeg', 'image/png', 'image/webp'], DIEZ_MEGABYTES, false);
 export const categoriaDocumento = () =>
   new CategoriaArchivo('DOCUMENTO', ['application/pdf', MIME_DOCX, 'image/jpeg'], VEINTICINCO_MEGABYTES, true);
+export const categoriaCpeXml = () =>
+  new CategoriaArchivo('CPE_XML', ['application/xml', 'application/zip'], VEINTICINCO_MEGABYTES, false);

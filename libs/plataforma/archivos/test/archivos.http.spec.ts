@@ -149,8 +149,8 @@ describe('HTTP /v1/archivos con el almacén en memoria (TR-RF-080, 081 y 082)', 
       const respuesta = await get('/v1/archivos/categorias');
 
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body.map((categoria: { codigo: string }) => categoria.codigo)).toEqual(['ADJUNTO_SOPORTE', 'DOCUMENTO', 'IMAGEN']);
-      expect(respuesta.body[1]).toEqual({
+      expect(respuesta.body.map((categoria: { codigo: string }) => categoria.codigo)).toEqual(['ADJUNTO_SOPORTE', 'CPE_XML', 'DOCUMENTO', 'IMAGEN']);
+      expect(respuesta.body[2]).toEqual({
         codigo: 'DOCUMENTO',
         mimes_permitidos: ['application/pdf', MIME_DOCX, 'image/jpeg'],
         tamano_max_bytes: VEINTICINCO_MEGABYTES,

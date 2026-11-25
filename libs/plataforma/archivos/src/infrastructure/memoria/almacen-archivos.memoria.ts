@@ -50,6 +50,13 @@ export class AlmacenArchivosMemoria implements AlmacenArchivos {
     return Promise.resolve(armarUrl('descarga', ruta, token, descargarComo));
   }
 
+  /** Como Storage sin `upsert`: una ruta que ya existe no se reemplaza. */
+  subir(ruta: string, contenido: Uint8Array): Promise<void> {
+    if (this.objetos.has(ruta)) return Promise.reject(new UrlFirmadaRechazadaError('OBJETO_YA_EXISTE'));
+    this.objetos.set(ruta, contenido);
+    return Promise.resolve();
+  }
+
   leer(ruta: string): Promise<Uint8Array | null> {
     return Promise.resolve(this.objetos.get(ruta) ?? null);
   }

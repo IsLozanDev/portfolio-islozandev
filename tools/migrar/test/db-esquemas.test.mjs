@@ -109,6 +109,7 @@ const CASOS = [
   { migracion: '01t_not_programacion.sql', esquema: 'ntf', prueba: 'tests/01t_not_programacion.test.sql' },
   { migracion: '01u_fe_comprobante.sql', esquema: 'fe', prueba: 'tests/01u_fe_comprobante.test.sql' },
   { migracion: '01v_fe_sunat_directo.sql', esquema: 'fe', prueba: 'tests/01v_fe_sunat_directo.test.sql' },
+  { migracion: '01w_arc_carga_sistema.sql', esquema: 'arc', prueba: 'tests/01w_arc_carga_sistema.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -416,6 +417,39 @@ const objetosComprobante = async () =>
        UNION ALL SELECT codigo FROM cat.catalogo WHERE codigo = 'TASA_IGV'`,
     )
   ).rows.map((r) => r.o);
+
+// Columnas y CHECK que agrega 01w_arc_carga_sistema (spec 52).
+const objetosCargaSistema = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name AS o FROM information_schema.columns
+        WHERE table_schema = 'arc' AND table_name = 'archivo' AND column_name = 'origen'
+       UNION ALL SELECT conname FROM pg_constraint WHERE conname = 'ck_archivo_actor'`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con un archivo SISTEMA el inverso de 01w_arc_carga_sistema se niega (spec 52); la transacción se revierte.
+async function inversoCargaSistemaConArchivos() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '52000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, origen)
+       VALUES (gen_random_uuid(), '${tenantId}', 'CPE_XML', 'FE_COMPROBANTE', 'C-1', 'cdr.zip', 'PENDIENTE_CARGA', 'SISTEMA')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 // Con un emisor SUNAT el inverso de 01v_fe_sunat_directo se niega (spec 51c); la transacción se revierte.
 async function inversoSunatConEmisores() {
@@ -931,8 +965,18 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
-    // El inverso de 01v_fe_sunat_directo se niega con emisores SUNAT; sin ellos quita el ítem. Va primero: es la
-    // última migración. Queda revertida hasta reaplicar 01p_fe, 01r_fe_prueba y 01u_fe_comprobante.
+    // El inverso de 01w_arc_carga_sistema se niega con archivos SISTEMA; sin ellos quita origen y vuelve a exigir
+    // actor, y se puede reaplicar. Va primero: es la última migración. Queda revertida hasta reaplicar 01m_arc.
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
+    expect(await inversoCargaSistemaConArchivos()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8'));
+    expect(await objetosCargaSistema()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01w_arc_carga_sistema.sql'), 'utf8'));
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8'));
+
+    // El inverso de 01v_fe_sunat_directo se niega con emisores SUNAT; sin ellos quita el ítem. Va después del de
+    // 01w_arc_carga_sistema. Queda revertida hasta reaplicar 01p_fe, 01r_fe_prueba y 01u_fe_comprobante.
     expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO', 'SUNAT']);
     expect(await inversoSunatConEmisores()).toBe('55006');
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01v_fe_sunat_directo.sql'), 'utf8'));
@@ -1056,6 +1100,8 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_categoria_fk.sql'), 'utf8'));
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
     expect(await objetosVersiones()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('01w_arc_carga_sistema.sql'), 'utf8'));
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
 
     // El inverso de 01l_per_fusion se niega con personas fusionadas; sin ellas quita alias, fusiones y descartes,
     // y se puede reaplicar (spec 39). Va antes que los demás de per.

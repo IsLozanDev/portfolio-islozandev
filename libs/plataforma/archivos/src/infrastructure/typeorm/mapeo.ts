@@ -5,6 +5,7 @@ import {
   type CodigoEstadoVersion,
   type MotivoRechazo,
   type MotivoRechazoVersion,
+  type OrigenArchivo,
   type RechazoVersion,
   type VersionArchivo,
 } from '../../domain/archivo.js';
@@ -29,6 +30,7 @@ export function filaDesdeArchivo(archivo: Archivo): FilaArchivoNueva {
     nombreOriginal: archivo.nombreOriginal,
     ...cambiosDeArchivo(archivo),
     version: archivo.version,
+    origen: archivo.origen,
     creadoPor: archivo.creadoPor,
   };
 }
@@ -78,6 +80,7 @@ export function archivoDesdeFilas(fila: FilaArchivo, versiones: FilaVersionArchi
     estado: fila.estado as CodigoEstadoArchivo,
     motivoRechazo: fila.motivoRechazo as MotivoRechazo | null,
     versionVigente: fila.versionVigente,
+    origen: fila.origen as OrigenArchivo,
     creadoPor: fila.creadoPor,
     versiones: versiones.map(versionDesdeFila),
     rechazoVersion: rechazoVersionDesdeFila(fila),

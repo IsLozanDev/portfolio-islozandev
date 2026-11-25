@@ -1,8 +1,8 @@
 import { ConflictError } from '@vitrina/plataforma/kernel';
-import { Archivo, type ContenidoAnalizado, type DatosSolicitudCarga } from '../src/domain/archivo.js';
+import { Archivo, type ContenidoAnalizado, type DatosArchivoSistema, type DatosSolicitudCarga } from '../src/domain/archivo.js';
 import { DatosArchivoInvalidosError, MimeNoPermitidoError, TamanoExcedidoError } from '../src/domain/errores.js';
 import { EVENTOS_ARC } from '../src/domain/eventos-arc.js';
-import { categoriaDocumento, categoriaImagen, DIEZ_MEGABYTES, VEINTICINCO_MEGABYTES } from './support/categorias.js';
+import { categoriaCpeXml, categoriaDocumento, categoriaImagen, DIEZ_MEGABYTES, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 
 const ARCHIVO_ID = '33000000-0000-4000-8000-0000000000a1';
 const TENANT_ID = '33000000-0000-4000-8000-00000000000a';
@@ -252,6 +252,7 @@ describe('Archivo.reconstituir', () => {
       estado: original.estado,
       motivoRechazo: original.motivoRechazo,
       versionVigente: original.versionVigente,
+      origen: original.origen,
       creadoPor: original.creadoPor,
       versiones: original.versiones.map((version) => ({ ...version })),
       rechazoVersion: null,
@@ -262,5 +263,54 @@ describe('Archivo.reconstituir', () => {
 
     expect(reconstituido.version).toBe(5);
     expect(props.versiones[0]?.hashSha256).toBeNull();
+  });
+});
+
+describe('Archivo.delSistema', () => {
+  const CONTENIDO_XML: ContenidoAnalizado = { hash: 'b'.repeat(64), bytes: 1_200, mimeReal: 'application/xml' };
+  const datosSistema = (cambios: Partial<DatosArchivoSistema> = {}): DatosArchivoSistema => ({
+    id: ARCHIVO_ID,
+    tenantId: TENANT_ID,
+    nombreOriginal: '20601234561-01-F001-00000001.xml',
+    mime: 'application/xml',
+    entidadTipo: 'FE_COMPROBANTE',
+    entidadId: 'C-1',
+    contenido: CONTENIDO_XML,
+    ...cambios,
+  });
+
+  it('nace DISPONIBLE con la versión 1 vigente, origen SISTEMA y sin actor', () => {
+    const archivo = Archivo.delSistema(datosSistema(), categoriaCpeXml());
+
+    expect(archivo).toMatchObject({ estado: 'DISPONIBLE', versionVigente: 1, origen: 'SISTEMA', creadoPor: null, categoria: 'CPE_XML' });
+    expect(archivo.primeraVersion).toMatchObject({
+      numero: 1,
+      estado: 'DISPONIBLE',
+      mimeDeclarado: 'application/xml',
+      bytesDeclarados: 1_200,
+      hashSha256: CONTENIDO_XML.hash,
+      bytes: 1_200,
+      mimeReal: 'application/xml',
+      subidoPor: null,
+    });
+  });
+
+  it('publica archivo.disponible con el hash, como una carga aprobada', () => {
+    const [evento] = Archivo.delSistema(datosSistema(), categoriaCpeXml()).pullEvents();
+
+    expect(evento?.eventType).toBe(EVENTOS_ARC.disponible);
+    expect(evento?.payload).toMatchObject({ archivo_id: ARCHIVO_ID, entidad_tipo: 'FE_COMPROBANTE', version: 1, hash_sha256: CONTENIDO_XML.hash });
+  });
+
+  it('aplica las reglas de MIME, tamaño y entidad de la categoría', () => {
+    expect(() => Archivo.delSistema(datosSistema({ mime: 'application/pdf' }), categoriaCpeXml())).toThrow(MimeNoPermitidoError);
+    expect(() =>
+      Archivo.delSistema(datosSistema({ contenido: { ...CONTENIDO_XML, bytes: VEINTICINCO_MEGABYTES + 1 } }), categoriaCpeXml()),
+    ).toThrow(TamanoExcedidoError);
+    expect(() => Archivo.delSistema(datosSistema({ entidadTipo: 'fe' }), categoriaCpeXml())).toThrow(DatosArchivoInvalidosError);
+  });
+
+  it('una carga del navegador sigue siendo CARGA con su actor', () => {
+    expect(Archivo.solicitar(datosSolicitud(), categoriaDocumento())).toMatchObject({ origen: 'CARGA', creadoPor: USUARIO_ID });
   });
 });

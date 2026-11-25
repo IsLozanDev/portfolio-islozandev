@@ -95,6 +95,34 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     expect(categorias.find((categoria) => categoria.codigo === 'IMAGEN')).toMatchObject({ tamanoMaxBytes: DIEZ_MEGABYTES });
   });
 
+  it('guarda y lee un archivo SISTEMA DISPONIBLE sin actor, con su origen (spec 52)', async () => {
+    const contenido: ContenidoAnalizado = { hash: 'c'.repeat(64), bytes: 512, mimeReal: 'application/zip' };
+    const archivo = await enTenant(tenantA, async () => {
+      const categoria = await repositorio.buscarCategoria('CPE_XML');
+      if (!categoria) throw new Error('falta la categoría CPE_XML sembrada');
+      const delSistema = Archivo.delSistema(
+        {
+          id: uuidV7(),
+          tenantId: tenantA,
+          nombreOriginal: 'R-20601234561-01-F001-00000001.zip',
+          mime: 'application/zip',
+          entidadTipo: 'FE_COMPROBANTE',
+          entidadId: 'C-1',
+          contenido,
+        },
+        categoria,
+      );
+      await repositorio.guardar(delSistema);
+      return delSistema;
+    });
+
+    const leido = await obtenerExistente(tenantA, archivo.id);
+
+    expect(leido).toMatchObject({ estado: 'DISPONIBLE', origen: 'SISTEMA', creadoPor: null, versionVigente: 1 });
+    expect(leido.primeraVersion).toMatchObject({ estado: 'DISPONIBLE', hashSha256: contenido.hash, bytes: 512, subidoPor: null });
+    expect(await enTenant(tenantB, () => repositorio.obtener(archivo.id))).toBeNull();
+  });
+
   it('una categoría que no existe es nula', async () => {
     expect(await enTenant(tenantA, () => repositorio.buscarCategoria('VIDEO'))).toBeNull();
   });

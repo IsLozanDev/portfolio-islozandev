@@ -9,6 +9,7 @@ import { ConfirmarCarga } from './application/confirmar-carga.js';
 import { ConfirmarVersion } from './application/confirmar-version.js';
 import { ConsultarEstadoArchivo } from './application/consultar-estado.js';
 import type { DependenciasArchivos } from './application/dependencias-archivos.js';
+import { GuardarArchivoSistema } from './application/guardar-archivo-sistema.js';
 import { EmitirUrlDescarga, type DependenciasDescarga } from './application/emitir-url-descarga.js';
 import { LimpiarCargasPendientes } from './application/limpiar-cargas-pendientes.js';
 import { ListarCategorias } from './application/listar-categorias.js';
@@ -16,6 +17,7 @@ import { ListarVersiones } from './application/listar-versiones.js';
 import { MarcarVersionVigente, type DependenciasVersionVigente } from './application/marcar-version-vigente.js';
 import type { AnalizadorAntivirus, SaludAntivirus } from './application/ports/analizador-antivirus.js';
 import { ARCHIVO_PORT, type ArchivoPort } from './application/ports/archivo.port.js';
+import { ARCHIVO_SISTEMA_PORT, type ArchivoSistemaPort } from './application/ports/archivo-sistema.port.js';
 import type { AlmacenArchivos } from './application/ports/almacen-archivos.js';
 import { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
 import type { CanalAnalisis } from './application/ports/canal-analisis.js';
@@ -87,6 +89,27 @@ function proveedorAlmacen(opciones: OpcionesAlmacenSupabase) {
     inject: [CLOCK],
   };
 }
+
+/** La carga desde el servidor (spec 52), en la API y en el worker. */
+const proveedorArchivoSistema = {
+  provide: ARCHIVO_SISTEMA_PORT,
+  useFactory: (
+    unidadDeTrabajo: TypeOrmUnitOfWork,
+    contexto: TenantContext,
+    ids: IdGenerator,
+    publicador: EventPublisher,
+    almacen: AlmacenArchivos,
+  ): ArchivoSistemaPort =>
+    new GuardarArchivoSistema({
+      unidadDeTrabajo,
+      contexto,
+      ids,
+      publicador,
+      archivos: new RepositorioArchivosTypeOrm(unidadDeTrabajo, contexto),
+      almacen,
+    }),
+  inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, ID_GENERATOR, EVENT_PUBLISHER, ALMACEN_ARCHIVOS],
+};
 
 /** Cierra la cola de análisis con la app (app.close() en pruebas y apagado). */
 class CierreColaAnalisis implements OnModuleDestroy {
@@ -170,6 +193,7 @@ export class ArchivosModule {
       providers: [
         { provide: AUTORIZADORES_ENTIDAD, ...(opciones.autorizadores ?? sinAutorizadores) },
         proveedorAlmacen({ ...opciones.supabase, bucket: opciones.bucket }),
+        proveedorArchivoSistema,
         ...proveedoresCola(opciones.redisUrl, logger),
         ...proveedoresCanal(opciones.redisUrl, logger),
         {
@@ -295,7 +319,7 @@ export class ArchivosModule {
           ],
         },
       ],
-      exports: [ARCHIVO_PORT],
+      exports: [ARCHIVO_PORT, ARCHIVO_SISTEMA_PORT],
     };
   }
 
@@ -310,6 +334,7 @@ export class ArchivosModule {
       module: ArchivosModule,
       providers: [
         proveedorAlmacen({ ...opciones.supabase, bucket: opciones.bucket }),
+        proveedorArchivoSistema,
         ...proveedoresCola(opciones.redisUrl, logger),
         ...proveedoresCanal(opciones.redisUrl, logger),
         { provide: ANTIVIRUS, useFactory: () => crearAntivirus(opciones.antivirus, logger) },
@@ -357,7 +382,7 @@ export class ArchivosModule {
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ALMACEN_ARCHIVOS],
         },
       ],
-      exports: [AnalizarArchivo, LimpiarCargasPendientes, ReencolarAnalisisAtascados, SALUD_ANTIVIRUS],
+      exports: [AnalizarArchivo, LimpiarCargasPendientes, ReencolarAnalisisAtascados, SALUD_ANTIVIRUS, ARCHIVO_SISTEMA_PORT],
     };
   }
 }
