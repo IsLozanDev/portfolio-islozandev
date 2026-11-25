@@ -3,10 +3,16 @@ import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { hashDocumento } from '@vitrina/plataforma/observabilidad';
-import { ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
+import { TenantRepositorioTypeOrm, ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
 import { CONSENTIMIENTO_PORT, PERSONA_PORT, type ConsentimientoPort, type PersonaPort } from '@vitrina/plataforma/personas';
+import { PropietariosTenantTypeOrm } from '@vitrina/plataforma/seguridad';
 import { Resend } from 'resend';
-import type { DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
+import { AvisarIntegridadRota } from './application/avisos/avisar-integridad-rota.js';
+import { AvisarSoporteSolicitado } from './application/avisos/avisar-soporte-solicitado.js';
+import { AvisarSuscripcionPorVencer } from './application/avisos/avisar-suscripcion-por-vencer.js';
+import { AvisarTenantSuspendido } from './application/avisos/avisar-tenant-suspendido.js';
+import { EnvioAvisos } from './application/avisos/envio-avisos.js';
+import type { DependenciasEnvio, DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
 import { EncolarEnvio } from './application/encolar-envio.js';
 import { EntregarMensaje } from './application/entregar-mensaje.js';
 import { EnviarNotificacion } from './application/enviar-notificacion.js';
@@ -30,7 +36,9 @@ import { RepositorioContactosInvalidosTypeOrm } from './infrastructure/typeorm/c
 import { MensajePorIdExternoSql, type EjecutorSql } from './infrastructure/typeorm/mensaje-por-id-externo.sql.js';
 import { RepositorioMensajesTypeOrm } from './infrastructure/typeorm/mensajes.repositorio.js';
 import { RepositorioPlantillasTypeOrm } from './infrastructure/typeorm/plantillas.repositorio.js';
+import { NombreTenantOrg } from './infrastructure/org/nombre-tenant.org.js';
 import type { EntornoNotificaciones } from './interface/entorno-notificaciones.js';
+import { AvisosPlataformaConsumidor } from './interface/avisos-plataforma.consumidor.js';
 import { NotificacionesConsumidor } from './interface/notificaciones.consumidor.js';
 import { PlantillasController } from './interface/plantillas.controller.js';
 import { WebhooksController } from './interface/webhooks.controller.js';
@@ -58,6 +66,34 @@ export interface NotificacionesWorkerOpciones {
 function crearAviso(): Registrar {
   const logger = new Logger(CONTEXTO_LOG);
   return (mensaje, datos) => logger.warn({ evento: mensaje, ...datos });
+}
+
+function crearInforme(): Registrar {
+  const logger = new Logger(CONTEXTO_LOG);
+  return (mensaje, datos) => logger.log({ evento: mensaje, ...datos });
+}
+
+/** El worker solo envía a correos directos y TRANSACCIONAL (avisos de plataforma): TR-PER no está en su proceso. */
+function personaNoDisponible(): Promise<never> {
+  return Promise.reject(new Error('TR-PER no está disponible en el worker de notificaciones'));
+}
+const PERSONAS_NO_DISPONIBLES: DependenciasEnvio['personas'] = { obtener: personaNoDisponible };
+const CONSENTIMIENTOS_NO_DISPONIBLES: DependenciasEnvio['consentimientos'] = { vigente: personaNoDisponible };
+
+type PiezasEnvio = Pick<DependenciasEnvio, 'unidadDeTrabajo' | 'contexto' | 'reloj' | 'ids' | 'publicador' | 'personas' | 'consentimientos'> & {
+  unidadDeTrabajo: TypeOrmUnitOfWork;
+};
+
+function crearEnvio(entorno: EntornoNotificaciones, piezas: PiezasEnvio): NotificacionPort {
+  const { unidadDeTrabajo, contexto } = piezas;
+  return new EnviarNotificacion({
+    ...piezas,
+    mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
+    plantillas: new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto),
+    contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+    hashearDestino: hasheadorDestino(entorno),
+    zonaHoraria: ZONA_VENCIMIENTOS,
+  });
 }
 
 function hasheadorDestino(entorno: EntornoNotificaciones): HashearDestino {
@@ -138,21 +174,7 @@ export class NotificacionesModule {
             publicador: EventPublisher,
             personas: PersonaPort,
             consentimientos: ConsentimientoPort,
-          ): NotificacionPort =>
-            new EnviarNotificacion({
-              unidadDeTrabajo,
-              contexto,
-              reloj,
-              ids,
-              publicador,
-              mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
-              plantillas: new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto),
-              contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
-              personas,
-              consentimientos,
-              hashearDestino: hasheadorDestino(entorno),
-              zonaHoraria: ZONA_VENCIMIENTOS,
-            }),
+          ): NotificacionPort => crearEnvio(entorno, { unidadDeTrabajo, contexto, reloj, ids, publicador, personas, consentimientos }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, PERSONA_PORT, CONSENTIMIENTO_PORT],
         },
         {
@@ -177,8 +199,9 @@ export class NotificacionesModule {
   }
 
   /**
-   * El consumidor de `not.mensaje.solicitado` (EventosModule.registrarWorker lo descubre por `@SuscribirEvento`) y
-   * `EntregarMensaje`, que procesa la cola `not-envios` desde apps/worker.
+   * El consumidor de `not.mensaje.solicitado` (EventosModule.registrarWorker lo descubre por `@SuscribirEvento`),
+   * `EntregarMensaje`, que procesa la cola `not-envios` desde apps/worker, y el consumidor de los avisos de
+   * plataforma (spec 44), que lee los propietarios de SEG y el nombre del tenant de ORG con sus adaptadores.
    */
   static registerWorker({ redisUrl, entorno }: NotificacionesWorkerOpciones): DynamicModule {
     const avisar = crearAviso();
@@ -195,6 +218,37 @@ export class NotificacionesModule {
           provide: NotificacionesConsumidor,
           useFactory: (reloj: Clock, abierta: ColaEnviosAbierta) => new NotificacionesConsumidor(new EncolarEnvio({ reloj, cola: abierta.cola })),
           inject: [CLOCK, COLA_ENVIOS_ABIERTA],
+        },
+        {
+          provide: AvisosPlataformaConsumidor,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock, ids: IdGenerator, publicador: EventPublisher) => {
+            const envio = new EnvioAvisos({
+              unidadDeTrabajo,
+              contexto,
+              notificaciones: crearEnvio(entorno, {
+                unidadDeTrabajo,
+                contexto,
+                reloj,
+                ids,
+                publicador,
+                personas: PERSONAS_NO_DISPONIBLES,
+                consentimientos: CONSENTIMIENTOS_NO_DISPONIBLES,
+              }),
+              propietarios: new PropietariosTenantTypeOrm(unidadDeTrabajo, contexto, reloj),
+              nombreTenant: new NombreTenantOrg(new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), contexto),
+              correoOperacion: entorno.NOT_CORREO_OPERACION,
+              zonaHoraria: ZONA_VENCIMIENTOS,
+              informar: crearInforme(),
+              avisar,
+            });
+            return new AvisosPlataformaConsumidor({
+              suscripcionPorVencer: new AvisarSuscripcionPorVencer(envio),
+              tenantSuspendido: new AvisarTenantSuspendido(envio),
+              soporteSolicitado: new AvisarSoporteSolicitado(envio),
+              integridadRota: new AvisarIntegridadRota(envio),
+            });
+          },
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER],
         },
         {
           provide: EntregarMensaje,

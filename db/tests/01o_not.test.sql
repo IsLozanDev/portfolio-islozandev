@@ -131,7 +131,9 @@ SELECT set_config('app.tenant_id', '42000000-0000-0000-0000-00000000000b', false
 DO $$
 DECLARE filas int;
 BEGIN
-  IF (SELECT count(*) FROM ntf.plantilla) <> 1 OR (SELECT count(*) FROM ntf.plantilla WHERE tenant_id IS NULL) <> 1 THEN
+  -- Las migraciones posteriores siembran más bases (spec 44): se cuenta solo PRUEBA_CORREO.
+  IF (SELECT count(*) FROM ntf.plantilla WHERE tenant_id IS NOT NULL) <> 0
+     OR (SELECT count(*) FROM ntf.plantilla WHERE tenant_id IS NULL AND codigo = 'PRUEBA_CORREO') <> 1 THEN
     RAISE EXCEPTION 'B debía ver solo la plantilla base';
   END IF;
   IF EXISTS (SELECT 1 FROM ntf.mensaje) THEN RAISE EXCEPTION 'B no debía ver mensajes de A'; END IF;

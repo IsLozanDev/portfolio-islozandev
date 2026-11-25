@@ -16,11 +16,13 @@ export const camposEntornoNotificaciones = {
   RESEND_WEBHOOK_SECRET: opcional(z.string().trim().min(1)),
   NOT_REMITENTE: opcional(z.string().trim().min(3).max(320)),
   NOT_SAL_DESTINO: opcional(z.string().min(LARGO_MINIMO_SAL)),
+  /** Destino de `aud.integridad.rota` (spec 44). Opcional también en producción: sin ella el aviso se omite con un log. */
+  NOT_CORREO_OPERACION: opcional(z.string().trim().pipe(z.email())),
 };
 
 export type EntornoNotificaciones = z.infer<z.ZodObject<typeof camposEntornoNotificaciones>>;
 
-const OBLIGATORIAS_EN_PRODUCCION = Object.keys(camposEntornoNotificaciones) as (keyof EntornoNotificaciones)[];
+const OBLIGATORIAS_EN_PRODUCCION: readonly (keyof EntornoNotificaciones)[] = ['RESEND_API_KEY', 'RESEND_WEBHOOK_SECRET', 'NOT_REMITENTE', 'NOT_SAL_DESTINO'];
 
 /**
  * Para `superRefine` del esquema de la app: en producción las cuatro son obligatorias. En los demás ambientes la
