@@ -11,6 +11,7 @@
     { "path": "../parametros" },
     { "path": "../auditoria" },
     { "path": "../seguridad" },
-    { "path": "../eventos" }
+    { "path": "../eventos" },
+    { "path": "../correlativos" }
   ]
 }

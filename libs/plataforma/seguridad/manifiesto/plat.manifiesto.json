@@ -1,7 +1,7 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.28.0",
+  "version": "1.29.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
@@ -88,6 +88,7 @@
     { "codigo": "plat.archivo.versionar", "descripcion": "Subir versiones de un archivo y elegir la vigente", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.fe.configurar", "descripcion": "Configurar el emisor electrónico", "alcance_minimo": "TENANT", "sensible": true },
     { "codigo": "plat.fe.consultar", "descripcion": "Ver el emisor electrónico", "alcance_minimo": "TENANT", "sensible": false },
+    { "codigo": "plat.fe.emitir", "descripcion": "Emitir comprobantes electrónicos (TR-RF-053 y TR-RF-054)", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.plantilla_notificacion.consultar", "descripcion": "Ver plantillas de notificación", "alcance_minimo": "TENANT", "sensible": false },
     { "codigo": "plat.plantilla_notificacion.gestionar", "descripcion": "Personalizar plantillas de notificación (SRS: plat.notificacion.plantilla)", "alcance_minimo": "TENANT", "sensible": false }
   ],
@@ -136,7 +137,8 @@
         "plat.catalogo.gestionar", "plat.catalogo.item_gestionar", "plat.catalogo.leer", "plat.catalogo.personalizar",
         "plat.catalogo.item_propio", "plat.catalogo.importar", "plat.feriado.gestionar", "plat.auditoria.consultar",
         "plat.auditoria.exportar", "plat.identidad.validar", "plat.identidad.consultar", "plat.identidad.cuota",
-        "plat.fe.configurar", "plat.fe.consultar", "plat.plantilla_notificacion.consultar", "plat.plantilla_notificacion.gestionar"
+        "plat.fe.configurar", "plat.fe.consultar", "plat.fe.emitir", "plat.plantilla_notificacion.consultar",
+        "plat.plantilla_notificacion.gestionar"
       ]
     },
     {
@@ -174,6 +176,14 @@
       "valor_defecto": 30,
       "alcance_maximo": "TENANT",
       "esquema": { "type": "integer", "minimum": 1, "maximum": 90 }
+    },
+    {
+      "codigo": "plat.fe.boleta_monto_identificacion",
+      "descripcion": "Total de boleta, en soles, por encima del cual se exige documento y nombre del adquirente (TR-RN-018)",
+      "tipo": "NUMERO",
+      "valor_defecto": 700.00,
+      "alcance_maximo": "EMPRESA",
+      "esquema": { "type": "number", "minimum": 0 }
     }
   ],
   "indicadores": [],

@@ -20,7 +20,7 @@ describe('Manifiesto PLAT 1.27.0: parte de aud (spec 20b)', () => {
   });
 
   it('está en la versión 1.27.0', () => {
-    expect(manifiesto.version).toBe('1.28.0');
+    expect(manifiesto.version).toBe('1.29.0');
   });
 
   it('declara PERMISOS_AUD con alcance mínimo SUCURSAL; exportar es sensible (TR-RN-009)', () => {

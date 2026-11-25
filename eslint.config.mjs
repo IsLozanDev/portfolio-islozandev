@@ -70,8 +70,8 @@ export default [
             comp('not', 'kernel', 'seg', 'org', 'evt', 'per', 'obs', 'aud'),
             // R2: el emisor electrónico lee la empresa, guarda sus secretos en la bóveda, valida el proveedor en
             // catálogos, lee el parámetro de aviso, audita y autoriza (spec 49); consume su prueba en beta en el
-            // worker (EVT, spec 50).
-            comp('fe', 'kernel', 'org', 'sec', 'cat', 'cfg', 'aud', 'seg', 'evt'),
+            // worker (EVT, spec 50). Numera boletas y facturas con SEQ en la transacción de la emisión (spec 51).
+            comp('fe', 'kernel', 'org', 'sec', 'cat', 'cfg', 'aud', 'seg', 'evt', 'seq'),
           ],
         },
       ],

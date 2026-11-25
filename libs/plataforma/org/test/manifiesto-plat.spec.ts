@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.27.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.28.0');
+    expect(manifiesto.version).toBe('1.29.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -53,7 +53,8 @@ describe('Manifiesto PLAT 1.27.0: parte de org (specs 12 y 17a)', () => {
     // catálogos también (spec 19a), y el de importar tablas oficiales (spec 19b); solo sirven en el tenant operador.
     // También lo del auditor de datos personales (spec 20b), el padrón RUC del registro de empresa (spec 28b)
     // y ver la cuota propia de consultas de identidad (spec 29). El emisor electrónico lo comparte con
-    // PLAT_ENCARGADO_FACTURACION (spec 49). Las plantillas de notificación son solo suyas (spec 43).
+    // PLAT_ENCARGADO_FACTURACION (spec 49); emitir comprobantes es solo suyo (spec 51). Las plantillas de
+    // notificación son solo suyas (spec 43).
     const soloPropietario = [
       'plat.soporte.autorizar',
       'plat.catalogo.gestionar',
@@ -64,6 +65,7 @@ describe('Manifiesto PLAT 1.27.0: parte de org (specs 12 y 17a)', () => {
       'plat.identidad.cuota',
       'plat.fe.configurar',
       'plat.fe.consultar',
+      'plat.fe.emitir',
       'plat.plantilla_notificacion.consultar',
       'plat.plantilla_notificacion.gestionar',
     ];
