@@ -304,7 +304,9 @@ export class AuditoriaMemoria implements Pick<AuditoriaPort, 'registrar'> {
 
 export function registro(): Registrar & { llamadas: { mensaje: string; datos: Record<string, unknown> }[] } {
   const llamadas: { mensaje: string; datos: Record<string, unknown> }[] = [];
-  const registrar = ((mensaje: string, datos: Record<string, unknown>) => llamadas.push({ mensaje, datos })) as Registrar & { llamadas: typeof llamadas };
+  const registrar = ((mensaje: string, datos: Record<string, unknown>) => {
+    llamadas.push({ mensaje, datos });
+  }) as Registrar & { llamadas: typeof llamadas };
   registrar.llamadas = llamadas;
   return registrar;
 }

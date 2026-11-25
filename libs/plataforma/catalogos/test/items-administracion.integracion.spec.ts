@@ -23,7 +23,7 @@ describeConDb('ListarItemsAdministracion (PostgreSQL 16)', () => {
   beforeAll(async () => {
     entorno = await crearEntornoCatalogos();
     const { unidadDeTrabajo, contexto, reloj, catalogos } = entorno.dependencias;
-    listarItems = new ListarItemsAdministracion({ unidadDeTrabajo, contexto, reloj, catalogos, lectura: new LecturaItemsAdministracionTypeOrm(unidadDeTrabajo) });
+    listarItems = new ListarItemsAdministracion({ unidadDeTrabajo, contexto, reloj, catalogos, lectura: new LecturaItemsAdministracionTypeOrm(entorno.unidadDeTrabajo) });
     const actorId = entorno.tenants.usuarioId;
     await comoCliente(async () => {
       await new AjustarItem(entorno.dependencias).ejecutar({ catalogo: 'MEDIO_PAGO', itemId: PLIN, visible: false, orden: 9, alias: 'Plin QR', version: null, actorId });

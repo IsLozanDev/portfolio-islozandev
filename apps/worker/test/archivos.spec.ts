@@ -297,19 +297,19 @@ describe('Limpieza diaria de cargas pendientes (spec 33, Redis 7)', () => {
   });
 
   it('informa cuántas cargas borró', async () => {
-    resultado = { borradas: 3, fallidas: 0 };
+    resultado = { borradas: 3, versionesBorradas: 0, fallidas: 0 };
 
     await correrAhora();
 
-    expect(informes).toContainEqual(['Limpieza de cargas pendientes terminada', { borradas: 3, fallidas: 0 }]);
+    expect(informes).toContainEqual(['Limpieza de cargas pendientes terminada', { borradas: 3, versionesBorradas: 0, fallidas: 0 }]);
   });
 
   it('si quedaron cargas sin borrar lo avisa, sin reportar error', async () => {
-    resultado = { borradas: 1, fallidas: 2 };
+    resultado = { borradas: 1, versionesBorradas: 0, fallidas: 2 };
 
     await correrAhora();
 
-    expect(avisos).toContainEqual(['Limpieza de cargas pendientes terminada', { borradas: 1, fallidas: 2 }]);
+    expect(avisos).toContainEqual(['Limpieza de cargas pendientes terminada', { borradas: 1, versionesBorradas: 0, fallidas: 2 }]);
     expect(reportados).toEqual([]);
   });
 
