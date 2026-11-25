@@ -63,6 +63,21 @@ function respuestaDesdeCdr(zip: Uint8Array): RespuestaPse {
   return { resultado: resultadoDeCodigo(codigo, notas.length > 0), codigo, descripcion, observaciones: notas, cdr: zip };
 }
 
+/** SOAP 1.1 devuelve los faults con HTTP 500: se lee el fault antes de mirar el estado. */
+function interpretar(estado: number, cuerpo: string): RespuestaPse {
+  const fault = leerFault(cuerpo);
+  if (fault) return respuestaDesdeFault(fault);
+  if (esFallaDelServidor(estado)) return respuestaSinSunat('ERROR_TECNICO', `HTTP_${estado}`);
+  const zip = zipDeLaRespuesta(cuerpo);
+  if (zip === null) return respuestaSinSunat('ERROR_TECNICO', CODIGOS_ADAPTADOR_SUNAT.respuestaInvalida);
+  try {
+    return respuestaDesdeCdr(zip);
+  } catch (error) {
+    if (!(error instanceof CdrIlegibleError)) throw error;
+    return respuestaSinSunat('ERROR_TECNICO', CODIGOS_ADAPTADOR_SUNAT.respuestaInvalida);
+  }
+}
+
 /**
  * SUNAT directo (SEE-Del Contribuyente): firma con el .pfx del emisor (51b), comprime y envía con `sendBill` al
  * billService del ambiente, con el usuario secundario SOL en WS-Security. Timeout de 15 s y circuit breaker local;
@@ -133,25 +148,10 @@ export class PseSunat implements PseOsePort {
         signal: AbortSignal.timeout(TIMEOUT_SUNAT_MS),
         redirect: 'error',
       });
-      return this.interpretar(respuesta.status, await respuesta.text());
+      return this.registrarSalud(interpretar(respuesta.status, await respuesta.text()));
     } catch (error) {
       this.circuito.registrarFallo();
       return respuestaSinSunat('ERROR_TECNICO', esTiempoAgotado(error) ? CODIGOS_ADAPTADOR_SUNAT.tiempoAgotado : CODIGOS_ADAPTADOR_SUNAT.red);
-    }
-  }
-
-  /** SOAP 1.1 devuelve los faults con HTTP 500: se lee el fault antes de mirar el estado. */
-  private interpretar(estado: number, cuerpo: string): RespuestaPse {
-    const fault = leerFault(cuerpo);
-    if (fault) return this.registrarSalud(respuestaDesdeFault(fault));
-    if (esFallaDelServidor(estado)) return this.registrarSalud(respuestaSinSunat('ERROR_TECNICO', `HTTP_${estado}`));
-    const zip = zipDeLaRespuesta(cuerpo);
-    if (zip === null) return this.registrarSalud(respuestaSinSunat('ERROR_TECNICO', CODIGOS_ADAPTADOR_SUNAT.respuestaInvalida));
-    try {
-      return this.registrarSalud(respuestaDesdeCdr(zip));
-    } catch (error) {
-      if (!(error instanceof CdrIlegibleError)) throw error;
-      return this.registrarSalud(respuestaSinSunat('ERROR_TECNICO', CODIGOS_ADAPTADOR_SUNAT.respuestaInvalida));
     }
   }
 

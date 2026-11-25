@@ -284,7 +284,7 @@ export class ComprobantesModule {
             listarSucursales: ListarSucursales,
           ) => {
             const proveedores = new ProveedoresFeCatalogo(catalogo);
-            const informar = (mensaje: string, datos: Record<string, unknown>) => logger.log({ evento: mensaje, ...datos });
+            const informar: Registrar = (mensaje, datos) => logger.log({ evento: mensaje, ...datos });
             return new EjecutarPruebaEmisor({
               unidadDeTrabajo,
               contexto,

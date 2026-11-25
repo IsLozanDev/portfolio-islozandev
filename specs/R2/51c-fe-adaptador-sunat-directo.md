@@ -1,6 +1,6 @@
 # SPEC 51c — Facturación electrónica: adaptador SUNAT directo (SEE-Del Contribuyente) con sendBill, CDR y prueba en la beta de SUNAT
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 51b, SPEC 50, SPEC 49, SPEC 41
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el adaptador `SUNAT` de `PseOsePort`, que comprime el XML firmado del 51b, lo envía con `sendBill` al servicio de SUNAT del ambiente del emisor usando el usuario secundario SOL y devuelve el resultado con el CDR, de modo que la prueba del emisor del spec 50 funcione contra la beta real de SUNAT.
@@ -205,6 +205,11 @@ urlProduccion: string | null;
 - **Sí:** humo en la beta con el RUC del usuario, `MODDATOS` y un certificado autofirmado. Decisión del usuario. No requiere trámites y valida firma y estructura de verdad. El RUC no se escribe en el repo.
 - **Sí:** errores de credencial como `RECHAZADO`. Reintentar con una clave mala no la arregla y puede bloquear el usuario SOL.
 - **Sí:** usuario SOL sin el RUC; el adaptador lo antepone. El usuario escribe lo mismo que en SOL y no puede poner otro RUC.
+- **Sí:** firma SHA-256 del 51b, sin cambiar a SHA-1. El humo del 2026-11-25 en la beta real aceptó factura, boleta y la boleta de prueba `BP01` con código 0.
+- **Sí:** nombre del archivo con el correlativo de 8 dígitos (`RUC-03-BP01-00000001`), como lo arma el 51b; la beta lo acepta.
+- **Sí:** el ZIP del CDR de SUNAT trae una carpeta `dummy/` además del `R-….xml`; `descomprimirCdr` busca el `R-….xml` y la ignora.
+- **Sí:** el adaptador recibe `ProveedoresFe` y resuelve la URL por ambiente en cada envío (no usa `credenciales.url`). El resolutor se arma en `registerPruebas`, donde vive `adaptadoresPse`.
+- **Sí:** la boleta de prueba con SUNAT usa el anexo de la sucursal principal (`EstablecimientoPrincipalPort` sobre `ListarSucursales` de ORG). Decisión del usuario. Sin anexo, la prueba queda `RECHAZADA` con `DATOS_INCOMPLETOS` (cabe en `prueba_codigo`).
 - **No:** `getStatusCdr`, resumen y baja aquí. Llegan con los specs que los usan (56 y 55).
 - **No:** permiso nuevo. Todo es configuración del emisor con `plat.fe.configurar`.
 
