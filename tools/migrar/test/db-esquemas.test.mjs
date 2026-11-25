@@ -105,6 +105,7 @@ const CASOS = [
   { migracion: '01p_fe.sql', esquema: 'fe', prueba: 'tests/01p_fe.test.sql' },
   { migracion: '01q_not_plantillas.sql', esquema: 'ntf', prueba: 'tests/01q_not_plantillas.test.sql' },
   { migracion: '01r_fe_prueba.sql', esquema: 'fe', prueba: 'tests/01r_fe_prueba.test.sql' },
+  { migracion: '01t_not_programacion.sql', esquema: 'ntf', prueba: 'tests/01t_not_programacion.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -214,6 +215,39 @@ async function inversoSecretosConFilas() {
     await c.end();
   }
 }
+
+// Con una programación PROGRAMADA el inverso de 01t_not_programacion se niega (spec 45); la transacción se revierte.
+async function inversoProgramacionesConVivas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '45000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO ntf.programacion (id, tenant_id, referencia_tipo, referencia_id, plantilla_codigo, destinatario, finalidad, enviar_en, estado)
+       VALUES (gen_random_uuid(), '${tenantId}', 'cita', 'c-1', 'PRUEBA_CORREO', '{"correo":"prueba@ejemplo.pe"}', 'TRANSACCIONAL',
+               now() + interval '1 day', 'PROGRAMADA')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01t_not_programacion.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Tabla y función que agrega 01t_not_programacion (2 en total).
+const objetosProgramacion = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT table_name::text AS o FROM information_schema.tables WHERE table_schema = 'ntf' AND table_name = 'programacion'
+       UNION ALL SELECT proname::text FROM pg_proc WHERE proname = 'programaciones_atrasadas'`,
+    )
+  ).rows.map((r) => r.o);
 
 // Con un mensaje ENCOLADO el inverso de 01o_not se niega (spec 42); la transacción se revierte.
 async function inversoNotificacionesConEncolados() {
@@ -787,8 +821,15 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01t_not_programacion se niega con programaciones vivas; sin ellas borra la tabla y la función
+    // del barrido. Va primero: es la última migración. Queda revertida hasta reaplicar 01o_not y 01q_not_plantillas.
+    expect(await objetosProgramacion()).toHaveLength(2);
+    expect(await inversoProgramacionesConVivas()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01t_not_programacion.sql'), 'utf8'));
+    expect(await objetosProgramacion()).toEqual([]);
+
     // El inverso de 01r_fe_prueba se niega con emisores verificados; sin ellos quita las columnas de la prueba y
-    // NUBEFACT, y se puede reaplicar. Va primero: es la última migración.
+    // NUBEFACT, y se puede reaplicar.
     expect(await inversoFePruebaConVerificados()).toBe('55006');
     expect(await columnasPruebaFe()).toBe(9);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01r_fe_prueba.sql'), 'utf8'));
@@ -827,6 +868,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('ntf')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('01q_not_plantillas.sql'), 'utf8'));
     expect(await objetosPlantillas()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('01t_not_programacion.sql'), 'utf8'));
+    expect(await objetosProgramacion()).toHaveLength(2);
 
     // El inverso de 01n_sec se niega con secretos guardados; sin ellos borra sec y se puede reaplicar.
     expect(await inversoSecretosConFilas()).toBe('55006');

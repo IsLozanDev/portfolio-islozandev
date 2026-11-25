@@ -88,7 +88,8 @@ export class WorkerModule {
           patronReencolado: config.ARC_REENCOLADO_CRON,
         }),
         // Spec 42: consumidor de not.mensaje.solicitado y cola not-envios hacia Resend.
-        NotificacionesWorkerModule.register({ redisUrl: config.REDIS_URL, entorno: config }),
+        // Spec 45: consumidor de not.programacion.registrada, cola not-programaciones y su barrido.
+        NotificacionesWorkerModule.register({ redisUrl: config.REDIS_URL, entorno: config, dataSource }),
         // Spec 50: consumidor de fe.prueba.solicitada y cola fe-pruebas hacia el PSE.
         PruebasFeModule.register({ redisUrl: config.REDIS_URL, entorno: config, secretos: secretosModulo }),
       ],

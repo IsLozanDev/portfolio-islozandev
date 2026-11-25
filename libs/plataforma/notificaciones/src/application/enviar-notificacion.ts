@@ -37,7 +37,7 @@ interface Decision {
  * ENCOLADO, publica `not.mensaje.solicitado` por outbox en la misma transacción (regla 4): si el llamador
  * revierte, no sale ningún correo. Los omitidos y los descartados también se guardan, sin evento.
  */
-export class EnviarNotificacion implements NotificacionPort {
+export class EnviarNotificacion implements Pick<NotificacionPort, 'enviar'> {
   constructor(private readonly dependencias: DependenciasEnvio) {}
 
   async enviar(comando: EnviarNotificacionComando): Promise<NotificacionRegistrada> {

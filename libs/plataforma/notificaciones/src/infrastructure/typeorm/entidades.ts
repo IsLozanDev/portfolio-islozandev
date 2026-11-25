@@ -141,4 +141,48 @@ export const ContactoInvalidoEntidad = new EntitySchema<FilaContactoInvalido>({
   },
 });
 
-export const ENTIDADES_NOT = [PlantillaEntidad, MensajeEntidad, IntentoEntregaEntidad, ContactoInvalidoEntidad];
+export interface FilaProgramacion {
+  id: string;
+  tenantId: string;
+  referenciaTipo: string;
+  referenciaId: string;
+  plantillaCodigo: string;
+  destinatario: { personaId: string } | { correo: string };
+  variables: Record<string, string | number>;
+  finalidad: string;
+  enviarEn: Date;
+  estado: string;
+  motivo: string | null;
+  mensajeId: string | null;
+  version: number;
+  creadoPor: string | null;
+  creadoEn: Date;
+  modificadoEn: Date | null;
+}
+
+export const ProgramacionEntidad = new EntitySchema<FilaProgramacion>({
+  name: 'ProgramacionNotificacion',
+  schema: 'ntf',
+  tableName: 'programacion',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    referenciaTipo: { name: 'referencia_tipo', type: 'varchar', length: 40 },
+    referenciaId: { name: 'referencia_id', type: 'varchar', length: 100 },
+    plantillaCodigo: { name: 'plantilla_codigo', type: 'varchar', length: 60 },
+    destinatario: { type: 'jsonb' },
+    variables: { type: 'jsonb' },
+    finalidad: { type: 'varchar', length: 14 },
+    enviarEn: { name: 'enviar_en', type: 'timestamptz' },
+    estado: { type: 'varchar', length: 12 },
+    motivo: { type: 'varchar', length: 40, nullable: true },
+    mensajeId: { name: 'mensaje_id', type: 'uuid', nullable: true },
+    // Bloqueo optimista que sube el dominio en cada cambio: también va en el jobId de la cola.
+    version: { type: 'integer' },
+    creadoPor: { name: 'creado_por', type: 'uuid', nullable: true },
+    creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },
+    modificadoEn: { name: 'modificado_en', type: 'timestamptz', nullable: true },
+  },
+});
+
+export const ENTIDADES_NOT = [PlantillaEntidad, MensajeEntidad, IntentoEntregaEntidad, ContactoInvalidoEntidad, ProgramacionEntidad];

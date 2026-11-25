@@ -2,6 +2,8 @@ import type { CanalNotificacion } from '../../domain/canal.js';
 import type { IntentoEntrega } from '../../domain/intento-entrega.js';
 import type { Mensaje } from '../../domain/mensaje.js';
 import type { OrigenPlantilla, Plantilla } from '../../domain/plantilla.js';
+import type { Programacion } from '../../domain/programacion.js';
+import type { ReferenciaProgramacion } from '../../domain/referencia-programacion.js';
 
 // Todos corren en la transacción activa y filtran por el tenant del contexto además de la RLS (regla 3).
 
@@ -65,6 +67,28 @@ export interface RepositorioContactosInvalidos {
   esInvalido(canal: CanalNotificacion, destinoHash: string): Promise<boolean>;
   /** Idempotente. */
   marcar(canal: CanalNotificacion, destinoHash: string, motivo: string): Promise<void>;
+}
+
+export interface RepositorioProgramaciones {
+  obtener(programacionId: string): Promise<Programacion | null>;
+  /** Las PROGRAMADA de la referencia; con plantilla, a lo más una (índice único de la viva). */
+  vivas(referencia: ReferenciaProgramacion, plantillaCodigo?: string): Promise<Programacion[]>;
+  /** Otra viva con la misma referencia y plantilla (carrera) → ProgramacionModificadaError. */
+  insertar(programacion: Programacion): Promise<void>;
+  /** ProgramacionModificadaError si la versión ya no es la esperada. */
+  actualizar(programacion: Programacion, versionEsperada: number): Promise<void>;
+}
+
+/** Lo único que devuelve el barrido entre tenants. */
+export interface ProgramacionAtrasada {
+  programacionId: string;
+  tenantId: string;
+  version: number;
+}
+
+export interface LocalizadorProgramaciones {
+  /** PROGRAMADA con `enviar_en` anterior a `antes`, de todos los tenants (función SECURITY DEFINER), fuera de toda transacción. */
+  atrasadas(antes: Date, limite: number): Promise<ProgramacionAtrasada[]>;
 }
 
 export interface LocalizadorMensajes {
