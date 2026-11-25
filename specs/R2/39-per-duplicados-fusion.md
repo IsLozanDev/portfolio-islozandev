@@ -1,6 +1,6 @@
 # SPEC 39 — Personas: detección de duplicados con puntaje, descartes y fusión con alias
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 31, SPEC 32, SPEC 37, SPEC 38, SPEC 20a, SPEC 11
 > **Date:** 2026-11-24
 > **Objective:** Ampliar `libs/plataforma/personas` para proponer pares de personas posiblemente duplicadas del tenant con un puntaje de reglas fijas, descartar los pares revisados y fusionar dos fichas en una transacción que mueve roles, contactos y direcciones a la conservada, deja la absorbida como alias inactivo, audita antes y después y publica `persona.fusionada` por outbox.

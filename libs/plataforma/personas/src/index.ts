@@ -21,23 +21,23 @@ export {
 } from './application/ports/consentimiento.port.js';
 export { TIPOS_CONTACTO, type TipoContacto } from './domain/contacto.js';
 export type { DenominacionPersona } from './domain/denominacion.js';
-export { MOTIVOS_DUPLICADO, type MotivoDuplicado } from './domain/duplicados.js';
 export { TIPOS_DOCUMENTO_PERSONA, type TipoDocumentoPersona } from './domain/documento-identidad.js';
+export { MOTIVOS_DUPLICADO, type MotivoDuplicado } from './domain/duplicados.js';
 export {
   AccionExpresaRequeridaError,
+  CampoElegidoInvalidoError,
   CelularPrincipalObligatorioError,
   ContactoDuplicadoError,
   ContactoInvalidoError,
   ContactoNoEncontradoError,
   DatosConsentimientoInvalidosError,
-  DireccionInvalidaError,
   DescarteNoEncontradoError,
+  DireccionInvalidaError,
   DireccionNoEncontradaError,
   DocumentoInvalidoPersonaError,
   DocumentosDistintosError,
   EvidenciaInvalidaError,
   EvidenciaNoEncontradaError,
-  CampoElegidoInvalidoError,
   FinalidadRepetidaError,
   MismaPersonaError,
   MOTIVOS_EVIDENCIA_INVALIDA,

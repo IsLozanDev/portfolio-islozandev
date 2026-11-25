@@ -32,8 +32,9 @@ const MOTIVO_CONSULTA = 'REGISTRO_CLIENTE';
 
 /**
  * Devuelve la persona del tenant (TR-CA-101) o, si no existe y el documento es DNI o RUC, los datos de
- * TR-IDN para prellenar (TR-CA-100). El documento de una absorbida devuelve su conservada. La consulta al proveedor va fuera de la transacción y su fallo nunca
- * falla la búsqueda (TR-RNF-007): vuelve como aviso y el registro sigue a mano.
+ * TR-IDN para prellenar (TR-CA-100). El documento de una absorbida devuelve su conservada. La consulta al
+ * proveedor va fuera de la transacción y su fallo nunca falla la búsqueda (TR-RNF-007): vuelve como aviso y
+ * el registro sigue a mano.
  */
 export class BuscarPersonaPorDocumento {
   constructor(private readonly dependencias: Pick<DependenciasPersonas, 'unidadDeTrabajo' | 'personas' | 'identidad'>) {}

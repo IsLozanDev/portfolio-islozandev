@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { ComparacionPar } from '../application/duplicados/comparar-par.js';
 import type { PaginaDuplicados, ParCandidato } from '../application/ports/consulta-duplicados.js';
-import { CAMPOS_POR_TIPO_PERSONA, ORIGENES_CAMPO, type OrigenCampo } from '../domain/fusion.js';
 import { MOTIVOS_DUPLICADO, type MotivoDuplicado } from '../domain/duplicados.js';
+import { CAMPOS_POR_TIPO_PERSONA, ORIGENES_CAMPO, type OrigenCampo } from '../domain/fusion.js';
 import { PersonaDetalleDto, PersonaListadaDto, personaDetalleDto, personaListadaDto } from './personas.dto.js';
 
 const CODIGOS_BLOQUEO = ['MISMA_PERSONA', 'PERSONA_FUSIONADA', 'TIPO_PERSONA_DISTINTO', 'DOCUMENTOS_DISTINTOS'];

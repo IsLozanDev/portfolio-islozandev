@@ -367,9 +367,9 @@ export class Persona extends AggregateRoot {
 
   /** Un principal elegido que se quedó en la absorbida por repetido pasa a su igual de la conservada. */
   private aplicarPrincipales(absorbida: Persona, principales: PrincipalesElegidos): void {
-    const principalDe = (clave: ClavePrincipal) => this.equivalenteDe(absorbida, clave, principales.get(clave) ?? null);
-    const principalDireccion = principalDe(PRINCIPAL_DIRECCION);
-    const principalesContacto = new Map(TIPOS_CONTACTO.map((tipo) => [tipo, principalDe(tipo)]));
+    const principalFinalDe = (clave: ClavePrincipal) => this.equivalenteDe(absorbida, clave, principales.get(clave) ?? null);
+    const principalDireccion = principalFinalDe(PRINCIPAL_DIRECCION);
+    const principalesContacto = new Map(TIPOS_CONTACTO.map((tipo) => [tipo, principalFinalDe(tipo)]));
     this.props.contactos = this.props.contactos.map((contacto) => contacto.conPrincipal(principalesContacto.get(contacto.tipo) === contacto.id));
     this.props.direcciones = this.props.direcciones.map((direccion) => direccion.conPrincipal(direccion.id === principalDireccion));
   }

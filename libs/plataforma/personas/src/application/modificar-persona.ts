@@ -1,7 +1,7 @@
 import { PersonaNoEncontradaError, VersionObsoletaPersonaError } from '../domain/errores.js';
 import type { Persona } from '../domain/persona.js';
-import { publicarEventosDe, type DependenciasPersonas } from './dependencias-personas.js';
 import { detalleConAlias, exigirSinFusionar } from './alias-personas.js';
+import { publicarEventosDe, type DependenciasPersonas } from './dependencias-personas.js';
 import type { PersonaDetalle } from './ports/persona.port.js';
 
 export type DependenciasModificarPersona = Pick<DependenciasPersonas, 'unidadDeTrabajo' | 'publicador' | 'personas'>;

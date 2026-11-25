@@ -1,10 +1,10 @@
 import { PersonaNoEncontradaError, VersionObsoletaPersonaError } from '../../domain/errores.js';
 import { validarMotivoFusion, type CamposElegidos } from '../../domain/fusion.js';
 import type { Persona } from '../../domain/persona.js';
+import { detalleConAlias } from '../alias-personas.js';
 import { exigirUsuario } from '../consentimientos/exigencias.js';
 import { publicarEventosDe, type DependenciasPersonas } from '../dependencias-personas.js';
 import type { PersonaDetalle } from '../ports/persona.port.js';
-import { detalleDe } from '../vista-persona.js';
 import { ENTIDAD_AUDITADA } from './par-del-tenant.js';
 
 export const ACCION_FUSIONAR = 'plat.persona.fusionar';
@@ -54,7 +54,7 @@ export class FusionarPersonas {
       });
       await this.auditar(conservada, absorbida, antes, motivo);
       await publicarEventosDe(publicador, conservada);
-      return detalleDe(conservada, { resueltaDesde: null, alias: await personas.aliasDe(conservada.id) });
+      return detalleConAlias(personas, { persona: conservada, resueltaDesde: null });
     });
   }
 
