@@ -231,6 +231,15 @@ export class TotalNoCoincideError extends ComprobanteNoAceptadoError {
   }
 }
 
+/** El UBL exige el dato y ORG no lo tiene: `campo` dice cuál completar en la empresa o la sucursal. */
+export class DatosEmisorIncompletosError extends ComprobanteNoAceptadoError {
+  override readonly code = 'DATOS_EMISOR_INCOMPLETOS';
+
+  constructor(readonly campo: string) {
+    super(`Falta un dato del emisor que exige el comprobante electrónico: ${campo}`);
+  }
+}
+
 export class EmisorNoHabilitadoError extends ConflictError {
   override readonly code = 'EMISOR_NO_HABILITADO';
 

@@ -14,7 +14,7 @@ const CODIGO_ACEPTADO = '0';
 
 /** Hash ficticio y estable del comprobante, para que la vista y los logs tengan algo que mostrar. */
 function hashFicticio(documento: DocumentoElectronico): string {
-  return Buffer.from(`${documento.emisorRuc}-${documento.tipo}-${documento.serie}-${documento.numero}`).toString('base64');
+  return Buffer.from(`${documento.emisor.ruc}-${documento.tipo}-${documento.serie}-${documento.numero}`).toString('base64');
 }
 
 /** Sin red y determinista según el token: para dev y CI (`FE_SIMULADO_PERMITIDO=true`). */

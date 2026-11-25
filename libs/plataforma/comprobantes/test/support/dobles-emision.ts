@@ -116,9 +116,9 @@ export class SeriesMemoria implements SeriesActivasPort, CorrelativoPort {
 
 export class SucursalesMemoria implements SucursalesEmisoras {
   readonly sucursales = new Map([
-    [SUCURSAL, { tenantId: TENANT_A, empresaId: EMPRESA }],
-    [SUCURSAL_2, { tenantId: TENANT_A, empresaId: EMPRESA }],
-    [SUCURSAL_DE_B, { tenantId: TENANT_B, empresaId: EMPRESA_DE_B }],
+    [SUCURSAL, { tenantId: TENANT_A, empresaId: EMPRESA, codigoEstablecimiento: '0000' as string | null }],
+    [SUCURSAL_2, { tenantId: TENANT_A, empresaId: EMPRESA, codigoEstablecimiento: null }],
+    [SUCURSAL_DE_B, { tenantId: TENANT_B, empresaId: EMPRESA_DE_B, codigoEstablecimiento: '0000' }],
   ]);
   constructor(private readonly contexto: TenantContext) {}
 
@@ -128,6 +128,12 @@ export class SucursalesMemoria implements SucursalesEmisoras {
       return Promise.reject(new SucursalNoEncontradaError());
     }
     return Promise.resolve();
+  }
+
+  codigoEstablecimiento(sucursalId: string): Promise<string | null> {
+    const sucursal = this.sucursales.get(sucursalId);
+    if (!sucursal || sucursal.tenantId !== this.contexto.current().tenantId) return Promise.reject(new SucursalNoEncontradaError());
+    return Promise.resolve(sucursal.codigoEstablecimiento);
   }
 }
 

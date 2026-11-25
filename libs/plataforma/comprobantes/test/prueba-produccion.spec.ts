@@ -133,7 +133,7 @@ describe('Prueba en beta y paso a producción (spec 50)', () => {
 
       await procesar();
       const [envio] = pse.envios;
-      expect(envio.documento).toMatchObject({ serie: 'B001', numero: 1, emisorRuc: '20601234561', fechaEmision: '2026-11-22' });
+      expect(envio.documento).toMatchObject({ serie: 'B001', numero: 1, emisor: expect.objectContaining({ ruc: '20601234561' }), fechaEmision: '2026-11-22' });
       expect(envio.credenciales).toEqual({ url: URL_NUBEFACT, usuario: 'MODDATOS', token: TOKEN, ambiente: 'BETA' });
       expect(emisor().datos).toMatchObject({ estado: 'VERIFICADO', prueba: expect.objectContaining({ estado: 'ACEPTADA', codigo: '0' }) });
       expect(dobles.publicador.tipos().filter((tipo) => tipo === EVENTOS_FE.emisorVerificado)).toHaveLength(1);

@@ -1,7 +1,7 @@
 import type { Clock, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
-import { fechaCalendarioDe } from '@vitrina/plataforma/org';
 import type { BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { boletaDePrueba, type DocumentoElectronico } from '../domain/documento-electronico.js';
+import { emisorDePrueba } from '../domain/emisor-documento.js';
 import type { Emisor } from '../domain/emisor.js';
 import { UrlProveedorNoPermitidaError } from '../domain/errores.js';
 import { emisorVerificado } from '../domain/eventos-fe.js';
@@ -108,7 +108,7 @@ export class EjecutarPruebaEmisor {
       throw error;
     }
     const empresa = await empresas.obtener(emisor.empresaId);
-    const documento = boletaDePrueba(empresa.ruc, proveedor.seriePrueba, numeroPrueba, fechaCalendarioDe(reloj.now()));
+    const documento = boletaDePrueba(emisorDePrueba(empresa), proveedor.seriePrueba, numeroPrueba, reloj.now());
     return { envio: { proveedor: proveedor.codigo, credenciales: await this.credencialesDe(emisor, emisor.secretoCredencialId, url), documento } };
   }
 

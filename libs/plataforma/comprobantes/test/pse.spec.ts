@@ -1,6 +1,7 @@
 import type { Clock } from '@vitrina/plataforma/kernel';
 import type { CredencialesPse } from '../src/application/ports/pse-ose.port.js';
 import { boletaDePrueba } from '../src/domain/documento-electronico.js';
+import { emisorDePrueba } from '../src/domain/emisor-documento.js';
 import { ProveedorFeInvalidoError } from '../src/domain/errores.js';
 import { ColaPruebasFeBullmq, INTENTOS_PRUEBA_FE, NOMBRE_COLA_PRUEBAS_FE } from '../src/infrastructure/bullmq/cola-pruebas.js';
 import { APERTURA_MS, CircuitBreaker, UMBRAL_FALLOS } from '../src/infrastructure/pse/circuit-breaker.js';
@@ -14,7 +15,8 @@ import { z } from 'zod';
 const RUTA = 'https://api.nubefact.com/api/v1/48239908-7ae7-4353-824d-071765d4';
 const TOKEN = '8d19d8c7c1f6402687720eab85cd57a54f5a7a3fa163476bbcf381ee2b5e0c69';
 const credenciales: CredencialesPse = { url: RUTA, usuario: null, token: TOKEN, ambiente: 'BETA' };
-const boleta = boletaDePrueba('20601234561', 'B001', 3, '2026-11-23');
+const EMISOR = emisorDePrueba({ ruc: '20601234561', razonSocial: 'EMPRESA SAC', nombreComercial: null, domicilioFiscal: null, ubigeo: null });
+const boleta = boletaDePrueba(EMISOR, 'B001', 3, new Date('2026-11-23T15:00:00Z'));
 
 // Respuestas grabadas del manual JSON de Nubefact (operación 1 y «MANEJO DE ERRORES»), adaptadas a una boleta.
 const ACEPTADA = {

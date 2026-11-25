@@ -216,18 +216,24 @@ export class RepositorioEmisoresMemoria implements RepositorioEmisores, Transacc
   }
 }
 
+/** Sin domicilio fiscal ni ubigeo, como las empresas de dev: la prueba del spec 50 no los exige. */
+function empresaEmisora(id: string, ruc: string, activa: boolean): EmpresaEmisora {
+  return { id, ruc, activa, razonSocial: 'EMPRESA DE PRUEBA SAC', nombreComercial: null, domicilioFiscal: null, ubigeo: null };
+}
+
 export class EmpresasMemoria implements EmpresaEmisoraPort {
   readonly empresas = new Map<string, EmpresaEmisora & { tenantId: string }>([
-    [EMPRESA, { id: EMPRESA, ruc: RUC_EMPRESA, activa: true, tenantId: TENANT_A }],
-    [EMPRESA_INACTIVA, { id: EMPRESA_INACTIVA, ruc: '20601234562', activa: false, tenantId: TENANT_A }],
-    [EMPRESA_DE_B, { id: EMPRESA_DE_B, ruc: '20512345678', activa: true, tenantId: TENANT_B }],
+    [EMPRESA, { ...empresaEmisora(EMPRESA, RUC_EMPRESA, true), tenantId: TENANT_A }],
+    [EMPRESA_INACTIVA, { ...empresaEmisora(EMPRESA_INACTIVA, '20601234562', false), tenantId: TENANT_A }],
+    [EMPRESA_DE_B, { ...empresaEmisora(EMPRESA_DE_B, '20512345678', true), tenantId: TENANT_B }],
   ]);
   constructor(private readonly contexto: TenantContext) {}
 
   obtener(empresaId: string): Promise<EmpresaEmisora> {
     const empresa = this.empresas.get(empresaId);
     if (!empresa || empresa.tenantId !== this.contexto.current().tenantId) throw new EmpresaNoEncontradaError();
-    return Promise.resolve({ id: empresa.id, ruc: empresa.ruc, activa: empresa.activa });
+    const { id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo } = empresa;
+    return Promise.resolve({ id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo });
   }
 }
 

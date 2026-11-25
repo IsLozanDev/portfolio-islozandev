@@ -1,6 +1,6 @@
 # SPEC 40 — Personas: revisión de duplicados, comparación lado a lado y fusión en admin
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 39, SPEC 38, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d
 > **Date:** 2026-11-25
 > **Objective:** Dar al administrador del cliente, en `admin-cliente`, una lista de pares de personas posiblemente duplicadas (también filtrada por una persona desde su ficha), una comparación a dos columnas donde elige la ficha que se conserva, cada dato básico y cada principal, y la fusión confirmada con motivo y aal2, más el descarte con deshacer y la ficha que resuelve los alias.

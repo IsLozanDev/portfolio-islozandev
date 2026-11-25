@@ -85,7 +85,8 @@
     "ts-jest": "^29.4.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.71.2",
-    "vitest": "4.1.12"
+    "vitest": "4.1.12",
+    "xpath": "0.1.0"
   },
   "dependencies": {
     "@angular/cdk": "~21.2.14",
@@ -118,6 +119,7 @@
     "@sentry/nestjs": "11.11.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
+    "@xmldom/xmldom": "0.9.12",
     "ajv": "^8.20.0",
     "bullmq": "6.3.11",
     "csv-parse": "7.0.3",

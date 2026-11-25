@@ -10,7 +10,15 @@ export class EmpresaEmisoraOrg implements EmpresaEmisoraPort {
   async obtener(empresaId: string): Promise<EmpresaEmisora> {
     try {
       const empresa = await this.consultarEmpresa.ejecutar(empresaId);
-      return { id: empresa.id, ruc: empresa.ruc, activa: empresa.activo };
+      return {
+        id: empresa.id,
+        ruc: empresa.ruc,
+        activa: empresa.activo,
+        razonSocial: empresa.razonSocial,
+        nombreComercial: empresa.nombreComercial,
+        domicilioFiscal: empresa.direccionFiscal,
+        ubigeo: empresa.ubigeo,
+      };
     } catch (error) {
       if (error instanceof NotFoundError) throw new EmpresaNoEncontradaError();
       throw error;

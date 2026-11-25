@@ -1,6 +1,6 @@
 # SPEC 51b — Facturación electrónica: documento electrónico completo, UBL 2.1 de factura y boleta y firma XMLDSig propia
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 51, SPEC 49, SPEC 41, SPEC 48
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el `DocumentoElectronico` completo de factura y boleta (armado desde el agregado `Comprobante`), su XML UBL 2.1 según SUNAT y la firma XMLDSig con el certificado del emisor, para que el adaptador SUNAT directo (spec 51c) solo tenga que comprimir y enviar.
@@ -198,6 +198,7 @@ codigoEstablecimiento(sucursalId: string): Promise<string | null>;
 - **Sí:** XML con DOM, no con plantillas de texto. Escapa caracteres de descripciones y nombres (`&`, `<`) sin depender de cada llamador.
 - **Sí:** datos del emisor desde ORG al armar el documento. No se duplican en FE; un dato faltante se informa con `DATOS_EMISOR_INCOMPLETOS`.
 - **Sí:** RSA-SHA256 por defecto, con SHA-1 como alternativa en una constante. La beta del 51c decide.
+- **Sí:** estructura UBL vigente, no la de la guía publicada. Decisión del usuario (2026-11-25, paso 3). Las guías de factura y boleta de cpe.sunat.gob.pe son la versión 1.0 de 2017: llevan el tipo de operación en `cbc:ProfileID`, las partes en `cac:PartyTaxScheme/CompanyID` y no tienen forma de pago. Se sigue la estructura que validan hoy SUNAT y la beta, la que pide este spec: `InvoiceTypeCode@listID`, `cac:PartyIdentification` + `cac:PartyLegalEntity/RegistrationAddress` y `PaymentTerms` `FormaPago` (RS 193-2020/SUNAT). De la guía se toman los atributos de catálogo, los tributos, `PricingReference`, la firma y los namespaces. La beta del 51c confirma; si rechaza un nodo, se corrige en `infrastructure/sunat/ubl/`.
 - **No:** validar contra los XSD de SUNAT en local. Exigiría una librería nativa (libxml). La beta valida estructura y reglas.
 - **No:** migración ni permiso nuevo. El manifiesto no cambia y este spec no choca con otros del mismo frente.
 
