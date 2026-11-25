@@ -1,4 +1,11 @@
 import { UrlProveedorNoPermitidaError } from './errores.js';
+import type { AmbienteEmisor } from './estado-emisor.js';
+
+/** URL fijas por ambiente que declara el ítem del catálogo. */
+export interface UrlsPorAmbiente {
+  urlBeta: string | null;
+  urlProduccion: string | null;
+}
 
 const PROTOCOLO_SEGURO = 'https:';
 /** `URL` deja el puerto vacío cuando es el de https. */
@@ -27,4 +34,10 @@ export function exigirUrlPermitida(url: string, dominiosPermitidos: readonly str
     dominiosPermitidos.some((dominio) => dominio.toLowerCase() === interpretada.hostname);
   if (!permitida) throw new UrlProveedorNoPermitidaError();
   return limpia;
+}
+
+/** Con `urlProduccion` en el ítem la URL es la del ambiente y el tenant no escribe URL; si no, null (manda `url_proveedor`). */
+export function urlSegunAmbiente(urls: UrlsPorAmbiente, ambiente: AmbienteEmisor): string | null {
+  if (urls.urlProduccion === null) return null;
+  return ambiente === 'PRODUCCION' ? urls.urlProduccion : urls.urlBeta;
 }

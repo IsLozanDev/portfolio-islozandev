@@ -239,9 +239,9 @@ export class EmpresasMemoria implements EmpresaEmisoraPort {
 
 export class ProveedoresMemoria implements ProveedoresFe {
   readonly proveedores = new Map<string, ProveedorFe>([
-    [SIMULADO, { codigo: SIMULADO, requiereCertificado: true, seriePrueba: 'B999', dominiosPermitidos: ['simulador.invalid'] }],
-    [SIN_CERTIFICADO, { codigo: SIN_CERTIFICADO, requiereCertificado: false, seriePrueba: 'B998', dominiosPermitidos: ['simulador.invalid'] }],
-    [NUBEFACT, { codigo: NUBEFACT, requiereCertificado: false, seriePrueba: 'B001', dominiosPermitidos: ['api.nubefact.com'] }],
+    [SIMULADO, { codigo: SIMULADO, requiereCertificado: true, seriePrueba: 'B999', dominiosPermitidos: ['simulador.invalid'], urlBeta: null, urlProduccion: null }],
+    [SIN_CERTIFICADO, { codigo: SIN_CERTIFICADO, requiereCertificado: false, seriePrueba: 'B998', dominiosPermitidos: ['simulador.invalid'], urlBeta: null, urlProduccion: null }],
+    [NUBEFACT, { codigo: NUBEFACT, requiereCertificado: false, seriePrueba: 'B001', dominiosPermitidos: ['api.nubefact.com'], urlBeta: null, urlProduccion: null }],
   ]);
 
   obtener(codigo: string): Promise<ProveedorFe> {

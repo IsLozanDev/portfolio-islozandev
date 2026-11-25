@@ -108,6 +108,7 @@ const CASOS = [
   { migracion: '01s_not_avisos_plataforma.sql', esquema: 'ntf', prueba: 'tests/01s_not_avisos_plataforma.test.sql' },
   { migracion: '01t_not_programacion.sql', esquema: 'ntf', prueba: 'tests/01t_not_programacion.test.sql' },
   { migracion: '01u_fe_comprobante.sql', esquema: 'fe', prueba: 'tests/01u_fe_comprobante.test.sql' },
+  { migracion: '01v_fe_sunat_directo.sql', esquema: 'fe', prueba: 'tests/01v_fe_sunat_directo.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -415,6 +416,33 @@ const objetosComprobante = async () =>
        UNION ALL SELECT codigo FROM cat.catalogo WHERE codigo = 'TASA_IGV'`,
     )
   ).rows.map((r) => r.o);
+
+// Con un emisor SUNAT el inverso de 01v_fe_sunat_directo se niega (spec 51c); la transacción se revierte.
+async function inversoSunatConEmisores() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '51c00000-0000-0000-0000-0000000000ff';
+    const empresaId = '51c00000-0000-0000-0000-0000000000fe';
+    await c.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('${tenantId}', 'fe-sunat-inverso', 'FE SUNAT inverso', 'ACTIVO', 1)`);
+    await c.query(
+      `INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version) VALUES ('${empresaId}', '${tenantId}', '20601234561', 'FE SUNAT inverso SAC', 1)`,
+    );
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO fe.emisor (id, tenant_id, empresa_id, proveedor, creado_por, estado)
+       VALUES (gen_random_uuid(), '${tenantId}', '${empresaId}', 'SUNAT', gen_random_uuid(), 'CONFIGURADO')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01v_fe_sunat_directo.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 // Con un emisor VERIFICADO el inverso de 01r_fe_prueba se niega (spec 50); la transacción se revierte.
 async function inversoFePruebaConVerificados() {
@@ -903,8 +931,15 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01v_fe_sunat_directo se niega con emisores SUNAT; sin ellos quita el ítem. Va primero: es la
+    // última migración. Queda revertida hasta reaplicar 01p_fe, 01r_fe_prueba y 01u_fe_comprobante.
+    expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO', 'SUNAT']);
+    expect(await inversoSunatConEmisores()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01v_fe_sunat_directo.sql'), 'utf8'));
+    expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO']);
+
     // El inverso de 01u_fe_comprobante se niega con comprobantes; sin ellos borra las tablas y TASA_IGV, y se puede
-    // reaplicar. Va primero: es la última migración. Queda revertida hasta reaplicar 01p_fe y 01r_fe_prueba.
+    // reaplicar. Va después del de 01v_fe_sunat_directo. Queda revertida hasta reaplicar 01p_fe y 01r_fe_prueba.
     expect((await objetosComprobante()).sort()).toEqual(['TASA_IGV', 'comprobante', 'comprobante_cuota', 'comprobante_linea']);
     expect(await inversoComprobantesConFilas()).toBe('55006');
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01u_fe_comprobante.sql'), 'utf8'));
@@ -959,6 +994,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await columnasPruebaFe()).toBe(9);
     await ejecutar(urlDb, await readFile(rutaDb('01u_fe_comprobante.sql'), 'utf8'));
     expect(await objetosComprobante()).toHaveLength(4);
+    await ejecutar(urlDb, await readFile(rutaDb('01v_fe_sunat_directo.sql'), 'utf8'));
+    expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO', 'SUNAT']);
 
     // Después, el de 01o_not se niega con mensajes ENCOLADO; sin ellos borra ntf y se puede reaplicar.
     expect(await inversoNotificacionesConEncolados()).toBe('55006');

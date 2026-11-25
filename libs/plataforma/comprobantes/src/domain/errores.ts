@@ -158,6 +158,15 @@ export class PruebaBetaRequeridaError extends ConflictError {
   }
 }
 
+/** Sin el usuario en el mensaje (TR-RNF-026). */
+export class UsuarioSolInvalidoError extends ValidationError {
+  override readonly code = 'USUARIO_SOL_INVALIDO';
+
+  constructor() {
+    super('El usuario secundario SOL debe ser alfanumérico en mayúsculas y sin el RUC delante');
+  }
+}
+
 /** Sin la URL en el mensaje: puede traer credenciales (TR-RNF-026). */
 export class UrlProveedorNoPermitidaError extends ValidationError {
   override readonly code = 'URL_PROVEEDOR_NO_PERMITIDA';

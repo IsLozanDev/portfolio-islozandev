@@ -8,6 +8,8 @@ export interface CredencialesPse {
   /** Leído de la bóveda en el worker al enviar; no se registra en ningún log, error ni evento. */
   token: string;
   ambiente: AmbienteEmisor;
+  /** Solo si el proveedor requiere certificado. Leído en el worker; nunca se registra. */
+  certificado?: { pfx: Uint8Array; clave: string };
 }
 
 /** Contrato a nivel de comprobante de dominio: un adaptador OSE o SUNAT directo (51b) se agrega sin tocar el dominio. */

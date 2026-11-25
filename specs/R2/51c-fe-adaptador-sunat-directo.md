@@ -1,6 +1,6 @@
 # SPEC 51c — Facturación electrónica: adaptador SUNAT directo (SEE-Del Contribuyente) con sendBill, CDR y prueba en la beta de SUNAT
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 51b, SPEC 50, SPEC 49, SPEC 41
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el adaptador `SUNAT` de `PseOsePort`, que comprime el XML firmado del 51b, lo envía con `sendBill` al servicio de SUNAT del ambiente del emisor usando el usuario secundario SOL y devuelve el resultado con el CDR, de modo que la prueba del emisor del spec 50 funcione contra la beta real de SUNAT.

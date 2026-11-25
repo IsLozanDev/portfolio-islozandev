@@ -10,6 +10,10 @@ export interface RespuestaPse {
   observaciones: string[];
   hash?: string;
   enlaces?: Record<string, string>;
+  /** XML firmado enviado (SUNAT directo). El 52 lo guarda en ARC. */
+  xmlFirmado?: Uint8Array;
+  /** ZIP del CDR tal como lo devuelve SUNAT. El 52 lo guarda en ARC. */
+  cdr?: Uint8Array;
 }
 
 export function fueAceptado(resultado: ResultadoPse): boolean {
