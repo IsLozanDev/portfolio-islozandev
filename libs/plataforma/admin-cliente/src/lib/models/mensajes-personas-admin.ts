@@ -20,4 +20,8 @@ export const MENSAJES_PERSONAS_ADMIN = {
   volver: 'Personas',
   noExiste: 'La persona no existe o no es de su organización',
   errorCarga: 'No se pudo cargar. Inténtelo de nuevo.',
+  posiblesDuplicados: (cantidad: number) => `Posibles duplicados (${cantidad})`,
+  textoDuplicados: (cantidad: number) =>
+    cantidad === 1 ? 'Hay otra ficha que podría ser esta misma persona.' : `Hay ${cantidad} fichas que podrían ser esta misma persona.`,
+  revisar: 'Revisar',
 } as const;

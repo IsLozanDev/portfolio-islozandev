@@ -51,5 +51,4 @@ export const MENSAJES_COMPARACION = {
   conDocumento: (denominacion: string, documento: string) => `${denominacion} (${documento})`,
   noExiste: 'El par no existe o no es de su organización',
   tituloError: 'No se pudo completar',
-  errorCarga: 'No se pudo cargar. Inténtelo de nuevo.',
 } as const;

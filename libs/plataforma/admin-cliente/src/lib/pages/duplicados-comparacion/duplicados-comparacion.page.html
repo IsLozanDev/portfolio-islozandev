@@ -201,7 +201,7 @@
             <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">warning</mat-icon>{{ mensajes.avisoIrreversible }}
           </p>
           <a mat-stroked-button routerLink="../.." data-accion="cancelar">{{ mensajes.cancelar }}</a>
-          <button mat-flat-button class="vit-destructivo" type="button" data-accion="fusionar" [disabled]="!editable() || deshabilitada()" (click)="fusionar()">
+          <button mat-stroked-button class="vit-destructivo" type="button" data-accion="fusionar" [disabled]="!editable() || deshabilitada()" (click)="fusionar()">
             <mat-icon aria-hidden="true">merge</mat-icon>{{ mensajes.fusionar }}
           </button>
         </footer>

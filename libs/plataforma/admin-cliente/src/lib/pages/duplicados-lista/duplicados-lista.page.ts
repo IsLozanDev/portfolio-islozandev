@@ -6,9 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   denominacionDe,
   DuplicadosCliente,
-  ErrorPersonas,
   formatoDocumento,
-  mensajeDeErrorDuplicados,
   MENSAJES_DUPLICADOS,
   motivosDe,
   PERMISOS_PERSONAS,
@@ -19,9 +17,10 @@ import {
 import { SiPermisoDirective } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AccionesFilaDirective, AvisosService, CeldaTablaDirective, EstadoVacioComponent, TablaComponent, type CambioPagina, type ColumnaTabla, type TonoEstado } from '@vitrina/shared/ui';
-import { esDescarteHecho, ESTADO_DESCARTE, type DescarteHecho } from '../../models/descarte-hecho';
+import { confirmacionDeDescarte, descarteHecho, esDescarteHecho, ESTADO_DESCARTE, type DescarteHecho } from '../../models/descarte-hecho';
 import type { Listado } from '../../models/listado';
 import { MENSAJES_DUPLICADOS_ADMIN } from '../../models/mensajes-duplicados-admin';
+import { mensajeDeFalloDuplicados } from '../../utils/error-duplicados';
 import {
   criteriosDeFiltroDuplicados,
   filtroDuplicadosDesdeUrl,
@@ -108,14 +107,9 @@ export class DuplicadosListaPage {
 
   protected async descartar(fila: FilaDuplicado): Promise<void> {
     if (!(await this.accionSensible.exigirMfa())) return;
-    const confirmado = await this.avisos.confirmar({
-      titulo: MENSAJES.confirmarDescarte,
-      texto: MENSAJES.textoDescarte(fila.personaA, fila.personaB),
-      textoConfirmar: MENSAJES.confirmarDescarteBoton,
-    });
-    if (!confirmado) return;
+    if (!(await this.avisos.confirmar(confirmacionDeDescarte(fila.personaA, fila.personaB)))) return;
     if (!(await this.intentar(() => this.duplicados.descartar(fila.idA, fila.idB)))) return;
-    this.ultimoDescarte.set({ idA: fila.idA, idB: fila.idB, texto: MENSAJES_DUPLICADOS.descartado(fila.personaA, fila.personaB) });
+    this.ultimoDescarte.set(descarteHecho(fila.idA, fila.idB, fila.personaA, fila.personaB));
     await this.cargar();
   }
 
@@ -132,8 +126,7 @@ export class DuplicadosListaPage {
       await accion();
       return true;
     } catch (error) {
-      const mensaje = error instanceof ErrorPersonas ? mensajeDeErrorDuplicados(error) : MENSAJES.errorCarga;
-      await this.avisos.error(MENSAJES.tituloError, mensaje);
+      await this.avisos.error(MENSAJES.tituloError, mensajeDeFalloDuplicados(error));
       return false;
     }
   }
@@ -166,7 +159,7 @@ export class DuplicadosListaPage {
     } catch (error) {
       if (consulta !== this.consultaActual) return;
       this.listado.set({ items: [], total: 0 });
-      this.error.set(error instanceof ErrorPersonas ? mensajeDeErrorDuplicados(error) : MENSAJES.errorCarga);
+      this.error.set(mensajeDeFalloDuplicados(error));
     } finally {
       if (consulta === this.consultaActual) this.cargando.set(false);
     }

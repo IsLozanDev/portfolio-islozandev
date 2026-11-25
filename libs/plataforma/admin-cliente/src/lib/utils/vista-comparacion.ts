@@ -60,6 +60,11 @@ export function otraFicha(comparacion: ComparacionPar, personaId: string): Perso
   return comparacion.personaA.id === personaId ? comparacion.personaB : comparacion.personaA;
 }
 
+/** La ficha que queda y la que pasa a ser alias según la elección. */
+export function conservadaYAbsorbida(comparacion: ComparacionPar, eleccion: EleccionFusion): [PersonaDetalle, PersonaDetalle] {
+  return [fichaDe(comparacion, eleccion.conservadaId), otraFicha(comparacion, eleccion.conservadaId)];
+}
+
 export function etiquetaFicha(comparacion: ComparacionPar, personaId: string): string {
   return comparacion.personaA.id === personaId ? MENSAJES.fichaA : MENSAJES.fichaB;
 }
@@ -74,8 +79,7 @@ export function origenDe(eleccion: EleccionFusion, personaId: string): Origen {
 }
 
 export function filasDatosBasicos(comparacion: ComparacionPar, eleccion: EleccionFusion): FilaDatoBasico[] {
-  const conservada = fichaDe(comparacion, eleccion.conservadaId);
-  const absorbida = otraFicha(comparacion, eleccion.conservadaId);
+  const [conservada, absorbida] = conservadaYAbsorbida(comparacion, eleccion);
   return opcionesDatosBasicos(conservada, absorbida).map(({ campo, iguales }) => ({
     campo,
     etiqueta: MENSAJES.campos[campo],
@@ -90,8 +94,7 @@ export function filasDatosBasicos(comparacion: ComparacionPar, eleccion: Eleccio
 }
 
 export function gruposPrincipales(comparacion: ComparacionPar, eleccion: EleccionFusion): GrupoVista[] {
-  const conservada = fichaDe(comparacion, eleccion.conservadaId);
-  const absorbida = otraFicha(comparacion, eleccion.conservadaId);
+  const [conservada, absorbida] = conservadaYAbsorbida(comparacion, eleccion);
   return opcionesPrincipales(conservada, absorbida).map(({ clave, candidatos }) => ({
     clave,
     titulo: MENSAJES.principales[clave],
@@ -118,8 +121,7 @@ export function fichasVista(comparacion: ComparacionPar, eleccion: EleccionFusio
 
 /** Cómo quedará la denominación con los datos elegidos. */
 export function denominacionResultante(comparacion: ComparacionPar, eleccion: EleccionFusion): string {
-  const conservada = fichaDe(comparacion, eleccion.conservadaId);
-  const absorbida = otraFicha(comparacion, eleccion.conservadaId);
+  const [conservada, absorbida] = conservadaYAbsorbida(comparacion, eleccion);
   const valor = (campo: CampoDatoBasico) => (eleccion.datosBasicos[campo] === 'ABSORBIDA' ? absorbida[campo] : conservada[campo]);
   return denominacionDe({
     nombres: valor('nombres'),

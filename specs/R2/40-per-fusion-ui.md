@@ -335,6 +335,14 @@ Lo que el canvas fije y no esté arriba se anota en Decisiones al implementar.
 - **Sí:** la solicitud manda todos los datos básicos y principales explícitos, no solo los de la absorbida. `campos_elegidos` queda completo en `per.fusion` y en la auditoría.
 - **Sí:** `persona-detalle` pasa a leer el `paramMap` observable. Sin eso, la navegación de alias a conservada reutiliza el componente con el id viejo.
 - **Sí:** un spec de 8-8,5 h, sobre las 6 h del roadmap, por el filtro de back y la sección en la ficha. Decisión del usuario. Orden de recorte fijado en «Por qué existe este spec».
+- **Sí (en el diseño):** el canvas fijó, con visto bueno del usuario, que en celular la fila de la lista solo abre la comparación (se descarta desde la comparación), la línea «Quedará como: …» en Datos básicos, el chip «Queda» / «Pasa a ser alias» en cada ficha, contactos y direcciones en una sección y roles y consentimientos en otra, el pie fijo con «Fusionar» y el botón «No son la misma» en la confirmación de descarte.
+- **No (en la implementación):** enmascarar `persona` en el registro HTTP. `logger.pino.ts` registra solo la ruta (`url.split('?')[0]`): la query nunca llega al log.
+- **Sí (en la implementación):** el descarte hecho en la comparación viaja a la lista en el `state` de la navegación (`history.state`), no en la URL: recargar la lista no vuelve a mostrar la franja.
+- **Sí (en la implementación):** «Fusionar» vuelve a pedir `exigirMfa` aunque la franja de MFA ya lo resolvió, por si vence mientras se elige.
+- **Sí (en la implementación):** el 409 `PERSONA_FUSIONADA` en la ficha entra en `CODIGOS_PERSONA_CAMBIADA`: la sección pide releer, la API devuelve la conservada con `resueltaDesde` y la página navega con el aviso del alias. No hace falta que cada panel lea `personaConservadaId`; ese campo de `ErrorPersonas` queda para otros consumidores.
+- **Sí (en la implementación):** `eleccionInicial` propone principal también para FIJO y WHATSAPP cuando alguna ficha los tiene (el canvas solo dibujó celular, correo y dirección).
+- **Hallazgo (verificación en dev, 2026-11-25):** `vit-destructivo` solo pinta botones de texto y con borde; «Fusionar» pasó de `mat-flat-button` a `mat-stroked-button` con `vit-destructivo` (como `tenant-detalle`). Diferencia con el canvas, que lo dibuja relleno.
+- **Nota (verificación en dev):** a 360 px el pie fijo ocupa unos 150 px; cuando las dos fichas tienen la misma denominación, la franja y el diálogo de descarte repiten el nombre sin el documento. Quedan como mejora posible, no corregidas.
 
 ## Riesgos
 

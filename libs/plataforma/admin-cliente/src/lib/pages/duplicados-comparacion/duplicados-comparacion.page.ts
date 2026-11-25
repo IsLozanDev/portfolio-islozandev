@@ -12,7 +12,6 @@ import {
   formatoRol,
   MENSAJES_BLOQUEO,
   MENSAJES_DUPLICADOS,
-  mensajeDeErrorDuplicados,
   motivosDe,
   PERMISOS_PERSONAS,
   solicitudDe,
@@ -29,10 +28,11 @@ import { SesionService } from '@vitrina/shared/auth';
 import { AccionSensibleService } from '@vitrina/shared/shell';
 import { AvisosService, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent, type TonoEstado } from '@vitrina/shared/ui';
 import { OpcionFusionComponent } from '../../components/opcion-fusion/opcion-fusion.component';
+import { confirmacionDeDescarte, descarteHecho, ESTADO_DESCARTE } from '../../models/descarte-hecho';
 import { MENSAJES_COMPARACION } from '../../models/mensajes-comparacion';
-import { ESTADO_DESCARTE, type DescarteHecho } from '../../models/descarte-hecho';
-import { MENSAJES_DUPLICADOS_ADMIN } from '../../models/mensajes-duplicados-admin';
+import { mensajeDeFalloDuplicados } from '../../utils/error-duplicados';
 import {
+  conservadaYAbsorbida,
   denominacionResultante,
   documentoDe,
   fichaDe,
@@ -145,15 +145,11 @@ export class DuplicadosComparacionPage {
   protected async descartar(): Promise<void> {
     const comparacion = this.comparacion();
     if (!comparacion || !(await this.accionSensible.exigirMfa())) return;
-    const [personaA, personaB] = [denominacionDe(comparacion.personaA), denominacionDe(comparacion.personaB)];
-    const confirmado = await this.avisos.confirmar({
-      titulo: MENSAJES_DUPLICADOS_ADMIN.confirmarDescarte,
-      texto: MENSAJES_DUPLICADOS_ADMIN.textoDescarte(personaA, personaB),
-      textoConfirmar: MENSAJES_DUPLICADOS_ADMIN.confirmarDescarteBoton,
-    });
-    if (!confirmado) return;
-    if (!(await this.intentar(() => this.duplicados.descartar(comparacion.personaA.id, comparacion.personaB.id)))) return;
-    const descarte: DescarteHecho = { idA: comparacion.personaA.id, idB: comparacion.personaB.id, texto: MENSAJES_DUPLICADOS.descartado(personaA, personaB) };
+    const { personaA, personaB } = comparacion;
+    const [denominacionA, denominacionB] = [denominacionDe(personaA), denominacionDe(personaB)];
+    if (!(await this.avisos.confirmar(confirmacionDeDescarte(denominacionA, denominacionB)))) return;
+    if (!(await this.intentar(() => this.duplicados.descartar(personaA.id, personaB.id)))) return;
+    const descarte = descarteHecho(personaA.id, personaB.id, denominacionA, denominacionB);
     await this.router.navigate(['../..'], { relativeTo: this.ruta, state: { [ESTADO_DESCARTE]: descarte } });
   }
 
@@ -167,8 +163,7 @@ export class DuplicadosComparacionPage {
     const comparacion = this.comparacion();
     const eleccion = this.eleccion();
     if (!comparacion || !eleccion || !(await this.accionSensible.exigirMfa())) return;
-    const conservada = fichaDe(comparacion, eleccion.conservadaId);
-    const absorbida = otraFicha(comparacion, eleccion.conservadaId);
+    const [conservada, absorbida] = conservadaYAbsorbida(comparacion, eleccion);
     const respuesta = await this.avisos.confirmarDestructiva({
       titulo: MENSAJES.tituloFusionar,
       texto: MENSAJES.textoFusionar(conDocumento(conservada), conDocumento(absorbida)),
@@ -192,9 +187,8 @@ export class DuplicadosComparacionPage {
   }
 
   private async tratarErrorDeFusion(error: unknown): Promise<void> {
-    const errorPersonas = error instanceof ErrorPersonas ? error : null;
-    await this.avisos.error(MENSAJES.tituloError, errorPersonas ? mensajeDeErrorDuplicados(errorPersonas) : MENSAJES.errorCarga);
-    if (errorPersonas && CODIGOS_QUE_RECARGAN.has(errorPersonas.codigo)) await this.cargar();
+    await this.avisos.error(MENSAJES.tituloError, mensajeDeFalloDuplicados(error));
+    if (error instanceof ErrorPersonas && CODIGOS_QUE_RECARGAN.has(error.codigo)) await this.cargar();
   }
 
   private async intentar(accion: () => Promise<void>): Promise<boolean> {
@@ -202,7 +196,7 @@ export class DuplicadosComparacionPage {
       await accion();
       return true;
     } catch (error) {
-      await this.avisos.error(MENSAJES.tituloError, error instanceof ErrorPersonas ? mensajeDeErrorDuplicados(error) : MENSAJES.errorCarga);
+      await this.avisos.error(MENSAJES.tituloError, mensajeDeFalloDuplicados(error));
       return false;
     }
   }
@@ -222,7 +216,7 @@ export class DuplicadosComparacionPage {
         this.noExiste.set(true);
         this.comparacion.set(null);
       } else {
-        this.error.set(error instanceof ErrorPersonas ? mensajeDeErrorDuplicados(error) : MENSAJES.errorCarga);
+        this.error.set(mensajeDeFalloDuplicados(error));
       }
     } finally {
       this.cargando.set(false);
