@@ -299,6 +299,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
       publicador: dependencias.publicador,
       emisores: dependencias.emisores,
       empresas: dependencias.empresas,
+      establecimientos: { codigo: () => Promise.resolve(null) },
       proveedores: dependencias.proveedores,
       boveda: dependencias.boveda,
       resolutor: new ResolutorPseMapa({ SIMULADO: new PseSimulador() }),

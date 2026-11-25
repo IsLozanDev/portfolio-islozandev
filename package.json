@@ -124,6 +124,7 @@
     "bullmq": "6.3.11",
     "csv-parse": "7.0.3",
     "exceljs": "4.4.0",
+    "fflate": "0.8.3",
     "file-type": "22.3.0",
     "ioredis": "6.0.0",
     "jose": "6.2.12",

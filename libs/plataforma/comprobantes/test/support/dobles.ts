@@ -3,7 +3,7 @@ import type { Clock, DomainEvent, EventPublisher, IdGenerator, TenantContext, Te
 import type { BovedaSecretos } from '@vitrina/plataforma/secretos';
 import type { DependenciasAvisos } from '../../src/application/avisar-certificados-por-vencer.js';
 import type { DependenciasEmisor } from '../../src/application/dependencias-fe.js';
-import type { EmpresaEmisora, EmpresaEmisoraPort } from '../../src/application/ports/empresa-emisora.port.js';
+import type { EmpresaEmisora, EmpresaEmisoraPort, EstablecimientoPrincipalPort } from '../../src/application/ports/empresa-emisora.port.js';
 import type { ProveedorFe, ProveedoresFe } from '../../src/application/ports/proveedores-fe.js';
 import type { EmisorPendienteDeAviso, RepositorioAvisosCertificado } from '../../src/application/ports/repositorio-avisos-certificado.js';
 import type { RepositorioEmisores } from '../../src/application/ports/repositorio-emisores.js';
@@ -23,6 +23,12 @@ export const AHORA = '2026-11-22T15:00:00.000Z';
 export const SIMULADO = 'SIMULADO';
 export const SIN_CERTIFICADO = 'SIN_CERTIFICADO';
 export const NUBEFACT = 'NUBEFACT';
+export const SUNAT = 'SUNAT';
+/** Como la semilla de 01v_fe_sunat_directo. */
+export const URL_SUNAT_BETA = 'https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService';
+export const URL_SUNAT_PRODUCCION = 'https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService';
+/** Anexo SUNAT de la sucursal principal de EMPRESA. */
+export const ESTABLECIMIENTO_PRINCIPAL = '0001';
 /** Como la semilla de 01r_fe_prueba. */
 export const URL_SIMULADOR = 'https://simulador.invalid/api/v1/ruta-demo';
 export const URL_NUBEFACT = 'https://api.nubefact.com/api/v1/48239908-7ae7-4353-824d-071765d4';
@@ -242,12 +248,32 @@ export class ProveedoresMemoria implements ProveedoresFe {
     [SIMULADO, { codigo: SIMULADO, requiereCertificado: true, seriePrueba: 'B999', dominiosPermitidos: ['simulador.invalid'], urlBeta: null, urlProduccion: null }],
     [SIN_CERTIFICADO, { codigo: SIN_CERTIFICADO, requiereCertificado: false, seriePrueba: 'B998', dominiosPermitidos: ['simulador.invalid'], urlBeta: null, urlProduccion: null }],
     [NUBEFACT, { codigo: NUBEFACT, requiereCertificado: false, seriePrueba: 'B001', dominiosPermitidos: ['api.nubefact.com'], urlBeta: null, urlProduccion: null }],
+    [
+      SUNAT,
+      {
+        codigo: SUNAT,
+        requiereCertificado: true,
+        seriePrueba: 'BP01',
+        dominiosPermitidos: ['e-beta.sunat.gob.pe', 'e-factura.sunat.gob.pe'],
+        urlBeta: URL_SUNAT_BETA,
+        urlProduccion: URL_SUNAT_PRODUCCION,
+      },
+    ],
   ]);
 
   obtener(codigo: string): Promise<ProveedorFe> {
     const proveedor = this.proveedores.get(codigo);
     if (!proveedor) throw new ProveedorFeInvalidoError();
     return Promise.resolve(proveedor);
+  }
+}
+
+/** Por empresa; sin entrada, la empresa no tiene sucursal principal con anexo. */
+export class EstablecimientosMemoria implements EstablecimientoPrincipalPort {
+  readonly codigos = new Map<string, string>([[EMPRESA, ESTABLECIMIENTO_PRINCIPAL]]);
+
+  codigo(empresaId: string): Promise<string | null> {
+    return Promise.resolve(this.codigos.get(empresaId) ?? null);
   }
 }
 
@@ -290,6 +316,7 @@ export interface Dobles extends DependenciasEmisor {
   boveda: BovedaMemoria;
   emisores: RepositorioEmisoresMemoria;
   empresas: EmpresasMemoria;
+  establecimientos: EstablecimientosMemoria;
   proveedores: ProveedoresMemoria;
 }
 
@@ -311,6 +338,7 @@ export function crearDobles(): Dobles {
     boveda,
     emisores,
     empresas: new EmpresasMemoria(contexto),
+    establecimientos: new EstablecimientosMemoria(),
     proveedores: new ProveedoresMemoria(),
     lector: new LectorCertificadoForge(),
     entorno: { produccionPermitida: true, simuladoPermitido: true },

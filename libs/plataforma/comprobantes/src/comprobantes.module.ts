@@ -4,7 +4,7 @@ import { CATALOGO_PORT, type CatalogoPort } from '@vitrina/plataforma/catalogos'
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { CORRELATIVO_PORT, SERIES_ACTIVAS_PORT, type CorrelativoPort, type SeriesActivasPort } from '@vitrina/plataforma/correlativos';
-import { ConsultarEmpresa, ConsultarSucursal, PADRON_RUC, type PadronRucPort } from '@vitrina/plataforma/org';
+import { ConsultarEmpresa, ConsultarSucursal, ListarSucursales, PADRON_RUC, type PadronRucPort } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { BOVEDA_SECRETOS, type BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { AvisarCertificadosPorVencer } from './application/avisar-certificados-por-vencer.js';
@@ -29,6 +29,7 @@ import { TasaIgvCatalogo } from './infrastructure/catalogos/tasa-igv.catalogo.js
 import { LectorCertificadoForge } from './infrastructure/forge/lector-certificado.forge.js';
 import { EmpresaEmisoraOrg } from './infrastructure/org/empresa-emisora.org.js';
 import { PadronAdquirenteOrg } from './infrastructure/org/padron-adquirente.org.js';
+import { EstablecimientoPrincipalOrg } from './infrastructure/org/establecimiento-principal.org.js';
 import { SucursalesEmisorasOrg } from './infrastructure/org/sucursales-emisoras.org.js';
 import { DiasAvisoParametros } from './infrastructure/parametros/dias-aviso.parametros.js';
 import { UmbralBoletaParametros } from './infrastructure/parametros/umbral-boleta.parametros.js';
@@ -36,6 +37,7 @@ import { CircuitBreaker } from './infrastructure/pse/circuit-breaker.js';
 import { PseNubefact } from './infrastructure/pse/nubefact/pse.nubefact.js';
 import { ResolutorPseMapa } from './infrastructure/pse/resolutor-pse.js';
 import { PseSimulador } from './infrastructure/pse/simulador/pse.simulador.js';
+import { PseSunat } from './infrastructure/pse/sunat/pse.sunat.js';
 import { RepositorioAvisosCertificadoTypeOrm } from './infrastructure/typeorm/avisos-certificado.repositorio.js';
 import { CertificadosConAvisoPendienteSql, type EjecutorSql } from './infrastructure/typeorm/certificados-con-aviso-pendiente.sql.js';
 import { RepositorioComprobantesTypeOrm } from './infrastructure/typeorm/comprobantes.repositorio.js';
@@ -71,7 +73,7 @@ export interface ComprobantesPruebasOpciones {
   /** Cola `fe-pruebas`. */
   redisUrl: string;
   entorno: EntornoFe;
-  /** Módulos que exportan ConsultarEmpresa (OrgModule), CATALOGO_PORT (CatalogosModule) y BOVEDA_SECRETOS (SecretosModule). */
+  /** Módulos que exportan ConsultarEmpresa y ListarSucursales (OrgModule), CATALOGO_PORT (CatalogosModule) y BOVEDA_SECRETOS (SecretosModule). */
   imports: ModuleMetadata['imports'];
 }
 
@@ -80,10 +82,15 @@ function casoDeUsoDelEmisor<CasoDeUso>(clase: new (dependencias: DependenciasEmi
   return { provide: clase, useFactory: (dependencias: DependenciasEmisor) => new clase(dependencias), inject: [DEPENDENCIAS_EMISOR] };
 }
 
+type Registrar = (mensaje: string, datos: Record<string, unknown>) => void;
+
 /** El simulador solo existe donde el ambiente lo permite: en los demás, un emisor SIMULADO no tiene adaptador. */
-function adaptadoresPse(reglas: ReglasEntornoFe, reloj: Clock): Record<string, PseOsePort> {
-  const nubefact = { [PROVEEDORES_CON_ADAPTADOR.nubefact]: new PseNubefact(new CircuitBreaker(reloj)) };
-  return reglas.simuladoPermitido ? { ...nubefact, [PROVEEDORES_CON_ADAPTADOR.simulado]: new PseSimulador() } : nubefact;
+function adaptadoresPse(reglas: ReglasEntornoFe, reloj: Clock, proveedores: ProveedoresFeCatalogo, informar: Registrar): Record<string, PseOsePort> {
+  const reales = {
+    [PROVEEDORES_CON_ADAPTADOR.nubefact]: new PseNubefact(new CircuitBreaker(reloj)),
+    [PROVEEDORES_CON_ADAPTADOR.sunat]: new PseSunat(proveedores, new CircuitBreaker(reloj), informar),
+  };
+  return reglas.simuladoPermitido ? { ...reales, [PROVEEDORES_CON_ADAPTADOR.simulado]: new PseSimulador() } : reales;
 }
 
 /** Cierra la cola de pruebas con la app (app.close() en pruebas y apagado). */
@@ -274,20 +281,25 @@ export class ComprobantesModule {
             boveda: BovedaSecretos,
             catalogo: CatalogoPort,
             consultarEmpresa: ConsultarEmpresa,
-          ) =>
-            new EjecutarPruebaEmisor({
+            listarSucursales: ListarSucursales,
+          ) => {
+            const proveedores = new ProveedoresFeCatalogo(catalogo);
+            const informar = (mensaje: string, datos: Record<string, unknown>) => logger.log({ evento: mensaje, ...datos });
+            return new EjecutarPruebaEmisor({
               unidadDeTrabajo,
               contexto,
               reloj,
               publicador,
               emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
               empresas: new EmpresaEmisoraOrg(consultarEmpresa),
-              proveedores: new ProveedoresFeCatalogo(catalogo),
+              establecimientos: new EstablecimientoPrincipalOrg(listarSucursales),
+              proveedores,
               boveda,
-              resolutor: new ResolutorPseMapa(adaptadoresPse(reglas, reloj)),
-              informar: (mensaje, datos) => logger.log({ evento: mensaje, ...datos }),
-            }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa],
+              resolutor: new ResolutorPseMapa(adaptadoresPse(reglas, reloj, proveedores, informar)),
+              informar,
+            });
+          },
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa, ListarSucursales],
         },
       ],
       exports: [EjecutarPruebaEmisor],

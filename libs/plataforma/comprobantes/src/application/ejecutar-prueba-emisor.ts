@@ -1,15 +1,15 @@
 import type { Clock, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { BovedaSecretos } from '@vitrina/plataforma/secretos';
-import { boletaDePrueba, type DocumentoElectronico } from '../domain/documento-electronico.js';
-import { emisorDePrueba } from '../domain/emisor-documento.js';
+import { boletaDePrueba, type DocumentoElectronico, type EmisorDocumento } from '../domain/documento-electronico.js';
+import { emisorDePrueba, exigirDatosEmisor } from '../domain/emisor-documento.js';
 import type { Emisor } from '../domain/emisor.js';
-import { UrlProveedorNoPermitidaError } from '../domain/errores.js';
+import { DatosEmisorIncompletosError, UrlProveedorNoPermitidaError } from '../domain/errores.js';
 import { emisorVerificado } from '../domain/eventos-fe.js';
 import type { RespuestaPse } from '../domain/respuesta-pse.js';
-import { urlDelProveedor } from './dependencias-fe.js';
+import { esSunatDirecto, urlDelProveedor } from './dependencias-fe.js';
 import type { IntentoPrueba, TrabajoPruebaFe } from './ports/cola-pruebas-fe.js';
-import type { EmpresaEmisoraPort } from './ports/empresa-emisora.port.js';
-import type { ProveedoresFe } from './ports/proveedores-fe.js';
+import type { EmpresaEmisora, EmpresaEmisoraPort, EstablecimientoPrincipalPort } from './ports/empresa-emisora.port.js';
+import type { ProveedorFe, ProveedoresFe } from './ports/proveedores-fe.js';
 import type { CredencialesPse, ResolutorPse } from './ports/pse-ose.port.js';
 import type { RepositorioEmisores } from './ports/repositorio-emisores.js';
 
@@ -22,6 +22,7 @@ export interface DependenciasPrueba {
   publicador: EventPublisher;
   emisores: RepositorioEmisores;
   empresas: EmpresaEmisoraPort;
+  establecimientos: EstablecimientoPrincipalPort;
   proveedores: ProveedoresFe;
   boveda: Pick<BovedaSecretos, 'leer'>;
   resolutor: ResolutorPse;
@@ -41,6 +42,8 @@ export const CODIGO_SIN_SERIE_PRUEBA = 'SIN_SERIE_PRUEBA';
 const MENSAJE_SIN_SERIE_PRUEBA = 'El proveedor no declara serie_prueba en PROVEEDOR_FE';
 /** Cabe en fe.emisor.prueba_codigo (20); el error de dominio es URL_PROVEEDOR_NO_PERMITIDA. */
 export const CODIGO_URL_NO_PERMITIDA = 'URL_NO_PERMITIDA';
+/** Cabe en fe.emisor.prueba_codigo (20); el error de dominio es DATOS_EMISOR_INCOMPLETOS. */
+export const CODIGO_DATOS_EMISOR_INCOMPLETOS = 'DATOS_INCOMPLETOS';
 export const DESCRIPCION_REGISTRADO_POR_PSE = 'Registrado por el PSE; SUNAT aún no responde';
 
 interface EnvioPreparado {
@@ -70,7 +73,8 @@ function resultadoDePrueba(respuesta: RespuestaPse): RespuestaPse {
 /**
  * Procesador de `fe-pruebas` (TR-RF-052, paso 4), con el contexto del tenant del trabajo. Envía la boleta de prueba
  * con la serie del catálogo y el número de la prueba, fuera de toda transacción. Si la prueba ya no es la última o ya
- * tiene resultado, termina sin enviar. El token se lee de la bóveda solo aquí y no sale del adaptador.
+ * tiene resultado, termina sin enviar. El token y, si el proveedor lo requiere, el .pfx y su clave se leen de la bóveda
+ * solo aquí y no salen del adaptador.
  */
 export class EjecutarPruebaEmisor {
   constructor(private readonly dependencias: DependenciasPrueba) {}
@@ -107,14 +111,38 @@ export class EjecutarPruebaEmisor {
       if (error instanceof UrlProveedorNoPermitidaError) return rechazoPorConfiguracion(CODIGO_URL_NO_PERMITIDA, error.message);
       throw error;
     }
-    const empresa = await empresas.obtener(emisor.empresaId);
-    const documento = boletaDePrueba(emisorDePrueba(empresa), proveedor.seriePrueba, numeroPrueba, reloj.now());
-    return { envio: { proveedor: proveedor.codigo, credenciales: await this.credencialesDe(emisor, emisor.secretoCredencialId, url), documento } };
+    let emisorDocumento: EmisorDocumento;
+    try {
+      emisorDocumento = await this.emisorDelDocumento(proveedor, await empresas.obtener(emisor.empresaId));
+    } catch (error) {
+      if (error instanceof DatosEmisorIncompletosError) return rechazoPorConfiguracion(CODIGO_DATOS_EMISOR_INCOMPLETOS, error.message);
+      throw error;
+    }
+    const documento = boletaDePrueba(emisorDocumento, proveedor.seriePrueba, numeroPrueba, reloj.now());
+    const credenciales = await this.credencialesDe(emisor, emisor.secretoCredencialId, url, proveedor);
+    return { envio: { proveedor: proveedor.codigo, credenciales, documento } };
   }
 
-  private async credencialesDe(emisor: Emisor, secretoId: string, url: string | null): Promise<CredencialesPse> {
+  /** SUNAT directo firma el UBL en casa: lleva los datos reales del emisor y el anexo de la sucursal principal. */
+  private async emisorDelDocumento(proveedor: ProveedorFe, empresa: EmpresaEmisora): Promise<EmisorDocumento> {
+    if (!esSunatDirecto(proveedor)) return emisorDePrueba(empresa);
+    return exigirDatosEmisor(empresa, await this.dependencias.establecimientos.codigo(empresa.id));
+  }
+
+  private async credencialesDe(emisor: Emisor, secretoId: string, url: string | null, proveedor: ProveedorFe): Promise<CredencialesPse> {
     const token = decodificador.decode(await this.dependencias.boveda.leer(secretoId));
-    return { url, usuario: emisor.usuarioProveedor, token, ambiente: emisor.ambiente };
+    const credenciales: CredencialesPse = { url, usuario: emisor.usuarioProveedor, token, ambiente: emisor.ambiente };
+    if (!proveedor.requiereCertificado) return credenciales;
+    const certificado = await this.certificadoDe(emisor);
+    return certificado ? { ...credenciales, certificado } : credenciales;
+  }
+
+  /** Solo en el worker y solo si el proveedor lo requiere; no sale del adaptador ni se registra. */
+  private async certificadoDe(emisor: Emisor): Promise<CredencialesPse['certificado']> {
+    const secretos = emisor.secretosCertificado;
+    if (secretos === null) return undefined;
+    const { boveda } = this.dependencias;
+    return { pfx: await boveda.leer(secretos.certificadoId), clave: decodificador.decode(await boveda.leer(secretos.claveId)) };
   }
 
   private enviar({ proveedor, credenciales, documento }: EnvioPreparado): Promise<RespuestaPse> {

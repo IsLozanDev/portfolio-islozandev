@@ -74,12 +74,22 @@ export function exigirProveedorDelAmbiente(proveedor: ProveedorFe, entorno: Regl
   if (esSimulado(proveedor) && !entorno.simuladoPermitido) throw new ProveedorFeInvalidoError();
 }
 
+export function esSunatDirecto(proveedor: ProveedorFe): boolean {
+  return proveedor.codigo === PROVEEDORES_CON_ADAPTADOR.sunat;
+}
+
+/** Con `url_produccion` en el ítem, la URL es la del ambiente (`urlSegunAmbiente`) y el tenant no escribe una. */
+function tieneUrlFija(proveedor: ProveedorFe): boolean {
+  return proveedor.urlProduccion !== null;
+}
+
 /**
+ * Con URL fija por ambiente, el tenant no escribe URL.
  * Con dominios permitidos la URL es obligatoria y debe ser de uno de ellos; sin dominios el proveedor no recibe URL.
  * Así el worker nunca llama a un host que el catálogo no declara (anti-SSRF).
  */
 export function urlDelProveedor(url: string | null, proveedor: ProveedorFe): string | null {
-  if (proveedor.dominiosPermitidos.length === 0) {
+  if (tieneUrlFija(proveedor) || proveedor.dominiosPermitidos.length === 0) {
     if (url !== null) throw new UrlProveedorNoPermitidaError();
     return null;
   }

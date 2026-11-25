@@ -17,6 +17,12 @@ function exigirDato(valor: string | null, campo: string): string {
   return valor;
 }
 
+/** SUNAT directo arma el UBL en casa: sin domicilio fiscal o ubigeo, DATOS_EMISOR_INCOMPLETOS al configurar. */
+export function exigirDireccionFiscal(empresa: DatosEmisor): void {
+  exigirDato(empresa.domicilioFiscal, 'domicilioFiscal');
+  exigirDato(empresa.ubigeo, 'ubigeo');
+}
+
 /** El UBL exige domicilio fiscal, ubigeo y anexo del establecimiento: si falta uno, DATOS_EMISOR_INCOMPLETOS. */
 export function exigirDatosEmisor(empresa: DatosEmisor, codigoEstablecimiento: string | null): EmisorDocumento {
   return {

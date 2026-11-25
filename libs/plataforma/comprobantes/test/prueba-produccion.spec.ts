@@ -11,6 +11,7 @@ import type { DocumentoElectronico } from '../src/domain/documento-electronico.j
 import { Emisor } from '../src/domain/emisor.js';
 import {
   CertificadoVencidoError,
+  DatosEmisorIncompletosError,
   EmisorEnProduccionError,
   EmisorNoEncontradoError,
   EstadoEmisorInvalidoError,
@@ -20,18 +21,21 @@ import {
   PruebaBetaRequeridaError,
   PruebaEnCursoError,
   UrlProveedorNoPermitidaError,
+  UsuarioSolInvalidoError,
 } from '../src/domain/errores.js';
 import { EVENTOS_FE } from '../src/domain/eventos-fe.js';
 import type { RespuestaPse } from '../src/domain/respuesta-pse.js';
 import { ResolutorPseMapa } from '../src/infrastructure/pse/resolutor-pse.js';
 import { CODIGO_RECHAZO_SIMULADO, PseSimulador, TOKEN_SIMULAR_ERROR, TOKEN_SIMULAR_RECHAZO } from '../src/infrastructure/pse/simulador/pse.simulador.js';
-import { CLAVE_PFX, crearPfx } from './support/certificados.js';
+import { CLAVE_PFX, crearPfx, RUC_EMPRESA } from './support/certificados.js';
 import {
   AHORA,
   crearDobles,
   EMPRESA,
+  ESTABLECIMIENTO_PRINCIPAL,
   NUBEFACT,
   SIMULADO,
+  SUNAT,
   TENANT_A,
   TENANT_B,
   URL_NUBEFACT,
@@ -112,9 +116,10 @@ describe('Prueba en beta y paso a producción (spec 50)', () => {
       publicador: dobles.publicador,
       emisores: dobles.emisores,
       empresas: dobles.empresas,
+      establecimientos: dobles.establecimientos,
       proveedores: dobles.proveedores,
       boveda: dobles.boveda,
-      resolutor: new ResolutorPseMapa({ [NUBEFACT]: pse, [SIMULADO]: new PseSimulador() }),
+      resolutor: new ResolutorPseMapa({ [NUBEFACT]: pse, [SUNAT]: pse, [SIMULADO]: new PseSimulador() }),
       informar: (_mensaje, datos) => registros.push(datos),
     };
     ejecutar = new EjecutarPruebaEmisor(dependencias);
@@ -331,6 +336,81 @@ describe('Prueba en beta y paso a producción (spec 50)', () => {
       await expect(configurar({ proveedor: 'SIN_CERTIFICADO', urlProveedor: URL_SIMULADOR })).rejects.toBeInstanceOf(EmisorEnProduccionError);
       expect(emisor().datos).toMatchObject({ proveedor: NUBEFACT, urlProveedor: URL_NUBEFACT, estado: 'PRODUCCION' });
       expect(dobles.boveda.texto(emisor().secretoCredencialId)).toBe('token-rotado');
+    });
+  });
+
+  describe('SUNAT directo (spec 51c)', () => {
+    const CLAVE_SOL = 'clave-sol-secreta';
+    const conSunat = (cambios: Partial<ConfigurarEmisorComando> = {}) =>
+      configurar({ proveedor: SUNAT, urlProveedor: undefined, usuarioProveedor: 'MODDATOS', clave: CLAVE_SOL, ...cambios });
+    const conDireccion = (direccion: { domicilioFiscal: string | null; ubigeo: string | null }) => {
+      const empresa = dobles.empresas.empresas.get(EMPRESA);
+      if (empresa) dobles.empresas.empresas.set(EMPRESA, { ...empresa, ...direccion });
+    };
+    const PFX = crearPfx(new Date(AHORA));
+    const conCertificado = () => new CargarCertificado(dobles).ejecutar({ empresaId: EMPRESA, pfx: PFX, clave: CLAVE_PFX });
+
+    beforeEach(() => conDireccion({ domicilioFiscal: 'AV. LIMA 123', ubigeo: '150101' }));
+
+    it('sin URL deja url_proveedor en null; con URL → URL_PROVEEDOR_NO_PERMITIDA sin tocar la bóveda', async () => {
+      await expect(conSunat({ urlProveedor: 'https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService' })).rejects.toBeInstanceOf(
+        UrlProveedorNoPermitidaError,
+      );
+      expect(dobles.boveda.secretos.size).toBe(0);
+      expect(await conSunat()).toMatchObject({ proveedor: SUNAT, urlProveedor: null, usuarioProveedor: 'MODDATOS' });
+    });
+
+    it.each([
+      ['con minúsculas', 'moddatos'],
+      ['con el RUC delante', `${RUC_EMPRESA}MODDATOS`],
+    ])('usuario SOL %s → USUARIO_SOL_INVALIDO sin tocar la bóveda', async (_caso, usuarioProveedor) => {
+      await expect(conSunat({ usuarioProveedor })).rejects.toBeInstanceOf(UsuarioSolInvalidoError);
+      expect(dobles.boveda.secretos.size).toBe(0);
+    });
+
+    it.each([
+      ['domicilio fiscal', { domicilioFiscal: null, ubigeo: '150101' }],
+      ['ubigeo', { domicilioFiscal: 'AV. LIMA 123', ubigeo: '  ' }],
+    ])('empresa sin %s → DATOS_EMISOR_INCOMPLETOS; NUBEFACT no lo exige', async (_caso, direccion) => {
+      conDireccion(direccion);
+      await expect(conSunat()).rejects.toBeInstanceOf(DatosEmisorIncompletosError);
+      expect(dobles.boveda.secretos.size).toBe(0);
+      expect((await configurar()).proveedor).toBe(NUBEFACT);
+    });
+
+    it('la prueba lee el .pfx y su clave de la bóveda y envía la boleta BP01 con el anexo de la sucursal principal; nada secreto en logs, auditoría ni eventos', async () => {
+      await conSunat();
+      await conCertificado();
+      await solicitar();
+      await procesar();
+
+      const [{ credenciales, documento }] = pse.envios;
+      expect(credenciales).toMatchObject({ url: null, usuario: 'MODDATOS', token: CLAVE_SOL, ambiente: 'BETA', certificado: { clave: CLAVE_PFX } });
+      expect(credenciales.certificado?.pfx).toEqual(PFX);
+      expect(documento).toMatchObject({ serie: 'BP01', numero: 1 });
+      expect(documento.emisor).toMatchObject({ domicilioFiscal: 'AV. LIMA 123', ubigeo: '150101', codigoEstablecimiento: ESTABLECIMIENTO_PRINCIPAL });
+      expect(emisor().datos.estado).toBe('VERIFICADO');
+      const registrado = JSON.stringify([registros, dobles.auditoria.entradas, dobles.publicador.eventos, emisor().prueba]);
+      expect(registrado).not.toMatch(new RegExp(`${CLAVE_SOL}|${CLAVE_PFX}`));
+    });
+
+    it('sin sucursal principal con anexo, la prueba se rechaza sin llamar al PSE', async () => {
+      await conSunat();
+      await conCertificado();
+      dobles.establecimientos.codigos.clear();
+      await solicitar();
+      await procesar();
+      expect(pse.envios).toHaveLength(0);
+      expect(emisor().datos.estado).toBe('CONFIGURADO');
+      expect(emisor().prueba).toMatchObject({ estado: 'RECHAZADA', codigo: 'DATOS_INCOMPLETOS' });
+    });
+
+    it('un proveedor que no requiere certificado no lo lee: NUBEFACT recibe credenciales sin certificado', async () => {
+      await configurar();
+      await conCertificado();
+      await solicitar();
+      await procesar();
+      expect(pse.envios[0].credenciales.certificado).toBeUndefined();
     });
   });
 });
