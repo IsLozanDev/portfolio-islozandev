@@ -210,9 +210,13 @@ describe('Casos de uso de duplicados y fusión (TR-RF-042)', () => {
   });
 
   describe('lista, comparación y descartes', () => {
-    it('ListarDuplicados pide desde el puntaje mínimo', async () => {
-      await new ListarDuplicados(dobles).ejecutar({ pagina: 2, tamano: 10 });
-      expect(dobles.consultaDuplicados.criterios).toEqual([{ pagina: 2, tamano: 10, puntajeMinimo: PUNTAJE_MINIMO }]);
+    it('ListarDuplicados pide desde el puntaje mínimo, con o sin persona', async () => {
+      await new ListarDuplicados(dobles).ejecutar({ pagina: 2, tamano: 10, personaId: null });
+      await new ListarDuplicados(dobles).ejecutar({ pagina: 1, tamano: 1, personaId: 'persona-1' });
+      expect(dobles.consultaDuplicados.criterios).toEqual([
+        { pagina: 2, tamano: 10, personaId: null, puntajeMinimo: PUNTAJE_MINIMO },
+        { pagina: 1, tamano: 1, personaId: 'persona-1', puntajeMinimo: PUNTAJE_MINIMO },
+      ]);
     });
 
     it('CompararPar trae las dos fichas en orden con puntaje, descarte y bloqueo', async () => {

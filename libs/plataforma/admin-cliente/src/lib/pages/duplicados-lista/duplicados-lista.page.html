@@ -1,0 +1,81 @@
+<section class="flex flex-col gap-4">
+  <nav [attr.aria-label]="mensajes.volver">
+    <a class="inline-flex items-center gap-1 text-sm font-medium text-primario no-underline" routerLink=".." data-accion="volver">
+      <mat-icon class="vit-icono-migas" aria-hidden="true">arrow_back</mat-icon>{{ mensajes.volver }}
+    </a>
+  </nav>
+
+  <header class="flex flex-col gap-1.5">
+    <h1 class="m-0 text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+  </header>
+
+  <div class="flex flex-wrap items-center gap-3">
+    @if (personaFiltrada(); as chip) {
+      <span class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-borde pr-1 pl-3 text-sm" data-filtro="persona">
+        <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">person</mat-icon>
+        {{ chip }}
+        <button mat-icon-button type="button" class="!size-6 !p-0" [attr.aria-label]="mensajes.quitarFiltro" data-accion="quitar-filtro" (click)="quitarFiltro()">
+          <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">close</mat-icon>
+        </button>
+      </span>
+    }
+    <span class="text-[13px] text-sobre-superficie-variante">{{ mensajes.ayudaPuntaje }}</span>
+  </div>
+
+  @if (ultimoDescarte(); as descarte) {
+    <div role="status" class="flex flex-wrap items-center gap-3 rounded-lg bg-chip-neutro py-2 pr-2 pl-3.5 text-sm text-sobre-chip-neutro" data-franja="deshacer">
+      <mat-icon aria-hidden="true">person_off</mat-icon>
+      <span class="min-w-0 flex-[1_1_240px]">{{ descarte.texto }}. {{ mensajes.noSeVolveraAProponer }}</span>
+      <button mat-button type="button" data-accion="deshacer" (click)="deshacer()">{{ mensajes.deshacer }}</button>
+    </div>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (sinPares()) {
+    <vit-estado-vacio icono="group" [titulo]="mensajesDuplicados.vacioTitulo" [texto]="mensajesDuplicados.vacioTexto" />
+  } @else {
+    <vit-tabla
+      [columnas]="columnas"
+      [filas]="listado().items"
+      [total]="listado().total"
+      [cargando]="cargando()"
+      [indicePagina]="filtro().pagina - 1"
+      [tamanoPagina]="filtro().tamano"
+      (pagina)="paginar($event)"
+    >
+      <ng-template vitCeldaTabla="personaA" let-fila>
+        <a class="font-medium text-sobre-superficie no-underline hover:text-primario hover:underline" [routerLink]="['..', fila.idA]" data-accion="ficha-a">{{ fila.personaA }}</a>
+        <span class="ml-2 font-mono text-[12.5px] text-sobre-superficie-variante">{{ fila.documentoA }}</span>
+      </ng-template>
+      <ng-template vitCeldaTabla="personaB" let-fila>
+        <a class="font-medium text-sobre-superficie no-underline hover:text-primario hover:underline" [routerLink]="['..', fila.idB]" data-accion="ficha-b">{{ fila.personaB }}</a>
+        <span class="ml-2 font-mono text-[12.5px] text-sobre-superficie-variante">{{ fila.documentoB }}</span>
+      </ng-template>
+      <ng-template vitAccionesFila let-fila>
+        <span class="flex justify-end gap-0.5">
+          <a mat-icon-button class="max-[599.98px]:!hidden" [routerLink]="[fila.idA, fila.idB]" [attr.aria-label]="mensajes.comparar(fila.personaA, fila.personaB)" data-accion="comparar">
+            <mat-icon aria-hidden="true">compare_arrows</mat-icon>
+          </a>
+          <a mat-icon-button class="min-[600px]:!hidden" [routerLink]="[fila.idA, fila.idB]" [attr.aria-label]="mensajes.comparar(fila.personaA, fila.personaB)" data-accion="comparar-movil">
+            <mat-icon aria-hidden="true">chevron_right</mat-icon>
+          </a>
+          <button
+            *siPermiso="permisos.fusionar"
+            mat-icon-button
+            type="button"
+            class="max-[599.98px]:!hidden"
+            [attr.aria-label]="mensajes.noSonLaMismaDe(fila.personaA, fila.personaB)"
+            data-accion="descartar"
+            (click)="descartar(fila)"
+          >
+            <mat-icon aria-hidden="true">person_off</mat-icon>
+          </button>
+        </span>
+      </ng-template>
+    </vit-tabla>
+  }
+</section>

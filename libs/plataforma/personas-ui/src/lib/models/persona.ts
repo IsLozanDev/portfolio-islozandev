@@ -63,6 +63,10 @@ export interface PersonaDetalle extends PersonaResumen {
   roles: RolAsignado[];
   contactos: ContactoPersona[];
   direcciones: DireccionPersona[];
+  /** Id de la ficha absorbida que se pidió; nulo si se pidió esta misma (spec 39). */
+  resueltaDesde: string | null;
+  /** Ids de las fichas absorbidas en esta. */
+  alias: string[];
 }
 
 export interface DenominacionRespuesta {
@@ -85,6 +89,8 @@ export interface PersonaDetalleRespuesta extends PersonaRespuesta {
   roles: { producto_codigo: ProductoCodigo; rol: RolPersona; desde: string; hasta: string | null }[];
   contactos: ContactoPersona[];
   direcciones: DireccionPersona[];
+  resuelta_desde: string | null;
+  alias: string[];
 }
 
 export function aDenominacion(respuesta: DenominacionRespuesta): Denominacion {
@@ -114,5 +120,7 @@ export function aPersonaDetalle(respuesta: PersonaDetalleRespuesta): PersonaDeta
     roles: respuesta.roles.map(({ producto_codigo, rol, desde, hasta }) => ({ productoCodigo: producto_codigo, rol, desde, hasta })),
     contactos: respuesta.contactos.map((contacto) => ({ ...contacto })),
     direcciones: respuesta.direcciones.map((direccion) => ({ ...direccion })),
+    resueltaDesde: respuesta.resuelta_desde,
+    alias: [...respuesta.alias],
   };
 }

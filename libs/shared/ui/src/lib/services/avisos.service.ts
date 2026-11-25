@@ -23,11 +23,18 @@ const ICONO_POR_TIPO: Readonly<Record<TipoAviso, SweetAlertIcon>> = {
 const CLASES_AVISO: SweetAlertCustomClass = { popup: 'vit-aviso' };
 const CLASES_AVISO_DESTRUCTIVO: SweetAlertCustomClass = { popup: ['vit-aviso', 'vit-aviso-destructivo'] };
 
-function campoMotivo(longitudMinima: number): SweetAlertOptions {
+function campoMotivo(longitudMinima: number, longitudMaxima?: number): SweetAlertOptions {
+  const validarMotivo = (valor: string): string | null => {
+    const largo = valor.trim().length;
+    if (largo < longitudMinima) return MENSAJES_UI.motivoMuyCorto(longitudMinima);
+    if (longitudMaxima !== undefined && largo > longitudMaxima) return MENSAJES_UI.motivoMuyLargo(longitudMaxima);
+    return null;
+  };
   return {
     input: 'textarea',
     inputLabel: MENSAJES_UI.motivo,
-    inputValidator: (valor: string) => (valor.trim().length < longitudMinima ? MENSAJES_UI.motivoMuyCorto(longitudMinima) : null),
+    ...(longitudMaxima !== undefined ? { inputAttributes: { maxlength: String(longitudMaxima) } } : {}),
+    inputValidator: validarMotivo,
   };
 }
 
@@ -79,7 +86,9 @@ export class AvisosService {
       confirmButtonText: opciones.textoConfirmar ?? MENSAJES_UI.eliminar,
       cancelButtonText: opciones.textoCancelar ?? MENSAJES_UI.cancelar,
       customClass: CLASES_AVISO_DESTRUCTIVO,
-      ...(opciones.pedirMotivo ? campoMotivo(opciones.longitudMinimaMotivo ?? LONGITUD_MINIMA_MOTIVO) : {}),
+      ...(opciones.pedirMotivo
+        ? campoMotivo(opciones.longitudMinimaMotivo ?? LONGITUD_MINIMA_MOTIVO, opciones.longitudMaximaMotivo)
+        : {}),
     });
     if (!resultado.isConfirmed) return { confirmado: false };
     return { confirmado: true, motivo: opciones.pedirMotivo ? String(resultado.value).trim() : null };

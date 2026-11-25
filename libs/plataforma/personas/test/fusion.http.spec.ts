@@ -126,8 +126,18 @@ describe('HTTP de duplicados y fusión (TR-RF-042)', () => {
 
     expect(respuesta.status).toBe(200);
     expect(respuesta.body).toEqual({ items: [], total: 0, pagina: 2, tamano: 5 });
-    expect(dobles.consultaDuplicados.criterios).toEqual([{ pagina: 2, tamano: 5, puntajeMinimo: 60 }]);
+    expect(dobles.consultaDuplicados.criterios).toEqual([{ pagina: 2, tamano: 5, personaId: null, puntajeMinimo: 60 }]);
     expect((await get('/v1/personas/duplicados?tamano=51')).status).toBe(400);
+  });
+
+  it('GET /v1/personas/duplicados?persona= filtra por esa persona y rechaza lo que no es uuid', async () => {
+    const personaId = '0192f3a4-5b6c-7d8e-9f01-23456789abcd';
+
+    expect((await get(`/v1/personas/duplicados?persona=${personaId}&tamano=1`)).status).toBe(200);
+    expect(dobles.consultaDuplicados.criterios).toEqual([{ pagina: 1, tamano: 1, personaId, puntajeMinimo: 60 }]);
+    const invalida = await get('/v1/personas/duplicados?persona=abc');
+    expect(invalida.status).toBe(400);
+    expect(invalida.body.codigo).toBe('SOLICITUD_INVALIDA');
   });
 
   it('GET /v1/personas/duplicados/{a}/{b} compara las dos fichas con versión, puntaje, descarte y bloqueo', async () => {
@@ -206,5 +216,7 @@ describe('HTTP de duplicados y fusión (TR-RF-042)', () => {
       ]),
     );
     expect(Object.keys(documento.paths['/v1/personas/duplicados/descartes/{a}/{b}'] ?? {})).toEqual(['delete']);
+    const parametros = documento.paths['/v1/personas/duplicados']?.get?.parameters ?? [];
+    expect(parametros).toContainEqual(expect.objectContaining({ name: 'persona', in: 'query', required: false }));
   });
 });

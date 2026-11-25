@@ -161,6 +161,39 @@ describe('AvisosService', () => {
 
       await expect(respuesta).resolves.toEqual({ confirmado: true, motivo: 'Cese' });
     });
+
+    it('con longitudMaximaMotivo 300 limita el campo y rechaza 301 caracteres con su mensaje', async () => {
+      void avisos.confirmarDestructiva({ titulo: '¿Fusionar?', pedirMotivo: true, longitudMinimaMotivo: 5, longitudMaximaMotivo: 300 });
+      await esperarPopup();
+
+      expect(popup().querySelector('textarea')?.getAttribute('maxlength')).toBe('300');
+      escribirMotivo('x'.repeat(301));
+      Swal.clickConfirm();
+
+      await vi.waitFor(() => expect(Swal.getValidationMessage()?.textContent).toBe('El motivo admite hasta 300 caracteres.'));
+      expect(Swal.getPopup()).not.toBeNull();
+    });
+
+    it('con longitudMaximaMotivo 300 acepta 300 caracteres', async () => {
+      const respuesta = avisos.confirmarDestructiva({ titulo: '¿Fusionar?', pedirMotivo: true, longitudMinimaMotivo: 5, longitudMaximaMotivo: 300 });
+      await esperarPopup();
+
+      escribirMotivo('x'.repeat(300));
+      Swal.clickConfirm();
+
+      await expect(respuesta).resolves.toEqual({ confirmado: true, motivo: 'x'.repeat(300) });
+    });
+
+    it('sin longitudMaximaMotivo el campo no tiene tope y acepta un motivo largo', async () => {
+      const respuesta = avisos.confirmarDestructiva({ titulo: '¿Eliminar?', pedirMotivo: true });
+      await esperarPopup();
+
+      expect(popup().querySelector('textarea')?.hasAttribute('maxlength')).toBe(false);
+      escribirMotivo('y'.repeat(500));
+      Swal.clickConfirm();
+
+      await expect(respuesta).resolves.toEqual({ confirmado: true, motivo: 'y'.repeat(500) });
+    });
   });
 
   describe('toast', () => {

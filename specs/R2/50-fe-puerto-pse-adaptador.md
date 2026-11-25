@@ -43,7 +43,7 @@ Lo que hay en el código hoy (revisado al redactar):
 - Emisión real de boleta y factura, series de SEQ y `ComprobantePort` (spec 51).
 - `enviarResumen`, `enviarBaja` y `consultarTicket` del puerto (specs 55 y 56).
 - CDR en ARC y procesamiento de la respuesta de comprobantes reales (spec 52).
-- Adaptador OSE o SUNAT directo, UBL propio y firma (spec 51b, condicional).
+- Adaptador SUNAT directo, UBL propio y firma (specs 51b y 51c).
 - Volver de `PRODUCCION` a `BETA`.
 - Historial de pruebas en tabla propia: queda la última prueba en el emisor y la auditoría de cada solicitud.
 - UI del emisor (spec 62) y correo con el resultado de la prueba.
@@ -212,7 +212,7 @@ Ninguna carga lleva token, usuario, URL ni contenido del certificado.
 ## Decisiones
 
 - **Sí:** Nubefact como PSE real, más el simulador. Decisión del usuario. PSE con API JSON que genera y firma el XML: no hace falta el 51b y el modo demo sirve de beta.
-- **No (por ahora):** SUNAT directo (SEE-Del Contribuyente). Evita el costo por comprobante, pero exige UBL 2.1, firma XMLDSig, SOAP con usuario secundario SOL y mantenimiento ante cambios de SUNAT (spec 51b), y la RS 000048-2026/SUNAT restringe la emisión a SEE-OSE en el régimen que regula; se revisa antes de reconsiderarlo. El puerto a nivel de comprobante permite agregarlo sin tocar el dominio.
+- **No en este spec; sí en los specs 51b y 51c (revisado el 2026-11-25):** SUNAT directo (SEE-Del Contribuyente). Evita el costo mensual del PSE, pero exige UBL 2.1, firma XMLDSig, SOAP con usuario secundario SOL y mantenimiento ante cambios de SUNAT. Corrección: la RS 000048-2026/SUNAT solo obliga a usar SEE-OSE para el documento de atribución (DOAE, art. 41.2); facturas, boletas y notas siguen pudiendo emitirse por SEE-Del Contribuyente. El puerto a nivel de comprobante permite agregarlo sin tocar el dominio, y Nubefact queda como proveedor alterno.
 - **Sí:** `PseOsePort` con `enviarComprobante` y la respuesta común. Decisión del usuario. La prueba en beta es enviar un comprobante; resumen, baja y ticket llegan con sus specs.
 - **Sí:** prueba asíncrona por outbox y cola `fe-pruebas`. Decisión del usuario. Un PSE lento no retiene la petición y una caída de Redis no pierde la solicitud.
 - **Sí:** última prueba en columnas de `fe.emisor`, sin tabla de historial. Decisión del usuario. La auditoría registra cada solicitud.
@@ -241,7 +241,7 @@ Ninguna carga lleva token, usuario, URL ni contenido del certificado.
 
 - Emisión real, series de SEQ y CDR (specs 51 y 52).
 - Resumen, baja y ticket en el puerto (specs 55 y 56).
-- OSE o SUNAT directo con UBL y firma propios (spec 51b).
+- SUNAT directo con UBL y firma propios (specs 51b y 51c).
 - Volver a beta, historial de pruebas y UI del emisor (spec 62).
 - Homologación formal con el PSE (R2-14).
 

@@ -3,17 +3,23 @@ import { HttpErrorResponse } from '@angular/common/http';
 export const CODIGO_DESCONOCIDO = 'DESCONOCIDO';
 export const MENSAJE_ERROR_DESCONOCIDO = 'No se pudo completar la operación. Inténtelo de nuevo.';
 
-/** Error de la API de personas como `{ codigo, mensaje }`, con el estado HTTP y, en PERSONA_DUPLICADA, la persona existente. */
+/**
+ * Error de la API de personas como `{ codigo, mensaje }`, con el estado HTTP; en PERSONA_DUPLICADA, la persona
+ * existente, y en PERSONA_FUSIONADA, la ficha en la que se fusionó.
+ */
 export class ErrorPersonas extends Error {
+  readonly personaConservadaId: string | null;
+
   constructor(
     readonly codigo: string,
     mensaje: string,
     readonly estado: number | null,
     readonly personaId: string | null = null,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; personaConservadaId?: string | null },
   ) {
     super(mensaje, options);
     this.name = 'ErrorPersonas';
+    this.personaConservadaId = options?.personaConservadaId ?? null;
   }
 }
 
@@ -21,6 +27,7 @@ interface CuerpoDeError {
   codigo?: unknown;
   mensaje?: unknown;
   persona_id?: unknown;
+  persona_conservada_id?: unknown;
 }
 
 export function aErrorPersonas(error: unknown): ErrorPersonas {
@@ -33,5 +40,6 @@ export function aErrorPersonas(error: unknown): ErrorPersonas {
   const codigo = typeof cuerpo.codigo === 'string' ? cuerpo.codigo : CODIGO_DESCONOCIDO;
   const mensaje = typeof cuerpo.mensaje === 'string' ? cuerpo.mensaje : MENSAJE_ERROR_DESCONOCIDO;
   const personaId = typeof cuerpo.persona_id === 'string' ? cuerpo.persona_id : null;
-  return new ErrorPersonas(codigo, mensaje, error.status, personaId, { cause: error });
+  const personaConservadaId = typeof cuerpo.persona_conservada_id === 'string' ? cuerpo.persona_conservada_id : null;
+  return new ErrorPersonas(codigo, mensaje, error.status, personaId, { cause: error, personaConservadaId });
 }

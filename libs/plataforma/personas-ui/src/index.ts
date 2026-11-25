@@ -28,7 +28,24 @@ export {
   type RolVigente,
 } from './lib/models/busqueda';
 export { FINALIDADES, type Canal, type Decision, type DecisionVigente, type EstadoConsentimiento, type Finalidad } from './lib/models/consentimiento';
+export {
+  CODIGOS_BLOQUEO,
+  MOTIVOS_DUPLICADO,
+  PRINCIPAL_DIRECCION,
+  type CampoDatoBasico,
+  type ClavePrincipal,
+  type CodigoBloqueo,
+  type ComparacionPar,
+  type CriteriosDuplicados,
+  type EleccionFusion,
+  type MotivoDuplicado,
+  type Origen,
+  type PaginaDuplicados,
+  type ParCandidato,
+  type SolicitudFusion,
+} from './lib/models/duplicados';
 export { ErrorPersonas } from './lib/models/error-personas';
+export { ETIQUETAS_MOTIVO, MENSAJES_BLOQUEO, MENSAJES_DUPLICADOS, mensajeDeErrorDuplicados, motivosDe } from './lib/models/mensajes-duplicados';
 export {
   ETIQUETAS_CANAL,
   ETIQUETAS_ESTADO_CONSENTIMIENTO,
@@ -67,13 +84,26 @@ export type {
   NuevoContacto,
   RegistroPersona,
 } from './lib/models/solicitudes-persona';
-export { TONO_ROL, TONOS_COINCIDENCIA, TONOS_ESTADO_CONSENTIMIENTO } from './lib/models/tonos-personas';
+export { TONO_DESCARTADO, TONO_ROL, TONOS_COINCIDENCIA, TONOS_ESTADO_CONSENTIMIENTO, TONOS_PUNTAJE } from './lib/models/tonos-personas';
 export { type Ubigeo } from './lib/models/ubigeo';
 export { ConsentimientosCliente } from './lib/services/consentimientos.cliente';
 export { ContactosCliente } from './lib/services/contactos.cliente';
 export { DireccionesCliente } from './lib/services/direcciones.cliente';
+export { DuplicadosCliente } from './lib/services/duplicados.cliente';
 export { PersonasCliente } from './lib/services/personas.cliente';
 export { UbigeosService } from './lib/services/ubigeos.service';
+export {
+  CAMPOS_POR_TIPO_PERSONA,
+  CLAVES_PRINCIPAL,
+  conservadaSugerida,
+  eleccionInicial,
+  opcionesDatosBasicos,
+  opcionesPrincipales,
+  solicitudDe,
+  type CandidatoPrincipal,
+  type GrupoPrincipal,
+  type OpcionDatoBasico,
+} from './lib/utils/campos-fusion';
 export { clasificarEntrada, type EntradaClasificada, type TipoElegido } from './lib/utils/clasificar-entrada';
 export { denominacionDe, esDocumentoDeJuridica, inicialesDe, inicialesDeTexto, nombreCompletoDe } from './lib/utils/denominacion';
 export { filtrarUbigeos } from './lib/utils/filtrar-ubigeos';

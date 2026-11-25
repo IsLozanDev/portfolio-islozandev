@@ -23,18 +23,23 @@ interface FilaPar {
 
 // SQL crudo (regla 11): autounión de per.persona con per.contacto, extensions.similarity y comparación de
 // conjuntos de palabras, que el QueryBuilder no expresa bien. Valores siempre como parámetros:
-// $1 tenant, $2 similitud mínima, $3-$5 puntajes de cada motivo.
+// $1 tenant, $2 similitud mínima, $3-$5 puntajes de cada motivo. La lista suma $6 puntaje mínimo, $7-$8 página
+// y $9 persona (nula para todas), que filtra desde los pares para no evaluar los ajenos.
 const PERSONAS_ACTIVAS = `SELECT * FROM per.persona
   WHERE tenant_id = $1 AND activo AND fusionada_en_id IS NULL`;
 const PERSONAS_DEL_TENANT = `SELECT * FROM per.persona WHERE tenant_id = $1`;
+
+const DE_LA_PERSONA = (menor: string, mayor: string) => `($9::uuid IS NULL OR ${menor} = $9 OR ${mayor} = $9)`;
 
 /** Solo comparten candidatos quienes comparten número de documento o un celular: la similitud va después. */
 const PARES_POR_DOCUMENTO_O_CELULAR = `
   SELECT una.id AS menor, otra.id AS mayor
     FROM personas una JOIN personas otra ON una.id < otra.id AND una.numero_documento = otra.numero_documento
+   WHERE ${DE_LA_PERSONA('una.id', 'otra.id')}
   UNION
   SELECT una.persona_id, otra.persona_id
-    FROM celulares una JOIN celulares otra ON una.valor = otra.valor AND una.persona_id < otra.persona_id`;
+    FROM celulares una JOIN celulares otra ON una.valor = otra.valor AND una.persona_id < otra.persona_id
+   WHERE ${DE_LA_PERSONA('una.persona_id', 'otra.persona_id')}`;
 
 const UN_PAR = `SELECT $6::uuid AS menor, $7::uuid AS mayor`;
 
@@ -109,9 +114,10 @@ export class ConsultaDuplicadosTypeOrm implements ConsultaDuplicados {
     private readonly contexto: TenantContext,
   ) {}
 
-  async buscar({ pagina, tamano, puntajeMinimo }: CriteriosDuplicados): Promise<PaginaDuplicados> {
-    const filas = await this.pagina(puntajeMinimo, tamano, (pagina - 1) * tamano);
-    if (filas.length === 0) return { items: [], total: await this.contar(puntajeMinimo, pagina) };
+  async buscar(criterios: CriteriosDuplicados): Promise<PaginaDuplicados> {
+    const { pagina, tamano } = criterios;
+    const filas = await this.pagina(criterios, tamano, (pagina - 1) * tamano);
+    if (filas.length === 0) return { items: [], total: await this.contar(criterios) };
 
     const ids = filas.flatMap((fila) => [fila.persona_a_id, fila.persona_b_id]);
     const personas = await leerPersonasDeLista(this.manager, this.tenantId, [...new Set(ids)]);
@@ -131,14 +137,14 @@ export class ConsultaDuplicadosTypeOrm implements ConsultaDuplicados {
     return evaluacionDelPar.motivos.length === 0 ? null : evaluacionDelPar;
   }
 
-  private pagina(puntajeMinimo: number, tamano: number, desplazamiento: number): Promise<FilaPar[]> {
-    return this.manager.query(LISTA, [...this.parametrosBase(), puntajeMinimo, tamano, desplazamiento]);
+  private pagina({ puntajeMinimo, personaId }: CriteriosDuplicados, tamano: number, desplazamiento: number): Promise<FilaPar[]> {
+    return this.manager.query(LISTA, [...this.parametrosBase(), puntajeMinimo, tamano, desplazamiento, personaId]);
   }
 
   /** Una página vacía más allá de la última no trae el total de la ventana: se cuenta desde la primera. */
-  private async contar(puntajeMinimo: number, pagina: number): Promise<number> {
-    if (pagina === 1) return 0;
-    const [primera] = await this.pagina(puntajeMinimo, 1, 0);
+  private async contar(criterios: CriteriosDuplicados): Promise<number> {
+    if (criterios.pagina === 1) return 0;
+    const [primera] = await this.pagina(criterios, 1, 0);
     return Number(primera?.total ?? 0);
   }
 

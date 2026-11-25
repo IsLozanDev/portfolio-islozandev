@@ -123,6 +123,11 @@ describe('PersonasListaPage', () => {
     expect(url()).toBe('/admin/personas/per-juana');
   });
 
+  it('«Revisar duplicados» lleva a la lista de duplicados', async () => {
+    await abrir('/admin/personas');
+    expect(elemento().querySelector('[data-accion="revisar-duplicados"]')?.getAttribute('href')).toBe('/admin/personas/duplicados');
+  });
+
   it('sin plat.persona.registrar no se ve «Nueva persona»', async () => {
     sesion.conPermisos('plat.persona.leer');
     await abrir('/admin/personas');

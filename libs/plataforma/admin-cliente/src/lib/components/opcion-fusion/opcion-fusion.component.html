@@ -1,0 +1,36 @@
+<div class="grid grid-cols-1 border-t border-borde md:grid-cols-[200px_repeat(2,minmax(0,1fr))]" [attr.data-fila]="nombre()">
+  <span class="px-4 pt-3 text-sm font-medium md:py-2.5 md:font-normal md:text-sobre-superficie-variante" [id]="nombre() + '-etiqueta'">{{ etiqueta() }}</span>
+  @if (iguales()) {
+    <span class="flex items-center gap-2 px-4 py-2.5 text-sm md:col-span-2 md:border-l md:border-borde">
+      {{ opciones()[0]?.valor ?? textoSinDato() }}
+      <vit-chip-estado [texto]="textoIgual()" tono="neutro" />
+    </span>
+  } @else if (editable()) {
+    <mat-radio-group
+      class="contents"
+      [name]="nombre()"
+      [value]="seleccionada()?.personaId"
+      [disabled]="deshabilitada()"
+      [attr.aria-labelledby]="nombre() + '-etiqueta'"
+      (change)="elegirPorId($event.value)"
+    >
+      @for (opcion of opciones(); track opcion.personaId) {
+        <span class="flex items-center gap-2 px-2 py-1 md:border-l md:border-borde" [class.font-medium]="opcion.marcada">
+          <mat-radio-button [value]="opcion.personaId" [attr.data-opcion]="opcion.ficha">
+            <span class="inline-flex items-center gap-2">
+              <span class="md:hidden"><vit-chip-estado [texto]="opcion.ficha" tono="neutro" /></span>
+              <span [class.italic]="opcion.valor === null" [class.text-sobre-superficie-variante]="opcion.valor === null">{{ opcion.valor ?? textoSinDato() }}</span>
+            </span>
+          </mat-radio-button>
+        </span>
+      }
+    </mat-radio-group>
+  } @else {
+    @for (opcion of opciones(); track opcion.personaId) {
+      <span class="flex items-center gap-2 px-4 py-2.5 text-sm md:border-l md:border-borde">
+        <span class="md:hidden"><vit-chip-estado [texto]="opcion.ficha" tono="neutro" /></span>
+        <span [class.italic]="opcion.valor === null" [class.text-sobre-superficie-variante]="opcion.valor === null">{{ opcion.valor ?? textoSinDato() }}</span>
+      </span>
+    }
+  }
+</div>
