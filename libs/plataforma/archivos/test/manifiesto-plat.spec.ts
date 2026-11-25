@@ -18,7 +18,7 @@ describe('Manifiesto PLAT 1.27.0: parte de arc (specs 33 y 35)', () => {
   });
 
   it('está en la versión 1.27.0 y declara los tres permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.27.0');
+    expect(manifiesto.version).toBe('1.28.0');
     const deArchivos = manifiesto.permisos.filter((permiso) => esDeArchivos(permiso.codigo));
     expect(deArchivos.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_ARC.subir, 'Subir archivos', 'TENANT', false],

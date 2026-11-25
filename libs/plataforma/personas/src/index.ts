@@ -1,5 +1,6 @@
 // TR-PER: persona maestra del tenant, registro por documento, rol por producto (spec 31), contactos y
-// direcciones con ubigeo (spec 32), y consentimientos por finalidad con textos versionados (spec 37).
+// direcciones con ubigeo (spec 32), consentimientos por finalidad con textos versionados (spec 37), y
+// duplicados y fusión con alias (spec 39).
 // Solo este archivo es público.
 export {
   CANALES,
@@ -21,27 +22,35 @@ export {
 export { TIPOS_CONTACTO, type TipoContacto } from './domain/contacto.js';
 export type { DenominacionPersona } from './domain/denominacion.js';
 export { TIPOS_DOCUMENTO_PERSONA, type TipoDocumentoPersona } from './domain/documento-identidad.js';
+export { MOTIVOS_DUPLICADO, type MotivoDuplicado } from './domain/duplicados.js';
 export {
   AccionExpresaRequeridaError,
+  CampoElegidoInvalidoError,
   CelularPrincipalObligatorioError,
   ContactoDuplicadoError,
   ContactoInvalidoError,
   ContactoNoEncontradoError,
   DatosConsentimientoInvalidosError,
+  DescarteNoEncontradoError,
   DireccionInvalidaError,
   DireccionNoEncontradaError,
   DocumentoInvalidoPersonaError,
+  DocumentosDistintosError,
   EvidenciaInvalidaError,
   EvidenciaNoEncontradaError,
   FinalidadRepetidaError,
+  MismaPersonaError,
   MOTIVOS_EVIDENCIA_INVALIDA,
+  MotivoFusionInvalidoError,
   PersonaDuplicadaError,
   PersonaNoEncontradaError,
+  PersonaYaFusionadaError,
   ProductoNoSuscritoError,
   SinConsentimientoVigenteError,
   TextoFinalidadInvalidoError,
   TextoNoPublicadoError,
   TipoDocumentoNoAdmitidoError,
+  TipoPersonaDistintoError,
   TipoPersonaIncoherenteError,
   UbigeoNoVigenteError,
   VersionObsoletaPersonaError,
@@ -55,6 +64,7 @@ export {
   type CambioPersona,
   type ConsentimientoRevocado,
   type PersonaActualizada,
+  type PersonaFusionada,
   type PersonaRegistrada,
   type PersonaRolAsignado,
 } from './domain/eventos-per.js';

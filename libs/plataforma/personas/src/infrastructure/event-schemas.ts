@@ -45,6 +45,11 @@ export const ESQUEMAS_PER: Readonly<Record<string, object>> = {
     canal: unoDe(CANALES),
     revocado_en: instante,
   }),
+  [EVENTOS_PER.fusionada]: objeto({
+    persona_conservada_id: uuid,
+    persona_absorbida_id: uuid,
+    fusion_id: uuid,
+  }),
 };
 
 export function registrarEsquemasPer(validador: Pick<InMemoryEventSchemaValidator, 'register'>): void {

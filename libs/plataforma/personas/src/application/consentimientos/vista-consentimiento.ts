@@ -17,6 +17,7 @@ export function decisionRegistradaDe(consentimiento: Consentimiento): DecisionRe
   const revocacion = consentimiento.revocacion;
   return {
     id: consentimiento.id,
+    personaId: consentimiento.personaId,
     finalidad: consentimiento.finalidad,
     decision: consentimiento.decision,
     versionTexto: consentimiento.versionTexto,

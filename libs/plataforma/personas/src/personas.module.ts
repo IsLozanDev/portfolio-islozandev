@@ -19,6 +19,11 @@ import { RegistrarConsentimientos } from './application/consentimientos/registra
 import { RevocarConsentimiento } from './application/consentimientos/revocar-consentimiento.js';
 import { ServicioConsentimientos } from './application/consentimientos/servicio-consentimientos.js';
 import type { DependenciasPersonas } from './application/dependencias-personas.js';
+import { CompararPar } from './application/duplicados/comparar-par.js';
+import { DescartarPar } from './application/duplicados/descartar-par.js';
+import { FusionarPersonas } from './application/duplicados/fusionar-personas.js';
+import { ListarDuplicados } from './application/duplicados/listar-duplicados.js';
+import { QuitarDescarte } from './application/duplicados/quitar-descarte.js';
 import { EditarContacto } from './application/editar-contacto.js';
 import { ListarProductosSuscritos } from './application/listar-productos-suscritos.js';
 import { EditarDireccion } from './application/editar-direccion.js';
@@ -31,11 +36,15 @@ import { RegistrarPersona } from './application/registrar-persona.js';
 import { ServicioPersonas } from './application/servicio-personas.js';
 import { SuscripcionesDelTenantOrg } from './infrastructure/suscripciones-del-tenant.org.js';
 import { RepositorioConsentimientosTypeOrm } from './infrastructure/typeorm/consentimientos.repositorio.js';
+import { ConsultaDuplicadosTypeOrm } from './infrastructure/typeorm/consulta-duplicados.typeorm.js';
 import { ConsultaPersonasTypeOrm } from './infrastructure/typeorm/consulta-personas.typeorm.js';
+import { RepositorioFusionesTypeOrm } from './infrastructure/typeorm/fusiones.repositorio.js';
 import { RepositorioPersonasTypeOrm } from './infrastructure/typeorm/personas.repositorio.js';
 import { ConsentimientosPersonaController } from './interface/consentimientos.controller.js';
 import { ContactosPersonaController } from './interface/contactos.controller.js';
 import { DireccionesPersonaController } from './interface/direcciones.controller.js';
+import { DuplicadosController } from './interface/duplicados.controller.js';
+import { FusionesController } from './interface/fusiones.controller.js';
 import { PersonasController } from './interface/personas.controller.js';
 import { TextosFinalidadController } from './interface/textos-finalidad.controller.js';
 
@@ -62,6 +71,11 @@ const CASOS_DE_USO: CasoDeUso[] = [
   RevocarConsentimiento,
   PublicarTextoFinalidad,
   ConsultarTextos,
+  ListarDuplicados,
+  CompararPar,
+  DescartarPar,
+  QuitarDescarte,
+  FusionarPersonas,
 ];
 
 const proveedorDe = (casoDeUso: CasoDeUso): Provider => ({
@@ -86,7 +100,10 @@ export class PersonasModule {
     return {
       module: PersonasModule,
       imports: opciones.imports,
+      // Duplicados y fusiones antes que PersonasController: `GET personas/:id` capturaría `personas/duplicados`.
       controllers: [
+        DuplicadosController,
+        FusionesController,
         PersonasController,
         ContactosPersonaController,
         DireccionesPersonaController,
@@ -120,6 +137,8 @@ export class PersonasModule {
             consentimientos: new RepositorioConsentimientosTypeOrm(unidadDeTrabajo, contexto),
             auditoria,
             archivos,
+            consultaDuplicados: new ConsultaDuplicadosTypeOrm(unidadDeTrabajo, contexto),
+            fusiones: new RepositorioFusionesTypeOrm(unidadDeTrabajo, contexto),
           }),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, CATALOGO_PORT, IDENTIDAD, AUDITORIA, ARCHIVO_PORT],
         },

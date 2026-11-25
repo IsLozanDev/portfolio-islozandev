@@ -16,10 +16,21 @@ export function resumenDe(persona: Persona): PersonaResumen {
   };
 }
 
-export function detalleDe(persona: Persona): PersonaDetalle {
+/** De dónde salió el detalle: la persona pedida o una absorbida que resolvió a ella, y sus alias. */
+export interface AliasDelDetalle {
+  resueltaDesde: string | null;
+  alias: string[];
+}
+
+/** Una persona recién registrada no es alias ni tiene alias. */
+export const SIN_ALIAS: AliasDelDetalle = { resueltaDesde: null, alias: [] };
+
+export function detalleDe(persona: Persona, { resueltaDesde, alias }: AliasDelDetalle = SIN_ALIAS): PersonaDetalle {
   return {
     ...resumenDe(persona),
     version: persona.version,
+    resueltaDesde,
+    alias: [...alias],
     roles: persona.roles.map((rolAsignado) => ({ ...rolAsignado })),
     contactos: persona.contactos.map(({ id, tipo, valor, principal }) => ({ id, tipo, valor, principal })),
     direcciones: persona.direcciones.map(direccionDetalleDe),

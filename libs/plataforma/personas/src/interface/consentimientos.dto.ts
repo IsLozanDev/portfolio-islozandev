@@ -55,6 +55,9 @@ export class DecisionRegistradaDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
+  @ApiProperty({ format: 'uuid', description: 'Quién decidió: en el historial de una conservada puede ser uno de sus alias' })
+  persona_id!: string;
+
   @ApiProperty({ enum: FINALIDADES })
   finalidad!: Finalidad;
 
@@ -153,6 +156,7 @@ export class ErrorConsentimientoDto {
 export function decisionRegistradaDto(decision: DecisionRegistrada): DecisionRegistradaDto {
   return {
     id: decision.id,
+    persona_id: decision.personaId,
     finalidad: decision.finalidad,
     decision: decision.decision,
     version_texto: decision.versionTexto,

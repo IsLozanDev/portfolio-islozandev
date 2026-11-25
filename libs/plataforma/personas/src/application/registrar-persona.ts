@@ -3,13 +3,15 @@ import { Contacto } from '../domain/contacto.js';
 import { CATALOGO_TIPO_DOCUMENTO, DocumentoIdentidad } from '../domain/documento-identidad.js';
 import { PersonaDuplicadaError, TipoDocumentoNoAdmitidoError } from '../domain/errores.js';
 import { Persona } from '../domain/persona.js';
+import { resolverAlias } from './alias-personas.js';
 import { publicarEventosDe, type DependenciasPersonas } from './dependencias-personas.js';
 import type { PersonaDetalle, RegistrarPersonaComando } from './ports/persona.port.js';
 import { detalleDe } from './vista-persona.js';
 
 /**
  * TR-RF-039: registra una persona única por documento en el tenant, con su celular principal y su correo
- * principal opcional. No consulta TR-IDN: el prellenado lo entrega la búsqueda.
+ * principal opcional. No consulta TR-IDN: el prellenado lo entrega la búsqueda. El documento de una absorbida
+ * ya es de su conservada.
  */
 export class RegistrarPersona {
   constructor(private readonly dependencias: DependenciasPersonas) {}
@@ -32,7 +34,7 @@ export class RegistrarPersona {
         contactos: contactosPrincipales(ids, comando),
       });
       const existente = await personas.buscarPorDocumento(documento.tipo, documento.numero);
-      if (existente) throw new PersonaDuplicadaError(existente.id);
+      if (existente) throw new PersonaDuplicadaError((await resolverAlias(personas, existente)).persona.id);
 
       await personas.guardar(persona);
       await publicarEventosDe(publicador, persona);

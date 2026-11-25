@@ -17,6 +17,11 @@ export abstract class AggregateRoot {
     return this.currentVersion;
   }
 
+  /** Para un cambio que no publica evento pero sí debe ganar el bloqueo optimista. */
+  protected bumpVersion(): void {
+    this.currentVersion += 1;
+  }
+
   protected raise(event: RaisedEvent): void {
     this.currentVersion += 1;
     this.pending.push({

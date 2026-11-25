@@ -1,6 +1,6 @@
 # SPEC 50 — Facturación electrónica: puerto PSE con adaptadores Nubefact y simulador, prueba en beta asíncrona y paso a producción
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 49, SPEC 41, SPEC 11, SPEC 21
 > **Date:** 2026-11-23
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el puerto `PseOsePort` con adaptadores Nubefact y simulador, una prueba en beta que se solicita por la API y ejecuta el worker enviando un comprobante de prueba, y el paso a producción con sus reglas (TR-RF-052 pasos 4 y 5).

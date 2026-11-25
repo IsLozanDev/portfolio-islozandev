@@ -6,10 +6,12 @@ import type { Contacto } from '../../domain/contacto.js';
 import type { Direccion } from '../../domain/direccion.js';
 import type { TipoDocumentoPersona } from '../../domain/documento-identidad.js';
 import { ContactoDuplicadoError, PersonaDuplicadaError } from '../../domain/errores.js';
+import type { ResultadoAbsorcion } from '../../domain/fusion.js';
 import type { Persona } from '../../domain/persona.js';
 import { compararConGuardados, porId } from './diferencias.js';
 import { ContactoEntidad, DireccionEntidad, PersonaEntidad, PersonaRolEntidad, type FilaPersona } from './entidades.js';
 import {
+  columnasDeAlias,
   columnasEditablesDeContacto,
   columnasEditablesDeDireccion,
   columnasEditablesDePersona,
@@ -22,6 +24,7 @@ import {
 
 const VIOLACION_UNICIDAD = '23505';
 const UNICO_CONTACTO_VALOR = 'uq_contacto_valor';
+const VERSION_CAMBIADA = 'La persona fue modificada por otra operación; vuelva a cargarla';
 
 /** Lo que la base tenía de la persona al leerla o guardarla: lo demás es nuevo, cambió o se borró. */
 interface EstadoGuardado {
@@ -60,6 +63,69 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     await this.sincronizarContactos(persona, guardado.contactos);
     await this.sincronizarDirecciones(persona, guardado.direcciones);
     this.recordar(persona);
+  }
+
+  /**
+   * Las dos filas primero, con su versión: si otra operación cambió alguna, nada más se escribe. Los
+   * principales se apagan antes de mover y se encienden al final, para no chocar con los únicos parciales.
+   */
+  async guardarFusion(conservada: Persona, absorbida: Persona, movimientos: ResultadoAbsorcion): Promise<void> {
+    await this.actualizar(conservada, this.estadoLeido(conservada).version);
+    await this.marcarAlias(absorbida, this.estadoLeido(absorbida).version);
+    await this.moverRoles(conservada.id, absorbida.id, movimientos);
+    await this.moverFilas(ContactoEntidad, conservada.id, conservada.contactos, movimientos.contactosMovidos);
+    await this.moverFilas(DireccionEntidad, conservada.id, conservada.direcciones, movimientos.direccionesMovidas);
+    this.recordar(conservada);
+    this.recordar(absorbida);
+  }
+
+  async aliasDe(personaId: string): Promise<string[]> {
+    const alias = await this.manager.getRepository(PersonaEntidad).find({
+      select: { id: true },
+      where: { fusionadaEnId: personaId, tenantId: this.tenantId },
+      order: { id: 'ASC' },
+    });
+    return alias.map((fila) => fila.id);
+  }
+
+  private estadoLeido(persona: Persona): EstadoGuardado {
+    const guardado = this.guardadas.get(persona);
+    if (!guardado) throw new Error('Solo se fusionan personas leídas de este repositorio');
+    return guardado;
+  }
+
+  private async marcarAlias(absorbida: Persona, versionGuardada: number): Promise<void> {
+    const resultado = await this.manager
+      .getRepository(PersonaEntidad)
+      .update({ id: absorbida.id, tenantId: this.tenantId, version: versionGuardada }, columnasDeAlias(absorbida));
+    if (resultado.affected !== 1) throw new ConflictError(VERSION_CAMBIADA);
+  }
+
+  /** Los roles no se borran (spec 31): pasan con su fila; los repetidos se quedan en la absorbida. */
+  private async moverRoles(conservadaId: string, absorbidaId: string, movimientos: ResultadoAbsorcion): Promise<void> {
+    const roles = this.manager.getRepository(PersonaRolEntidad);
+    const tenantId = this.tenantId;
+    for (const { productoCodigo, rol } of movimientos.rolesMovidos) {
+      await roles.update({ personaId: absorbidaId, tenantId, productoCodigo, rol }, { personaId: conservadaId });
+    }
+    for (const { productoCodigo, rol, desde } of movimientos.rolesAdelantados) {
+      await roles.update({ personaId: conservadaId, tenantId, productoCodigo, rol }, { desde });
+    }
+  }
+
+  private async moverFilas(
+    entidad: typeof ContactoEntidad | typeof DireccionEntidad,
+    conservadaId: string,
+    finales: readonly (Contacto | Direccion)[],
+    movidos: string[],
+  ): Promise<void> {
+    const filas = this.manager.getRepository(entidad);
+    const tenantId = this.tenantId;
+    const ids = finales.map((elemento) => elemento.id);
+    const principales = finales.filter((elemento) => elemento.principal).map((elemento) => elemento.id);
+    if (ids.length > 0) await filas.update({ id: In(ids), tenantId }, { principal: false });
+    if (movidos.length > 0) await filas.update({ id: In(movidos), tenantId }, { personaId: conservadaId });
+    if (principales.length > 0) await filas.update({ id: In(principales), tenantId }, { principal: true });
   }
 
   private async buscar(filtro: FindOptionsWhere<FilaPersona>): Promise<Persona | null> {
@@ -110,9 +176,7 @@ export class RepositorioPersonasTypeOrm implements RepositorioPersonas {
     const resultado = await this.manager
       .getRepository(PersonaEntidad)
       .update({ id: persona.id, tenantId: this.tenantId, version: versionGuardada }, columnasEditablesDePersona(persona));
-    if (resultado.affected !== 1) {
-      throw new ConflictError('La persona fue modificada por otra operación; vuelva a cargarla');
-    }
+    if (resultado.affected !== 1) throw new ConflictError(VERSION_CAMBIADA);
   }
 
   private async insertarRolesNuevos(persona: Persona, yaGuardados: number): Promise<void> {

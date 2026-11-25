@@ -38,6 +38,8 @@ export interface RegistrarConsentimientosComando {
 /** Vista de una fila de per.consentimiento. */
 export interface DecisionRegistrada {
   id: string;
+  /** La persona que decidió: en el historial de una conservada puede ser uno de sus alias. */
+  personaId: string;
   finalidad: Finalidad;
   decision: Decision;
   versionTexto: string;

@@ -1,19 +1,17 @@
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import type { ProductoCodigo } from '@vitrina/plataforma/org';
-import { Brackets, In, IsNull, type EntityManager, type SelectQueryBuilder } from 'typeorm';
+import { Brackets, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 import type {
   Coincidencia,
   ConsultaPersonas,
   CriteriosConsultaPersonas,
   PaginaPersonas,
-  PersonaListada,
 } from '../../application/ports/consulta-personas.js';
 import type { ConsultaClasificada } from '../../domain/consulta-personas.js';
-import type { TipoDocumentoPersona } from '../../domain/documento-identidad.js';
-import type { TipoPersona } from '../../domain/persona.js';
 import type { RolPersona } from '../../domain/rol-persona.js';
-import { ContactoEntidad, PersonaEntidad, PersonaRolEntidad, type FilaContacto, type FilaPersona, type FilaPersonaRol } from './entidades.js';
+import { PersonaEntidad, type FilaPersona } from './entidades.js';
+import { leerDetallesDeLista, personaDeLista } from './listado-personas.js';
 
 /** Umbral de `word_similarity` para el operador `<%`: se ajusta con la medición de 50 000 personas. */
 export const UMBRAL_SIMILITUD = 0.35;
@@ -23,7 +21,6 @@ const PUNTAJE_DOCUMENTO_PREFIJO = 2;
 const PUNTAJE_CONTACTO = 1;
 const PUNTAJE_FONETICO = 0.9;
 const TIPOS_TELEFONO = ['CELULAR', 'FIJO', 'WHATSAPP'];
-const TIPOS_CONTACTO_LISTADO = ['CELULAR', 'CORREO'];
 
 interface FilaPuntaje {
   persona_id: string;
@@ -96,11 +93,11 @@ export class ConsultaPersonasTypeOrm implements ConsultaPersonas {
       .getRawAndEntities();
 
     const puntajes = new Map<string, number>(raw.map((fila: FilaPuntaje) => [fila.persona_id, Number(fila.puntaje)]));
-    const ids = filas.map((fila) => fila.id);
-    const [contactos, roles] = await Promise.all([this.contactosPrincipales(ids), this.rolesVigentes(ids)]);
-    const items = filas.map((fila) =>
-      listada(fila, deLaPersona(contactos, fila.id), deLaPersona(roles, fila.id), coincidenciaDe(criterios.consulta, puntajes.get(fila.id) ?? 0)),
-    );
+    const detalles = await leerDetallesDeLista(this.manager, this.tenantId, filas.map((fila) => fila.id));
+    const items = filas.map((fila) => ({
+      ...personaDeLista(fila, detalles),
+      coincidencia: coincidenciaDe(criterios.consulta, puntajes.get(fila.id) ?? 0),
+    }));
     return { items, total };
   }
 
@@ -108,7 +105,9 @@ export class ConsultaPersonasTypeOrm implements ConsultaPersonas {
     const consulta = this.manager
       .getRepository(PersonaEntidad)
       .createQueryBuilder('persona')
-      .where('persona.tenant_id = :tenantId', { tenantId: this.tenantId });
+      .where('persona.tenant_id = :tenantId', { tenantId: this.tenantId })
+      // Una absorbida (spec 39) no se lista: sus lecturas resuelven a la conservada.
+      .andWhere('persona.fusionada_en_id IS NULL');
     if (criterios.tipoPersona) consulta.andWhere('persona.tipo_persona = :tipoPersona', { tipoPersona: criterios.tipoPersona });
     if (criterios.producto || criterios.rol) this.filtrarPorRol(consulta, criterios.producto, criterios.rol);
     if (criterios.consulta) this.filtrarPorTexto(consulta, criterios.consulta);
@@ -161,19 +160,6 @@ export class ConsultaPersonasTypeOrm implements ConsultaPersonas {
     await this.manager.query(`SELECT set_config('pg_trgm.word_similarity_threshold', $1, true)`, [String(UMBRAL_SIMILITUD)]);
   }
 
-  private contactosPrincipales(ids: string[]): Promise<FilaContacto[]> {
-    return this.manager.getRepository(ContactoEntidad).find({
-      where: { personaId: In(ids), tenantId: this.tenantId, principal: true, tipoContacto: In(TIPOS_CONTACTO_LISTADO) },
-    });
-  }
-
-  private rolesVigentes(ids: string[]): Promise<FilaPersonaRol[]> {
-    return this.manager.getRepository(PersonaRolEntidad).find({
-      where: { personaId: In(ids), tenantId: this.tenantId, hasta: IsNull() },
-      order: { productoCodigo: 'ASC', rol: 'ASC' },
-    });
-  }
-
   private get manager(): EntityManager {
     return this.unidadDeTrabajo.manager;
   }
@@ -188,29 +174,4 @@ function coincidenciaDe(clasificada: ConsultaClasificada | null, puntaje: number
   if (clasificada.clase === 'TEXTO') return 'NOMBRE';
   if (clasificada.clase === 'NUMERO' && puntaje >= PUNTAJE_DOCUMENTO_PREFIJO) return 'DOCUMENTO';
   return 'CONTACTO';
-}
-
-function deLaPersona<Fila extends { personaId: string }>(filas: Fila[], personaId: string): Fila[] {
-  return filas.filter((fila) => fila.personaId === personaId);
-}
-
-function valorPrincipal(contactos: FilaContacto[], tipo: string): string | null {
-  return contactos.find((contacto) => contacto.tipoContacto === tipo)?.valor ?? null;
-}
-
-function listada(fila: FilaPersona, contactos: FilaContacto[], roles: FilaPersonaRol[], coincidencia: Coincidencia | null): PersonaListada {
-  return {
-    id: fila.id,
-    tipoPersona: fila.tipoPersona as TipoPersona,
-    tipoDocumento: fila.tipoDocumento as TipoDocumentoPersona,
-    numeroDocumento: fila.numeroDocumento,
-    nombres: fila.nombres,
-    apellidoPaterno: fila.apellidoPaterno,
-    apellidoMaterno: fila.apellidoMaterno,
-    razonSocial: fila.razonSocial,
-    celularPrincipal: valorPrincipal(contactos, 'CELULAR'),
-    correoPrincipal: valorPrincipal(contactos, 'CORREO'),
-    roles: roles.map((rol) => ({ productoCodigo: rol.productoCodigo as ProductoCodigo, rol: rol.rol as RolPersona })),
-    coincidencia,
-  };
 }

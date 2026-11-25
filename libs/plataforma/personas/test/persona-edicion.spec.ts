@@ -378,6 +378,7 @@ describe('Persona: direcciones', () => {
       roles: [],
       contactos,
       direcciones,
+      fusion: null,
     });
 
     persona.agregarDireccion(direccion('Calle Mercaderes 120'));

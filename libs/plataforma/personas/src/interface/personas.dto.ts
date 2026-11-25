@@ -87,6 +87,17 @@ export class PersonaDetalleDto extends PersonaDto {
 
   @ApiProperty({ type: [DireccionDto] })
   direcciones!: DireccionDto[];
+
+  @ApiProperty({
+    type: String,
+    format: 'uuid',
+    nullable: true,
+    description: 'Id de la absorbida que se pidió y resolvió a esta conservada (spec 39); nulo si se pidió esta persona',
+  })
+  resuelta_desde!: string | null;
+
+  @ApiProperty({ type: [String], description: 'Ids de las personas absorbidas en esta' })
+  alias!: string[];
 }
 
 export class ActualizarDatosBasicosDto {
@@ -236,6 +247,9 @@ export class ErrorPersonaDto {
 
   @ApiPropertyOptional({ format: 'uuid', description: 'Solo en PERSONA_DUPLICADA: la persona que ya tiene ese documento' })
   persona_id?: string;
+
+  @ApiPropertyOptional({ format: 'uuid', description: 'Solo en PERSONA_FUSIONADA: la conservada que hay que cargar' })
+  persona_conservada_id?: string;
 }
 
 function denominacionDto(denominacion: DenominacionPersona): DenominacionDto {
@@ -265,6 +279,8 @@ export function personaDetalleDto(persona: PersonaDetalle): PersonaDetalleDto {
     roles: persona.roles.map(({ productoCodigo, rol, desde, hasta }) => ({ producto_codigo: productoCodigo, rol, desde, hasta })),
     contactos: persona.contactos.map(({ id, tipo, valor, principal }) => ({ id, tipo, valor, principal })),
     direcciones: persona.direcciones.map(direccionDto),
+    resuelta_desde: persona.resueltaDesde,
+    alias: [...persona.alias],
   };
 }
 
@@ -278,7 +294,7 @@ export function busquedaDto(resultado: ResultadoBusqueda): BusquedaDto {
   return resultado.aviso === undefined ? sinPersona : { ...sinPersona, aviso: resultado.aviso };
 }
 
-function personaListadaDto(persona: PersonaListada): PersonaListadaDto {
+export function personaListadaDto(persona: PersonaListada): PersonaListadaDto {
   return {
     id: persona.id,
     tipo_persona: persona.tipoPersona,

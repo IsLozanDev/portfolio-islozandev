@@ -37,6 +37,10 @@ export interface DireccionDetalle {
 export interface PersonaDetalle extends PersonaResumen {
   /** Versión del agregado: la piden las ediciones y los borrados. */
   version: number;
+  /** Id de la absorbida que se pidió y resolvió a esta conservada; nulo si se pidió esta persona. */
+  resueltaDesde: string | null;
+  /** Ids de las personas absorbidas en esta (spec 39). */
+  alias: string[];
   roles: RolAsignado[];
   contactos: ContactoDetalle[];
   direcciones: DireccionDetalle[];

@@ -4,8 +4,10 @@ import type { CatalogoPort } from '@vitrina/plataforma/catalogos';
 import type { IdentidadPort } from '@vitrina/plataforma/identidad';
 import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import type { Persona } from '../domain/persona.js';
+import type { ConsultaDuplicados } from './ports/consulta-duplicados.js';
 import type { ConsultaPersonas } from './ports/consulta-personas.js';
 import type { RepositorioConsentimientos } from './ports/repositorio-consentimientos.js';
+import type { RepositorioFusiones } from './ports/repositorio-fusiones.js';
 import type { RepositorioPersonas } from './ports/repositorio-personas.js';
 import type { SuscripcionesDelTenant } from './ports/suscripciones-del-tenant.js';
 
@@ -23,6 +25,8 @@ export interface DependenciasPersonas {
   consentimientos: RepositorioConsentimientos;
   auditoria: Pick<AuditoriaPort, 'registrar'>;
   archivos: Pick<ArchivoPort, 'estado'>;
+  consultaDuplicados: ConsultaDuplicados;
+  fusiones: RepositorioFusiones;
 }
 
 /** Los eventos van al outbox en la misma transacción que guardó a la persona (regla 4). */

@@ -2,10 +2,13 @@ import { FINALIDADES, type Finalidad } from '../../domain/consentimiento.js';
 import { ConsentimientosDePersona } from '../../domain/consentimientos-de-persona.js';
 import type { DependenciasPersonas } from '../dependencias-personas.js';
 import type { ConsentimientoVigente, DecisionRegistrada } from '../ports/consentimiento.port.js';
-import { exigirPersona } from './exigencias.js';
+import { obtenerResuelta } from '../alias-personas.js';
 import { consentimientoVigenteDe, decisionRegistradaDe, type DecisionPorFinalidad } from './vista-consentimiento.js';
 
-/** Decisiones de una persona del tenant. Una persona de otro tenant no existe. */
+/**
+ * Decisiones de una persona del tenant; las de una absorbida son las de su conservada. Los vigentes son solo
+ * los de la conservada: no se infiere consentimiento de un alias (Ley 29733). Una persona de otro tenant no existe.
+ */
 export class ConsultarConsentimientos {
   constructor(private readonly dependencias: Pick<DependenciasPersonas, 'unidadDeTrabajo' | 'personas' | 'consentimientos'>) {}
 
@@ -18,12 +21,17 @@ export class ConsultarConsentimientos {
     });
   }
 
-  /** De la más reciente a la más antigua, revocadas incluidas. */
+  /** De la más reciente a la más antigua, revocadas incluidas, con las de sus alias. */
   historial(personaId: string): Promise<DecisionRegistrada[]> {
     const { unidadDeTrabajo, personas, consentimientos } = this.dependencias;
     return unidadDeTrabajo.run(async () => {
-      const persona = await exigirPersona(personas, personaId);
-      return (await consentimientos.decisionesDe(persona.id)).map(decisionRegistradaDe);
+      const { persona } = await obtenerResuelta(personas, personaId);
+      const fichas = [persona.id, ...(await personas.aliasDe(persona.id))];
+      const deCadaFicha = await Promise.all(fichas.map((fichaId) => consentimientos.decisionesDe(fichaId)));
+      return deCadaFicha
+        .flat()
+        .sort((una, otra) => otra.registradoEn.getTime() - una.registradoEn.getTime())
+        .map(decisionRegistradaDe);
     });
   }
 
@@ -36,7 +44,7 @@ export class ConsultarConsentimientos {
   private historialDe(personaId: string): Promise<ConsentimientosDePersona> {
     const { unidadDeTrabajo, personas, consentimientos } = this.dependencias;
     return unidadDeTrabajo.run(async () => {
-      const persona = await exigirPersona(personas, personaId);
+      const { persona } = await obtenerResuelta(personas, personaId);
       return new ConsentimientosDePersona(persona.id, await consentimientos.decisionesDe(persona.id));
     });
   }

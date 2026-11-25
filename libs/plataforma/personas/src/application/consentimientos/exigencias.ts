@@ -1,12 +1,14 @@
 import type { TenantContext } from '@vitrina/plataforma/kernel';
 import { DatosConsentimientoInvalidosError, PersonaNoEncontradaError } from '../../domain/errores.js';
 import type { Persona } from '../../domain/persona.js';
+import { exigirSinFusionar } from '../alias-personas.js';
 import type { RepositorioPersonas } from '../ports/repositorio-personas.js';
 
-/** Una persona de otro tenant no existe para quien consulta. */
+/** Para registrar o revocar. Una persona de otro tenant no existe; una absorbida no consiente (spec 39). */
 export async function exigirPersona(personas: RepositorioPersonas, personaId: string): Promise<Persona> {
   const persona = await personas.obtener(personaId);
   if (!persona) throw new PersonaNoEncontradaError();
+  exigirSinFusionar(persona);
   return persona;
 }
 

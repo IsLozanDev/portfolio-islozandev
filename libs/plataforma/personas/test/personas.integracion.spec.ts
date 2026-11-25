@@ -11,9 +11,10 @@ import { Persona } from '../src/domain/persona.js';
 import { registrarEsquemasPer } from '../src/infrastructure/event-schemas.js';
 import { ENTIDADES_PER } from '../src/infrastructure/typeorm/entidades.js';
 import { ConsultaPersonasTypeOrm } from '../src/infrastructure/typeorm/consulta-personas.typeorm.js';
+import { RepositorioFusionesTypeOrm } from '../src/infrastructure/typeorm/fusiones.repositorio.js';
 import { RepositorioPersonasTypeOrm } from '../src/infrastructure/typeorm/personas.repositorio.js';
 import { VerificadorReferenciasPer } from '../src/infrastructure/verificador-referencias.per.js';
-import { ArchivosFijos, AuditoriaEspia, CatalogoFijo, IdentidadEspia, SuscripcionesFijas } from './support/dobles.js';
+import { ArchivosFijos, AuditoriaEspia, CatalogoFijo, ConsultaDuplicadosEspia, IdentidadEspia, SuscripcionesFijas } from './support/dobles.js';
 import { RepositorioConsentimientosTypeOrm } from '../src/infrastructure/typeorm/consentimientos.repositorio.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
@@ -257,6 +258,8 @@ describeConDb('Personas con TypeORM (TR-RF-039, 040, PostgreSQL 16)', () => {
         consentimientos: new RepositorioConsentimientosTypeOrm(unidadDeTrabajo, contexto),
         auditoria: new AuditoriaEspia(),
         archivos: new ArchivosFijos(),
+        consultaDuplicados: new ConsultaDuplicadosEspia(),
+        fusiones: new RepositorioFusionesTypeOrm(unidadDeTrabajo, contexto),
       };
     });
 
