@@ -9,7 +9,6 @@ const MILLON = 1_000_000;
 const MIL = 1_000;
 const CENTENA = 100;
 const DECENA = 10;
-const LIMITE_NOMBRE_PROPIO = 30;
 
 const NOMBRE_MONEDA: Readonly<Record<Moneda, string>> = { PEN: 'SOLES', USD: 'DÓLARES AMERICANOS' };
 
@@ -35,7 +34,7 @@ function apocopar(palabras: string): string {
 }
 
 function decenasEnLetras(numero: number): string {
-  if (numero < LIMITE_NOMBRE_PROPIO) return MENORES_DE_TREINTA[numero];
+  if (numero < MENORES_DE_TREINTA.length) return MENORES_DE_TREINTA[numero];
   const unidad = numero % DECENA;
   const decena = DECENAS[Math.floor(numero / DECENA)];
   return unidad === 0 ? decena : `${decena} Y ${MENORES_DE_TREINTA[unidad]}`;

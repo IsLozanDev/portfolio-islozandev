@@ -108,7 +108,7 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 49 | fe-emisor-configuracion | R2-04: TR-RF-052 (pasos 1-3, alerta de vencimiento) | 7-8 | 41, 09, 19a, 20a | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
 | 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
 | 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
-| 51b | fe-ubl-firma | Documento electrónico completo, UBL 2.1 de factura y boleta y firma XMLDSig con el certificado del emisor | 9-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 51b | fe-ubl-firma | Documento electrónico completo, UBL 2.1 de factura y boleta y firma XMLDSig con el certificado del emisor | 9-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
 | 51c | fe-adaptador-sunat-directo | Adaptador SEE-Del Contribuyente de `PseOsePort`: `sendBill`, ZIP, CDR y prueba en la beta de SUNAT; Nubefact queda como alterno | 9-10 | 51b, 50 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 51c, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 53 | fe-representacion-impresa | R2-06: TR-RF-061 | 6-7 | 51, 33 | `tr-fe/fe-representacion-impresa.md` | Pendiente |

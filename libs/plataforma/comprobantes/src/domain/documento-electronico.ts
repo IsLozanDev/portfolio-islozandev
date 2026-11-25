@@ -1,8 +1,8 @@
 import { fechaCalendarioDe, type FechaCalendario } from '@vitrina/plataforma/org';
+import { monto } from './comprobante/dinero.js';
 import { CODIGO_SUNAT_POR_TIPO, type CodigoTipoComprobante, type FormaPago, type Moneda } from './comprobante/tipo-comprobante.js';
 import { horaEnLima } from './hora-lima.js';
 import { montoEnLetras } from './monto-en-letras.js';
-import { monto } from './comprobante/dinero.js';
 
 export type TipoDocumentoElectronico = CodigoTipoComprobante;
 

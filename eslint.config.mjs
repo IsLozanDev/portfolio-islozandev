@@ -14,6 +14,7 @@ const paquete = (group, message) => ({ group, message });
 const SUPABASE = paquete(['@supabase/*'], 'Supabase solo en infrastructure/supabase.');
 const NEST = paquete(['@nestjs/*'], 'El dominio no importa NestJS.');
 const ORM = paquete(['typeorm', 'typeorm/*'], 'Esta capa no importa TypeORM.');
+const XML_Y_FIRMA = paquete(['xml-crypto', '@xmldom/xmldom', 'node-forge'], 'El dominio no arma XML ni firma: eso va en infrastructure.');
 const restringir = (...patterns) => ({ 'no-restricted-imports': ['error', { patterns }] });
 
 export default [
@@ -95,6 +96,6 @@ export default [
   },
   {
     files: ['libs/plataforma/*/src/domain/**/*.ts', 'libs/plataforma/kernel/src/**/*.ts'],
-    rules: restringir(capa('application'), capa('infrastructure'), capa('interface'), NEST, ORM, SUPABASE),
+    rules: restringir(capa('application'), capa('infrastructure'), capa('interface'), NEST, ORM, SUPABASE, XML_Y_FIRMA),
   },
 ];

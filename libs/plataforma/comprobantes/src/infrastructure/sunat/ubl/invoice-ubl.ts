@@ -1,7 +1,7 @@
 import type { Element } from '@xmldom/xmldom';
 import { Decimal, ESCALA_MONTO, ESCALA_TASA } from '../../../domain/comprobante/dinero.js';
 import { formatearNumero } from '../../../domain/comprobante/tipo-comprobante.js';
-import type { DocumentoElectronico, LineaDocumento } from '../../../domain/documento-electronico.js';
+import type { DocumentoElectronico, LineaDocumento, TotalesDocumento } from '../../../domain/documento-electronico.js';
 import {
   ATRIBUTOS_AFECTACION,
   ATRIBUTOS_CATEGORIA_TRIBUTO,
@@ -39,8 +39,6 @@ const PORCENTAJE_SIN_IGV = '0.00';
 const SIN_IMPUESTO = '0.00';
 /** Cat. 06: el emisor siempre se identifica con RUC. */
 const TIPO_DOCUMENTO_RUC = '6';
-
-type TotalesDocumento = DocumentoElectronico['totales'];
 
 const BASE_DEL_TRIBUTO: ReadonlyMap<TributoSunat, keyof TotalesDocumento> = new Map([
   [TRIBUTO_IGV, 'gravado'],
