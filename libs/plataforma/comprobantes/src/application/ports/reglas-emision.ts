@@ -33,4 +33,6 @@ export interface PadronAdquirente {
 /** SucursalNoEncontradaError si la sucursal no es de la empresa (o es de otro tenant). */
 export interface SucursalesEmisoras {
   exigirDeLaEmpresa(sucursalId: string, empresaId: string): Promise<void>;
+  /** Anexo SUNAT de la sucursal; null si ORG no lo tiene. SucursalNoEncontradaError si no existe. */
+  codigoEstablecimiento(sucursalId: string): Promise<string | null>;
 }

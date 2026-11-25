@@ -1,6 +1,6 @@
 # SPEC 51b — Facturación electrónica: documento electrónico completo, UBL 2.1 de factura y boleta y firma XMLDSig propia
 
-> **Status:** Borrador
+> **Status:** Implementado
 > **Depends on:** SPEC 51, SPEC 49, SPEC 41, SPEC 48
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el `DocumentoElectronico` completo de factura y boleta (armado desde el agregado `Comprobante`), su XML UBL 2.1 según SUNAT y la firma XMLDSig con el certificado del emisor, para que el adaptador SUNAT directo (spec 51c) solo tenga que comprimir y enviar.
@@ -172,21 +172,21 @@ codigoEstablecimiento(sucursalId: string): Promise<string | null>;
 
 ## Criterios de aceptación
 
-- [ ] La factura de TR-CA-136 genera un `Invoice` UBL 2.1 con `ID` `F001-00000100`, `InvoiceTypeCode` `01` con `listID` `0101`, IGV 18.00, total 118.00 y leyenda `1000` «CIENTO DIECIOCHO CON 00/100 SOLES».
-- [ ] La boleta sin adquirente lleva al adquirente con documento `0` y nombre «CLIENTES VARIOS», y `InvoiceTypeCode` `03`.
-- [ ] Gravado, exonerado e inafecto en un mismo comprobante → un `TaxSubtotal` por tributo (`1000`, `9997`, `9998`) con su base y, en cada línea, `TaxExemptionReasonCode` igual a su afectación.
-- [ ] Crédito con dos cuotas → `PaymentTerms` `FormaPago`/`Credito` con el monto pendiente y `Cuota001`, `Cuota002` con monto y fecha.
-- [ ] El emisor lleva RUC con `schemeID="6"`, razón social, ubigeo y `AddressTypeCode` igual al código de establecimiento de la sucursal.
-- [ ] Empresa sin domicilio fiscal o sin ubigeo, o sucursal sin código de establecimiento → `DATOS_EMISOR_INCOMPLETOS` con el campo.
-- [ ] El XML firmado verifica con `xml-crypto` y el certificado del `.pfx`. Alterar un importe después de firmar hace fallar la verificación.
-- [ ] La firma está dentro de `ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent`, es enveloped, usa C14N inclusiva y lleva `X509Certificate`. El hash devuelto es su `DigestValue`.
-- [ ] Ningún log, error ni valor devuelto contiene la clave del `.pfx` ni la llave privada (TR-RNF-113).
-- [ ] `montoEnLetras` cubre céntimos, miles, millones y dólares.
-- [ ] `boletaDePrueba`, el simulador y el mapeo de Nubefact siguen pasando sus pruebas con el documento nuevo.
-- [ ] El dominio no importa `xml-crypto`, `@xmldom/xmldom` ni `node-forge` (lint de capas).
-- [ ] Cobertura de dominio de `comprobantes` ≥ 70 %.
-- [ ] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md`.
-- [ ] `npx nx run-many -t lint test -p comprobantes boundaries-test` verde; `nx affected` verde en el CI del PR.
+- [x] La factura de TR-CA-136 genera un `Invoice` UBL 2.1 con `ID` `F001-00000100`, `InvoiceTypeCode` `01` con `listID` `0101`, IGV 18.00, total 118.00 y leyenda `1000` «CIENTO DIECIOCHO CON 00/100 SOLES».
+- [x] La boleta sin adquirente lleva al adquirente con documento `0` y nombre «CLIENTES VARIOS», y `InvoiceTypeCode` `03`.
+- [x] Gravado, exonerado e inafecto en un mismo comprobante → un `TaxSubtotal` por tributo (`1000`, `9997`, `9998`) con su base y, en cada línea, `TaxExemptionReasonCode` igual a su afectación.
+- [x] Crédito con dos cuotas → `PaymentTerms` `FormaPago`/`Credito` con el monto pendiente y `Cuota001`, `Cuota002` con monto y fecha.
+- [x] El emisor lleva RUC con `schemeID="6"`, razón social, ubigeo y `AddressTypeCode` igual al código de establecimiento de la sucursal.
+- [x] Empresa sin domicilio fiscal o sin ubigeo, o sucursal sin código de establecimiento → `DATOS_EMISOR_INCOMPLETOS` con el campo.
+- [x] El XML firmado verifica con `xml-crypto` y el certificado del `.pfx`. Alterar un importe después de firmar hace fallar la verificación.
+- [x] La firma está dentro de `ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent`, es enveloped, usa C14N inclusiva y lleva `X509Certificate`. El hash devuelto es su `DigestValue`.
+- [x] Ningún log, error ni valor devuelto contiene la clave del `.pfx` ni la llave privada (TR-RNF-113).
+- [x] `montoEnLetras` cubre céntimos, miles, millones y dólares.
+- [x] `boletaDePrueba`, el simulador y el mapeo de Nubefact siguen pasando sus pruebas con el documento nuevo.
+- [x] El dominio no importa `xml-crypto`, `@xmldom/xmldom` ni `node-forge` (lint de capas).
+- [x] Cobertura de dominio de `comprobantes` ≥ 70 %.
+- [x] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md`.
+- [ ] `npx nx run-many -t lint test -p comprobantes boundaries-test` verde; `nx affected` verde en el CI del PR. Local en verde el 2026-11-25; `nx affected` queda para el CI del PR.
 
 ## Decisiones
 
@@ -198,6 +198,7 @@ codigoEstablecimiento(sucursalId: string): Promise<string | null>;
 - **Sí:** XML con DOM, no con plantillas de texto. Escapa caracteres de descripciones y nombres (`&`, `<`) sin depender de cada llamador.
 - **Sí:** datos del emisor desde ORG al armar el documento. No se duplican en FE; un dato faltante se informa con `DATOS_EMISOR_INCOMPLETOS`.
 - **Sí:** RSA-SHA256 por defecto, con SHA-1 como alternativa en una constante. La beta del 51c decide.
+- **Sí:** estructura UBL vigente, no la de la guía publicada. Decisión del usuario (2026-11-25, paso 3). Las guías de factura y boleta de cpe.sunat.gob.pe son la versión 1.0 de 2017: llevan el tipo de operación en `cbc:ProfileID`, las partes en `cac:PartyTaxScheme/CompanyID` y no tienen forma de pago. Se sigue la estructura que validan hoy SUNAT y la beta, la que pide este spec: `InvoiceTypeCode@listID`, `cac:PartyIdentification` + `cac:PartyLegalEntity/RegistrationAddress` y `PaymentTerms` `FormaPago` (RS 193-2020/SUNAT). De la guía se toman los atributos de catálogo, los tributos, `PricingReference`, la firma y los namespaces. La beta del 51c confirma; si rechaza un nodo, se corrige en `infrastructure/sunat/ubl/`.
 - **No:** validar contra los XSD de SUNAT en local. Exigiría una librería nativa (libxml). La beta valida estructura y reglas.
 - **No:** migración ni permiso nuevo. El manifiesto no cambia y este spec no choca con otros del mismo frente.
 

@@ -27,12 +27,17 @@ function moduloDe(llave: unknown): string | null {
   return modulo ? modulo.toString(16) : null;
 }
 
+/** La llave privada del contenedor y su certificado hoja. */
+export interface ParDeLlave {
+  llave: forge.pki.PrivateKey;
+  certificado: forge.pki.Certificate;
+}
+
 /** El certificado hoja es el de la llave privada: por `localKeyId` y, si falta, por el módulo RSA. */
-function certificadoDeLaLlave(contenedor: forge.pkcs12.Pkcs12Pfx): forge.pki.Certificate {
-  const llaves = BOLSAS_LLAVE.flatMap((tipo) => bolsasDe(contenedor, tipo));
+function parDeLaLlave(contenedor: forge.pkcs12.Pkcs12Pfx): ParDeLlave {
+  const [llave] = BOLSAS_LLAVE.flatMap((tipo) => bolsasDe(contenedor, tipo));
   const certificados = bolsasDe(contenedor, BOLSA_CERTIFICADO).filter((bolsa) => bolsa.cert);
-  const [llave] = llaves;
-  if (!llave || certificados.length === 0) throw new ArchivoCertificadoInvalidoError();
+  if (!llave?.key || certificados.length === 0) throw new ArchivoCertificadoInvalidoError();
   const idLlave = idLlaveDe(llave);
   const moduloLlave = moduloDe(llave.key);
   const hoja = certificados.find(
@@ -41,7 +46,7 @@ function certificadoDeLaLlave(contenedor: forge.pkcs12.Pkcs12Pfx): forge.pki.Cer
       (moduloLlave !== null && moduloDe(bolsa.cert?.publicKey) === moduloLlave),
   );
   if (!hoja?.cert) throw new ArchivoCertificadoInvalidoError();
-  return hoja.cert;
+  return { llave: llave.key, certificado: hoja.cert };
 }
 
 function abrir(pfx: Uint8Array, clave: string): forge.pkcs12.Pkcs12Pfx {
@@ -60,6 +65,14 @@ function abrir(pfx: Uint8Array, clave: string): forge.pkcs12.Pkcs12Pfx {
   }
 }
 
+/**
+ * Abre el PKCS#12 y devuelve la llave privada con su certificado hoja. ClaveCertificadoIncorrectaError o
+ * ArchivoCertificadoInvalidoError, sin la clave ni el mensaje de node-forge.
+ */
+export function abrirParDeLlave(pfx: Uint8Array, clave: string): ParDeLlave {
+  return parDeLaLlave(abrir(pfx, clave));
+}
+
 function atributosDe(certificado: forge.pki.Certificate): AtributoSujeto[] {
   return certificado.subject.attributes.map((atributo) => ({
     nombre: atributo.name,
@@ -76,7 +89,7 @@ function huellaDe(certificado: forge.pki.Certificate): string {
 /** PKCS#12 con node-forge (JS puro, sin archivos temporales): abre PBES2/AES y 3DES con MAC SHA-1 o SHA-256. */
 export class LectorCertificadoForge implements LectorCertificado {
   leer(pfx: Uint8Array, clave: string): CertificadoLeido {
-    const certificado = certificadoDeLaLlave(abrir(pfx, clave));
+    const { certificado } = abrirParDeLlave(pfx, clave);
     const sujeto = atributosDe(certificado);
     return new CertificadoLeido(extraerRuc(sujeto), certificado.validity.notAfter, certificado.validity.notBefore, huellaDe(certificado), sujeto);
   }

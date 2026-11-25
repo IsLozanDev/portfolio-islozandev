@@ -1,5 +1,6 @@
 import { CertificadoLeido } from '../src/domain/certificado-leido.js';
-import { boletaDePrueba, redondearMonto } from '../src/domain/documento-electronico.js';
+import { boletaDePrueba } from '../src/domain/documento-electronico.js';
+import { emisorDePrueba } from '../src/domain/emisor-documento.js';
 import { Emisor, LARGO_MAXIMO_DESCRIPCION_PRUEBA, type ReglasProduccion } from '../src/domain/emisor.js';
 import {
   CertificadoVencidoError,
@@ -85,13 +86,15 @@ describe('exigirUrlPermitida (anti-SSRF)', () => {
 });
 
 describe('boletaDePrueba', () => {
-  it('S/ 1.00 con IGV del 18 %: gravada 0.85 e IGV 0.15 que suman el total, a CLIENTES VARIOS', () => {
-    const boleta = boletaDePrueba('20601234561', 'B001', 7, '2026-11-23');
-    expect(boleta).toMatchObject({ tipo: '03', serie: 'B001', numero: 7, moneda: 'PEN', fechaEmision: '2026-11-23' });
-    expect(boleta.adquirente).toEqual({ tipoDocumento: '-', numero: '-', nombre: 'CLIENTES VARIOS' });
-    expect(boleta.totales).toEqual({ gravada: 0.85, igv: 0.15, total: 1 });
-    expect(boleta.items).toEqual([expect.objectContaining({ cantidad: 1, valorUnitario: 0.85, igv: 0.15, total: 1 })]);
-    expect(redondearMonto(0.155)).toBe(0.16);
+  it('S/ 1.00 con IGV del 18 %: gravada 0.85 e IGV 0.15 que suman el total, a CLIENTES VARIOS con documento 0', () => {
+    const emisor = emisorDePrueba({ ruc: '20601234561', razonSocial: 'EMPRESA SAC', nombreComercial: null, domicilioFiscal: null, ubigeo: null });
+    const boleta = boletaDePrueba(emisor, 'B001', 7, new Date('2026-11-24T03:30:00Z'));
+    expect(boleta).toMatchObject({ tipo: '03', serie: 'B001', numero: 7, moneda: 'PEN', fechaEmision: '2026-11-23', horaEmision: '22:30:00' });
+    expect(boleta.emisor).toEqual({ ruc: '20601234561', razonSocial: 'EMPRESA SAC', nombreComercial: null, domicilioFiscal: '', ubigeo: '', codigoEstablecimiento: '0000' });
+    expect(boleta.adquirente).toEqual({ tipoDocumento: '0', numero: '0', nombre: 'CLIENTES VARIOS' });
+    expect(boleta.totales).toEqual({ gravado: '0.85', exonerado: '0.00', inafecto: '0.00', igv: '0.15', total: '1.00' });
+    expect(boleta.lineas).toEqual([expect.objectContaining({ cantidad: '1.0000', valorUnitario: '0.8500', precioUnitario: '1.0000', afectacionIgv: '10', igv: '0.15' })]);
+    expect(boleta.montoEnLetras).toBe('UNO CON 00/100 SOLES');
   });
 });
 
