@@ -9,8 +9,10 @@ import { ConsultarSerie, ListarSeries, type DependenciasLectura } from './applic
 import { ObtenerSiguiente } from './application/obtener-siguiente.js';
 import { SembrarSeriesIniciales } from './application/sembrar-series-iniciales.js';
 import { CORRELATIVO_PORT, type CorrelativoPort } from './application/ports/correlativo.port.js';
+import { SERIES_ACTIVAS_PORT, type SeriesActivasPort } from './application/ports/series-activas.port.js';
 import { LecturaSeriesTypeOrm } from './infrastructure/typeorm/lectura-series.typeorm.js';
 import { NumeracionSqlTypeOrm } from './infrastructure/typeorm/numeracion-sql.typeorm.js';
+import { SeriesActivasTypeOrm } from './infrastructure/typeorm/series-activas.typeorm.js';
 import { SeriesRepositorioTypeOrm } from './infrastructure/typeorm/series.repositorio.js';
 import { UbicacionesSerieTypeOrm } from './infrastructure/typeorm/ubicaciones-serie.typeorm.js';
 import { SeriesController } from './interface/series.controller.js';
@@ -74,8 +76,14 @@ export class CorrelativosModule {
             new ObtenerSiguiente(contexto, reloj, new NumeracionSqlTypeOrm(unidadDeTrabajo), depurar),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
         },
+        {
+          provide: SERIES_ACTIVAS_PORT,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): SeriesActivasPort =>
+            new SeriesActivasTypeOrm(unidadDeTrabajo, contexto),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
       ],
-      exports: [CORRELATIVO_PORT, CrearSerie, SembrarSeriesIniciales],
+      exports: [CORRELATIVO_PORT, SERIES_ACTIVAS_PORT, CrearSerie, SembrarSeriesIniciales],
     };
   }
 }
