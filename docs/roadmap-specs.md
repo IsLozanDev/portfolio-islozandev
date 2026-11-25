@@ -2,7 +2,7 @@
 
 Un spec es un archivo `specs/NN-slug.md`: un componente TR o un slice de uno. Objetivo en una frase, tres áreas como máximo, cabe en 10 h. `/spec` asigna el número según el orden en que se guardan; esta lista fija el orden de construcción y el contenido.
 
-Estado: columna Estado, tomada del encabezado de cada `specs/NN-slug.md` (revisado el 2026-11-23). Se actualiza cuando un spec pasa a Aprobado o Implementado; sin archivo, Pendiente.
+Estado: columna Estado, tomada del encabezado de cada `specs/NN-slug.md` (revisado el 2026-11-24). Se actualiza cuando un spec pasa a Aprobado o Implementado; sin archivo, Pendiente.
 
 Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`). Los specs 03, 04, 06 y 07 originales superaban el tope de 10 h y el alta de tenant dependía de componentes que se construyen después.
 
@@ -22,7 +22,7 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 10 | seq-correlativos | D-02 y parte de D-05 (RF 035-037) | 7 | 07 | 10 | Implementado |
 | 11 | evt-outbox-relay | E-02 (RF 093, 095): relay en el worker, suscriptores, reproceso | 6 | 02 | 11 | Implementado |
 | 12 | org-alta-tenant-vencimiento | O-02 y vencimiento de O-03 (RF 001, 007): alta transaccional, siembra, invitación al propietario, tarea diaria. IDN y NOT van por puertos con adaptador nulo hasta R2 | 9 | 08, 09, 10, 11 | 03 | Implementado |
-| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 | Aprobado |
+| 13 | auth-cliente-angular | A-04: shared/auth (cliente Supabase, sesión, interceptor, guards, `*siPermiso`). Compilar con Angular 21 | 6 | 07 | 13 | Implementado |
 | 14 | auth-ui-minima | Páginas `/auth`: ingresar, callback OAuth (Google real; Microsoft pendiente), MFA, recuperar, nueva clave e invitación (pantalla del spec 08). Primera app `plataforma-admin` con Material y Tailwind 4. Sin historia en el plan; se agrega | 12-13 | 13, 08 | 13 | Implementado |
 | 15 | shell-y-ui | U-01, U-02 (RF 015, 016 en UI): `shared/ui` (tokens, avisos con SweetAlert2, tabla, filtros, formulario, carga, vacío) y `shared/shell` (layout, menú, selector de sucursal, páginas de sistema, interceptor de errores). Mayor que las 8 h del plan por SweetAlert2, tabla, filtros y formulario | 13-14 | 13, 14 | 15 | Implementado |
 | 16a | usuarios-asignaciones | U-03 (RF 009, 013, 014) y su back: listar y detalle de miembros, `POST /asignaciones`. Agrega a `confirmarDestructiva` del 15 la opción `longitudMinimaMotivo` (por defecto 10) y la usa con 4 para SEG | 9 | 08, 15, 17a | 16a | Implementado |
@@ -94,20 +94,20 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 35 | arc-versiones | R2-03: TR-RF-081 | 9-10 | 33 | `tr-arc/arc-subida-versiones-url-firmada.md` | Implementado |
 | 36 | arc-ui-archivo-carga | `<ui-archivo-carga>` | 7 | 33, 35, 15 | `tr-arc/arc-subida-versiones-url-firmada.md` | Implementado |
 | 37 | per-consentimientos | R2-01: TR-RF-043 | 7 | 31, 33, 20a, 11 | `tr-per/per-consentimientos.md` | Implementado |
-| 38 | per-ui-persona-buscador | UI de 039 y 041 (`personas-ui`, `<ui-persona-buscador>`) | 8 | 31, 32, 15b-d | `tr-per/per-registro-roles-contactos.md` | Pendiente |
-| 39 | per-duplicados-fusion | TR-RF-042 (back) | 7 | 31, 32, 37, 20a | `tr-per/per-duplicados-fusion.md` | Pendiente |
+| 38 | per-ui-persona-buscador | UI de 039 y 041 (`personas-ui`, `<ui-persona-buscador>`) | 8 | 31, 32, 15b-d | `tr-per/per-registro-roles-contactos.md` | Implementado |
+| 39 | per-duplicados-fusion | TR-RF-042 (back): candidatos con puntaje, descartes y fusión con alias | 9-10 | 31, 32, 37, 38, 20a, 11 | `tr-per/per-duplicados-fusion.md` | Implementado |
 | 40 | per-fusion-ui | UI de 042 | 6 | 39, 17c | `tr-per/per-duplicados-fusion.md` | Pendiente |
 | 41 | boveda-secretos | TR-RNF-113: secretos por tenant con cifrado por sobre (FE, PAG, NOT) | 4-5 | kernel-infra | `tr-fe/fe-emisor-y-puerto-pse.md`, `tr-pag/README.md` | Implementado |
 | 42 | not-envio-correo-resend | R2-09: TR-RF-075, 079 (correo) | 9 | 11, 21, 37 | `tr-not/not-correo-plantillas-estados.md` | Implementado |
-| 43 | not-plantillas-personalizacion | R2-09: TR-RF-074 (back) | 5 | 42, 07 | `tr-not/not-correo-plantillas-estados.md` | Aprobado |
-| 44 | not-consumidores-plataforma | Correos de eventos ya publicados (vencimiento, suspensión, integridad, soporte) | 3 | 42, 43 | `tr-not/not-correo-plantillas-estados.md` | Pendiente |
-| 45 | not-recordatorios | R2-10: TR-RF-076 | 4 | 42 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
+| 43 | not-plantillas-personalizacion | R2-09: TR-RF-074 (back) | 5 | 42, 07 | `tr-not/not-correo-plantillas-estados.md` | Implementado |
+| 44 | not-consumidores-plataforma | Correos de eventos ya publicados (vencimiento, suspensión, integridad, soporte) | 3 | 42, 43 | `tr-not/not-correo-plantillas-estados.md` | Implementado |
+| 45 | not-recordatorios | R2-10: TR-RF-076 | 4 | 42 | `tr-not/not-recordatorios-preferencias.md` | Implementado |
 | 46 | not-preferencias-bajas | R2-10: TR-RF-077 | 6 | 45, 31 | `tr-not/not-recordatorios-preferencias.md` | Pendiente |
 | 47 | not-plantillas-ui | R2-11: UI de 074 | 4-5 | 43, 15, 17c, 19e | `tr-not/not-plantillas-ui.md` | Pendiente |
 | 48 | cat-tablas-sunat-fe | Catálogos SUNAT 05, 09, 10, 16, 51, 52 y regenerar 01, 06, 07 | 3-4 | 19b | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
 | 49 | fe-emisor-configuracion | R2-04: TR-RF-052 (pasos 1-3, alerta de vencimiento) | 7-8 | 41, 09, 19a, 20a | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
-| 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Aprobado |
-| 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
+| 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
 | 51b | fe-ubl-firma | UBL 2.1 y firma propios; solo si se elige OSE o SUNAT directo | 8-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Condicional |
 | 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 53 | fe-representacion-impresa | R2-06: TR-RF-061 | 6-7 | 51, 33 | `tr-fe/fe-representacion-impresa.md` | Pendiente |

@@ -1,6 +1,6 @@
 # SPEC 51 — Facturación electrónica: emisión de boleta y factura con cálculo de IGV, validaciones normativas, numeración de SEQ e idempotencia
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 48, SPEC 49, SPEC 50, SPEC 10, SPEC 09, SPEC 19a, SPEC 28b, SPEC 20a
 > **Date:** 2026-11-24
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el agregado `Comprobante` y `ComprobantePort.emitir` (en proceso y por `POST /v1/fe/comprobantes`), que valida adquirente, líneas y catálogos SUNAT, calcula el IGV con la tasa vigente, numera con SEQ en la misma transacción, guarda el comprobante en `PENDIENTE_ENVIO` y publica `cpe.emitido`, sin duplicar ante la misma clave de idempotencia.

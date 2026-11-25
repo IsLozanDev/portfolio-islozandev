@@ -1,6 +1,6 @@
 # SPEC 44 — Notificaciones: correos de los eventos de plataforma ya publicados (vencimiento, suspensión, soporte e integridad)
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 42, SPEC 43, SPEC 11, SPEC 12, SPEC 18, SPEC 20b
 > **Date:** 2026-11-24
 > **Objective:** Enviar con `NotificacionPort.enviar` un correo transaccional a los propietarios del tenant cuando se publican `suscripcion.por_vencer`, `tenant.suspendido` y `soporte.solicitado`, y a la dirección de operación de la plataforma cuando se publica `aud.integridad.rota`, con plantillas base nuevas y un envío por destinatario sin duplicados.

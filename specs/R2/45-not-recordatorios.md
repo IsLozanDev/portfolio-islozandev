@@ -1,6 +1,6 @@
 # SPEC 45 — Notificaciones: recordatorios programados por referencia, con cancelación, reprogramación y revalidación a la hora del envío
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 42, SPEC 11, SPEC 21
 > **Date:** 2026-11-24
 > **Objective:** Agregar a `NotificacionPort` las operaciones `programar` y `cancelar`, que guardan en `ntf.programacion` un envío futuro por referencia del producto, lo disparan desde una cola BullMQ diferida del worker y a la hora llaman a `enviar`, que revalida bajas, contactos inválidos y consentimiento.

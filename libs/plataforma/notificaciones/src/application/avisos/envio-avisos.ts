@@ -23,7 +23,7 @@ export interface EventoDeAviso<Carga> {
 export interface DependenciasAvisos {
   unidadDeTrabajo: UnitOfWork;
   contexto: TenantContext;
-  notificaciones: NotificacionPort;
+  notificaciones: Pick<NotificacionPort, 'enviar'>;
   propietarios: Pick<PropietariosTenant, 'listar'>;
   nombreTenant: NombreTenant;
   /** `NOT_CORREO_OPERACION`: destino de `aud.integridad.rota`. */

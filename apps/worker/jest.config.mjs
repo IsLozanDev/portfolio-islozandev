@@ -12,6 +12,7 @@ export default {
     '^@vitrina/plataforma/secretos$': '<rootDir>/../../libs/plataforma/secretos/src/index.ts',
     '^@vitrina/plataforma/notificaciones$': '<rootDir>/../../libs/plataforma/notificaciones/src/index.ts',
     '^@vitrina/plataforma/personas$': '<rootDir>/../../libs/plataforma/personas/src/index.ts',
+    '^@vitrina/plataforma/correlativos$': '<rootDir>/../../libs/plataforma/correlativos/src/index.ts',
     '^@vitrina/plataforma/comprobantes$': '<rootDir>/../../libs/plataforma/comprobantes/src/index.ts',
     '^@vitrina/plataforma/org$': '<rootDir>/../../libs/plataforma/org/src/index.ts',
     '^@vitrina/plataforma/parametros$': '<rootDir>/../../libs/plataforma/parametros/src/index.ts',
