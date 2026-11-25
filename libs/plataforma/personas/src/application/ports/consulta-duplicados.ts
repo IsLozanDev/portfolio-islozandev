@@ -22,6 +22,8 @@ export interface CriteriosDuplicados {
   pagina: number;
   tamano: number;
   puntajeMinimo: number;
+  /** Solo los pares donde está esta persona; nulo para todos. */
+  personaId: string | null;
 }
 
 export interface EvaluacionPar {

@@ -89,7 +89,7 @@ describeConDb('Duplicados de personas con TypeORM (spec 39, PostgreSQL 16)', () 
   }
 
   const buscar = (criterios: Partial<CriteriosDuplicados> = {}, tenantId = tenantA) =>
-    enTenant(tenantId, () => consulta.buscar({ pagina: 1, tamano: 20, puntajeMinimo: PUNTAJE_MINIMO, ...criterios }));
+    enTenant(tenantId, () => consulta.buscar({ pagina: 1, tamano: 20, puntajeMinimo: PUNTAJE_MINIMO, personaId: null, ...criterios }));
 
   const paresDe = async (criterios: Partial<CriteriosDuplicados> = {}) =>
     (await buscar(criterios)).items.map((item) => ({ par: ParPersonas.de(item.personaA.id, item.personaB.id), puntaje: item.puntaje }));
@@ -172,6 +172,23 @@ describeConDb('Duplicados de personas con TypeORM (spec 39, PostgreSQL 16)', () 
     expect(await evaluar(par(PEDRO_DNI, PEDRO_OTRO_DNI))).toEqual({ puntaje: 80, motivos: ['CELULAR_Y_NOMBRE_IGUAL', 'CELULAR_Y_NOMBRE_PARECIDO'] });
     expect(await evaluar(par(JUANA_DNI, JUANA_ALIAS))).toEqual({ puntaje: 60, motivos: ['CELULAR_Y_NOMBRE_PARECIDO'] });
     expect(await evaluar(par(JUANA_DNI, MARTHA_CE))).toBeNull();
+  });
+
+  it('con persona solo trae sus pares, con el total de esos pares', async () => {
+    const deJuana = await buscar({ personaId: id(JUANA_DNI) });
+    expect(deJuana.total).toBe(1);
+    expect(deJuana.items.map((item) => ParPersonas.de(item.personaA.id, item.personaB.id))).toEqual([par(JUANA_DNI, JUANA_PASAPORTE)]);
+
+    expect((await paresDe({ personaId: id(MARTHA_PASAPORTE) })).map((item) => item.par)).toEqual([par(MARTHA_CE, MARTHA_PASAPORTE)]);
+    expect(await buscar({ personaId: id(MARTHA_PASAPORTE), pagina: 2, tamano: 1 })).toEqual({ items: [], total: 1 });
+  });
+
+  it('con una persona absorbida, de otro tenant, bloqueada o sin pares la lista viene vacía', async () => {
+    const vacia = { items: [], total: 0 };
+    expect(await buscar({ personaId: id(JUANA_ALIAS) })).toEqual(vacia);
+    expect(await buscar({ personaId: id(PEDRO_DNI) })).toEqual(vacia);
+    expect(await buscar({ personaId: id(JUANA_EIRL) })).toEqual(vacia);
+    expect(await buscar({ personaId: id(JUANA_DNI) }, tenantB)).toEqual(vacia);
   });
 
   it('desde otro tenant no se ve ningún par de A ni se evalúan sus personas', async () => {

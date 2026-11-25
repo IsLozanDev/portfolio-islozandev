@@ -108,8 +108,9 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 49 | fe-emisor-configuracion | R2-04: TR-RF-052 (pasos 1-3, alerta de vencimiento) | 7-8 | 41, 09, 19a, 20a | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
 | 50 | fe-puerto-pse-adaptador | R2-04: TR-RF-052 (pasos 4-5) | 5-6 | 49 | `tr-fe/fe-emisor-y-puerto-pse.md` | Implementado |
 | 51 | fe-emision-boleta-factura | R2-05: TR-RF-053, 054 | 9-10 | 48, 50, 10, 09, 28 | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
-| 51b | fe-ubl-firma | UBL 2.1 y firma propios; solo si se elige OSE o SUNAT directo | 8-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Condicional |
-| 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 51b | fe-ubl-firma | UBL 2.1 propio de factura, boleta y notas, y firma XMLDSig con el certificado del emisor | 10-12 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 51c | fe-adaptador-sunat-directo | Adaptador SEE-Del Contribuyente de `PseOsePort`: SOAP (`sendBill`, `sendSummary`, `getStatus`), ZIP, CDR y beta de SUNAT; Nubefact queda como alterno | 10-12 | 51b | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
+| 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 51c, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 53 | fe-representacion-impresa | R2-06: TR-RF-061 | 6-7 | 51, 33 | `tr-fe/fe-representacion-impresa.md` | Pendiente |
 | 54 | fe-notas-credito-debito | R2-07: TR-RF-055, 056 | 7-8 | 52 | `tr-fe/fe-notas-resumen-baja.md` | Pendiente |
 | 55 | fe-resumen-diario-baja | R2-07: TR-RF-057, 058 | 8-9 | 54 | `tr-fe/fe-notas-resumen-baja.md` | Pendiente |
@@ -217,6 +218,24 @@ Specs 22 a 27 (tabla de arriba) y, de R2, CC-06 (personas por tenant, R2-12), CC
 - Ola 5: 09, 10, 14, 20a; luego 20b; luego 20c.
 - Ola 6: 12, 15, 18, 19a, 21; luego 19b y 19c en paralelo; 19d tras 19b y 19c, y 19e tras 19d; luego 17a; luego 16a y 17b (solo comparten `plat.manifiesto.json`); luego 16b y 17c (los dos sobre `libs/plataforma/admin-cliente`, que crea el 16a); luego 16c.
 - Bloque transversal (28 a 138) antes que SazónPOS. SazónPOS (22 a 26), 27 y los CC de R2 al final.
+
+### Bloque transversal desde el 2026-11-25 (facturación electrónica primero)
+
+Frente A: notificaciones, auditoría y reportes. Frente B: backend de facturación electrónica (lib `comprobantes`, un spec a la vez). Frente C: UI de facturación y sueltos. «→» son dos specs chicos en serie dentro del mismo frente.
+
+| Ola | Frente A | Frente B | Frente C |
+|---|---|---|---|
+| 1 | 46 not-preferencias-bajas | 51b fe-ubl-firma | 62 fe-admin-emisor-ui |
+| 2 | 47 not-plantillas-ui | 51c fe-adaptador-sunat-directo | 60 seq-series-ui |
+| 3 | 63 aud-incidentes-datos | 52 fe-envio-cdr | 40 per-fusion-ui |
+| 4 | 80 rep-definiciones-motor | 53 fe-representacion-impresa | 61 cfg-parametros-ui |
+| 5 | 64 arco-solicitud-plazos | 54 fe-notas-credito-debito | 83 cms-sitio-dominio-marca |
+| 6 | 65 arco-atencion-compilado | 55 fe-resumen-diario-baja | 84 cms-paginas-bloques |
+| 7 | 66, 67, 68 | 59 fe-entrega → 56 fe-reintentos | 85 cms-render-ssr |
+| 8 | 72 evt-registro-esquemas | 57 fe-monitor-api | 71 cfg-historial-parametros |
+| 9 | 73 pag-pasarela | 119 fe-registro-ventas | 58 fe-monitor-ui |
+
+Después de la ola 9, por cadena: pagos 74 → (75, 76, 78), 77 → 79; reportes 81 → 82, 106; CMS y portal 86 a 93; soporte 94 en adelante; observabilidad 99 en adelante; WhatsApp 104 → 105; IA, integraciones y edge. Las olas son un orden sugerido: un frente arranca su siguiente spec apenas sus dependencias estén en main.
 
 Máximo 2 o 3 frentes a la vez: la revisión de diffs es el cuello de botella.
 

@@ -17,6 +17,8 @@ export const DETALLE_DE_PRUEBA: PersonaDetalleRespuesta = {
   roles: [{ producto_codigo: 'CLI', rol: 'PACIENTE', desde: '2026-03-02', hasta: null }],
   contactos: [{ id: 'c1', tipo: 'CELULAR', valor: '987654321', principal: true }],
   direcciones: [],
+  resuelta_desde: null,
+  alias: [],
 };
 
 /** La ficha completa de Juana, como modelo del front: dos celulares, correo, WhatsApp y dos direcciones. */

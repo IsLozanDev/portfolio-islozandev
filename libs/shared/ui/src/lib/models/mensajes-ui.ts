@@ -6,6 +6,7 @@ export const MENSAJES_UI = {
   eliminar: 'Eliminar',
   motivo: 'Motivo',
   motivoMuyCorto: (longitudMinima: number) => `Ingrese un motivo de al menos ${longitudMinima} caracteres.`,
+  motivoMuyLargo: (longitudMaxima: number) => `El motivo admite hasta ${longitudMaxima} caracteres.`,
   cargando: 'Cargando…',
   guardar: 'Guardar',
   guardando: 'Guardando',

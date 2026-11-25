@@ -35,6 +35,7 @@ const PRIMERA_PAGINA = 1;
 const EsquemaPagina = z.object({
   pagina: z.coerce.number().int().min(PRIMERA_PAGINA).default(PRIMERA_PAGINA),
   tamano: z.coerce.number().int().min(1).max(TAMANO_PAGINA_DUPLICADOS.maximo).default(TAMANO_PAGINA_DUPLICADOS.porDefecto),
+  persona: z.uuid().optional(),
 });
 const EsquemaParEnRuta = z.object({ a: z.uuid(), b: z.uuid() });
 const EsquemaParEnCuerpo = z.object({ persona_a_id: z.uuid(), persona_b_id: z.uuid() });
@@ -48,7 +49,7 @@ const MISMA_PERSONA = 'MISMA_PERSONA: los dos ids son el mismo';
 @ApiHeader({ name: 'X-Sucursal-Id', required: true })
 @ApiUnauthorizedResponse({ description: 'TOKEN_INVALIDO; o MFA requerida (aal2) para descartar' })
 @ApiForbiddenResponse({ description: 'SIN_PERMISO o SUCURSAL_NO_ASIGNADA' })
-@ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (ids que no son uuid o paginación fuera de rango)' })
+@ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (ids o `persona` que no son uuid, o paginación fuera de rango)' })
 @UseFilters(PersonasFiltro)
 @Controller('personas/duplicados')
 export class DuplicadosController {
@@ -63,13 +64,20 @@ export class DuplicadosController {
   @Permiso(PERMISOS_PER.leer)
   @ApiQuery({ name: 'pagina', required: false, example: PRIMERA_PAGINA, description: 'Desde 1' })
   @ApiQuery({ name: 'tamano', required: false, example: TAMANO_PAGINA_DUPLICADOS.porDefecto, description: `De 1 a ${TAMANO_PAGINA_DUPLICADOS.maximo}` })
+  @ApiQuery({
+    name: 'persona',
+    required: false,
+    schema: { type: 'string', format: 'uuid' },
+    description: 'Solo los pares donde está esta persona. De otro tenant, inactiva o absorbida: lista vacía',
+  })
   @ApiOkResponse({
     type: PaginaDuplicadosDto,
     description: 'Personas activas sin fusionar, del mismo tipo, sin documentos distintos del mismo tipo ni descarte; por puntaje',
   })
   async listar(@Query() consulta: unknown): Promise<PaginaDuplicadosDto> {
-    const { pagina, tamano } = validar(EsquemaPagina, consulta);
-    return paginaDuplicadosDto(await this.listarDuplicados.ejecutar({ pagina, tamano }), pagina, tamano);
+    const { pagina, tamano, persona } = validar(EsquemaPagina, consulta);
+    const resultado = await this.listarDuplicados.ejecutar({ pagina, tamano, personaId: persona ?? null });
+    return paginaDuplicadosDto(resultado, pagina, tamano);
   }
 
   @Get(':a/:b')

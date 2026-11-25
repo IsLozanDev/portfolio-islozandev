@@ -32,6 +32,8 @@ const JUANA: PersonaDetalle = {
   roles: [{ productoCodigo: 'CLI', rol: 'PACIENTE', desde: '2026-03-02', hasta: null }],
   contactos: [{ id: 'c1', tipo: 'CELULAR', valor: '987654321', principal: true }],
   direcciones: [],
+  resueltaDesde: null,
+  alias: [],
 };
 
 describe('PersonaDetallePage', () => {
