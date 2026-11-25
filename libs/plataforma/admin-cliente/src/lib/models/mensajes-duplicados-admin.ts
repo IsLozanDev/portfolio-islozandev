@@ -1,0 +1,21 @@
+/** Textos de las páginas de duplicados en admin (spec 40). Los de motivos, bloqueos y errores vienen de `personas-ui`. */
+export const MENSAJES_DUPLICADOS_ADMIN = {
+  titulo: 'Posibles duplicados',
+  subtitulo: 'Pares de fichas que podrían ser la misma persona. Compáralas y fusiónalas, o descarta las que no lo son.',
+  volver: 'Personas',
+  ayudaPuntaje: 'Ordenados por puntaje. 100: mismo número en otro documento; 80: mismo celular y nombre; 60: mismo celular y nombre parecido.',
+  paresDe: (persona: string) => `Pares de ${persona}`,
+  personaFiltrada: 'Persona filtrada',
+  quitarFiltro: 'Quitar el filtro de persona',
+  columnas: { personaA: 'Persona A', personaB: 'Persona B', puntaje: 'Puntaje', motivos: 'Motivos' },
+  comparar: (personaA: string, personaB: string) => `Comparar ${personaA} con ${personaB}`,
+  noSonLaMisma: 'No son la misma persona',
+  noSonLaMismaDe: (personaA: string, personaB: string) => `No son la misma persona: ${personaA} y ${personaB}`,
+  confirmarDescarte: '¿No son la misma persona?',
+  textoDescarte: (personaA: string, personaB: string) => `${personaA} — ${personaB}. El par no se volverá a proponer.`,
+  confirmarDescarteBoton: 'No son la misma',
+  noSeVolveraAProponer: 'No se volverá a proponer.',
+  deshacer: 'Deshacer',
+  tituloError: 'No se pudo completar',
+  errorCarga: 'No se pudo cargar. Inténtelo de nuevo.',
+} as const;

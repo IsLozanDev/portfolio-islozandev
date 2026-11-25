@@ -177,6 +177,17 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
     loadComponent: () => import('./pages/personas-lista/personas-lista.page').then((modulo) => modulo.PersonasListaPage),
   },
+  // Antes de `personas/:personaId`, para que no la capture.
+  {
+    path: 'personas/duplicados',
+    canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
+    loadComponent: () => import('./pages/duplicados-lista/duplicados-lista.page').then((modulo) => modulo.DuplicadosListaPage),
+  },
+  {
+    path: 'personas/duplicados/:a/:b',
+    canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
+    loadComponent: () => import('./pages/duplicados-comparacion/duplicados-comparacion.page').then((modulo) => modulo.DuplicadosComparacionPage),
+  },
   {
     path: 'personas/:personaId',
     canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],

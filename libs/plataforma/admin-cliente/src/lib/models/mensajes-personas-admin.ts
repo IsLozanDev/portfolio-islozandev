@@ -3,6 +3,7 @@ export const MENSAJES_PERSONAS_ADMIN = {
   titulo: 'Personas',
   subtitulo: 'Clientes, pacientes, socios y proveedores de tu organización. Una sola ficha por documento, compartida entre tus productos.',
   nueva: 'Nueva persona',
+  revisarDuplicados: 'Revisar duplicados',
   abrirFicha: 'Abrir ficha',
   abrirFichaDe: (persona: string) => `Abrir la ficha de ${persona}`,
   registrada: 'Persona registrada',

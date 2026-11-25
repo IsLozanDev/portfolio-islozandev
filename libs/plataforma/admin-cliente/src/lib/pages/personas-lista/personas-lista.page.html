@@ -4,6 +4,10 @@
       <h1 class="m-0 text-2xl font-medium">{{ mensajes.titulo }}</h1>
       <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
     </div>
+    <a mat-stroked-button routerLink="duplicados" data-accion="revisar-duplicados">
+      <mat-icon aria-hidden="true">group</mat-icon>
+      {{ mensajes.revisarDuplicados }}
+    </a>
     <button *siPermiso="permisos.registrar" mat-flat-button type="button" data-accion="nueva-persona" (click)="nuevaPersona()">
       <mat-icon aria-hidden="true">person_add</mat-icon>
       {{ mensajes.nueva }}

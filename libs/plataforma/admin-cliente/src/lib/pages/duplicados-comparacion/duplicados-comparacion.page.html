@@ -1,0 +1,211 @@
+<section class="flex flex-col gap-4 pb-2">
+  <nav [attr.aria-label]="mensajes.volver">
+    <a class="inline-flex items-center gap-1 text-sm font-medium text-primario no-underline" routerLink="../.." data-accion="volver">
+      <mat-icon class="vit-icono-migas" aria-hidden="true">arrow_back</mat-icon>{{ mensajes.volver }}
+    </a>
+  </nav>
+
+  @if (cargando() && !comparacion()) {
+    <vit-cargando />
+  } @else if (noExiste()) {
+    <vit-estado-vacio icono="group_off" [titulo]="mensajes.noExiste" />
+  } @else if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  @if (comparacion(); as par) {
+    <header class="flex flex-wrap items-end gap-3">
+      <div class="flex min-w-0 flex-[1_1_320px] flex-col gap-2">
+        <h1 class="m-0 text-2xl font-medium">{{ mensajes.titulo }}</h1>
+        @if (puntaje(); as datosPuntaje) {
+          <div class="flex flex-wrap items-center gap-2">
+            <vit-chip-estado [texto]="datosPuntaje.texto" [tono]="datosPuntaje.tono" />
+            <span class="text-sm text-sobre-superficie-variante">{{ datosPuntaje.motivos }}</span>
+            @if (par.descartado) {
+              <span data-estado="descartado"><vit-chip-estado [texto]="mensajes.descartado" [tono]="tonoDescartado" /></span>
+            }
+          </div>
+        }
+      </div>
+      @if (puedeFusionar()) {
+        @if (par.descartado) {
+          <button mat-stroked-button type="button" data-accion="volver-a-proponer" [disabled]="enCurso()" (click)="volverAProponer()">
+            <mat-icon aria-hidden="true">undo</mat-icon>{{ mensajes.volverAProponer }}
+          </button>
+        } @else {
+          <button mat-stroked-button type="button" data-accion="descartar" [disabled]="enCurso()" (click)="descartar()">
+            <mat-icon aria-hidden="true">person_off</mat-icon>{{ mensajes.noSonLaMisma }}
+          </button>
+        }
+      }
+    </header>
+
+    @if (bloqueo(); as mensajeBloqueo) {
+      <p role="alert" class="m-0 flex items-center gap-3 rounded-lg bg-contenedor-error px-3.5 py-2.5 text-sm text-sobre-contenedor-error" data-franja="bloqueo">
+        <mat-icon aria-hidden="true">block</mat-icon>{{ mensajeBloqueo }}
+      </p>
+    }
+    @if (editable() && sinMfa()) {
+      <div role="status" class="flex flex-wrap items-center gap-3 rounded-lg bg-chip-advertencia py-2 pr-2 pl-3.5 text-sm text-sobre-chip-advertencia" data-franja="mfa">
+        <mat-icon aria-hidden="true">shield_lock</mat-icon>
+        <span class="min-w-0 flex-[1_1_240px]">{{ mensajes.mfaRequerida }}</span>
+        <button mat-button type="button" data-accion="verificar" (click)="verificar()">{{ mensajes.verificarAhora }}</button>
+      </div>
+    }
+    @if (!puedeFusionar()) {
+      <p class="m-0 flex items-start gap-2 text-[13px] text-sobre-superficie-variante" data-nota="solo-lectura">
+        <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">visibility</mat-icon>{{ mensajes.soloLectura }}
+      </p>
+    }
+
+    @if (vista(); as datos) {
+      <section class="flex flex-col gap-2.5" aria-labelledby="titulo-queda">
+        <h2 id="titulo-queda" class="m-0 text-lg font-medium">{{ mensajes.fichaQueda }}</h2>
+        <mat-radio-group
+          class="grid grid-cols-1 gap-4 md:grid-cols-2"
+          name="conservada"
+          aria-labelledby="titulo-queda"
+          [value]="eleccion()?.conservadaId"
+          [disabled]="deshabilitada()"
+          (change)="elegirConservada($event.value)"
+        >
+          @for (ficha of datos.fichas; track ficha.id) {
+            <article
+              class="flex flex-col gap-2.5 rounded-tarjeta border bg-superficie px-5 py-4"
+              [class.border-primario]="ficha.queda && editable()"
+              [class.border-2]="ficha.queda && editable()"
+              [class.border-borde]="!(ficha.queda && editable())"
+              [attr.aria-label]="ficha.etiqueta"
+              [attr.data-ficha]="ficha.etiqueta"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-xs font-medium tracking-wide text-sobre-superficie-variante uppercase">{{ ficha.etiqueta }}</span>
+                @if (editable()) {
+                  <vit-chip-estado [texto]="ficha.queda ? mensajes.queda : mensajes.pasaAAlias" [tono]="ficha.queda ? 'exito' : 'neutro'" />
+                }
+              </div>
+              <b class="text-[17px] font-medium">{{ ficha.denominacion }}</b>
+              <span class="flex flex-wrap items-center gap-1.5 text-[13px] text-sobre-superficie-variante">
+                <span class="font-mono">{{ ficha.documento }}</span>
+                @for (rol of ficha.roles; track rol) {
+                  <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+                }
+              </span>
+              @if (editable()) {
+                <mat-radio-button [value]="ficha.id" [attr.data-conservar]="ficha.etiqueta">{{ mensajes.conservar }}</mat-radio-button>
+              }
+            </article>
+          }
+        </mat-radio-group>
+      </section>
+
+      <section class="vit-tarjeta-tabla overflow-hidden rounded-tarjeta" aria-labelledby="titulo-datos">
+        <div class="flex flex-col gap-1 px-5 pt-4 pb-3">
+          <h2 id="titulo-datos" class="m-0 text-lg font-medium">{{ mensajes.datosBasicos }}</h2>
+          <p class="m-0 text-sm text-sobre-superficie-variante">
+            {{ mensajes.quedaraComo }} <b class="font-medium text-sobre-superficie" data-resultado>{{ datos.resultado }}</b>
+          </p>
+        </div>
+        <div class="hidden border-t border-borde bg-superficie-contenedor text-[13px] font-medium text-sobre-superficie-variante md:grid md:grid-cols-[200px_repeat(2,minmax(0,1fr))]" aria-hidden="true">
+          <span class="px-4 py-2">{{ mensajes.dato }}</span>
+          <span class="border-l border-borde px-4 py-2">{{ mensajes.fichaA }}</span>
+          <span class="border-l border-borde px-4 py-2">{{ mensajes.fichaB }}</span>
+        </div>
+        <div class="grid grid-cols-1 border-t border-borde md:grid-cols-[200px_minmax(0,1fr)]">
+          <span class="px-4 pt-3 text-sm font-medium md:py-2.5 md:font-normal md:text-sobre-superficie-variante">{{ mensajes.documento }}</span>
+          <span class="flex flex-wrap items-center gap-1.5 px-4 py-2.5 text-[13px] text-sobre-superficie-variante md:border-l md:border-borde">
+            <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">lock</mat-icon>
+            {{ mensajes.documentoSeConserva }} <span class="font-mono text-sobre-superficie" data-documento-queda>{{ datos.documentoQueda }}</span>
+          </span>
+        </div>
+        @for (fila of datos.filas; track fila.campo) {
+          <vit-opcion-fusion
+            [etiqueta]="fila.etiqueta"
+            [nombre]="'dato-' + fila.campo"
+            [opciones]="fila.opciones"
+            [iguales]="fila.iguales"
+            [editable]="editable()"
+            [deshabilitada]="deshabilitada()"
+            [textoIgual]="mensajes.igual"
+            [textoSinDato]="mensajes.sinDato"
+            (elegir)="elegirDato(fila.campo, $event)"
+          />
+        }
+      </section>
+
+      <section class="vit-tarjeta-tabla overflow-hidden rounded-tarjeta" aria-labelledby="titulo-contactos">
+        <div class="flex flex-col gap-1 px-5 pt-4 pb-3">
+          <h2 id="titulo-contactos" class="m-0 text-lg font-medium">{{ mensajes.contactos }}</h2>
+          <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.textoContactos }}</p>
+        </div>
+        @for (grupo of datos.grupos; track grupo.clave) {
+          <div class="flex flex-col gap-2 border-t border-borde px-5 py-3" [attr.data-grupo]="grupo.clave">
+            <span class="text-sm font-medium" [id]="'principal-' + grupo.clave">{{ grupo.titulo }}</span>
+            @if (editable()) {
+              <mat-radio-group
+                class="flex flex-col gap-1"
+                [name]="'principal-' + grupo.clave"
+                [attr.aria-labelledby]="'principal-' + grupo.clave"
+                [value]="eleccion()?.principales?.[grupo.clave]"
+                [disabled]="deshabilitada()"
+                (change)="elegirPrincipal(grupo.clave, $event.value)"
+              >
+                @for (candidato of grupo.candidatos; track candidato.id) {
+                  <span class="flex flex-wrap items-center gap-2.5">
+                    <mat-radio-button class="min-w-0 flex-[1_1_260px]" [value]="candidato.id" [attr.data-candidato]="candidato.id">{{ candidato.texto }}</mat-radio-button>
+                    <vit-chip-estado [texto]="candidato.origen" [tono]="candidato.enLasDos ? 'exito' : 'neutro'" />
+                  </span>
+                }
+              </mat-radio-group>
+            } @else {
+              <ul class="m-0 flex list-none flex-col gap-1.5 p-0">
+                @for (candidato of grupo.candidatos; track candidato.id) {
+                  <li class="flex flex-wrap items-center gap-2.5 text-sm">
+                    <span class="min-w-0 flex-[1_1_260px]">
+                      {{ candidato.texto }}
+                      @if (candidato.marcada) {
+                        <mat-icon class="!size-[18px] align-[-3px] !text-[18px] text-sobre-chip-advertencia" [attr.aria-label]="mensajes.principal">star</mat-icon>
+                      }
+                    </span>
+                    <vit-chip-estado [texto]="candidato.origen" [tono]="candidato.enLasDos ? 'exito' : 'neutro'" />
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="vit-tarjeta-tabla overflow-hidden rounded-tarjeta" aria-labelledby="titulo-otros">
+        <h2 id="titulo-otros" class="m-0 px-5 pt-4 pb-3 text-lg font-medium">{{ mensajes.rolesYConsentimientos }}</h2>
+        <div class="flex flex-col gap-2 border-t border-borde px-5 py-3">
+          <span class="text-sm font-medium">{{ mensajes.roles }}</span>
+          <span class="flex flex-wrap gap-1.5">
+            @for (rol of datos.roles; track $index) {
+              <vit-chip-estado [texto]="rol" [tono]="tonoRol" />
+            } @empty {
+              <span class="text-sm text-sobre-superficie-variante">{{ mensajes.sinRoles }}</span>
+            }
+          </span>
+          <p class="m-0 text-[13px] text-sobre-superficie-variante">{{ mensajes.notaRoles }}</p>
+        </div>
+        <div class="flex flex-col gap-2 border-t border-borde px-5 py-3">
+          <span class="text-sm font-medium">{{ mensajes.consentimientos }}</span>
+          <p class="m-0 text-[13px] text-sobre-superficie-variante">{{ mensajes.notaConsentimientos }}</p>
+        </div>
+      </section>
+
+      @if (puedeFusionar()) {
+        <footer class="sticky bottom-0 z-[2] flex flex-wrap items-center gap-3 rounded-tarjeta border border-borde bg-superficie px-4 py-3">
+          <p class="m-0 flex min-w-0 flex-[1_1_280px] items-start gap-2 text-[13px] text-sobre-superficie-variante">
+            <mat-icon class="!size-[18px] !text-[18px]" aria-hidden="true">warning</mat-icon>{{ mensajes.avisoIrreversible }}
+          </p>
+          <a mat-stroked-button routerLink="../.." data-accion="cancelar">{{ mensajes.cancelar }}</a>
+          <button mat-flat-button class="vit-destructivo" type="button" data-accion="fusionar" [disabled]="!editable() || deshabilitada()" (click)="fusionar()">
+            <mat-icon aria-hidden="true">merge</mat-icon>{{ mensajes.fusionar }}
+          </button>
+        </footer>
+      }
+    }
+  }
+</section>
