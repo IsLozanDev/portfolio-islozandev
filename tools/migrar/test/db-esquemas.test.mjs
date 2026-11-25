@@ -105,6 +105,7 @@ const CASOS = [
   { migracion: '01p_fe.sql', esquema: 'fe', prueba: 'tests/01p_fe.test.sql' },
   { migracion: '01q_not_plantillas.sql', esquema: 'ntf', prueba: 'tests/01q_not_plantillas.test.sql' },
   { migracion: '01r_fe_prueba.sql', esquema: 'fe', prueba: 'tests/01r_fe_prueba.test.sql' },
+  { migracion: '01s_not_avisos_plataforma.sql', esquema: 'ntf', prueba: 'tests/01s_not_avisos_plataforma.test.sql' },
   { migracion: '01t_not_programacion.sql', esquema: 'ntf', prueba: 'tests/01t_not_programacion.test.sql' },
 ];
 
@@ -293,6 +294,35 @@ async function inversoPlantillasConPersonalizacion() {
     await c.end();
   }
 }
+
+// Con una personalización de un aviso de plataforma el inverso de 01s_not_avisos_plataforma se niega (spec 44);
+// la transacción se revierte.
+async function inversoAvisosConPersonalizacion() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '44000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id)
+       VALUES (gen_random_uuid(), '${tenantId}', 'TENANT_SUSPENDIDO', 'CORREO', 1, 'Suspendida', '<p>Suspendida</p>', '44000000-0000-0000-0000-000000000002')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01s_not_avisos_plataforma.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Plantillas base de los avisos de plataforma que siembra 01s_not_avisos_plataforma (4 en total).
+const plantillasAvisos = async () =>
+  (await ejecutar(urlDb, `SELECT codigo FROM ntf.plantilla WHERE tenant_id IS NULL AND id::text LIKE '44000000-%' ORDER BY codigo`)).rows.map(
+    (r) => r.codigo,
+  );
 
 // Columna, índice y ejemplos de PRUEBA_CORREO que agrega 01q_not_plantillas (3 en total).
 const objetosPlantillas = async () =>
@@ -828,8 +858,18 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01t_not_programacion.sql'), 'utf8'));
     expect(await objetosProgramacion()).toEqual([]);
 
+    // El inverso de 01s_not_avisos_plataforma se niega con personalizaciones; sin ellas borra las cuatro bases y se
+    // puede reaplicar. Va después del de 01t_not_programacion.
+    expect(await plantillasAvisos()).toEqual(['INTEGRIDAD_ROTA', 'SOPORTE_SOLICITADO', 'SUSCRIPCION_POR_VENCER', 'TENANT_SUSPENDIDO']);
+    expect(await inversoAvisosConPersonalizacion()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01s_not_avisos_plataforma.sql'), 'utf8'));
+    expect(await plantillasAvisos()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01s_not_avisos_plataforma.sql'), 'utf8'));
+    expect(await plantillasAvisos()).toHaveLength(4);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01s_not_avisos_plataforma.sql'), 'utf8'));
+
     // El inverso de 01r_fe_prueba se niega con emisores verificados; sin ellos quita las columnas de la prueba y
-    // NUBEFACT, y se puede reaplicar.
+    // NUBEFACT, y se puede reaplicar. Va después del de 01s_not_avisos_plataforma.
     expect(await inversoFePruebaConVerificados()).toBe('55006');
     expect(await columnasPruebaFe()).toBe(9);
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01r_fe_prueba.sql'), 'utf8'));
@@ -868,6 +908,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await existeEsquema('ntf')).toBe(true);
     await ejecutar(urlDb, await readFile(rutaDb('01q_not_plantillas.sql'), 'utf8'));
     expect(await objetosPlantillas()).toHaveLength(3);
+    await ejecutar(urlDb, await readFile(rutaDb('01s_not_avisos_plataforma.sql'), 'utf8'));
+    expect(await plantillasAvisos()).toHaveLength(4);
     await ejecutar(urlDb, await readFile(rutaDb('01t_not_programacion.sql'), 'utf8'));
     expect(await objetosProgramacion()).toHaveLength(2);
 

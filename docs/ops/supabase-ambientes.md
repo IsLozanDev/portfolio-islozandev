@@ -246,6 +246,7 @@ TR-NOT envía el correo transaccional por la API de Resend (no por el SMTP de Au
 - **Webhook**: en Resend, *Webhooks → Add endpoint* con la URL pública de la API (`https://<api>/v1/notificaciones/webhooks/resend`) y los eventos `email.sent`, `email.delivered`, `email.opened`, `email.bounced` y `email.complained`. El *signing secret* (`whsec_...`) va en `RESEND_WEBHOOK_SECRET` de la api. Una API local no recibe el webhook: se registra contra staging.
 - **Sal del destino** en `NOT_SAL_DESTINO` (al menos 32 caracteres, la misma en api y worker): los logs y `ntf.contacto_invalido` solo llevan el hash del correo. Cambiarla deja sin efecto los contactos inválidos ya marcados.
 - En `production` las cuatro son obligatorias: sin ellas api y worker no arrancan. En dev arrancan; el envío falla con `PROVEEDOR_NO_CONFIGURADO` (el mensaje queda `ENCOLADO`) y el webhook responde 503.
+- **Avisos de plataforma (spec 44)**: el worker manda `SUSCRIPCION_POR_VENCER`, `TENANT_SUSPENDIDO` y `SOPORTE_SOLICITADO` a los propietarios del tenant (membresía activa y `PLAT_PROPIETARIO` vigente), y `INTEGRIDAD_ROTA` a `NOT_CORREO_OPERACION` (opcional, también en producción: vacía, el aviso se omite con una advertencia `not.aviso.sin_destinatarios`). Las plantillas base las siembra `01s_not_avisos_plataforma.sql`.
 - Límite de tasa: `LIMITE_ENVIOS` (2 por segundo) en el Worker de BullMQ; si la cuenta tiene otro, se cambia la constante. Un 429 se reintenta.
 
 Orden:
@@ -256,6 +257,8 @@ Orden:
 - [ ] (dev) Humo: `notificaciones:probar:remoto` entrega el correo al dueño de la cuenta y el mensaje queda `ENVIADO` con `id_externo`.
 - [ ] (staging) Dominio verificado, remitente propio y webhook registrado; un `email.delivered` deja el mensaje `ENTREGADO`.
 - [ ] (staging, prod) Las cuatro variables en el panel de despliegue de api y worker.
+- [ ] (dev) `01s_not_avisos_plataforma.sql` aplicada; las cuatro plantillas de avisos visibles desde cualquier tenant.
+- [ ] (staging, prod) `NOT_CORREO_OPERACION` en el worker con la dirección de operación.
 
 ### 19. Facturación electrónica: prueba en beta y producción (SPEC 50)
 

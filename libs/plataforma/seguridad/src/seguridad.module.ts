@@ -65,6 +65,8 @@ import { AlcanceActorSeg } from './application/alcance-actor.js';
 import { ALCANCE_ACTOR, type AlcanceActor } from './application/ports/alcance-actor.port.js';
 import { DIRECTORIO_SEG, type DirectorioSeg } from './application/ports/directorio-seg.port.js';
 import { DirectorioSegTypeOrm } from './infrastructure/typeorm/directorio-seg.typeorm.js';
+import { PROPIETARIOS_TENANT, type PropietariosTenant } from './application/ports/propietarios-tenant.js';
+import { PropietariosTenantTypeOrm } from './infrastructure/typeorm/propietarios-tenant.typeorm.js';
 import { PRODUCTOS_CONTRATADOS, type ProductosContratados } from './application/ports/repositorios.js';
 import { CambiarPermisosRol, CopiarRol, CrearRol, InactivarRol } from './application/rol.casos-de-uso.js';
 import { ConsultarCatalogo, ConsultarRol, ListarProductosDisponibles, ListarRoles, type DependenciasLecturaRoles } from './application/lecturas-roles.js';
@@ -245,6 +247,13 @@ export class SeguridadModule {
           provide: DIRECTORIO_SEG,
           useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext): DirectorioSeg => new DirectorioSegTypeOrm(unidadDeTrabajo, contexto),
           inject: [TypeOrmUnitOfWork, TENANT_CONTEXT],
+        },
+        // Destinatarios de los avisos de plataforma de TR-NOT (spec 44).
+        {
+          provide: PROPIETARIOS_TENANT,
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, reloj: Clock): PropietariosTenant =>
+            new PropietariosTenantTypeOrm(unidadDeTrabajo, contexto, reloj),
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK],
         },
         {
           provide: PRODUCTOS_CONTRATADOS,
@@ -576,7 +585,7 @@ export class SeguridadModule {
           inject: [Reflector, ResolverAccesoSoporteVigente, UNIT_OF_WORK, TENANT_CONTEXT, REPOS_MEMBRESIAS],
         },
       ],
-      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, DIRECTORIO_SEG, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
+      exports: [VERIFICADOR_TOKEN, ResolverPermisos, ALCANCE_ACTOR, DIRECTORIO_SEG, PROPIETARIOS_TENANT, PRODUCTOS_CONTRATADOS, InvitarPropietario, RevocarAccesosPorTicket, ResolverAccesoSoporteVigente],
     };
   }
 }
