@@ -1,17 +1,22 @@
+import { exigirDireccionFiscal } from '../domain/emisor-documento.js';
 import { Emisor } from '../domain/emisor.js';
 import { EmpresaInactivaError, VersionObsoletaEmisorError } from '../domain/errores.js';
 import { emisorConfigurado } from '../domain/eventos-fe.js';
+import { exigirUsuarioSol } from '../domain/usuario-sol.js';
 import {
   ACCIONES_EMISOR,
   actorDe,
   bytesDe,
   ENTIDAD_EMISOR,
+  esSunatDirecto,
   exigirProveedorDelAmbiente,
   guardarORotar,
   TIPOS_SECRETO_FE,
   urlDelProveedor,
   type DependenciasEmisor,
 } from './dependencias-fe.js';
+import type { EmpresaEmisora } from './ports/empresa-emisora.port.js';
+import type { ProveedorFe } from './ports/proveedores-fe.js';
 import { vistaDe, type VistaEmisor } from './vista-emisor.js';
 
 export interface ConfigurarEmisorComando {
@@ -51,6 +56,7 @@ export class ConfigurarEmisor {
       const proveedor = await proveedores.obtener(comando.proveedor);
       exigirProveedorDelAmbiente(proveedor, entorno);
       const urlProveedor = urlDelProveedor(comando.urlProveedor ?? null, proveedor);
+      const usuarioProveedor = usuarioDelProveedor(comando.usuarioProveedor, proveedor, empresa);
       const ahora = reloj.now();
 
       const existente = await emisores.porEmpresa(empresa.id);
@@ -61,7 +67,7 @@ export class ConfigurarEmisor {
 
       emisor.configurarProveedor({
         proveedor: proveedor.codigo,
-        usuarioProveedor: comando.usuarioProveedor,
+        usuarioProveedor,
         regimenIgv: comando.regimenIgv,
         leyendaPie: comando.leyendaPie ?? null,
         urlProveedor,
@@ -89,6 +95,14 @@ export class ConfigurarEmisor {
     const { contexto, ids } = this.dependencias;
     return Emisor.crear({ id: ids.next(), tenantId: contexto.current().tenantId, empresaId, creadoPor: actorId, ahora });
   }
+}
+
+/** SUNAT directo: usuario secundario SOL sin el RUC y la dirección fiscal que exige el UBL armado en casa. */
+function usuarioDelProveedor(usuario: string, proveedor: ProveedorFe, empresa: EmpresaEmisora): string {
+  if (!esSunatDirecto(proveedor)) return usuario;
+  const usuarioSol = exigirUsuarioSol(usuario);
+  exigirDireccionFiscal(empresa);
+  return usuarioSol;
 }
 
 /** Con emisor, la versión leída debe coincidir; sin emisor, no se acepta una versión (el cliente vio otro estado). */

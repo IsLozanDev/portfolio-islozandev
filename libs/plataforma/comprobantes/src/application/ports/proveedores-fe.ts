@@ -5,6 +5,10 @@ export interface ProveedorFe {
   seriePrueba: string | null;
   /** Hosts a los que el worker puede llamar (atributo `dominios_permitidos`, anti-SSRF). */
   dominiosPermitidos: string[];
+  /** URL fija del servicio en beta (atributo `url_beta`); null si el tenant la escribe. */
+  urlBeta: string | null;
+  /** URL fija del servicio en producción (atributo `url_produccion`); con ella, el tenant no escribe URL. */
+  urlProduccion: string | null;
 }
 
 export interface ProveedoresFe {

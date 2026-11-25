@@ -285,6 +285,23 @@ Orden:
 - [ ] Regenerar el TOKEN de la cuenta demo de Nubefact (se compartió por chat el 2026-11-23).
 - [ ] (staging, prod) Las dos variables en el panel de despliegue de api y worker, según la tabla.
 
+### 20. Facturación electrónica: SUNAT directo (SPEC 51c)
+
+Ítem `SUNAT` de `PROVEEDOR_FE` (SEE-Del Contribuyente): el worker firma el UBL con el `.pfx` del emisor y lo envía con `sendBill` al billService de SUNAT. La URL es fija por ambiente (`url_beta` y `url_produccion` del ítem): el `PUT` del emisor va sin `url_proveedor`. `usuario_proveedor` es el usuario secundario SOL en mayúsculas y **sin** el RUC (el adaptador lo antepone); `clave` es la clave SOL (va a la bóveda). La empresa necesita domicilio fiscal y ubigeo, y la sucursal principal su anexo SUNAT, porque el UBL se arma en casa. Sin variables nuevas.
+
+- **Beta:** el usuario `MODDATOS` con la clave `moddatos` (públicos de SUNAT) y el RUC de la empresa. La beta acepta un `.pfx` autofirmado con ese RUC: no hace falta trámite. Serie de prueba `BP01` (`serie_prueba` del ítem).
+- **Producción, por cada cliente:** certificado digital vigente de una entidad acreditada (la beta no lo valida; producción sí), alta como emisor electrónico en SOL (SEE-Del Contribuyente) y un usuario secundario SOL con el perfil de envío por servicio web (sin él, SUNAT responde 0111 y la prueba queda `RECHAZADA`).
+- Errores de credencial (0102 a 0106, 0111 a 0113, 0154) dan `RECHAZADO` para no reintentar con una clave mala; 0109 y las demás excepciones técnicas se reintentan.
+
+Orden:
+1. `corepack pnpm db:up:remoto` (aplica `01v_fe_sunat_directo.sql`). Por el MCP: ítem `SUNAT` en `PROVEEDOR_FE` con sus atributos.
+2. Con la API y el worker locales contra dev, en una empresa con domicilio fiscal, ubigeo y sucursal principal con anexo: `PUT` del emisor con `SUNAT`, `MODDATOS` y `moddatos`; carga del `.pfx` autofirmado; `POST .../prueba` (202) y `GET` hasta `VERIFICADO`.
+3. `FE_HUMO_SUNAT_BETA=1` con `FE_HUMO_RUC`, `FE_HUMO_PFX` (ruta) y `FE_HUMO_PFX_CLAVE` en el entorno local: `npx jest test/sunat-beta.humo.spec.ts` en `libs/plataforma/comprobantes` envía una factura y una boleta a la beta.
+
+- [x] (dev) `01v_fe_sunat_directo.sql` aplicada.
+- [x] (dev) Prueba del emisor `SUNAT` en la beta real: `ACEPTADA` y `VERIFICADO`.
+- [x] (dev) Humo `FE_HUMO_SUNAT_BETA=1`: factura y boleta aceptadas con CDR.
+
 ## Evidencia
 
 | Fecha | Ambiente | Paso | Resultado |
@@ -364,3 +381,4 @@ _Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, a
 - Antes de usuarios reales: dominio verificado en Resend y remitente `no-reply@<dominio>`.
 - Email OTP Expiration en 86400 s: el enlace de Supabase dura 24 h; la invitación propia, 72 h (`SEG_INVITACION_HORAS`).
 - `SEG_URL_INVITACION` debe estar en Authentication → URL Configuration → Redirect URLs.
+| 2026-11-25 | dev | SPEC 51c: `db:up:remoto`, humo del adaptador contra la beta real de SUNAT y prueba del emisor (casos de uso con TypeORM contra dev, sin HTTP, y worker local) | Aplica `01v_fe_sunat_directo.sql`: ítem `SUNAT` en `PROVEEDOR_FE` (versión del catálogo 5). `FE_HUMO_SUNAT_BETA=1` con el RUC del usuario, `MODDATOS` y un `.pfx` autofirmado (scratchpad): factura `F001` y boleta `B001` `ACEPTADO` código 0 con CDR; firma SHA-256 y correlativo de 8 dígitos en el nombre aceptados; el ZIP del CDR trae una carpeta `dummy/` además del `R-….xml`. Tenant `humo-51c` (empresa con domicilio, ubigeo 150101 y sucursal principal `0000`): `PUT` con `url_proveedor` → `URL_PROVEEDOR_NO_PERMITIDA`; usuario con el RUC → `USUARIO_SOL_INVALIDO`; sin URL → `url_proveedor` null; con el `.pfx` `CONFIGURADO`; prueba 1 `BP01-00000001` enviada por el worker local con `sendBill`: `ACEPTADA` («La Boleta numero BP01-00000001, ha sido aceptada»), `VERIFICADO` y un `fe.emisor.verificado`. Clave SOL, clave del `.pfx` y sobre SOAP ausentes del outbox, `aud` y logs del worker (en `aud` solo el usuario `MODDATOS` de la vista). **Dato que queda:** tenant `humo-51c` con su emisor `VERIFICADO` en beta |

@@ -1,7 +1,7 @@
 import type { PseOsePort, ResolutorPse } from '../../application/ports/pse-ose.port.js';
 import { ProveedorFeInvalidoError } from '../../domain/errores.js';
 
-/** Adaptador por código de PROVEEDOR_FE: `{ SIMULADO, NUBEFACT }`. */
+/** Adaptador por código de PROVEEDOR_FE: `{ SIMULADO, NUBEFACT, SUNAT }`. */
 export class ResolutorPseMapa implements ResolutorPse {
   constructor(private readonly adaptadores: Readonly<Record<string, PseOsePort>>) {}
 

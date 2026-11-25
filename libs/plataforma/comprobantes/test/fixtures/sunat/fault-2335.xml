@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/"><soap-env:Header/><soap-env:Body><soap-env:Fault><faultcode>soap-env:Client.2335</faultcode><faultstring>El documento electrónico ingresado ha sido alterado - Detalle: Incorrect reference digest value</faultstring></soap-env:Fault></soap-env:Body></soap-env:Envelope>

@@ -7,7 +7,12 @@ export class ConfigurarEmisorDto {
   @ApiProperty({ example: 'SIMULADO', maxLength: 40, description: 'Código de un ítem vigente del catálogo PROVEEDOR_FE' })
   proveedor!: string;
 
-  @ApiProperty({ example: 'MODDATOS', minLength: 1, maxLength: 100 })
+  @ApiProperty({
+    example: 'MODDATOS',
+    minLength: 1,
+    maxLength: 100,
+    description: 'Con SUNAT, el usuario secundario SOL en mayúsculas y sin el RUC (400 USUARIO_SOL_INVALIDO); la clave es la clave SOL',
+  })
   usuario_proveedor!: string;
 
   @ApiPropertyOptional({
@@ -30,7 +35,7 @@ export class ConfigurarEmisorDto {
     example: 'https://api.nubefact.com/api/v1/48239908-7ae7-4353-824d-071765d4',
     description:
       'Ruta del proveedor. Obligatoria si el proveedor declara dominios permitidos: https, de uno de ellos, sin credenciales ni otro puerto. ' +
-      'Ausente es null. En producción no se puede cambiar',
+      'Ausente es null. Con un proveedor de URL fija por ambiente (SUNAT) debe ir vacía. En producción no se puede cambiar',
   })
   url_proveedor?: string | null;
 

@@ -6,10 +6,12 @@ export const CATALOGO_PROVEEDOR_FE = 'PROVEEDOR_FE';
 const ATRIBUTO_REQUIERE_CERTIFICADO = 'requiere_certificado';
 const ATRIBUTO_SERIE_PRUEBA = 'serie_prueba';
 const ATRIBUTO_DOMINIOS_PERMITIDOS = 'dominios_permitidos';
+const ATRIBUTO_URL_BETA = 'url_beta';
+const ATRIBUTO_URL_PRODUCCION = 'url_produccion';
 
-function seriePruebaDe(atributos: AtributosItem | null): string | null {
-  const serie = atributos?.[ATRIBUTO_SERIE_PRUEBA];
-  return typeof serie === 'string' ? serie : null;
+function textoDe(atributos: AtributosItem | null, atributo: string): string | null {
+  const valor = atributos?.[atributo];
+  return typeof valor === 'string' ? valor : null;
 }
 
 /** Sin el atributo o con algo que no es una lista de textos, ningún dominio: el worker no llama a nadie. */
@@ -30,8 +32,10 @@ export class ProveedoresFeCatalogo implements ProveedoresFe {
     return {
       codigo,
       requiereCertificado: atributos?.[ATRIBUTO_REQUIERE_CERTIFICADO] !== false,
-      seriePrueba: seriePruebaDe(atributos),
+      seriePrueba: textoDe(atributos, ATRIBUTO_SERIE_PRUEBA),
       dominiosPermitidos: dominiosDe(atributos),
+      urlBeta: textoDe(atributos, ATRIBUTO_URL_BETA),
+      urlProduccion: textoDe(atributos, ATRIBUTO_URL_PRODUCCION),
     };
   }
 }

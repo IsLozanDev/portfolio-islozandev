@@ -73,5 +73,6 @@ export {
   PruebaBetaRequeridaError,
   PruebaEnCursoError,
   UrlProveedorNoPermitidaError,
+  UsuarioSolInvalidoError,
   VersionObsoletaEmisorError,
 } from './domain/errores.js';
