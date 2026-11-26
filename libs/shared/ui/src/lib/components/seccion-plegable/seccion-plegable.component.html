@@ -12,12 +12,12 @@
         (click)="alternar()"
       >
         <ng-content select="[vitSeccionEntrada]" />
-        <span class="flex min-w-0 flex-col gap-0.5 min-[600px]:flex-row min-[600px]:items-baseline min-[600px]:gap-3">
+        <span class="flex min-w-0 flex-col gap-0.5 min-[601px]:flex-row min-[601px]:items-baseline min-[601px]:gap-3">
           <span class="text-base font-medium whitespace-nowrap" [class.text-sobre-superficie-variante]="deshabilitada()">
             {{ titulo() }}
           </span>
           @if (!abierta() && resumen()) {
-            <span class="resumen text-sm text-sobre-superficie-variante min-[600px]:truncate">{{ resumen() }}</span>
+            <span class="resumen text-sm text-sobre-superficie-variante min-[601px]:truncate">{{ resumen() }}</span>
           }
         </span>
       </button>
