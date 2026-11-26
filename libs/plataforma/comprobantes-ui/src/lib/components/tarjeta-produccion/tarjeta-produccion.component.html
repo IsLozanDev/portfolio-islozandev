@@ -1,0 +1,34 @@
+<div class="flex flex-col gap-5">
+  @if (enProduccion()) {
+    <p class="m-0 flex items-center gap-2 text-sm" data-produccion="desde">
+      <mat-icon class="text-primario" aria-hidden="true">verified</mat-icon>{{ desde() }}
+    </p>
+  } @else {
+    <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.explicacion }}</p>
+
+    @if (motivo(); as motivoBloqueo) {
+      <p class="m-0 flex items-center gap-2 text-sm text-sobre-superficie-variante" data-motivo="produccion">
+        <mat-icon aria-hidden="true">lock</mat-icon>{{ motivoBloqueo }}
+      </p>
+    } @else if (vigencia(); as vigenciaPrueba) {
+      <p class="m-0 flex items-center gap-2 text-sm text-sobre-superficie-variante" data-produccion="vigencia">
+        <mat-icon aria-hidden="true">timer</mat-icon>{{ vigenciaPrueba }}
+      </p>
+    }
+
+    @if (error(); as mensajeError) {
+      <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="produccion">{{ mensajeError }}</p>
+    }
+
+    <div *siPermiso="permisos.configurar" class="flex justify-end border-t border-borde pt-4">
+      <button mat-flat-button type="button" class="vit-destructivo" data-accion="produccion" [disabled]="motivo() !== null || pasando()" [attr.aria-busy]="pasando()" (click)="pasar.emit()">
+        @if (pasando()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" />
+        } @else {
+          <mat-icon aria-hidden="true">rocket_launch</mat-icon>
+        }
+        {{ mensajes.pasar }}
+      </button>
+    </div>
+  }
+</div>

@@ -96,6 +96,17 @@ export interface EmpresaConEmisorRespuesta {
   } | null;
 }
 
+/** Cuerpo del `PUT /v1/fe/emisores/{empresaId}`: `clave` solo si se escribió; `version` si el emisor ya existe. */
+export interface CargaConfigurarEmisor {
+  proveedor: string;
+  usuario_proveedor: string;
+  clave?: string;
+  regimen_igv: RegimenIgv;
+  leyenda_pie: string | null;
+  url_proveedor?: string | null;
+  version?: number;
+}
+
 export function aEmisor(respuesta: EmisorRespuesta): Emisor {
   return {
     emisorId: respuesta.emisor_id,

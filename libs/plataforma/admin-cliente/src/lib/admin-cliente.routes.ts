@@ -193,6 +193,11 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
     loadComponent: () => import('./pages/persona-detalle/persona-detalle.page').then((modulo) => modulo.PersonaDetallePage),
   },
+  // Facturación electrónica (spec 62): cada ruta de la lib exige su permiso.
+  {
+    path: 'fe',
+    loadChildren: () => import('@vitrina/plataforma/comprobantes-ui').then((modulo) => modulo.FE_ROUTES),
+  },
   // Las asignaciones se gestionan en el detalle del miembro (D5 del spec 16a); la opción del menú sigue en el manifiesto.
   // Angular no admite canMatch junto a redirectTo: el permiso lo decide la ruta de destino.
   { path: 'asignaciones', redirectTo: 'usuarios' },

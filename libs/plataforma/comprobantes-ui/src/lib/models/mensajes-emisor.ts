@@ -57,3 +57,86 @@ export const MOTIVOS_DESHABILITADA = {
 
 export const AYUDA_CREDENCIAL_CONFIGURADA = 'Configurada. Déjalo vacío para conservarla.';
 export const AYUDA_CERTIFICADO_OPCIONAL = 'Opcional: este proveedor firma por su cuenta';
+
+/** Textos de la lista de emisores (artboard FE-Emisores). */
+export const MENSAJES_EMISORES = {
+  titulo: 'Emisor electrónico',
+  subtitulo: 'Cada empresa emite con su propio RUC, certificado y usuario SOL.',
+  empresa: 'Empresa',
+  ruc: 'RUC',
+  proveedor: 'Proveedor',
+  ambiente: 'Ambiente',
+  estado: 'Estado',
+  certificadoVence: 'Certificado vence',
+  configurar: 'Configurar',
+  verEmisor: 'Ver emisor',
+  sinEmpresas: 'No hay empresas activas.',
+  sinDato: '—',
+} as const;
+
+/** Textos de la página del emisor (artboard FE-Emisor). */
+export const MENSAJES_EMISOR = {
+  volver: 'Emisor electrónico',
+  subtitulo: 'Emite con su propio certificado y usuario SOL.',
+  empresaNoEncontrada: 'La empresa no existe o está inactiva.',
+  recargar: 'Recargar',
+  completarEmpresa: 'Completar los datos de la empresa',
+  secciones: {
+    proveedor: 'Proveedor y credencial',
+    certificado: 'Certificado digital',
+    prueba: 'Prueba en beta',
+    produccion: 'Producción',
+  },
+  proveedor: {
+    proveedor: 'Proveedor',
+    usuario: 'Usuario del proveedor',
+    usuarioSol: 'Usuario secundario SOL',
+    ayudaUsuarioSol: 'En mayúsculas y sin el RUC. Se crea en SUNAT Operaciones en Línea.',
+    clave: 'Clave del proveedor',
+    claveSol: 'Clave SOL',
+    url: 'URL del proveedor',
+    regimenIgv: 'Régimen de IGV',
+    leyendaPie: 'Leyenda del pie (opcional)',
+    avisoRepetirPrueba: 'Si cambias el proveedor, la URL, la clave o el certificado tendrás que volver a ejecutar la prueba.',
+    bloqueadoEnProduccion: 'En producción no se cambia el proveedor ni la URL.',
+    sinProveedores: 'No se pudo leer la lista de proveedores.',
+    guardar: 'Guardar',
+    descartar: 'Descartar',
+    guardado: 'Proveedor guardado.',
+  },
+  certificado: {
+    rucCertificado: 'RUC del certificado',
+    vence: 'Vence',
+    huella: 'Huella SHA-256',
+    sinCertificado: 'Sin certificado',
+    restricciones: '.pfx o .p12, hasta 50 KB. Se guarda cifrado y no se vuelve a mostrar.',
+    elegirArchivo: 'Elegir archivo',
+    clave: 'Clave del certificado',
+    subir: 'Subir certificado',
+    reemplazar: 'Reemplazar certificado',
+    sinInterrupcion: 'Al reemplazarlo no se interrumpe la emisión.',
+    subido: 'Certificado cargado.',
+  },
+  prueba: {
+    explicacion: 'Envía una boleta de prueba a la beta de SUNAT. No tiene validez tributaria.',
+    sinPruebas: 'Sin pruebas',
+    aunNoHay: 'Aún no hay pruebas para este emisor.',
+    enProceso: (numero: number) => `Prueba n.º ${numero} en proceso. Se actualiza sola; puedes seguir en la página.`,
+    errorEnvio: 'No se pudo enviar la prueba. Vuelve a intentarlo.',
+    ejecutar: 'Ejecutar prueba',
+    volverAProbar: 'Volver a probar',
+    probando: 'Probando…',
+    actualizar: 'Actualizar',
+    numero: (numero: number) => `Prueba n.º ${numero}`,
+  },
+  produccion: {
+    explicacion: 'Desde ese momento los comprobantes se envían a SUNAT con validez tributaria. No se puede volver a beta.',
+    vigenteHasta: (fechaHora: string) => `La prueba aceptada vale hasta el ${fechaHora}.`,
+    pasar: 'Pasar a producción',
+    enProduccionDesde: (fecha: string) => `En producción desde ${fecha}`,
+    confirmarTitulo: '¿Pasar a producción?',
+    confirmarTexto: (razonSocial: string, ruc: string) =>
+      `${razonSocial} (RUC ${ruc}) empezará a emitir con validez tributaria. Las boletas y facturas se envían a SUNAT en producción. No se puede volver a beta.`,
+    hecho: 'El emisor está en producción.',
+  },
+} as const;
