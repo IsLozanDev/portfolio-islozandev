@@ -28,6 +28,11 @@ export class CatalogosSunatCatalogo implements CatalogosSunat {
     return this.esValido(CATALOGOS_SUNAT.tipoDocumento, codigo);
   }
 
+  async codigoSunatTipoDocumento(codigo: string): Promise<string | null> {
+    const { valido, codigoExterno } = await this.catalogo.validarItem(CATALOGOS_SUNAT.tipoDocumento, codigo);
+    return valido ? codigoExterno : null;
+  }
+
   /** Sin el atributo `oneroso` o con un grupo que FE no emite (IVAP, exportación, gratuitas), null. */
   async grupoAfectacion(codigo: string): Promise<GrupoAfectacion | null> {
     const { valido, atributos } = await this.catalogo.validarItem(CATALOGOS_SUNAT.afectacion, codigo);

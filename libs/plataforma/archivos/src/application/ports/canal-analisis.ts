@@ -18,8 +18,8 @@ export interface ResultadoAnalisis {
   motivoRechazo?: MotivoRechazo | MotivoRechazoVersion;
   versionCoincidente?: number;
   mensaje?: string;
-  /** Solo para autorizar el SSE: no sale al cliente. */
-  subidoPor: string;
+  /** Solo para autorizar el SSE: no sale al cliente. Nulo solo en un archivo `SISTEMA`, que nadie sigue. */
+  subidoPor: string | null;
 }
 
 /** Del worker a la API: el resultado de cada análisis, en vivo y el último guardado por un tiempo. */

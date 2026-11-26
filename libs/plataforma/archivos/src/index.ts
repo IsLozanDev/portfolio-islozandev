@@ -1,14 +1,16 @@
-// TR-ARC: carga con URL firmada, análisis en el worker y descarga con URL firmada (spec 33), con antivirus ClamAV y reencolado de análisis atascados (spec 34), y versiones (spec 35). Solo este archivo es público.
+// TR-ARC: carga con URL firmada, análisis en el worker y descarga con URL firmada (spec 33), con antivirus ClamAV y reencolado de análisis atascados (spec 34), versiones (spec 35) y carga desde el servidor (spec 52). Solo este archivo es público.
 export {
   ESTADOS_ARCHIVO,
   ESTADOS_VERSION,
   MOTIVOS_RECHAZO,
   MOTIVOS_RECHAZO_VERSION,
   NUMERO_PRIMERA_VERSION,
+  ORIGENES_ARCHIVO,
   type CodigoEstadoArchivo,
   type CodigoEstadoVersion,
   type MotivoRechazo,
   type MotivoRechazoVersion,
+  type OrigenArchivo,
 } from './domain/archivo.js';
 export { CODIGOS_CATEGORIA, type CodigoCategoria } from './domain/categoria.js';
 export {
@@ -49,6 +51,12 @@ export {
   type VersionListada,
   type VersionSolicitada,
 } from './application/ports/archivo.port.js';
+export {
+  ARCHIVO_SISTEMA_PORT,
+  type ArchivoGuardado,
+  type ArchivoSistemaPort,
+  type GuardarArchivoComando,
+} from './application/ports/archivo-sistema.port.js';
 export { AUTORIZADORES_ENTIDAD, type AutorizadorEntidad } from './application/ports/autorizador-entidad.js';
 export { ESQUEMAS_ARC, registrarEsquemasArc } from './infrastructure/event-schemas.js';
 export { AnalizarArchivo } from './application/analizar-archivo.js';

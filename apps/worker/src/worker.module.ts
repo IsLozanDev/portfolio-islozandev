@@ -19,6 +19,7 @@ import type { Config } from './config/env.js';
 import { CuotasModule } from './cuotas/cuotas.module.js';
 import { ImportacionesModule } from './importaciones/importaciones.module.js';
 import { NotificacionesWorkerModule } from './notificaciones/notificaciones.module.js';
+import { EnviosFeModule } from './envios-fe/envios-fe.module.js';
 import { PruebasFeModule } from './pruebas-fe/pruebas-fe.module.js';
 import { SERVICIO } from './servicio.js';
 import { SoporteModule } from './soporte/soporte.module.js';
@@ -49,6 +50,16 @@ export class WorkerModule {
     registrarEsquemasFe(validator);
     // La misma referencia en WorkerModule y PruebasFeModule: una sola bóveda.
     const secretosModulo = SecretosModule.register({ claves: clavesMaestrasDe(config) });
+    // La misma referencia en WorkerModule y EnviosFeModule: un solo Storage para el análisis y los CPE.
+    const archivosModulo = ArchivosWorkerModule.register({
+      dataSource,
+      redisUrl: config.REDIS_URL,
+      supabase: { url: config.SUPABASE_URL, secretKey: config.SUPABASE_SECRET_KEY },
+      bucket: config.ARC_BUCKET,
+      patronLimpieza: config.ARC_LIMPIEZA_CRON,
+      antivirus: opcionesAntivirusDe(config),
+      patronReencolado: config.ARC_REENCOLADO_CRON,
+    });
     return {
       module: WorkerModule,
       imports: [
@@ -78,20 +89,14 @@ export class WorkerModule {
         VerificacionModule.register({ dataSource, redisUrl: config.REDIS_URL, patron: config.AUD_VERIFICACION_CRON }),
         // Spec 49: aviso diario de certificados digitales por vencer.
         CertificadosFeModule.register({ dataSource, redisUrl: config.REDIS_URL, programar: true }),
-        ArchivosWorkerModule.register({
-          dataSource,
-          redisUrl: config.REDIS_URL,
-          supabase: { url: config.SUPABASE_URL, secretKey: config.SUPABASE_SECRET_KEY },
-          bucket: config.ARC_BUCKET,
-          patronLimpieza: config.ARC_LIMPIEZA_CRON,
-          antivirus: opcionesAntivirusDe(config),
-          patronReencolado: config.ARC_REENCOLADO_CRON,
-        }),
+        archivosModulo,
         // Spec 42: consumidor de not.mensaje.solicitado y cola not-envios hacia Resend.
         // Spec 45: consumidor de not.programacion.registrada, cola not-programaciones y su barrido.
         NotificacionesWorkerModule.register({ redisUrl: config.REDIS_URL, entorno: config, dataSource }),
         // Spec 50: consumidor de fe.prueba.solicitada y cola fe-pruebas hacia el PSE.
         PruebasFeModule.register({ redisUrl: config.REDIS_URL, entorno: config, secretos: secretosModulo }),
+        // Spec 52: consumidor de cpe.emitido y cola fe-envios hacia SUNAT, con el XML y el CDR en TR-ARC.
+        EnviosFeModule.register({ redisUrl: config.REDIS_URL, entorno: config, secretos: secretosModulo, archivos: archivosModulo }),
       ],
       providers: [{ provide: CierreBaseDeDatos, useValue: new CierreBaseDeDatos(dataSource) }],
     };

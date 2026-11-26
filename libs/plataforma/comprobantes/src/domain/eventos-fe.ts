@@ -14,6 +14,9 @@ export const EVENTOS_FE = {
   pruebaSolicitada: 'fe.prueba.solicitada',
   /** Con el nombre del SRS (spec 51). Lo consume el envío al PSE (spec 52). */
   comprobanteEmitido: 'cpe.emitido',
+  /** ACEPTADO o ACEPTADO_CON_OBSERVACIONES, con las observaciones (spec 52). */
+  comprobanteAceptado: 'cpe.aceptado',
+  comprobanteRechazado: 'cpe.rechazado',
 } as const;
 
 export const AGREGADO_COMPROBANTE = 'comprobante_fe';
@@ -31,9 +34,23 @@ export interface ComprobanteEmitidoEvento {
   origen_id: string | null;
 }
 
-export function comprobanteEmitido(version: number, carga: ComprobanteEmitidoEvento, ocurridoEn: Date): DomainEvent<ComprobanteEmitidoEvento> {
+/** Sin datos del adquirente. Los ids de archivo son nulos si la subida a ARC falló o SUNAT no devolvió CDR. */
+export interface ComprobanteAceptadoEvento extends ComprobanteEmitidoEvento {
+  codigo_respuesta: string | null;
+  observaciones: string[];
+  xml_archivo_id: string | null;
+  cdr_archivo_id: string | null;
+}
+
+export interface ComprobanteRechazadoEvento extends ComprobanteEmitidoEvento {
+  codigo_respuesta: string | null;
+  descripcion_respuesta: string | null;
+  xml_archivo_id: string | null;
+}
+
+function eventoDeComprobante<Carga extends ComprobanteEmitidoEvento>(tipo: string, version: number, carga: Carga, ocurridoEn: Date): DomainEvent<Carga> {
   return {
-    eventType: EVENTOS_FE.comprobanteEmitido,
+    eventType: tipo,
     aggregateType: AGREGADO_COMPROBANTE,
     aggregateId: carga.comprobante_id,
     aggregateVersion: version,
@@ -41,6 +58,18 @@ export function comprobanteEmitido(version: number, carga: ComprobanteEmitidoEve
     payload: carga,
     occurredAt: ocurridoEn,
   };
+}
+
+export function comprobanteEmitido(version: number, carga: ComprobanteEmitidoEvento, ocurridoEn: Date): DomainEvent<ComprobanteEmitidoEvento> {
+  return eventoDeComprobante(EVENTOS_FE.comprobanteEmitido, version, carga, ocurridoEn);
+}
+
+export function comprobanteAceptado(version: number, carga: ComprobanteAceptadoEvento, ocurridoEn: Date): DomainEvent<ComprobanteAceptadoEvento> {
+  return eventoDeComprobante(EVENTOS_FE.comprobanteAceptado, version, carga, ocurridoEn);
+}
+
+export function comprobanteRechazado(version: number, carga: ComprobanteRechazadoEvento, ocurridoEn: Date): DomainEvent<ComprobanteRechazadoEvento> {
+  return eventoDeComprobante(EVENTOS_FE.comprobanteRechazado, version, carga, ocurridoEn);
 }
 
 /** Sin usuario ni clave del proveedor ni nada del certificado. */

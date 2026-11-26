@@ -20,6 +20,7 @@ import {
 } from './estado-emisor.js';
 import type { CambioEstadoEmisor, EmisorConfigurado } from './eventos-fe.js';
 import { esRegimenIgv, REGIMEN_IGV_POR_DEFECTO, type RegimenIgv } from './regimen-igv.js';
+import { recortar } from './recortar.js';
 import { fueAceptado, type RespuestaPse, type ResultadoPse } from './respuesta-pse.js';
 
 /** Los mismos largos que las columnas de fe.emisor. */
@@ -113,17 +114,13 @@ export interface ConfiguracionProveedor {
 const ESTADOS_DE_CONFIGURACION: readonly EstadoEmisor[] = ['BORRADOR', 'CONFIGURADO'];
 const ESTADOS_QUE_PIDEN_PRUEBA: readonly EstadoEmisor[] = ['CONFIGURADO', 'VERIFICADO'];
 
-function recortar(texto: string | null, largoMaximo: number): string | null {
-  return texto === null ? null : texto.slice(0, largoMaximo);
-}
-
 function minutosEntre(desde: Date, hasta: Date): number {
   return (hasta.getTime() - desde.getTime()) / MILISEGUNDOS_POR_MINUTO;
 }
 
 function estadoPruebaDe(resultado: Exclude<ResultadoPse, 'EN_PROCESO'>): EstadoPrueba {
   if (fueAceptado(resultado)) return 'ACEPTADA';
-  if (resultado === 'RECHAZADO') return 'RECHAZADA';
+  if (resultado === 'RECHAZADO' || resultado === 'CREDENCIAL_INVALIDA') return 'RECHAZADA';
   return 'ERROR';
 }
 

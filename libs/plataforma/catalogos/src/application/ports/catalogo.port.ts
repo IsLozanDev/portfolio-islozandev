@@ -11,6 +11,8 @@ export interface ResultadoValidacion {
   atributos: AtributosItem | null;
   /** Nombre del ítem si es válido; null en otro caso. */
   nombre: string | null;
+  /** Código del ítem en la fuente oficial (p. ej. el de SUNAT) si es válido y lo tiene; null en otro caso (spec 52). */
+  codigoExterno: string | null;
 }
 
 /**

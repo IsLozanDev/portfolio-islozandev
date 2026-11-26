@@ -2,16 +2,18 @@ import { Comprobante } from '../../domain/comprobante/comprobante.js';
 import { Decimal, ESCALA_TASA, ESCALA_UNITARIO, monto } from '../../domain/comprobante/dinero.js';
 import { esGrupoAfectacion, type GrupoAfectacion, type LineaCalculada } from '../../domain/comprobante/linea-comprobante.js';
 import type { Cuota } from '../../domain/comprobante/reglas-factura.js';
+import type { RespuestaComprobante } from '../../domain/comprobante/respuesta-comprobante.js';
 import {
   CODIGO_SUNAT_POR_TIPO,
   tipoDesdeCodigo,
+  esEstadoFinal,
   type EstadoComprobante,
   type FormaPago,
   type ModoEnvio,
   type Moneda,
 } from '../../domain/comprobante/tipo-comprobante.js';
 import type { RegimenIgv } from '../../domain/regimen-igv.js';
-import type { FilaComprobante, FilaCuotaComprobante, FilaLineaComprobante } from './entidades-comprobante.js';
+import type { CambiosRespuestaComprobante, FilaComprobante, FilaCuotaComprobante, FilaLineaComprobante } from './entidades-comprobante.js';
 
 /** La fila guarda el código de afectación; el grupo sale de su primer dígito (cat. 07: 1 gravado, 2 exonerado, 3 inafecto). */
 const GRUPO_POR_DIGITO: Record<string, GrupoAfectacion> = { '1': 'GRAVADO', '2': 'EXONERADO', '3': 'INAFECTO' };
@@ -44,6 +46,21 @@ function lineaDesdeFila(fila: FilaLineaComprobante): LineaCalculada {
 
 function cuotaDesdeFila(fila: FilaCuotaComprobante): Cuota {
   return { numero: fila.numero, monto: monto(fila.monto, 'monto'), fechaVencimiento: fila.fechaVencimiento };
+}
+
+/** Solo un comprobante en estado final tiene respuesta: respondido_en la marca. */
+function respuestaDesdeFila(fila: FilaComprobante): RespuestaComprobante | null {
+  if (fila.respondidoEn === null || !esEstadoFinal(fila.estado)) return null;
+  return {
+    resultado: fila.estado,
+    codigo: fila.codigoRespuesta,
+    descripcion: fila.descripcionRespuesta,
+    observaciones: fila.observaciones,
+    hash: fila.hash,
+    xmlArchivoId: fila.xmlArchivoId,
+    cdrArchivoId: fila.cdrArchivoId,
+    respondidoEn: fila.respondidoEn,
+  };
 }
 
 /** Los CHECK de las tablas garantizan tipo, moneda, forma de pago, modo, estado y régimen. */
@@ -87,6 +104,8 @@ export function comprobanteDesdeFilas(fila: FilaComprobante, lineas: FilaLineaCo
     version: fila.version,
     creadoPor: fila.creadoPor,
     creadoEn: fila.creadoEn,
+    modificadoEn: fila.modificadoEn,
+    respuesta: respuestaDesdeFila(fila),
   });
 }
 
@@ -117,16 +136,31 @@ export function filaDesdeComprobante(comprobante: Comprobante): FilaComprobante 
     igv: datos.totales.igv.aTexto(),
     total: datos.totales.total.aTexto(),
     modoEnvio: datos.modoEnvio,
-    estado: datos.estado,
     advertencias: datos.advertencias,
     origenProducto: datos.origen?.producto ?? null,
     origenId: datos.origen?.id ?? null,
     claveIdempotencia: datos.claveIdempotencia,
     huellaSolicitud: datos.huellaSolicitud,
-    version: datos.version,
     creadoPor: datos.creadoPor,
     creadoEn: datos.creadoEn,
-    modificadoEn: null,
+    ...cambiosDeRespuesta(comprobante),
+  };
+}
+
+/** El estado, la versión y las columnas de la respuesta de SUNAT, vacías mientras no la haya. */
+export function cambiosDeRespuesta(comprobante: Comprobante): CambiosRespuestaComprobante {
+  const { estado, version, modificadoEn, respuesta } = comprobante.datos;
+  return {
+    estado,
+    version,
+    modificadoEn,
+    hash: respuesta?.hash ?? null,
+    xmlArchivoId: respuesta?.xmlArchivoId ?? null,
+    cdrArchivoId: respuesta?.cdrArchivoId ?? null,
+    codigoRespuesta: respuesta?.codigo ?? null,
+    descripcionRespuesta: respuesta?.descripcion ?? null,
+    observaciones: respuesta?.observaciones ?? [],
+    respondidoEn: respuesta?.respondidoEn ?? null,
   };
 }
 

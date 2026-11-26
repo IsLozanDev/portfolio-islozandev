@@ -1,5 +1,6 @@
 // TR-FE: emisor electrónico por empresa con sus secretos en la bóveda y aviso de vencimiento del certificado (spec 49),
-// prueba en beta con el PSE y paso a producción (spec 50), emisión de boleta y factura (spec 51). Solo este archivo es público.
+// prueba en beta con el PSE y paso a producción (spec 50), emisión de boleta y factura (spec 51) y su envío a SUNAT
+// con el CDR en ARC (spec 52). Solo este archivo es público.
 export {
   COMPROBANTE_PORT,
   type AdquirenteComando,
@@ -12,9 +13,10 @@ export {
   type TotalesEmitidos,
 } from './application/ports/comprobante.port.js';
 export type { EstadoComprobante, FormaPago, ModoEnvio, Moneda, TipoComprobante } from './domain/comprobante/tipo-comprobante.js';
-export type { ComprobanteEmitidoEvento } from './domain/eventos-fe.js';
+export type { ComprobanteAceptadoEvento, ComprobanteEmitidoEvento, ComprobanteRechazadoEvento } from './domain/eventos-fe.js';
 export {
   ComprobantesModule,
+  type ComprobantesEnviosOpciones,
   type ComprobantesOpciones,
   type ComprobantesPruebasOpciones,
   type ComprobantesWorkerOpciones,
@@ -23,6 +25,9 @@ export { AvisarCertificadosPorVencer, type ResultadoAvisos } from './application
 export { EjecutarPruebaEmisor, ErrorTecnicoPseError } from './application/ejecutar-prueba-emisor.js';
 export type { IntentoPrueba, TrabajoPruebaFe } from './application/ports/cola-pruebas-fe.js';
 export { INTENTOS_PRUEBA_FE, NOMBRE_COLA_PRUEBAS_FE } from './infrastructure/bullmq/cola-pruebas.js';
+export { EnviarComprobante } from './application/enviar-comprobante.js';
+export type { IntentoTrabajoEnvio, TrabajoEnvioFe } from './application/ports/cola-envios-fe.js';
+export { INTENTOS_ENVIO_FE, NOMBRE_COLA_ENVIOS_FE } from './infrastructure/bullmq/cola-envios.js';
 export { camposEntornoFe, type EntornoFe } from './interface/entorno-fe.js';
 export { BYTES_MAXIMOS_CERTIFICADO } from './application/cargar-certificado.js';
 export { ENTIDADES_FE } from './infrastructure/typeorm/entidades.js';

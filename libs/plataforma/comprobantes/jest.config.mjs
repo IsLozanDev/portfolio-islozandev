@@ -14,6 +14,7 @@ export default {
     '^@vitrina/plataforma/seguridad$': '<rootDir>/../seguridad/src/index.ts',
     '^@vitrina/plataforma/eventos$': '<rootDir>/../eventos/src/index.ts',
     '^@vitrina/plataforma/correlativos$': '<rootDir>/../correlativos/src/index.ts',
+    '^@vitrina/plataforma/archivos$': '<rootDir>/../archivos/src/index.ts',
     '^@vitrina/shared/util$': '<rootDir>/../../shared/util/src/index.ts',
   },
   testTimeout: 30_000,

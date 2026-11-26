@@ -116,8 +116,8 @@ export class VersionDto {
   @ApiPropertyOptional({ description: 'Tipo real, después del análisis' })
   mime_real?: string;
 
-  @ApiProperty({ format: 'uuid' })
-  subido_por!: string;
+  @ApiProperty({ format: 'uuid', nullable: true, description: 'Nulo en un archivo que subió el sistema' })
+  subido_por!: string | null;
 
   @ApiProperty({ format: 'date-time' })
   subido_en!: string;

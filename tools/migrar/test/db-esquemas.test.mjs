@@ -109,6 +109,8 @@ const CASOS = [
   { migracion: '01t_not_programacion.sql', esquema: 'ntf', prueba: 'tests/01t_not_programacion.test.sql' },
   { migracion: '01u_fe_comprobante.sql', esquema: 'fe', prueba: 'tests/01u_fe_comprobante.test.sql' },
   { migracion: '01v_fe_sunat_directo.sql', esquema: 'fe', prueba: 'tests/01v_fe_sunat_directo.test.sql' },
+  { migracion: '01w_arc_carga_sistema.sql', esquema: 'arc', prueba: 'tests/01w_arc_carga_sistema.test.sql' },
+  { migracion: '01x_fe_envio.sql', esquema: 'fe', prueba: 'tests/01x_fe_envio.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -416,6 +418,95 @@ const objetosComprobante = async () =>
        UNION ALL SELECT codigo FROM cat.catalogo WHERE codigo = 'TASA_IGV'`,
     )
   ).rows.map((r) => r.o);
+
+// La tabla de intentos y las columnas de respuesta que agrega 01x_fe_envio (spec 52).
+const objetosEnvio = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT table_name AS o FROM information_schema.tables WHERE table_schema = 'fe' AND table_name = 'envio'
+       UNION ALL SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'fe' AND table_name = 'comprobante' AND column_name IN ('cdr_archivo_id', 'respondido_en')`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con un intento de envío registrado el inverso de 01x_fe_envio se niega (spec 52); la transacción se revierte.
+async function inversoEnvioConIntentos() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '52000000-0000-0000-0000-0000000000ef';
+    const empresaId = '52000000-0000-0000-0000-0000000000ee';
+    const sucursalId = '52000000-0000-0000-0000-0000000000ed';
+    const emisorId = '52000000-0000-0000-0000-0000000000ec';
+    const comprobanteId = '52000000-0000-0000-0000-0000000000eb';
+    await c.query(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('${tenantId}', 'fe-envio-inverso', 'FE envío inverso', 'ACTIVO', 1)`);
+    await c.query(
+      `INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version) VALUES ('${empresaId}', '${tenantId}', '20601234561', 'FE envío inverso SAC', 1)`,
+    );
+    await c.query(
+      `INSERT INTO org.sucursal (id, tenant_id, empresa_id, codigo, nombre, codigo_establecimiento_sunat, es_principal, version)
+       VALUES ('${sucursalId}', '${tenantId}', '${empresaId}', 'PRI', 'Principal', '0000', true, 1)`,
+    );
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO fe.emisor (id, tenant_id, empresa_id, proveedor, creado_por, estado)
+       VALUES ('${emisorId}', '${tenantId}', '${empresaId}', 'SIMULADO', gen_random_uuid(), 'CONFIGURADO')`,
+    );
+    await c.query(
+      `INSERT INTO fe.comprobante (id, tenant_id, empresa_id, sucursal_id, emisor_id, tipo, serie, numero, fecha_emision, moneda, forma_pago,
+                                   adquirente_tipo_doc, adquirente_numero, adquirente_nombre, regimen_igv, tasa_igv, total_gravado,
+                                   total_exonerado, total_inafecto, igv, total, estado, clave_idempotencia, huella_solicitud)
+       VALUES ('${comprobanteId}', '${tenantId}', '${empresaId}', '${sucursalId}', '${emisorId}', '03', 'B001', 1, '2026-11-25', 'PEN', 'CONTADO',
+               'DOC_0', '0', 'CLIENTES VARIOS', 'GENERAL', 0.18, 10, 0, 0, 1.80, 11.80, 'PENDIENTE_ENVIO', gen_random_uuid(), repeat('c', 64))`,
+    );
+    await c.query(
+      `INSERT INTO fe.envio (id, tenant_id, comprobante_id, intento, proveedor, resultado, enviado_en)
+       VALUES (gen_random_uuid(), '${tenantId}', '${comprobanteId}', 1, 'SIMULADO', 'ERROR_TECNICO', now())`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01x_fe_envio.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Columnas y CHECK que agrega 01w_arc_carga_sistema (spec 52).
+const objetosCargaSistema = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name AS o FROM information_schema.columns
+        WHERE table_schema = 'arc' AND table_name = 'archivo' AND column_name = 'origen'
+       UNION ALL SELECT conname FROM pg_constraint WHERE conname = 'ck_archivo_actor'`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con un archivo SISTEMA el inverso de 01w_arc_carga_sistema se niega (spec 52); la transacción se revierte.
+async function inversoCargaSistemaConArchivos() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '52000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, origen)
+       VALUES (gen_random_uuid(), '${tenantId}', 'CPE_XML', 'FE_COMPROBANTE', 'C-1', 'cdr.zip', 'PENDIENTE_CARGA', 'SISTEMA')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
 
 // Con un emisor SUNAT el inverso de 01v_fe_sunat_directo se niega (spec 51c); la transacción se revierte.
 async function inversoSunatConEmisores() {
@@ -931,8 +1022,28 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
-    // El inverso de 01v_fe_sunat_directo se niega con emisores SUNAT; sin ellos quita el ítem. Va primero: es la
-    // última migración. Queda revertida hasta reaplicar 01p_fe, 01r_fe_prueba y 01u_fe_comprobante.
+    // El inverso de 01x_fe_envio se niega con intentos de envío; sin ellos quita fe.envio y las columnas de respuesta, y
+    // se puede reaplicar. Va primero: es la última migración. Queda revertida hasta reaplicar 01u_fe_comprobante.
+    expect((await objetosEnvio()).sort()).toEqual(['cdr_archivo_id', 'envio', 'respondido_en']);
+    expect(await inversoEnvioConIntentos()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01x_fe_envio.sql'), 'utf8'));
+    expect(await objetosEnvio()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01x_fe_envio.sql'), 'utf8'));
+    expect((await objetosEnvio()).sort()).toEqual(['cdr_archivo_id', 'envio', 'respondido_en']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01x_fe_envio.sql'), 'utf8'));
+
+    // El inverso de 01w_arc_carga_sistema se niega con archivos SISTEMA; sin ellos quita origen y vuelve a exigir
+    // actor, y se puede reaplicar. Va después del de 01x_fe_envio. Queda revertida hasta reaplicar 01m_arc.
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
+    expect(await inversoCargaSistemaConArchivos()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8'));
+    expect(await objetosCargaSistema()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01w_arc_carga_sistema.sql'), 'utf8'));
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01w_arc_carga_sistema.sql'), 'utf8'));
+
+    // El inverso de 01v_fe_sunat_directo se niega con emisores SUNAT; sin ellos quita el ítem. Va después del de
+    // 01w_arc_carga_sistema. Queda revertida hasta reaplicar 01p_fe, 01r_fe_prueba y 01u_fe_comprobante.
     expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO', 'SUNAT']);
     expect(await inversoSunatConEmisores()).toBe('55006');
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01v_fe_sunat_directo.sql'), 'utf8'));
@@ -996,6 +1107,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await objetosComprobante()).toHaveLength(4);
     await ejecutar(urlDb, await readFile(rutaDb('01v_fe_sunat_directo.sql'), 'utf8'));
     expect(await proveedoresFe()).toEqual(['NUBEFACT', 'SIMULADO', 'SUNAT']);
+    await ejecutar(urlDb, await readFile(rutaDb('01x_fe_envio.sql'), 'utf8'));
+    expect((await objetosEnvio()).sort()).toEqual(['cdr_archivo_id', 'envio', 'respondido_en']);
 
     // Después, el de 01o_not se niega con mensajes ENCOLADO; sin ellos borra ntf y se puede reaplicar.
     expect(await inversoNotificacionesConEncolados()).toBe('55006');
@@ -1056,6 +1169,8 @@ describeConDb('db/ y supabase/migrations', () => {
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_categoria_fk.sql'), 'utf8'));
     await ejecutar(urlDb, await readFile(rutaDb('01m_arc_versiones.sql'), 'utf8'));
     expect(await objetosVersiones()).toHaveLength(8);
+    await ejecutar(urlDb, await readFile(rutaDb('01w_arc_carga_sistema.sql'), 'utf8'));
+    expect((await objetosCargaSistema()).sort()).toEqual(['ck_archivo_actor', 'origen']);
 
     // El inverso de 01l_per_fusion se niega con personas fusionadas; sin ellas quita alias, fusiones y descartes,
     // y se puede reaplicar (spec 39). Va antes que los demás de per.

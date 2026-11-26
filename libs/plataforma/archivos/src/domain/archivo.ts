@@ -26,6 +26,10 @@ export type CodigoEstadoArchivo = (typeof ESTADOS_ARCHIVO)[number];
 export const ESTADOS_VERSION = ['PENDIENTE_CARGA', 'EN_ANALISIS', 'DISPONIBLE', 'CUARENTENA', 'RECHAZADO'] as const;
 export type CodigoEstadoVersion = (typeof ESTADOS_VERSION)[number];
 
+/** `SISTEMA`: lo genera la plataforma o lo devuelve un tercero de confianza; nace `DISPONIBLE`, sin antivirus ni actor. */
+export const ORIGENES_ARCHIVO = ['CARGA', 'SISTEMA'] as const;
+export type OrigenArchivo = (typeof ORIGENES_ARCHIVO)[number];
+
 export const MOTIVOS_RECHAZO = ['TIPO_NO_PERMITIDO', 'TAMANO_NO_COINCIDE'] as const;
 export type MotivoRechazo = (typeof MOTIVOS_RECHAZO)[number];
 
@@ -46,7 +50,10 @@ export const NUMERO_PRIMERA_VERSION = 1;
 const VERSION_AL_SOLICITAR = 1;
 const ESTADOS_EN_CURSO: readonly CodigoEstadoVersion[] = ['PENDIENTE_CARGA', 'EN_ANALISIS'];
 
-/** `hashSha256`, `bytes` y `mimeReal` quedan nulos hasta que el worker analiza los bytes. */
+/**
+ * `hashSha256`, `bytes` y `mimeReal` quedan nulos hasta que el worker analiza los bytes. `subidoPor` solo es nulo
+ * en un archivo `SISTEMA`.
+ */
 export interface VersionArchivo {
   numero: number;
   rutaStorage: string;
@@ -56,7 +63,7 @@ export interface VersionArchivo {
   hashSha256: string | null;
   bytes: number | null;
   mimeReal: string | null;
-  subidoPor: string;
+  subidoPor: string | null;
 }
 
 export interface ArchivoProps {
@@ -69,7 +76,9 @@ export interface ArchivoProps {
   estado: CodigoEstadoArchivo;
   motivoRechazo: MotivoRechazo | null;
   versionVigente: number | null;
-  creadoPor: string;
+  origen: OrigenArchivo;
+  /** Solo nulo en un archivo `SISTEMA`. */
+  creadoPor: string | null;
   /** Siempre trae la versión 1. */
   versiones: VersionArchivo[];
   rechazoVersion: RechazoVersion | null;
@@ -84,6 +93,17 @@ export interface DatosSolicitudCarga {
   entidadTipo: string;
   entidadId: string;
   solicitadoPor: string;
+}
+
+/** Los bytes ya están en el servidor: el hash y el tamaño se miden antes de crear el archivo. */
+export interface DatosArchivoSistema {
+  id: string;
+  tenantId: string;
+  nombreOriginal: string;
+  mime: string;
+  entidadTipo: string;
+  entidadId: string;
+  contenido: ContenidoAnalizado;
 }
 
 export interface DatosSolicitudVersion {
@@ -123,9 +143,7 @@ export class Archivo extends AggregateRoot {
   static solicitar(datos: DatosSolicitudCarga, categoria: CategoriaArchivo): Archivo {
     const nombreOriginal = exigirTexto(datos.nombreOriginal, NOMBRE_MAXIMO, 'nombre');
     exigirMimeYTamano(datos.mimeDeclarado, datos.bytesDeclarados, categoria);
-    if (!FORMATO_ENTIDAD_TIPO.test(datos.entidadTipo)) {
-      throw new DatosArchivoInvalidosError('El tipo de entidad va en mayúsculas, con dígitos o guion bajo, de 2 a 40 caracteres');
-    }
+    exigirEntidadTipo(datos.entidadTipo);
     return new Archivo(datos.id, VERSION_AL_SOLICITAR, {
       tenantId: datos.tenantId,
       categoria: categoria.codigo,
@@ -135,10 +153,43 @@ export class Archivo extends AggregateRoot {
       estado: 'PENDIENTE_CARGA',
       motivoRechazo: null,
       versionVigente: null,
+      origen: 'CARGA',
       creadoPor: datos.solicitadoPor,
       versiones: [versionPendiente(datos.tenantId, datos.id, NUMERO_PRIMERA_VERSION, datos)],
       rechazoVersion: null,
     });
+  }
+
+  /**
+   * Un archivo que sube el servidor (spec 52): nace `DISPONIBLE` con la versión 1 vigente, sin pasar por el
+   * antivirus, y publica `archivo.disponible`. Se arma en análisis y se aprueba con lo medido para no repetir
+   * las reglas y el evento de `aprobar`.
+   */
+  static delSistema(datos: DatosArchivoSistema, categoria: CategoriaArchivo): Archivo {
+    const nombreOriginal = exigirTexto(datos.nombreOriginal, NOMBRE_MAXIMO, 'nombre');
+    exigirMimeYTamano(datos.mime, datos.contenido.bytes, categoria);
+    exigirEntidadTipo(datos.entidadTipo);
+    const primeraVersion = versionPendiente(datos.tenantId, datos.id, NUMERO_PRIMERA_VERSION, {
+      mimeDeclarado: datos.mime,
+      bytesDeclarados: datos.contenido.bytes,
+      solicitadoPor: null,
+    });
+    const archivo = new Archivo(datos.id, VERSION_AL_SOLICITAR, {
+      tenantId: datos.tenantId,
+      categoria: categoria.codigo,
+      entidadTipo: datos.entidadTipo,
+      entidadId: exigirTexto(datos.entidadId, ENTIDAD_ID_MAXIMO, 'identificador de la entidad'),
+      nombreOriginal,
+      estado: 'EN_ANALISIS',
+      motivoRechazo: null,
+      versionVigente: null,
+      origen: 'SISTEMA',
+      creadoPor: null,
+      versiones: [{ ...primeraVersion, estado: 'EN_ANALISIS' }],
+      rechazoVersion: null,
+    });
+    archivo.aprobar(datos.contenido);
+    return archivo;
   }
 
   static reconstituir(id: string, version: number, props: ArchivoProps): Archivo {
@@ -311,7 +362,11 @@ export class Archivo extends AggregateRoot {
     return this.props.versionVigente;
   }
 
-  get creadoPor(): string {
+  get origen(): OrigenArchivo {
+    return this.props.origen;
+  }
+
+  get creadoPor(): string | null {
     return this.props.creadoPor;
   }
 
@@ -410,7 +465,10 @@ export function armarRutaStorage(tenantId: string, archivoId: string, numeroVers
   return `${tenantId}/${archivoId}/${numeroVersion}`;
 }
 
-function versionPendiente(tenantId: string, archivoId: string, numero: number, datos: DatosSolicitudVersion): VersionArchivo {
+/** El actor es nulo solo en la versión de un archivo `SISTEMA`. */
+type DatosVersionNueva = Omit<DatosSolicitudVersion, 'solicitadoPor'> & { solicitadoPor: string | null };
+
+function versionPendiente(tenantId: string, archivoId: string, numero: number, datos: DatosVersionNueva): VersionArchivo {
   return {
     numero,
     rutaStorage: armarRutaStorage(tenantId, archivoId, numero),
@@ -422,6 +480,12 @@ function versionPendiente(tenantId: string, archivoId: string, numero: number, d
     mimeReal: null,
     subidoPor: datos.solicitadoPor,
   };
+}
+
+function exigirEntidadTipo(entidadTipo: string): void {
+  if (!FORMATO_ENTIDAD_TIPO.test(entidadTipo)) {
+    throw new DatosArchivoInvalidosError('El tipo de entidad va en mayúsculas, con dígitos o guion bajo, de 2 a 40 caracteres');
+  }
 }
 
 function registrarContenido(versionArchivo: VersionArchivo, contenido: ContenidoAnalizado): void {

@@ -40,7 +40,8 @@ export interface VersionListada {
   hashSha256?: string;
   bytes?: number;
   mimeReal?: string;
-  subidoPor: string;
+  /** Nulo en un archivo que subió el sistema. */
+  subidoPor: string | null;
   subidoEn: Date;
 }
 

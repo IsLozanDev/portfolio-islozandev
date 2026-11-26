@@ -20,7 +20,7 @@ describe('Esquemas de los eventos de FE', () => {
   registrarEsquemasFe(validador);
   const valida = (tipo: string, payload: unknown) => () => validador.validate(evento(tipo, payload));
 
-  it('registra los cinco eventos', () => {
+  it('registra un esquema por cada evento de FE', () => {
     expect(Object.keys(ESQUEMAS_FE).sort()).toEqual(Object.values(EVENTOS_FE).sort());
   });
 
@@ -48,5 +48,34 @@ describe('Esquemas de los eventos de FE', () => {
     expect(valida(EVENTOS_FE.certificadoPorVencer, carga)).not.toThrow();
     expect(valida(EVENTOS_FE.certificadoPorVencer, { ...carga, ruc: '123' })).toThrow();
     expect(valida(EVENTOS_FE.certificadoPorVencer, { ...carga, pfx: 'AAAA' })).toThrow();
+  });
+
+  describe('cpe.aceptado y cpe.rechazado (spec 52)', () => {
+    const XML = '0193f3a0-0000-7000-8000-0000000000a1';
+    const comun = {
+      comprobante_id: '0193f3a0-0000-7000-8000-0000000000c1',
+      tipo: '03',
+      serie: 'B002',
+      numero: 125,
+      total: '11.80',
+      moneda: 'PEN',
+      origen_producto: null,
+      origen_id: null,
+    };
+    const aceptado = { ...comun, estado: 'ACEPTADO', codigo_respuesta: '0', observaciones: [], xml_archivo_id: XML, cdr_archivo_id: null };
+    const rechazado = { ...comun, estado: 'RECHAZADO', codigo_respuesta: '2105', descripcion_respuesta: 'Unidad no existe', xml_archivo_id: null };
+
+    it('aceptan su carga, con observaciones y archivos nulos', () => {
+      expect(valida(EVENTOS_FE.comprobanteAceptado, aceptado)).not.toThrow();
+      expect(valida(EVENTOS_FE.comprobanteAceptado, { ...aceptado, estado: 'ACEPTADO_CON_OBSERVACIONES', observaciones: ['4252 - obs'] })).not.toThrow();
+      expect(valida(EVENTOS_FE.comprobanteRechazado, rechazado)).not.toThrow();
+    });
+
+    it('rechazan un estado que no les toca y los datos del adquirente', () => {
+      expect(valida(EVENTOS_FE.comprobanteAceptado, { ...aceptado, estado: 'RECHAZADO' })).toThrow();
+      expect(valida(EVENTOS_FE.comprobanteRechazado, { ...rechazado, estado: 'ACEPTADO' })).toThrow();
+      expect(valida(EVENTOS_FE.comprobanteAceptado, { ...aceptado, adquirente_numero: '20512345678' })).toThrow();
+      expect(valida(EVENTOS_FE.comprobanteRechazado, { ...rechazado, adquirente_nombre: 'CLIENTE SAC' })).toThrow();
+    });
   });
 });

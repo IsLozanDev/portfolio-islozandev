@@ -18,10 +18,18 @@ export const MODOS_ENVIO = ['INDIVIDUAL', 'RESUMEN'] as const;
 export type ModoEnvio = (typeof MODOS_ENVIO)[number];
 export const MODO_ENVIO_POR_DEFECTO: ModoEnvio = 'INDIVIDUAL';
 
-/** Los mismos que el CHECK de fe.comprobante.estado; este spec solo crea PENDIENTE_ENVIO (el 52, los demás). */
+/** Los mismos que el CHECK de fe.comprobante.estado. ENVIADO (Nubefact) y ANULADO (baja, spec 55) aún no se usan. */
 export const ESTADOS_COMPROBANTE = ['PENDIENTE_ENVIO', 'ENVIADO', 'ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO', 'ANULADO'] as const;
 export type EstadoComprobante = (typeof ESTADOS_COMPROBANTE)[number];
 export const ESTADO_INICIAL_COMPROBANTE: EstadoComprobante = 'PENDIENTE_ENVIO';
+
+/** La respuesta de SUNAT que cierra el envío: desde aquí el comprobante no cambia (TR-RN-022, trigger de 01x). */
+export const ESTADOS_FINALES = ['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO'] as const satisfies readonly EstadoComprobante[];
+export type EstadoFinal = (typeof ESTADOS_FINALES)[number];
+
+export function esEstadoFinal(estado: string): estado is EstadoFinal {
+  return (ESTADOS_FINALES as readonly string[]).includes(estado);
+}
 
 /** El correlativo de un comprobante SUNAT tiene 8 dígitos (ck_serie_sunat de seq). */
 export const DIGITOS_NUMERO_COMPROBANTE = 8;

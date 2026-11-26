@@ -16,7 +16,7 @@ import { CanalAnalisisMemoria } from '../../src/infrastructure/memoria/canal-ana
 import { idDeTrabajo } from '../../src/infrastructure/bullmq/cola-analisis.bullmq.js';
 import { AlmacenArchivosMemoria } from '../../src/infrastructure/memoria/almacen-archivos.memoria.js';
 import { DetectorTipoFileType } from '../../src/infrastructure/tipo/detector-tipo.file-type.js';
-import { categoriaDocumento, categoriaImagen, VEINTICINCO_MEGABYTES } from './categorias.js';
+import { categoriaCpeXml, categoriaDocumento, categoriaImagen, VEINTICINCO_MEGABYTES } from './categorias.js';
 import { RelojFijo } from './reloj-fijo.js';
 
 export const TENANT_A = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -100,6 +100,7 @@ export class RepositorioArchivosMemoria implements RepositorioArchivos {
     categoriaImagen(),
     categoriaDocumento(),
     new CategoriaArchivo('ADJUNTO_SOPORTE', ['application/pdf', 'image/jpeg', 'image/png', 'text/plain'], VEINTICINCO_MEGABYTES, false),
+    categoriaCpeXml(),
   ];
 
   constructor(private readonly contexto: TenantContext) {}

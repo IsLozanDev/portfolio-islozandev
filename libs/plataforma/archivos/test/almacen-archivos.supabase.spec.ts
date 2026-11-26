@@ -19,6 +19,12 @@ class BucketDoble implements BucketStorage {
   respuestaDescarga: Awaited<ReturnType<BucketStorage['createSignedUrl']>> = { data: { signedUrl: URL_DESCARGA }, error: null };
   respuestaLectura: Awaited<ReturnType<BucketStorage['download']>> = { data: new Blob([new Uint8Array(pdf())]), error: null };
   respuestaBorrado: Awaited<ReturnType<BucketStorage['remove']>> = { data: [], error: null };
+  respuestaSubida: Awaited<ReturnType<BucketStorage['upload']>> = { data: { path: RUTA }, error: null };
+
+  upload(...argumentos: unknown[]) {
+    this.llamadas.push(['upload', ...argumentos]);
+    return Promise.resolve(this.respuestaSubida);
+  }
 
   createSignedUploadUrl(...argumentos: unknown[]) {
     this.llamadas.push(['createSignedUploadUrl', ...argumentos]);
@@ -84,6 +90,14 @@ describe('AlmacenArchivosSupabase', () => {
     expect(await almacen.leer(RUTA)).toBeNull();
   });
 
+  it('sube los bytes desde el servidor con su tipo y sin upsert', async () => {
+    const contenido = new Uint8Array([1, 2, 3]);
+
+    await almacen.subir(RUTA, contenido, 'application/xml');
+
+    expect(bucket.llamadas).toEqual([['upload', RUTA, contenido, { contentType: 'application/xml', upsert: false }]]);
+  });
+
   it('borra el objeto por su ruta', async () => {
     await almacen.borrar(RUTA);
 
@@ -95,6 +109,7 @@ describe('AlmacenArchivosSupabase', () => {
     ['firmarDescarga', (doble: BucketDoble) => (doble.respuestaDescarga = { data: null, error: ERROR_INTERNO }), (a: AlmacenArchivosSupabase) => a.firmarDescarga(RUTA, VIGENCIA_SEGUNDOS)],
     ['leer', (doble: BucketDoble) => (doble.respuestaLectura = { data: null, error: ERROR_INTERNO }), (a: AlmacenArchivosSupabase) => a.leer(RUTA)],
     ['borrar', (doble: BucketDoble) => (doble.respuestaBorrado = { data: null, error: ERROR_INTERNO }), (a: AlmacenArchivosSupabase) => a.borrar(RUTA)],
+    ['subir', (doble: BucketDoble) => (doble.respuestaSubida = { data: null, error: ERROR_INTERNO }), (a: AlmacenArchivosSupabase) => a.subir(RUTA, new Uint8Array([1]), 'application/zip')],
   ])('%s traduce el error de Storage a ALMACEN_NO_DISPONIBLE con solo el código', async (_metodo, programarFallo, llamar) => {
     programarFallo(bucket);
 

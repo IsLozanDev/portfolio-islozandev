@@ -8,6 +8,8 @@ export interface CatalogosSunat {
   existeUnidad(codigo: string): Promise<boolean>;
   existeMoneda(codigo: string): Promise<boolean>;
   existeTipoDocumento(codigo: string): Promise<boolean>;
+  /** El `codigo_externo` SUNAT (cat. 06) del tipo de documento interno; null si no existe o no lo tiene. */
+  codigoSunatTipoDocumento(codigo: string): Promise<string | null>;
   /** null si el código no existe, no está vigente o no es una operación onerosa gravada, exonerada o inafecta. */
   grupoAfectacion(codigo: string): Promise<GrupoAfectacion | null>;
 }

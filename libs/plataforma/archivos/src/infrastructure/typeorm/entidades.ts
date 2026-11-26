@@ -24,7 +24,8 @@ export interface FilaArchivo {
   versionCoincidente: number | null;
   versionVigente: number | null;
   version: number;
-  creadoPor: string;
+  origen: string;
+  creadoPor: string | null;
   creadoEn: Date;
   actualizadoEn: Date;
 }
@@ -41,7 +42,7 @@ export interface FilaVersionArchivo {
   hashSha256: string | null;
   bytes: string | null;
   mimeReal: string | null;
-  subidoPor: string;
+  subidoPor: string | null;
   subidoEn: Date;
 }
 
@@ -75,7 +76,8 @@ export const ArchivoEntidad = new EntitySchema<FilaArchivo>({
     versionVigente: { name: 'version_vigente', type: 'integer', nullable: true },
     // TypeORM la sube en uno en cada UPDATE: también en los cambios de estado que no publican evento.
     version: { type: 'integer', version: true },
-    creadoPor: { name: 'creado_por', type: 'uuid' },
+    origen: { type: 'varchar', length: 8 },
+    creadoPor: { name: 'creado_por', type: 'uuid', nullable: true },
     creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },
     actualizadoEn: { name: 'actualizado_en', type: 'timestamptz', updateDate: true },
   },
@@ -96,7 +98,7 @@ export const VersionArchivoEntidad = new EntitySchema<FilaVersionArchivo>({
     hashSha256: { name: 'hash_sha256', type: 'char', length: 64, nullable: true },
     bytes: { type: 'bigint', nullable: true },
     mimeReal: { name: 'mime_real', type: 'varchar', length: 100, nullable: true },
-    subidoPor: { name: 'subido_por', type: 'uuid' },
+    subidoPor: { name: 'subido_por', type: 'uuid', nullable: true },
     subidoEn: { name: 'subido_en', type: 'timestamptz', createDate: true },
   },
 });

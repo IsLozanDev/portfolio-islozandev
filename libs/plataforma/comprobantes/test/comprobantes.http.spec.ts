@@ -13,6 +13,8 @@ import { ComprobantesController } from '../src/interface/comprobantes.controller
 import { EMPRESA, TENANT_A, USUARIO } from './support/dobles.js';
 import { crearDoblesEmision, emisorEn, RUC_CLIENTE, SUCURSAL, type DoblesEmision } from './support/dobles-emision.js';
 
+const XML_ARCHIVO = '0193f3a0-0000-7000-8000-0000000000a1';
+
 const MFA_MAX_EDAD_SEG = 900;
 const RUTA = '/v1/fe/comprobantes';
 const CLAVE = '0193f3a0-0000-7000-8000-00000000c1b1';
@@ -119,6 +121,7 @@ describe('HTTP /v1/fe/comprobantes (TR-RF-053 y 054)', () => {
         { orden: 2, valor_venta: '40.00', igv: '7.20' },
       ],
       cuotas: [],
+      respuesta: null,
     });
     const ausente = await http().get(`${RUTA}/0193f3a0-0000-7000-8000-0000000000ff`).set('X-Sucursal-Id', SUCURSAL);
     expect([ausente.status, ausente.body.codigo]).toEqual([404, 'COMPROBANTE_NO_ENCONTRADO']);
@@ -173,6 +176,39 @@ describe('HTTP /v1/fe/comprobantes (TR-RF-053 y 054)', () => {
     expect([dobles.seriesMemoria.pedidos, dobles.base.auditoria.entradas.length]).toEqual([0, 0]);
   });
 
+  it('GET de un comprobante respondido trae la respuesta de SUNAT con los ids de archivo (spec 52)', async () => {
+    const { body } = await emitir(cuerpoFactura);
+    const respondidoEn = new Date('2026-11-22T15:01:00.000Z');
+    await dobles.contexto.run({ tenantId: TENANT_A, actorId: USUARIO }, () =>
+      dobles.unidadDeTrabajo.run(async () => {
+        const comprobante = await dobles.comprobantes.porId(body.comprobante_id);
+        if (!comprobante) throw new Error('el comprobante debía existir');
+        const version = comprobante.datos.version;
+        comprobante.registrarRespuesta(
+          { resultado: 'ACEPTADO_CON_OBSERVACIONES', codigo: '0', descripcion: 'Aceptada', observaciones: ['4252 - obs'], hash: 'hash-firma' },
+          { xmlArchivoId: XML_ARCHIVO, cdrArchivoId: null },
+          respondidoEn,
+        );
+        await dobles.comprobantes.actualizarRespuesta(comprobante, version);
+      }),
+    );
+
+    const detalle = await http().get(`${RUTA}/${body.comprobante_id}`).set('X-Sucursal-Id', SUCURSAL);
+
+    expect(detalle.body).toMatchObject({
+      estado: 'ACEPTADO_CON_OBSERVACIONES',
+      respuesta: {
+        codigo: '0',
+        descripcion: 'Aceptada',
+        observaciones: ['4252 - obs'],
+        hash: 'hash-firma',
+        xml_archivo_id: XML_ARCHIVO,
+        cdr_archivo_id: null,
+        respondido_en: respondidoEn.toISOString(),
+      },
+    });
+  });
+
   it('sin plat.fe.emitir → 403 en las dos rutas; plat.fe.emitir no es sensible: aal1 alcanza', async () => {
     permisosDelActor = [PERMISOS_FE.consultar, PERMISOS_FE.configurar];
     expect((await emitir(cuerpoFactura)).status).toBe(403);
@@ -189,5 +225,9 @@ describe('HTTP /v1/fe/comprobantes (TR-RF-053 y 054)', () => {
     const ejemplos = (post?.requestBody as { content: Record<string, { examples?: object }> }).content['application/json'].examples;
     expect(Object.keys(ejemplos ?? {})).toEqual(['factura', 'boleta']);
     expect(JSON.stringify(post?.responses['422'])).toContain('BOLETA_REQUIERE_ADQUIRENTE');
+    const respuesta = (documento.components?.schemas?.RespuestaSunatDto ?? {}) as { properties?: Record<string, unknown> };
+    expect(Object.keys(respuesta.properties ?? {}).sort()).toEqual(
+      ['cdr_archivo_id', 'codigo', 'descripcion', 'hash', 'observaciones', 'respondido_en', 'xml_archivo_id'].sort(),
+    );
   });
 });

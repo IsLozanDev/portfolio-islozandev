@@ -170,6 +170,30 @@ class CuotaDetalleDto extends CuotaDto {
   numero!: number;
 }
 
+/** La respuesta de SUNAT al envío (TR-RF-059, spec 52). */
+class RespuestaSunatDto {
+  @ApiProperty({ example: '0', nullable: true, description: 'Código del CDR o del fault de SUNAT' })
+  codigo!: string | null;
+
+  @ApiProperty({ example: 'La Factura numero F001-00000100, ha sido aceptada', nullable: true })
+  descripcion!: string | null;
+
+  @ApiProperty({ type: [String], example: ['4252 - El dato ingresado como atributo @listName es incorrecto'], description: 'Observaciones no bloqueantes del CDR' })
+  observaciones!: string[];
+
+  @ApiProperty({ nullable: true, description: 'DigestValue de la firma: lo usa el QR de la representación impresa (spec 53)' })
+  hash!: string | null;
+
+  @ApiProperty({ format: 'uuid', nullable: true, description: 'XML firmado en TR-ARC; nulo si la subida falló' })
+  xml_archivo_id!: string | null;
+
+  @ApiProperty({ format: 'uuid', nullable: true, description: 'CDR (ZIP de SUNAT) en TR-ARC; nulo si falló la subida o SUNAT no lo devolvió' })
+  cdr_archivo_id!: string | null;
+
+  @ApiProperty({ format: 'date-time' })
+  respondido_en!: string;
+}
+
 export class ComprobanteDetalleDto extends ComprobanteBaseDto {
   @ApiProperty({ enum: TIPOS_COMPROBANTE })
   tipo!: string;
@@ -212,6 +236,9 @@ export class ComprobanteDetalleDto extends ComprobanteBaseDto {
 
   @ApiProperty({ format: 'date-time' })
   creado_en!: string;
+
+  @ApiProperty({ type: RespuestaSunatDto, nullable: true, description: 'null mientras el comprobante está PENDIENTE_ENVIO' })
+  respuesta!: RespuestaSunatDto | null;
 }
 
 export function comprobanteEmitidoDto(emitido: ComprobanteEmitido): ComprobanteEmitidoDto {
@@ -268,5 +295,14 @@ export function comprobanteDetalleDto(vista: VistaComprobante): ComprobanteDetal
     })),
     cuotas: vista.cuotas.map((cuota) => ({ numero: cuota.numero, monto: cuota.monto, fecha_vencimiento: cuota.fechaVencimiento })),
     creado_en: vista.creadoEn.toISOString(),
+    respuesta: vista.respuesta && {
+      codigo: vista.respuesta.codigo,
+      descripcion: vista.respuesta.descripcion,
+      observaciones: [...vista.respuesta.observaciones],
+      hash: vista.respuesta.hash,
+      xml_archivo_id: vista.respuesta.xmlArchivoId,
+      cdr_archivo_id: vista.respuesta.cdrArchivoId,
+      respondido_en: vista.respuesta.respondidoEn.toISOString(),
+    },
   };
 }

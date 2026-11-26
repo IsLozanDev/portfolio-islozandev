@@ -32,6 +32,7 @@ export interface BucketStorage {
     vigenciaSegundos: number,
     opciones?: { download?: string | boolean },
   ): Promise<RespuestaStorage<{ signedUrl: string }>>;
+  upload(ruta: string, contenido: Uint8Array, opciones: { contentType: string; upsert: boolean }): Promise<RespuestaStorage<unknown>>;
   download(ruta: string): PromiseLike<RespuestaStorage<Blob>>;
   remove(rutas: string[]): Promise<RespuestaStorage<unknown>>;
 }
@@ -62,6 +63,11 @@ export class AlmacenArchivosSupabase implements AlmacenArchivos {
   async firmarDescarga(ruta: string, vigenciaSegundos: number, descargarComo?: string): Promise<string> {
     const opciones = descargarComo === undefined ? undefined : { download: descargarComo };
     return exigirDatos(await this.bucket.createSignedUrl(ruta, vigenciaSegundos, opciones)).signedUrl;
+  }
+
+  /** Sin `upsert`: subir a una ruta que ya existe falla. */
+  async subir(ruta: string, contenido: Uint8Array, mime: string): Promise<void> {
+    exigirDatos(await this.bucket.upload(ruta, contenido, { contentType: mime, upsert: false }));
   }
 
   async leer(ruta: string): Promise<Uint8Array | null> {

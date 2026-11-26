@@ -9,7 +9,7 @@ const URL_PRODUCCION = 'https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billServi
 const RUC = '20601234561';
 
 const catalogoCon = (atributos: AtributosItem) => ({
-  validarItem: (): Promise<ResultadoValidacion> => Promise.resolve({ valido: true, motivo: null, atributos, nombre: 'SUNAT' }),
+  validarItem: (): Promise<ResultadoValidacion> => Promise.resolve({ valido: true, motivo: null, atributos, nombre: 'SUNAT', codigoExterno: null }),
 });
 
 describe('urlSegunAmbiente (spec 51c)', () => {

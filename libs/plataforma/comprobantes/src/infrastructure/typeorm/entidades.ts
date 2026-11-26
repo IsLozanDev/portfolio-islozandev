@@ -1,5 +1,5 @@
 import { EntitySchema } from 'typeorm';
-import { ComprobanteEntidad, CuotaComprobanteEntidad, LineaComprobanteEntidad } from './entidades-comprobante.js';
+import { ComprobanteEntidad, CuotaComprobanteEntidad, EnvioEntidad, LineaComprobanteEntidad } from './entidades-comprobante.js';
 
 // Mapeo ORM de las tablas de fe. El esquema lo definen las migraciones de db/ (sin synchronize):
 // aquí solo se describe lo que ya existe.
@@ -100,4 +100,4 @@ export const AvisoCertificadoEntidad = new EntitySchema<FilaAvisoCertificado>({
   },
 });
 
-export const ENTIDADES_FE = [EmisorEntidad, AvisoCertificadoEntidad, ComprobanteEntidad, LineaComprobanteEntidad, CuotaComprobanteEntidad];
+export const ENTIDADES_FE = [EmisorEntidad, AvisoCertificadoEntidad, ComprobanteEntidad, LineaComprobanteEntidad, CuotaComprobanteEntidad, EnvioEntidad];

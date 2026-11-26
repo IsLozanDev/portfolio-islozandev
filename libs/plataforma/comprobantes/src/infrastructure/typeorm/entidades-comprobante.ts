@@ -1,6 +1,7 @@
 import { EntitySchema } from 'typeorm';
 
-// Mapeo ORM de fe.comprobante y sus líneas y cuotas (01u_fe_comprobante). Sin synchronize. Los numeric viajan como
+// Mapeo ORM de fe.comprobante y sus líneas y cuotas (01u_fe_comprobante), con la respuesta de SUNAT y los intentos
+// de envío (01x_fe_envio). Sin synchronize. Los numeric viajan como
 // texto (node-pg) y se pasan a Decimal en el mapeo: nunca por number.
 
 export interface FilaComprobante {
@@ -40,6 +41,41 @@ export interface FilaComprobante {
   creadoPor: string | null;
   creadoEn: Date;
   modificadoEn: Date | null;
+  hash: string | null;
+  xmlArchivoId: string | null;
+  cdrArchivoId: string | null;
+  codigoRespuesta: string | null;
+  descripcionRespuesta: string | null;
+  observaciones: string[];
+  respondidoEn: Date | null;
+}
+
+/** Lo que cambia con la respuesta de SUNAT (spec 52): el trigger de 01x no deja tocar nada más. */
+export type CambiosRespuestaComprobante = Pick<
+  FilaComprobante,
+  | 'estado'
+  | 'version'
+  | 'modificadoEn'
+  | 'hash'
+  | 'xmlArchivoId'
+  | 'cdrArchivoId'
+  | 'codigoRespuesta'
+  | 'descripcionRespuesta'
+  | 'observaciones'
+  | 'respondidoEn'
+>;
+
+export interface FilaEnvio {
+  id: string;
+  tenantId: string;
+  comprobanteId: string;
+  intento: number;
+  proveedor: string;
+  resultado: string;
+  codigo: string | null;
+  descripcion: string | null;
+  enviadoEn: Date;
+  duracionMs: number | null;
 }
 
 export interface FilaLineaComprobante {
@@ -107,6 +143,31 @@ export const ComprobanteEntidad = new EntitySchema<FilaComprobante>({
     creadoPor: { name: 'creado_por', type: 'uuid', nullable: true },
     creadoEn: { name: 'creado_en', type: 'timestamptz' },
     modificadoEn: { name: 'modificado_en', type: 'timestamptz', nullable: true },
+    hash: { type: 'varchar', length: 100, nullable: true },
+    xmlArchivoId: { name: 'xml_archivo_id', type: 'uuid', nullable: true },
+    cdrArchivoId: { name: 'cdr_archivo_id', type: 'uuid', nullable: true },
+    codigoRespuesta: { name: 'codigo_respuesta', type: 'varchar', length: 10, nullable: true },
+    descripcionRespuesta: { name: 'descripcion_respuesta', type: 'varchar', length: 500, nullable: true },
+    observaciones: { type: 'jsonb' },
+    respondidoEn: { name: 'respondido_en', type: 'timestamptz', nullable: true },
+  },
+});
+
+export const EnvioEntidad = new EntitySchema<FilaEnvio>({
+  name: 'EnvioFe',
+  schema: 'fe',
+  tableName: 'envio',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    comprobanteId: { name: 'comprobante_id', type: 'uuid' },
+    intento: { type: 'smallint' },
+    proveedor: { type: 'varchar', length: 20 },
+    resultado: { type: 'varchar', length: 26 },
+    codigo: { type: 'varchar', length: 20, nullable: true },
+    descripcion: { type: 'varchar', length: 500, nullable: true },
+    enviadoEn: { name: 'enviado_en', type: 'timestamptz' },
+    duracionMs: { name: 'duracion_ms', type: 'integer', nullable: true },
   },
 });
 

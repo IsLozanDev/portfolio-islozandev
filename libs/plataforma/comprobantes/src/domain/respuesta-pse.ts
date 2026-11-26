@@ -1,5 +1,8 @@
-/** Respuesta común de un PSE u OSE a un comprobante enviado. */
-export const RESULTADOS_PSE = ['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO', 'ERROR_TECNICO', 'EN_PROCESO'] as const;
+/**
+ * Respuesta común de un PSE u OSE a un comprobante enviado. `CREDENCIAL_INVALIDA`: el proveedor no procesó el
+ * comprobante por la configuración del emisor (usuario o clave SOL, certificado, URL); reintentar no lo arregla.
+ */
+export const RESULTADOS_PSE = ['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES', 'RECHAZADO', 'ERROR_TECNICO', 'EN_PROCESO', 'CREDENCIAL_INVALIDA'] as const;
 export type ResultadoPse = (typeof RESULTADOS_PSE)[number];
 
 /** Nunca lleva el token ni la URL con credenciales. */
