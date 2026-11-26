@@ -1,0 +1,50 @@
+<section class="overflow-hidden rounded-tarjeta border border-borde bg-superficie" [class.abierta]="abierta()">
+  <div class="cabecera relative flex min-h-14 items-center gap-4 py-2.5 pr-3 pl-5" [class.deshabilitada]="deshabilitada()">
+    <div role="heading" class="min-w-0 flex-1" [attr.aria-level]="nivelTitulo()">
+      <button
+        type="button"
+        class="disparador flex w-full min-w-0 items-center gap-4 text-start"
+        [id]="idCabecera"
+        [attr.aria-expanded]="abierta()"
+        [attr.aria-controls]="idContenido"
+        [attr.aria-disabled]="deshabilitada() || null"
+        [attr.title]="etiquetaGalon()"
+        (click)="alternar()"
+      >
+        <ng-content select="[vitSeccionEntrada]" />
+        <span class="flex min-w-0 flex-col gap-0.5 min-[601px]:flex-row min-[601px]:items-baseline min-[601px]:gap-3">
+          <span class="text-base font-medium whitespace-nowrap" [class.text-sobre-superficie-variante]="deshabilitada()">
+            {{ titulo() }}
+          </span>
+          @if (!abierta() && resumen()) {
+            <span class="resumen text-sm text-sobre-superficie-variante min-[601px]:truncate">{{ resumen() }}</span>
+          }
+        </span>
+      </button>
+    </div>
+    <div class="fin flex shrink-0 items-center gap-2">
+      <ng-content select="[vitSeccionFin]" />
+    </div>
+    <mat-icon class="galon shrink-0 text-sobre-superficie-variante" aria-hidden="true">
+      expand_more
+    </mat-icon>
+  </div>
+  <div
+    class="contenido"
+    role="region"
+    [id]="idContenido"
+    [attr.aria-labelledby]="idCabecera"
+    [attr.inert]="abierta() ? null : ''"
+  >
+    <div class="min-h-0 overflow-hidden">
+      <div class="border-t border-borde px-6 py-5">
+        <ng-content />
+      </div>
+      @if (pie()) {
+        <div class="flex justify-end gap-2 border-t border-borde px-6 py-3">
+          <ng-content select="[vitSeccionPie]" />
+        </div>
+      }
+    </div>
+  </div>
+</section>

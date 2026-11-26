@@ -58,7 +58,7 @@ export class PersonaDireccionesComponent {
   protected readonly filas = computed(() => this.persona().direcciones.map((direccion) => this.filaDe(direccion)));
   private readonly operaciones = new OperacionesFicha((cambio) => this.cambio.emit(cambio));
   protected readonly ocupado = this.operaciones.ocupado;
-  protected readonly error = this.operaciones.error;
+  readonly error = this.operaciones.error;
 
   protected agregar(): Promise<void> {
     return this.abrirPanel({ persona: this.persona() });

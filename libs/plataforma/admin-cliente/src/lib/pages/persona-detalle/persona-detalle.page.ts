@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, viewChild, type Signal, type WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +13,7 @@ import {
   inicialesDe,
   mensajeDeError,
   MENSAJES_DUPLICADOS,
+  MENSAJES_FICHA,
   motivosDe,
   PersonaConsentimientosComponent,
   PersonaContactosComponent,
@@ -20,13 +21,25 @@ import {
   PersonaDireccionesComponent,
   PersonaRolesComponent,
   PersonasCliente,
+  resumenContactos,
+  resumenDatosBasicos,
+  resumenDirecciones,
+  resumenRoles,
   TONO_ROL,
   TONOS_PUNTAJE,
   type CambioFicha,
   type PaginaDuplicados,
   type PersonaDetalle,
 } from '@vitrina/plataforma/personas-ui';
-import { AvisosService, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent, type TonoEstado } from '@vitrina/shared/ui';
+import {
+  AvisosService,
+  CargandoComponent,
+  ChipEstadoComponent,
+  EstadoVacioComponent,
+  GrupoPlegableComponent,
+  SeccionPlegableComponent,
+  type TonoEstado,
+} from '@vitrina/shared/ui';
 import { map } from 'rxjs';
 import { MENSAJES_PERSONAS_ADMIN } from '../../models/mensajes-personas-admin';
 import { MENSAJES_COMPARACION } from '../../models/mensajes-comparacion';
@@ -37,8 +50,13 @@ const CODIGO_NO_ENCONTRADA = 'NO_ENCONTRADA';
 const MUESTRA_DUPLICADOS = { pagina: 1, tamano: 1 } as const;
 const TONO_POR_DEFECTO: TonoEstado = 'info';
 
+interface SeccionConError {
+  error: Signal<string | null>;
+}
+
 interface ResumenDuplicados {
   titulo: string;
+  resumen: string;
   texto: string;
   otra: string;
   documento: string;
@@ -61,6 +79,8 @@ interface ResumenDuplicados {
     CargandoComponent,
     ChipEstadoComponent,
     EstadoVacioComponent,
+    GrupoPlegableComponent,
+    SeccionPlegableComponent,
     PersonaConsentimientosComponent,
     PersonaContactosComponent,
     PersonaDatosBasicosComponent,
@@ -86,6 +106,28 @@ export class PersonaDetallePage {
   protected readonly error = signal<string | null>(null);
   protected readonly duplicadosDeLaPersona = signal<ResumenDuplicados | null>(null);
 
+  protected readonly mensajesFicha = MENSAJES_FICHA;
+  private readonly contactos = viewChild(PersonaContactosComponent);
+  private readonly direcciones = viewChild(PersonaDireccionesComponent);
+  private readonly consentimientos = viewChild(PersonaConsentimientosComponent);
+  /** Se arman con la ficha: la cabecera de cada sección se evalúa antes de que su componente reciba `persona`. */
+  protected readonly resumenes = computed(() => {
+    const persona = this.persona();
+    if (!persona) return null;
+    return {
+      datos: resumenDatosBasicos(persona),
+      contactos: resumenContactos(persona),
+      direcciones: resumenDirecciones(persona),
+      roles: resumenRoles(persona),
+    };
+  });
+  /** Este sí sale del componente: depende de las decisiones que carga él. */
+  protected readonly resumenConsentimientos = computed(() => this.consentimientos()?.resumen() ?? '');
+  /** Las secciones que muestran errores propios: si una falla contraída, se expande para que se vea. */
+  protected readonly contactosExpandida = signal(true);
+  protected readonly direccionesExpandida = signal(false);
+  protected readonly consentimientosExpandida = signal(false);
+
   protected readonly cabecera = computed(() => {
     const persona = this.persona();
     if (!persona) return null;
@@ -109,6 +151,9 @@ export class PersonaDetallePage {
         this.personaId.set(personaId);
         if (this.persona()?.id !== personaId) void this.cargar();
       });
+    expandirAnteError(this.contactos, this.contactosExpandida);
+    expandirAnteError(this.direcciones, this.direccionesExpandida);
+    expandirAnteError(this.consentimientos, this.consentimientosExpandida);
   }
 
   protected async alCambiar(cambio: CambioFicha): Promise<void> {
@@ -158,12 +203,20 @@ export class PersonaDetallePage {
   }
 }
 
+/** Debe llamarse en el constructor: crea un `effect`. */
+function expandirAnteError(seccion: Signal<SeccionConError | undefined>, expandida: WritableSignal<boolean>): void {
+  effect(() => {
+    if (seccion()?.error()) expandida.set(true);
+  });
+}
+
 function resumenDe(pagina: PaginaDuplicados, personaId: string): ResumenDuplicados | null {
   const [par] = pagina.items;
   if (!par || pagina.total === 0) return null;
   const otra = par.personaA.id === personaId ? par.personaB : par.personaA;
   return {
     titulo: MENSAJES_PERSONAS_ADMIN.posiblesDuplicados(pagina.total),
+    resumen: MENSAJES_PERSONAS_ADMIN.resumenDuplicados(pagina.total),
     texto: MENSAJES_PERSONAS_ADMIN.textoDuplicados(pagina.total),
     otra: otra.denominacion,
     documento: formatoDocumento(otra.tipoDocumento, otra.numeroDocumento),

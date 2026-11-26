@@ -387,4 +387,9 @@ $tabla-ancho-maximo-celda: 12rem;
       }
     }
   }
+
+  /* «Expandir todo» y «Contraer todo» de `vit-grupo-plegable`: botones de texto a 32 px, como los de fila. */
+  .vit-controles-plegables {
+    @include mat.button-density(-1);
+  }
 }

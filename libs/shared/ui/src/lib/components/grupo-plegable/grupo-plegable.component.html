@@ -1,0 +1,15 @@
+@if (mostrarControles()) {
+  <div class="vit-controles-plegables mb-2 flex justify-end gap-1">
+    <button mat-button type="button" [disabled]="todoExpandido()" (click)="expandirTodo()">
+      <mat-icon aria-hidden="true">unfold_more</mat-icon>
+      {{ textoExpandirTodo }}
+    </button>
+    <button mat-button type="button" [disabled]="todoContraido()" (click)="contraerTodo()">
+      <mat-icon aria-hidden="true">unfold_less</mat-icon>
+      {{ textoContraerTodo }}
+    </button>
+  </div>
+}
+<div class="flex flex-col gap-4">
+  <ng-content />
+</div>

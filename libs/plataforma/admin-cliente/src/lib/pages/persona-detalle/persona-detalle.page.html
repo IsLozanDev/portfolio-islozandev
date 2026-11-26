@@ -28,29 +28,55 @@
         </div>
       </header>
     }
-    <vit-persona-datos-basicos [persona]="ficha" (cambio)="alCambiar($event)" />
-    @if (duplicadosDeLaPersona(); as duplicados) {
-      <section class="vit-tarjeta-tabla overflow-hidden rounded-tarjeta" aria-labelledby="titulo-duplicados" data-seccion="duplicados">
-        <div class="flex flex-wrap items-center gap-3 px-5 py-4">
-          <div class="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
-            <h2 id="titulo-duplicados" class="m-0 text-lg font-medium">{{ duplicados.titulo }}</h2>
-            <p class="m-0 text-sm text-sobre-superficie-variante">{{ duplicados.texto }}</p>
+    <vit-grupo-plegable>
+      <vit-seccion-plegable data-seccion="datos" [titulo]="mensajesFicha.datos.titulo" [resumen]="resumenes()?.datos ?? ''">
+        <vit-persona-datos-basicos [persona]="ficha" (cambio)="alCambiar($event)" />
+      </vit-seccion-plegable>
+      @if (duplicadosDeLaPersona(); as duplicados) {
+        <vit-seccion-plegable data-seccion="duplicados" [titulo]="duplicados.titulo" [resumen]="duplicados.resumen">
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="m-0 min-w-0 flex-[1_1_260px] text-sm text-sobre-superficie-variante">{{ duplicados.texto }}</p>
+              <a mat-stroked-button routerLink="../duplicados" [queryParams]="{ persona: ficha.id }" data-accion="revisar-duplicados">
+                <mat-icon aria-hidden="true">compare_arrows</mat-icon>{{ mensajes.revisar }}
+              </a>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+              <span class="font-medium">{{ duplicados.otra }}</span>
+              <span class="font-mono text-[13px] text-sobre-superficie-variante">{{ duplicados.documento }}</span>
+              <vit-chip-estado [texto]="duplicados.puntaje" [tono]="duplicados.tonoPuntaje" />
+              <span class="text-sobre-superficie-variante">{{ duplicados.motivos }}</span>
+            </div>
           </div>
-          <a mat-stroked-button routerLink="../duplicados" [queryParams]="{ persona: ficha.id }" data-accion="revisar-duplicados">
-            <mat-icon aria-hidden="true">compare_arrows</mat-icon>{{ mensajes.revisar }}
-          </a>
-        </div>
-        <div class="flex flex-wrap items-center gap-3 border-t border-borde px-5 py-2.5 text-sm">
-          <span class="font-medium">{{ duplicados.otra }}</span>
-          <span class="font-mono text-[13px] text-sobre-superficie-variante">{{ duplicados.documento }}</span>
-          <vit-chip-estado [texto]="duplicados.puntaje" [tono]="duplicados.tonoPuntaje" />
-          <span class="text-sobre-superficie-variante">{{ duplicados.motivos }}</span>
-        </div>
-      </section>
-    }
-    <vit-persona-contactos [persona]="ficha" (cambio)="alCambiar($event)" />
-    <vit-persona-direcciones [persona]="ficha" (cambio)="alCambiar($event)" />
-    <vit-persona-roles [persona]="ficha" (cambio)="alCambiar($event)" />
-    <vit-persona-consentimientos [personaId]="ficha.id" />
+        </vit-seccion-plegable>
+      }
+      <vit-seccion-plegable
+        data-seccion="contactos"
+        [titulo]="mensajesFicha.contactos.titulo"
+        [resumen]="resumenes()?.contactos ?? ''"
+        [(expandida)]="contactosExpandida"
+      >
+        <vit-persona-contactos [persona]="ficha" (cambio)="alCambiar($event)" />
+      </vit-seccion-plegable>
+      <vit-seccion-plegable
+        data-seccion="direcciones"
+        [titulo]="mensajesFicha.direcciones.titulo"
+        [resumen]="resumenes()?.direcciones ?? ''"
+        [(expandida)]="direccionesExpandida"
+      >
+        <vit-persona-direcciones [persona]="ficha" (cambio)="alCambiar($event)" />
+      </vit-seccion-plegable>
+      <vit-seccion-plegable data-seccion="roles" [titulo]="mensajesFicha.roles.titulo" [resumen]="resumenes()?.roles ?? ''" [expandida]="false">
+        <vit-persona-roles [persona]="ficha" (cambio)="alCambiar($event)" />
+      </vit-seccion-plegable>
+      <vit-seccion-plegable
+        data-seccion="consentimientos"
+        [titulo]="mensajesFicha.consentimientos.titulo"
+        [resumen]="resumenConsentimientos()"
+        [(expandida)]="consentimientosExpandida"
+      >
+        <vit-persona-consentimientos [personaId]="ficha.id" />
+      </vit-seccion-plegable>
+    </vit-grupo-plegable>
   }
 </section>

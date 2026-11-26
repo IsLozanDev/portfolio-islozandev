@@ -1,6 +1,6 @@
 # SPEC 15e — Diseño UI: secciones plegables en `shared/ui` para páginas con muchas tarjetas
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 15, SPEC 15b, SPEC 15c, SPEC 38
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `shared/ui` los componentes `vit-grupo-plegable` y `vit-seccion-plegable`, que dejan contraer y expandir cada tarjeta de una página con un resumen visible, animación y teclado, y aplicarlos a la ficha de persona como primer consumidor, con la regla en `CLAUDE.md` de usarlos en toda página con tres o más secciones.
@@ -83,7 +83,8 @@ export class SeccionPlegableComponent {
   - `[vitSeccionPie]`: acciones, que solo se ven expandida.
 - **Cabecera:** fila de 56 px. Lleva la entrada, el título (16 px, peso 500) y el resumen (14 px, `--color-sobre-superficie-variante`, una línea con puntos suspensivos, solo contraída), y al final el fin y el galón `expand_more` de Material Symbols, que gira 180° expandida.
   - El hover usa `--color-superficie-contenedor`.
-  - En celular (< 600 px) el resumen baja a una segunda línea bajo el título.
+  - Hasta 600 px inclusive el resumen baja a una segunda línea bajo el título (corte `min-[601px]`).
+  - La fila entera pliega con un solo tab stop: el `<button>` (dentro de `role="heading"`) se estira sobre la fila con `::after`. El fin queda encima con `z-index`, así que pulsarlo no pliega sin detener la propagación. El galón es decorativo (`aria-hidden`) y `expandirSeccion`/`contraerSeccion` van como `title` del botón. Un `div` con `(click)` no pasa las reglas de accesibilidad del lint.
 - **Tarjeta:** radio `rounded-tarjeta` y borde `--color-borde`; el separador entre la cabecera y el contenido solo se ve expandida.
 - **Deshabilitada:** la cabecera no pliega, el título usa el tono variante y el resumen explica por qué («Guarda primero el proveedor»). Si llega deshabilitada, se muestra contraída.
 - **Contenido:** envoltura con `display: grid` y `grid-template-rows` animado; el hijo tiene `min-height: 0` y `overflow: hidden`; `inert` cuando está contraída.
@@ -111,14 +112,14 @@ export class GrupoPlegableComponent {
 
 | Sección | Inicio | Resumen contraída |
 | --- | --- | --- |
-| Datos básicos | Expandida | Documento y fecha de nacimiento |
+| Datos básicos | Expandida | Documento y tipo de persona (la ficha no trae fecha de nacimiento) |
 | Posibles duplicados (N) | Expandida si N > 0 | «N posibles duplicados» |
 | Contactos | Expandida | «N contactos · principal: {tipo}» |
 | Direcciones | Contraída | «N direcciones · principal: {distrito}» |
 | Roles | Contraída | Roles separados por coma |
-| Consentimientos | Contraída | «N de M vigentes» |
+| Consentimientos | Contraída | «N de M vigentes» (N aceptadas, M finalidades con decisión) |
 
-- Cada componente de `personas-ui` expone su resumen como `computed` (`resumen`), y la página lo pasa a la sección. Los encabezados propios que hoy tiene cada componente se quitan: el título lo pone la sección.
+- Los resúmenes de datos básicos, contactos, direcciones y roles son funciones puras de `personas-ui` (`utils/resumenes-ficha.ts`) que la página aplica a la ficha. No pueden ser `computed` del componente: la cabecera de la sección se evalúa antes de que el hijo reciba `persona` (NG0950). Consentimientos sí expone `resumen` como `computed`, porque depende de lo que carga él mismo. Los encabezados propios de cada componente se quitan: el título lo pone la sección.
 - Si una acción falla dentro de una sección contraída (por ejemplo, un guardado desde un panel lateral), la página la expande antes de mostrar el error.
 
 ### Regla en `CLAUDE.md` (sección «Diseño UI»)

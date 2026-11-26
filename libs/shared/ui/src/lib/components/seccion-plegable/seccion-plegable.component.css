@@ -1,0 +1,68 @@
+.cabecera {
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.cabecera:not(.deshabilitada):hover {
+  background-color: var(--color-superficie-contenedor);
+}
+
+.cabecera.deshabilitada,
+.cabecera.deshabilitada .disparador {
+  cursor: default;
+}
+
+.cabecera:has(.disparador:focus-visible) {
+  outline: 3px solid var(--color-primario);
+  outline-offset: -3px;
+  border-radius: var(--radius-tarjeta);
+}
+
+.disparador {
+  cursor: pointer;
+  outline: none;
+}
+
+/* El botón se estira sobre toda la fila: se pliega pulsando en cualquier parte con un solo tab stop. */
+.disparador::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Por encima del botón estirado: el chip o la acción del fin no pliegan. */
+.fin {
+  position: relative;
+  z-index: 1;
+}
+
+.galon {
+  transition: transform 200ms ease;
+}
+
+.abierta .galon {
+  transform: rotate(180deg);
+}
+
+.deshabilitada .galon {
+  opacity: 0.4;
+}
+
+/* La altura animable sale de la rejilla: 0fr → 1fr, con el hijo en `min-height: 0`. */
+.contenido {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease;
+}
+
+.abierta .contenido {
+  grid-template-rows: 1fr;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabecera,
+  .galon,
+  .contenido {
+    transition: none;
+  }
+}
