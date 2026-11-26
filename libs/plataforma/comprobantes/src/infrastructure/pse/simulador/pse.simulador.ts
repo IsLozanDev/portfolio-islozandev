@@ -2,7 +2,7 @@ import type { CredencialesPse, PseOsePort } from '../../../application/ports/pse
 import type { DocumentoElectronico } from '../../../domain/documento-electronico.js';
 import type { RespuestaPse } from '../../../domain/respuesta-pse.js';
 import { nombreArchivoSunat } from '../../sunat/generar-xml-firmado.js';
-import { comprimir } from '../sunat/zip-sunat.js';
+import { comprimir, PREFIJO_CDR } from '../sunat/zip-sunat.js';
 
 /** Tokens que fuerzan un resultado; cualquier otro acepta. */
 export const TOKEN_SIMULAR_RECHAZO = 'SIMULAR_RECHAZO';
@@ -19,8 +19,6 @@ const DESCRIPCION_ERROR = 'Error técnico simulado';
 const DESCRIPCION_CREDENCIAL = 'Usuario o contraseña incorrectos (simulado)';
 const CODIGO_ERROR_SIMULADO = 'SIMULADO';
 const CODIGO_ACEPTADO = '0';
-/** SUNAT nombra el CDR `R-RUC-TIPO-SERIE-NUMERO`. */
-const PREFIJO_CDR = 'R-';
 const codificador = new TextEncoder();
 
 /** Hash ficticio y estable del comprobante, para que la vista y los logs tengan algo que mostrar. */

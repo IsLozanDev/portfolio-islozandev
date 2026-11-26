@@ -291,7 +291,7 @@ Orden:
 
 - **Beta:** el usuario `MODDATOS` con la clave `moddatos` (públicos de SUNAT) y el RUC de la empresa. La beta acepta un `.pfx` autofirmado con ese RUC: no hace falta trámite. Serie de prueba `BP01` (`serie_prueba` del ítem).
 - **Producción, por cada cliente:** certificado digital vigente de una entidad acreditada (la beta no lo valida; producción sí), alta como emisor electrónico en SOL (SEE-Del Contribuyente) y un usuario secundario SOL con el perfil de envío por servicio web (sin él, SUNAT responde 0111 y la prueba queda `RECHAZADA`).
-- Errores de credencial (0102 a 0106, 0111 a 0113, 0154) dan `RECHAZADO` para no reintentar con una clave mala; 0109 y las demás excepciones técnicas se reintentan.
+- Errores de credencial (0102 a 0106, 0111 a 0113, 0154) dan `CREDENCIAL_INVALIDA` (spec 52; antes `RECHAZADO`) para no reintentar con una clave mala; la prueba del emisor los registra como `RECHAZADA`. 0109 y las demás excepciones técnicas se reintentan.
 
 Orden:
 1. `corepack pnpm db:up:remoto` (aplica `01v_fe_sunat_directo.sql`). Por el MCP: ítem `SUNAT` en `PROVEEDOR_FE` con sus atributos.
@@ -301,6 +301,23 @@ Orden:
 - [x] (dev) `01v_fe_sunat_directo.sql` aplicada.
 - [x] (dev) Prueba del emisor `SUNAT` en la beta real: `ACEPTADA` y `VERIFICADO`.
 - [x] (dev) Humo `FE_HUMO_SUNAT_BETA=1`: factura y boleta aceptadas con CDR.
+
+### 21. Facturación electrónica: envío de comprobantes y CDR (SPEC 52)
+
+Cada `cpe.emitido` pasa por el consumidor `fe-envios-encolado` a la cola BullMQ `fe-envios` (`jobId` = comprobante, 3 intentos con espera exponencial desde 5 s). El worker envía con el adaptador del emisor (`SUNAT` o `SIMULADO`; `NUBEFACT` todavía no envía comprobantes reales), guarda el XML firmado y el CDR (ZIP de SUNAT) en TR-ARC con categoría `CPE_XML` y entidad `FE_COMPROBANTE`, deja el comprobante `ACEPTADO`, `ACEPTADO_CON_OBSERVACIONES` o `RECHAZADO` y publica `cpe.aceptado` o `cpe.rechazado`. Cada intento queda en `fe.envio`. Sin variables nuevas: usa `REDIS_URL`, la bóveda y el bucket de ARC del worker.
+
+- **Validez tributaria:** los comprobantes de un emisor `VERIFICADO` van a la beta de SUNAT y no tienen validez; solo los de un emisor en `PRODUCCION` la tienen.
+- **Se quedan `PENDIENTE_ENVIO`** (los retoma el spec 56): un `ERROR_TECNICO` en el tercer intento, una `CREDENCIAL_INVALIDA` (log `fe.envio.credencial_invalida`) y los `NO_ENVIADO` por configuración (log `fe.envio.no_enviado`, con el motivo en `fe.envio.codigo`).
+- **Estado primero, archivo después:** si ARC falla tres veces, el estado y el evento se registran con el `archivo_id` en `null` y el log `fe.envio.archivo_no_guardado`; el comprobante no se reenvía.
+- Las boletas en modo `RESUMEN` no se envían aquí (spec 55).
+- Los archivos `SISTEMA` de ARC (`arc.archivo.origen`, migración `01w`) no pasan por el antivirus ni tienen `creado_por`.
+
+Orden:
+1. `corepack pnpm db:up:remoto` (aplica `01w_arc_carga_sistema.sql` y `01x_fe_envio.sql`).
+2. Con la API y el worker locales contra dev, con el emisor `SUNAT` `VERIFICADO` del humo del 51c: `POST /v1/fe/comprobantes` de una factura y una boleta y `GET /v1/fe/comprobantes/{id}` hasta que `respuesta` traiga `xml_archivo_id` y `cdr_archivo_id`.
+
+- [x] (dev) `01w_arc_carga_sistema.sql` y `01x_fe_envio.sql` aplicadas.
+- [x] (dev) Factura y boleta del tenant `humo-51c` enviadas por el worker local a la beta: `ACEPTADO` con XML y CDR en ARC (emitidas con el puerto en proceso, ver Evidencia).
 
 ## Evidencia
 
@@ -382,3 +399,4 @@ _Las filas de los pasos 1 a 8 que faltan se agregan al ejecutarlos, con fecha, a
 - Email OTP Expiration en 86400 s: el enlace de Supabase dura 24 h; la invitación propia, 72 h (`SEG_INVITACION_HORAS`).
 - `SEG_URL_INVITACION` debe estar en Authentication → URL Configuration → Redirect URLs.
 | 2026-11-25 | dev | SPEC 51c: `db:up:remoto`, humo del adaptador contra la beta real de SUNAT y prueba del emisor (casos de uso con TypeORM contra dev, sin HTTP, y worker local) | Aplica `01v_fe_sunat_directo.sql`: ítem `SUNAT` en `PROVEEDOR_FE` (versión del catálogo 5). `FE_HUMO_SUNAT_BETA=1` con el RUC del usuario, `MODDATOS` y un `.pfx` autofirmado (scratchpad): factura `F001` y boleta `B001` `ACEPTADO` código 0 con CDR; firma SHA-256 y correlativo de 8 dígitos en el nombre aceptados; el ZIP del CDR trae una carpeta `dummy/` además del `R-….xml`. Tenant `humo-51c` (empresa con domicilio, ubigeo 150101 y sucursal principal `0000`): `PUT` con `url_proveedor` → `URL_PROVEEDOR_NO_PERMITIDA`; usuario con el RUC → `USUARIO_SOL_INVALIDO`; sin URL → `url_proveedor` null; con el `.pfx` `CONFIGURADO`; prueba 1 `BP01-00000001` enviada por el worker local con `sendBill`: `ACEPTADA` («La Boleta numero BP01-00000001, ha sido aceptada»), `VERIFICADO` y un `fe.emisor.verificado`. Clave SOL, clave del `.pfx` y sobre SOAP ausentes del outbox, `aud` y logs del worker (en `aud` solo el usuario `MODDATOS` de la vista). **Dato que queda:** tenant `humo-51c` con su emisor `VERIFICADO` en beta |
+| 2026-11-25 | dev | SPEC 52: `db:up:remoto` y humo del envío a la beta real de SUNAT con el worker local | Aplica `01w_arc_carga_sistema.sql` y `01x_fe_envio.sql`. En el tenant `humo-51c` (emisor `SUNAT` `VERIFICADO` del 51c) se crean por SQL las series `F001` y `B001` de la sucursal principal (autor: usuario de prueba `humo51-cbe0fe`). Factura `F001-00000001` y boleta `B001-00000001` emitidas con `ComprobantePort.emitir` desde un script temporal con TypeORM contra dev (sin HTTP: el tenant no tiene usuarios con acceso; el `POST` lo cubren las pruebas del 51). El worker local las toma de `cpe.emitido` → `fe-envios` → `sendBill`: las dos `ACEPTADO` código 0 («La Factura/Boleta numero …, ha sido aceptada») en 904 y 762 ms, versión 2, hash, un intento `ACEPTADO` en `fe.envio`, XML (`RUC-TT-SERIE-NUMERO.xml`, ~7,7 kB) y CDR (`R-….zip`, ~1,3 kB) como archivos `SISTEMA` `DISPONIBLE` sin `creado_por` en `arc.archivo` y en el bucket `archivos`, y un `cpe.aceptado` por comprobante en el outbox, sin datos del adquirente. El log del worker no trae la clave SOL, el adquirente ni el sobre SOAP. **Datos que quedan:** las dos series, los dos comprobantes con sus intentos y los cuatro archivos en `humo-51c` |

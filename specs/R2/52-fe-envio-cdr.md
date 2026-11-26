@@ -1,6 +1,6 @@
 # SPEC 52 — Facturación electrónica: envío de boleta y factura a SUNAT, CDR en ARC y estados finales
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 51, SPEC 51c, SPEC 33, SPEC 11
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `libs/plataforma/comprobantes` el worker que toma cada comprobante en `PENDIENTE_ENVIO`, lo envía con el adaptador del emisor, guarda en TR-ARC el XML firmado y el CDR con su hash, deja el comprobante en `ACEPTADO`, `ACEPTADO_CON_OBSERVACIONES` o `RECHAZADO` y publica `cpe.aceptado` o `cpe.rechazado`.
@@ -303,6 +303,7 @@ subir(ruta: string, bytes: Uint8Array, mime: string): Promise<void>;
 - **Sí:** `creado_por` nulo solo para `origen = SISTEMA`, sin un uuid de sistema inventado. La auditoría distingue la carga de una persona de la del sistema.
 - **Sí:** el CDR se guarda como ZIP, tal como lo devuelve SUNAT. Es la constancia original; leerlo es tarea del 53 y el 57.
 - **Sí:** humo de punta a punta en la beta real. Decisión del usuario. Se pide autorización antes de crear datos en dev.
+- **Sí:** en el humo, la factura y la boleta se emiten con `ComprobantePort.emitir` desde un script temporal contra dev, no por `POST`. Decisión del usuario (2026-11-25). El tenant `humo-51c` no tiene usuarios con acceso y crearlos deja datos en `seg` sin borrado; el `POST` lo cubren las pruebas del 51. El envío sí es el real: `cpe.emitido` → `fe-envios` → worker local → beta de SUNAT → ARC.
 - **Sí:** el anexo SUNAT es el de la sucursal del comprobante, no el de la principal. La prueba del emisor usa la principal; un comprobante real sale del establecimiento que vende.
 - **Sí:** `observaciones` como `jsonb` en `fe.comprobante`, no la tabla `fe.comprobante_observacion` del contexto. Se leen siempre con el comprobante y no se consultan solas; sigue el patrón de `advertencias`.
 - **Sí:** `fe.envio` cuenta los intentos por comprobante, no por trabajo. El 56 sigue la misma numeración.

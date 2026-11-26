@@ -30,16 +30,21 @@ export interface ArchivosWorkerOpciones {
   patronReencolado: string;
 }
 
-/** Specs 33 y 34. Necesita KernelInfraModule con registrarEsquemasArc. ENTIDADES_ARC van en el DataSource. */
+/**
+ * Specs 33 y 34. Necesita KernelInfraModule con registrarEsquemasArc. ENTIDADES_ARC van en el DataSource. Reexporta
+ * ArchivosModule.registrarWorker para que el envío de FE (spec 52) use ARCHIVO_SISTEMA_PORT con el mismo Storage.
+ */
 @Module({})
 export class ArchivosWorkerModule {
   static register({ dataSource, redisUrl, supabase, bucket, patronLimpieza, antivirus, patronReencolado }: ArchivosWorkerOpciones): DynamicModule {
     const logger = new Logger('Archivos');
     const informar = (mensaje: string, datos: Record<string, unknown>) => logger.log({ mensaje, ...datos });
     const avisar = (mensaje: string, datos: Record<string, unknown>) => logger.warn({ mensaje, ...datos });
+    const archivosWorker = ArchivosModule.registrarWorker({ dataSource, redisUrl, supabase, bucket, antivirus });
     return {
       module: ArchivosWorkerModule,
-      imports: [ArchivosModule.registrarWorker({ dataSource, redisUrl, supabase, bucket, antivirus })],
+      imports: [archivosWorker],
+      exports: [archivosWorker],
       providers: [
         {
           provide: TareaAnalisisArchivos,

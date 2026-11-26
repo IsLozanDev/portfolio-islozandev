@@ -1,4 +1,5 @@
 import { Logger, Module, type DynamicModule, type ModuleMetadata, type OnModuleDestroy, type Provider } from '@nestjs/common';
+import { ARCHIVO_SISTEMA_PORT, type ArchivoSistemaPort } from '@vitrina/plataforma/archivos';
 import { AUDITORIA, type AuditoriaPort } from '@vitrina/plataforma/auditoria';
 import { CATALOGO_PORT, type CatalogoPort } from '@vitrina/plataforma/catalogos';
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
@@ -17,11 +18,15 @@ import { EmitirComprobanteAuditado } from './application/emitir-comprobante-audi
 import { COMPROBANTE_PORT, type ComprobantePort } from './application/ports/comprobante.port.js';
 import type { DependenciasEmisor, ReglasEntornoFe } from './application/dependencias-fe.js';
 import { EjecutarPruebaEmisor } from './application/ejecutar-prueba-emisor.js';
+import { EncolarEnvioComprobante } from './application/encolar-envio-comprobante.js';
 import { EncolarPruebaEmisor } from './application/encolar-prueba-emisor.js';
+import { EnviarComprobante } from './application/enviar-comprobante.js';
 import { HabilitarProduccion } from './application/habilitar-produccion.js';
 import type { PseOsePort } from './application/ports/pse-ose.port.js';
 import { SolicitarPruebaEmisor } from './application/solicitar-prueba-emisor.js';
 import { PROVEEDORES_CON_ADAPTADOR } from './domain/proveedores-fe.js';
+import { ArchivosCpeArc } from './infrastructure/arc/archivos-cpe.arc.js';
+import { abrirColaEnviosFe, EVENTO_ERROR_COLA_ENVIOS_FE, type ColaEnviosFeAbierta } from './infrastructure/bullmq/cola-envios.js';
 import { abrirColaPruebasFe, EVENTO_ERROR_COLA_PRUEBAS_FE, type ColaPruebasFeAbierta } from './infrastructure/bullmq/cola-pruebas.js';
 import { CatalogosSunatCatalogo } from './infrastructure/catalogos/catalogos-sunat.catalogo.js';
 import { ProveedoresFeCatalogo } from './infrastructure/catalogos/proveedores-fe.catalogo.js';
@@ -42,13 +47,16 @@ import { RepositorioAvisosCertificadoTypeOrm } from './infrastructure/typeorm/av
 import { CertificadosConAvisoPendienteSql, type EjecutorSql } from './infrastructure/typeorm/certificados-con-aviso-pendiente.sql.js';
 import { RepositorioComprobantesTypeOrm } from './infrastructure/typeorm/comprobantes.repositorio.js';
 import { RepositorioEmisoresTypeOrm } from './infrastructure/typeorm/emisores.repositorio.js';
+import { RepositorioEnviosTypeOrm } from './infrastructure/typeorm/envios.repositorio.js';
 import { ComprobantesController } from './interface/comprobantes.controller.js';
 import { EmisoresController } from './interface/emisores.controller.js';
 import { reglasEntornoFe, type EntornoFe } from './interface/entorno-fe.js';
+import { EnviosFeConsumidor } from './interface/envios-fe.consumidor.js';
 import { PruebasFeConsumidor } from './interface/pruebas-fe.consumidor.js';
 
 const DEPENDENCIAS_EMISOR = Symbol('DependenciasEmisor');
 const COLA_PRUEBAS_ABIERTA = Symbol('ColaPruebasFeAbierta');
+const COLA_ENVIOS_ABIERTA = Symbol('ColaEnviosFeAbierta');
 const CONTEXTO_LOG = 'Comprobantes';
 
 export interface ComprobantesOpciones {
@@ -77,6 +85,17 @@ export interface ComprobantesPruebasOpciones {
   imports: ModuleMetadata['imports'];
 }
 
+export interface ComprobantesEnviosOpciones {
+  /** Cola `fe-envios`. */
+  redisUrl: string;
+  entorno: EntornoFe;
+  /**
+   * Módulos que exportan ConsultarEmpresa y ConsultarSucursal (OrgModule), CATALOGO_PORT (CatalogosModule),
+   * BOVEDA_SECRETOS (SecretosModule) y ARCHIVO_SISTEMA_PORT (ArchivosModule.registrarWorker).
+   */
+  imports: ModuleMetadata['imports'];
+}
+
 /** Los casos de uso del emisor reciben las mismas dependencias. */
 function casoDeUsoDelEmisor<CasoDeUso>(clase: new (dependencias: DependenciasEmisor) => CasoDeUso): Provider {
   return { provide: clase, useFactory: (dependencias: DependenciasEmisor) => new clase(dependencias), inject: [DEPENDENCIAS_EMISOR] };
@@ -93,9 +112,9 @@ function adaptadoresPse(reglas: ReglasEntornoFe, reloj: Clock, proveedores: Prov
   return reglas.simuladoPermitido ? { ...reales, [PROVEEDORES_CON_ADAPTADOR.simulado]: new PseSimulador() } : reales;
 }
 
-/** Cierra la cola de pruebas con la app (app.close() en pruebas y apagado). */
-class CierreColaPruebas implements OnModuleDestroy {
-  constructor(private readonly abierta: ColaPruebasFeAbierta) {}
+/** Cierra una cola de FE con la app (app.close() en pruebas y apagado). */
+class CierreColaFe implements OnModuleDestroy {
+  constructor(private readonly abierta: { cerrar(): Promise<void> }) {}
 
   onModuleDestroy(): Promise<void> {
     return this.abierta.cerrar();
@@ -265,7 +284,7 @@ export class ComprobantesModule {
           useFactory: (): ColaPruebasFeAbierta =>
             abrirColaPruebasFe(redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_COLA_PRUEBAS_FE, error: error.name })),
         },
-        { provide: CierreColaPruebas, useFactory: (abierta: ColaPruebasFeAbierta) => new CierreColaPruebas(abierta), inject: [COLA_PRUEBAS_ABIERTA] },
+        { provide: CierreColaFe, useFactory: (abierta: ColaPruebasFeAbierta) => new CierreColaFe(abierta), inject: [COLA_PRUEBAS_ABIERTA] },
         {
           provide: PruebasFeConsumidor,
           useFactory: (abierta: ColaPruebasFeAbierta) => new PruebasFeConsumidor(new EncolarPruebaEmisor(abierta.cola)),
@@ -303,6 +322,84 @@ export class ComprobantesModule {
         },
       ],
       exports: [EjecutarPruebaEmisor],
+    };
+  }
+
+  /**
+   * El envío de comprobantes a SUNAT en apps/worker (spec 52): el consumidor de `cpe.emitido` (EventosModule.registrarWorker
+   * lo descubre por `@SuscribirEvento`), que encola en `fe-envios`, y `EnviarComprobante`, que procesa esa cola. Mismos
+   * adaptadores que la prueba en beta; el XML y el CDR van a TR-ARC por ARCHIVO_SISTEMA_PORT.
+   */
+  static registerEnvios({ redisUrl, entorno, imports }: ComprobantesEnviosOpciones): DynamicModule {
+    const logger = new Logger(CONTEXTO_LOG);
+    const reglas = reglasEntornoFe(entorno);
+    const informar: Registrar = (mensaje, datos) => logger.log({ evento: mensaje, ...datos });
+    const avisar: Registrar = (mensaje, datos) => logger.warn({ evento: mensaje, ...datos });
+    return {
+      module: ComprobantesModule,
+      imports,
+      providers: [
+        {
+          provide: COLA_ENVIOS_ABIERTA,
+          // Solo el nombre del error: el mensaje de Redis puede llevar la URL con su clave.
+          useFactory: (): ColaEnviosFeAbierta => abrirColaEnviosFe(redisUrl, (error) => logger.warn({ evento: EVENTO_ERROR_COLA_ENVIOS_FE, error: error.name })),
+        },
+        { provide: CierreColaFe, useFactory: (abierta: ColaEnviosFeAbierta) => new CierreColaFe(abierta), inject: [COLA_ENVIOS_ABIERTA] },
+        {
+          provide: EnviosFeConsumidor,
+          useFactory: (abierta: ColaEnviosFeAbierta) => new EnviosFeConsumidor(new EncolarEnvioComprobante(abierta.cola)),
+          inject: [COLA_ENVIOS_ABIERTA],
+        },
+        {
+          provide: EnviarComprobante,
+          useFactory: (
+            unidadDeTrabajo: TypeOrmUnitOfWork,
+            contexto: TenantContext,
+            reloj: Clock,
+            ids: IdGenerator,
+            publicador: EventPublisher,
+            boveda: BovedaSecretos,
+            catalogo: CatalogoPort,
+            consultarEmpresa: ConsultarEmpresa,
+            consultarSucursal: ConsultarSucursal,
+            archivos: ArchivoSistemaPort,
+          ) => {
+            const proveedores = new ProveedoresFeCatalogo(catalogo);
+            return new EnviarComprobante({
+              unidadDeTrabajo,
+              contexto,
+              reloj,
+              ids,
+              publicador,
+              comprobantes: new RepositorioComprobantesTypeOrm(unidadDeTrabajo, contexto),
+              envios: new RepositorioEnviosTypeOrm(unidadDeTrabajo, contexto),
+              emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
+              empresas: new EmpresaEmisoraOrg(consultarEmpresa),
+              sucursales: new SucursalesEmisorasOrg(consultarSucursal),
+              catalogos: new CatalogosSunatCatalogo(catalogo),
+              proveedores,
+              boveda,
+              resolutor: new ResolutorPseMapa(adaptadoresPse(reglas, reloj, proveedores, informar)),
+              archivos: new ArchivosCpeArc(archivos, avisar),
+              informar,
+              avisar,
+            });
+          },
+          inject: [
+            TypeOrmUnitOfWork,
+            TENANT_CONTEXT,
+            CLOCK,
+            ID_GENERATOR,
+            EVENT_PUBLISHER,
+            BOVEDA_SECRETOS,
+            CATALOGO_PORT,
+            ConsultarEmpresa,
+            ConsultarSucursal,
+            ARCHIVO_SISTEMA_PORT,
+          ],
+        },
+      ],
+      exports: [EnviarComprobante],
     };
   }
 }

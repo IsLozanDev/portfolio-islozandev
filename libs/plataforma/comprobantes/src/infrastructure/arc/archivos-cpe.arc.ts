@@ -1,6 +1,7 @@
 import type { ArchivoSistemaPort } from '@vitrina/plataforma/archivos';
 import type { ArchivosCpe } from '../../application/ports/archivos-cpe.js';
 import type { DocumentoElectronico } from '../../domain/documento-electronico.js';
+import { PREFIJO_CDR } from '../pse/sunat/zip-sunat.js';
 import { nombreArchivoSunat } from '../sunat/generar-xml-firmado.js';
 
 /** Categoría sembrada en arc.categoria (01m_arc) para el XML y el CDR de los comprobantes. */
@@ -10,8 +11,6 @@ export const INTENTOS_SUBIDA_ARC = 3;
 export const EVENTO_ARCHIVO_NO_GUARDADO = 'fe.envio.archivo_no_guardado';
 const MIME_XML = 'application/xml';
 const MIME_ZIP = 'application/zip';
-/** SUNAT nombra el CDR `R-RUC-TIPO-SERIE-NUMERO.zip`. */
-const PREFIJO_CDR = 'R-';
 
 type Registrar = (mensaje: string, datos: Record<string, unknown>) => void;
 

@@ -55,17 +55,19 @@ export class TareaPruebasFe implements OnApplicationBootstrap, BeforeApplication
   }
 }
 
-/** `attemptsMade` cuenta los intentos ya fallidos: el que corre es el siguiente. */
-export function intentoDe(trabajo: Pick<Job<TrabajoPruebaFe>, 'attemptsMade' | 'opts'>): IntentoPrueba {
+type TrabajoBullmq = Pick<Job, 'attemptsMade' | 'opts'>;
+
+/** `attemptsMade` cuenta los intentos ya fallidos: el que corre es el siguiente. Lo usan las colas de FE. */
+export function intentoDe(trabajo: TrabajoBullmq): IntentoPrueba {
   const numero = trabajo.attemptsMade + 1;
   return { numero, esUltimo: numero >= intentosPermitidos(trabajo) };
 }
 
 /** BullMQ avisa `failed` en cada intento; solo el último es definitivo. */
-function esFalloDefinitivo(trabajo: Job<TrabajoPruebaFe> | undefined): boolean {
+export function esFalloDefinitivo(trabajo: TrabajoBullmq | undefined): boolean {
   return trabajo === undefined || trabajo.attemptsMade >= intentosPermitidos(trabajo);
 }
 
-function intentosPermitidos(trabajo: Pick<Job<TrabajoPruebaFe>, 'opts'>): number {
+function intentosPermitidos(trabajo: TrabajoBullmq): number {
   return trabajo.opts.attempts ?? INTENTOS_SIN_CONFIGURAR;
 }

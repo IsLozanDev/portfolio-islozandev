@@ -2,7 +2,7 @@ import { strFromU8, unzipSync, zipSync } from 'fflate';
 
 const EXTENSION_XML = '.xml';
 /** SUNAT nombra el CDR `R-RUC-TIPO-SERIE-NUMERO.xml`. */
-const PREFIJO_CDR = 'R-';
+export const PREFIJO_CDR = 'R-';
 
 export class CdrIlegibleError extends Error {
   constructor() {

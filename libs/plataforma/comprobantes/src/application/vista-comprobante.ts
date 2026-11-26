@@ -19,6 +19,17 @@ export interface LineaVista {
   precioUnitario: string;
 }
 
+/** La respuesta de SUNAT (spec 52). Los ids de archivo son de TR-ARC; nulos si la subida falló o no hubo CDR. */
+export interface RespuestaVista {
+  codigo: string | null;
+  descripcion: string | null;
+  observaciones: string[];
+  hash: string | null;
+  xmlArchivoId: string | null;
+  cdrArchivoId: string | null;
+  respondidoEn: Date;
+}
+
 export interface CuotaVista {
   numero: number;
   monto: string;
@@ -48,6 +59,8 @@ export interface VistaComprobante {
   lineas: LineaVista[];
   cuotas: CuotaVista[];
   creadoEn: Date;
+  /** null mientras el envío no tenga respuesta final. */
+  respuesta: RespuestaVista | null;
 }
 
 function totalesEmitidos(totales: Totales): TotalesEmitidos {
@@ -109,5 +122,13 @@ export function vistaComprobanteDe(comprobante: Comprobante): VistaComprobante {
     })),
     cuotas: datos.cuotas.map((cuota) => ({ numero: cuota.numero, monto: cuota.monto.aTexto(), fechaVencimiento: cuota.fechaVencimiento })),
     creadoEn: datos.creadoEn,
+    respuesta: respuestaVistaDe(comprobante),
   };
+}
+
+function respuestaVistaDe(comprobante: Comprobante): RespuestaVista | null {
+  const { respuesta } = comprobante.datos;
+  if (respuesta === null) return null;
+  const { codigo, descripcion, observaciones, hash, xmlArchivoId, cdrArchivoId, respondidoEn } = respuesta;
+  return { codigo, descripcion, observaciones: [...observaciones], hash, xmlArchivoId, cdrArchivoId, respondidoEn };
 }
