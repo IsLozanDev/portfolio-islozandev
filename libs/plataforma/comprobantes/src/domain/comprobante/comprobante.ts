@@ -1,12 +1,13 @@
 import type { DomainEvent } from '@vitrina/plataforma/kernel';
-import { DatosComprobanteInvalidosError } from '../errores.js';
-import { comprobanteEmitido } from '../eventos-fe.js';
+import { DatosComprobanteInvalidosError, TransicionComprobanteInvalidaError } from '../errores.js';
+import { comprobanteAceptado, comprobanteEmitido, comprobanteRechazado, type ComprobanteEmitidoEvento } from '../eventos-fe.js';
 import type { RegimenIgv } from '../regimen-igv.js';
 import type { Adquirente } from './adquirente.js';
 import type { Decimal } from './dinero.js';
 import { calcularLinea, type EntradaLinea, type LineaCalculada } from './linea-comprobante.js';
 import { adquirenteDeBoleta } from './reglas-boleta.js';
 import { exigirAdquirenteDeFactura, exigirCuotas, type Advertencia, type Cuota } from './reglas-factura.js';
+import type { ArchivosRespuesta, RespuestaComprobante, RespuestaFinal } from './respuesta-comprobante.js';
 import {
   CODIGO_SUNAT_POR_TIPO,
   ESTADO_INICIAL_COMPROBANTE,
@@ -83,6 +84,9 @@ export interface ComprobanteProps {
   version: number;
   creadoPor: string | null;
   creadoEn: Date;
+  modificadoEn: Date | null;
+  /** La respuesta de SUNAT, desde que el envío terminó (spec 52). */
+  respuesta: RespuestaComprobante | null;
 }
 
 /** Validado y calculado, sin número: el número se pide al final de la transacción (TR-CA-095). */
@@ -110,7 +114,10 @@ export function prepararEmision(datos: DatosEmision): EmisionPreparada {
   return { datos, adquirente, lineas, totales };
 }
 
-/** TR-RF-053 y 054. Inmutable desde que nace (TR-RN-022): solo el spec 52 le cambia el estado. */
+/**
+ * TR-RF-053 y 054. Inmutable desde que nace (TR-RN-022): solo cambia una vez, de PENDIENTE_ENVIO a un estado
+ * final, con la respuesta de SUNAT (TR-RF-059).
+ */
 export class Comprobante {
   private eventos: DomainEvent[] = [];
 
@@ -149,6 +156,8 @@ export class Comprobante {
       version: VERSION_INICIAL_COMPROBANTE,
       creadoPor: datos.creadoPor,
       creadoEn: datos.creadoEn,
+      modificadoEn: null,
+      respuesta: null,
     });
     comprobante.eventos.push(comprobante.eventoEmitido());
     return comprobante;
@@ -166,6 +175,20 @@ export class Comprobante {
     return formatearNumero(this.props.serie, this.props.numero);
   }
 
+  /**
+   * TR-RF-059: la respuesta final de SUNAT, una sola vez y solo desde PENDIENTE_ENVIO. Sube la versión y levanta
+   * `cpe.aceptado` (también con observaciones) o `cpe.rechazado`.
+   */
+  registrarRespuesta(respuesta: RespuestaFinal, archivos: ArchivosRespuesta, ahora: Date): void {
+    if (this.props.estado !== ESTADO_INICIAL_COMPROBANTE) throw new TransicionComprobanteInvalidaError(this.props.estado);
+    const registrada: RespuestaComprobante = { ...respuesta, ...archivos, respondidoEn: ahora };
+    this.props.estado = respuesta.resultado;
+    this.props.respuesta = registrada;
+    this.props.version += 1;
+    this.props.modificadoEn = ahora;
+    this.eventos.push(this.eventoRespuesta(registrada));
+  }
+
   /** ¿La solicitud repetida trae el mismo contenido que la original? */
   tieneLaHuella(huella: string): boolean {
     return this.props.huellaSolicitud === huella;
@@ -178,21 +201,43 @@ export class Comprobante {
   }
 
   private eventoEmitido(): DomainEvent {
-    const { id, tipo, serie, numero, totales, moneda, estado, origen, version, creadoEn } = this.props;
-    return comprobanteEmitido(
-      version,
-      {
-        comprobante_id: id,
-        tipo: CODIGO_SUNAT_POR_TIPO[tipo],
-        serie,
-        numero,
-        total: totales.total.aTexto(),
-        moneda,
-        estado,
-        origen_producto: origen?.producto ?? null,
-        origen_id: origen?.id ?? null,
-      },
-      creadoEn,
-    );
+    return comprobanteEmitido(this.props.version, this.cargaComun(), this.props.creadoEn);
+  }
+
+  private eventoRespuesta(respuesta: RespuestaComprobante): DomainEvent {
+    const { version } = this.props;
+    if (respuesta.resultado === 'RECHAZADO') {
+      const carga = {
+        ...this.cargaComun(),
+        codigo_respuesta: respuesta.codigo,
+        descripcion_respuesta: respuesta.descripcion,
+        xml_archivo_id: respuesta.xmlArchivoId,
+      };
+      return comprobanteRechazado(version, carga, respuesta.respondidoEn);
+    }
+    const carga = {
+      ...this.cargaComun(),
+      codigo_respuesta: respuesta.codigo,
+      observaciones: respuesta.observaciones,
+      xml_archivo_id: respuesta.xmlArchivoId,
+      cdr_archivo_id: respuesta.cdrArchivoId,
+    };
+    return comprobanteAceptado(version, carga, respuesta.respondidoEn);
+  }
+
+  /** Sin datos del adquirente (TR-RNF-026). */
+  private cargaComun(): ComprobanteEmitidoEvento {
+    const { id, tipo, serie, numero, totales, moneda, estado, origen } = this.props;
+    return {
+      comprobante_id: id,
+      tipo: CODIGO_SUNAT_POR_TIPO[tipo],
+      serie,
+      numero,
+      total: totales.total.aTexto(),
+      moneda,
+      estado,
+      origen_producto: origen?.producto ?? null,
+      origen_id: origen?.id ?? null,
+    };
   }
 }

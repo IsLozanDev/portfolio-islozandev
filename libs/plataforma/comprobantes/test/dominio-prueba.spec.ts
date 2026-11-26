@@ -153,6 +153,14 @@ describe('Emisor: prueba en beta (TR-RF-052, paso 4)', () => {
     expect(emisor.prueba).toMatchObject({ estado: 'ERROR', codigo: 'TIEMPO_AGOTADO', descripcion: null });
     expect(emisor.datos.estado).toBe('CONFIGURADO');
   });
+
+  it('credencial o configuración inválida (spec 52) → RECHAZADA, como antes; el emisor sigue CONFIGURADO', () => {
+    const emisor = configurado();
+    const numero = emisor.solicitarPrueba(AHORA);
+    emisor.registrarResultadoPrueba(numero, respuesta('CREDENCIAL_INVALIDA', { codigo: '0102' }), despues(MINUTO));
+    expect(emisor.prueba).toMatchObject({ estado: 'RECHAZADA', codigo: '0102' });
+    expect(emisor.datos.estado).toBe('CONFIGURADO');
+  });
 });
 
 describe('Emisor: paso a producción (TR-RF-052, paso 5)', () => {

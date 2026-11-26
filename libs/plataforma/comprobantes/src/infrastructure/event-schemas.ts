@@ -12,6 +12,26 @@ const nulo = { type: 'null' };
 /** El CHECK de fe.comprobante.numero. */
 const NUMERO_MAXIMO_COMPROBANTE = 99_999_999;
 const cambioEstado = () => objeto({ emisor_id: uuid, empresa_id: uuid, proveedor: codigoProveedor });
+const textoONulo = (maximo: number) => ({ anyOf: [{ type: 'string', maxLength: maximo }, nulo] });
+const uuidONulo = { anyOf: [uuid, nulo] };
+/** Los largos de las columnas de respuesta de 01x. */
+const LARGO_MAXIMO_CODIGO_RESPUESTA = 10;
+const LARGO_MAXIMO_DESCRIPCION_RESPUESTA = 500;
+
+/** Lo que comparten los eventos del comprobante; `estados` limita el estado que puede traer cada uno. */
+function cargaComprobante(estados: readonly string[] = ESTADOS_COMPROBANTE): Record<string, object> {
+  return {
+    comprobante_id: uuid,
+    tipo: { type: 'string', enum: Object.values(CODIGO_SUNAT_POR_TIPO) },
+    serie: { type: 'string', pattern: '^[FB][A-Z0-9]{3}$' },
+    numero: { type: 'integer', minimum: 1, maximum: NUMERO_MAXIMO_COMPROBANTE },
+    total: { type: 'string', pattern: '^[0-9]+\\.[0-9]{2}$' },
+    moneda: { type: 'string', enum: [...MONEDAS] },
+    estado: { type: 'string', enum: [...estados] },
+    origen_producto: { anyOf: [{ type: 'string', minLength: 1, maxLength: 10 }, nulo] },
+    origen_id: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, nulo] },
+  };
+}
 
 const objeto = (properties: Record<string, object>) => ({
   type: 'object',
@@ -39,16 +59,19 @@ export const ESQUEMAS_FE: Readonly<Record<string, object>> = {
   [EVENTOS_FE.produccionHabilitada]: cambioEstado(),
   [EVENTOS_FE.pruebaSolicitada]: objeto({ emisor_id: uuid, numero_prueba: { type: 'integer', minimum: 1 } }),
   // Sin campos del adquirente (TR-RNF-026): additionalProperties: false los rechaza.
-  [EVENTOS_FE.comprobanteEmitido]: objeto({
-    comprobante_id: uuid,
-    tipo: { type: 'string', enum: Object.values(CODIGO_SUNAT_POR_TIPO) },
-    serie: { type: 'string', pattern: '^[FB][A-Z0-9]{3}$' },
-    numero: { type: 'integer', minimum: 1, maximum: NUMERO_MAXIMO_COMPROBANTE },
-    total: { type: 'string', pattern: '^[0-9]+\\.[0-9]{2}$' },
-    moneda: { type: 'string', enum: [...MONEDAS] },
-    estado: { type: 'string', enum: [...ESTADOS_COMPROBANTE] },
-    origen_producto: { anyOf: [{ type: 'string', minLength: 1, maxLength: 10 }, nulo] },
-    origen_id: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, nulo] },
+  [EVENTOS_FE.comprobanteEmitido]: objeto(cargaComprobante()),
+  [EVENTOS_FE.comprobanteAceptado]: objeto({
+    ...cargaComprobante(['ACEPTADO', 'ACEPTADO_CON_OBSERVACIONES']),
+    codigo_respuesta: textoONulo(LARGO_MAXIMO_CODIGO_RESPUESTA),
+    observaciones: { type: 'array', items: { type: 'string' } },
+    xml_archivo_id: uuidONulo,
+    cdr_archivo_id: uuidONulo,
+  }),
+  [EVENTOS_FE.comprobanteRechazado]: objeto({
+    ...cargaComprobante(['RECHAZADO']),
+    codigo_respuesta: textoONulo(LARGO_MAXIMO_CODIGO_RESPUESTA),
+    descripcion_respuesta: textoONulo(LARGO_MAXIMO_DESCRIPCION_RESPUESTA),
+    xml_archivo_id: uuidONulo,
   }),
 };
 

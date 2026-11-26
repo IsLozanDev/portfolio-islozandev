@@ -109,26 +109,29 @@ export class PseSunat implements PseOsePort {
     try {
       firmado = generarXmlFirmado(documento, preparacion.certificado);
     } catch {
-      // Clave o .pfx malos, o un dato que el UBL no admite: reintentar no lo arregla.
-      return respuestaSinSunat('RECHAZADO', CODIGOS_ADAPTADOR_SUNAT.firmaFallida);
+      // Clave o .pfx malos, o un dato que el UBL no admite: reintentar no lo arregla, y SUNAT no lo vio.
+      return respuestaSinSunat('CREDENCIAL_INVALIDA', CODIGOS_ADAPTADOR_SUNAT.firmaFallida);
     }
     const usuario = usuarioWsSecurity(documento.emisor.ruc, preparacion.usuario);
     const respuesta = await this.enviar(preparacion.url, usuario, credenciales.token, firmado);
     return { ...respuesta, xmlFirmado: firmado.xml, hash: firmado.hash };
   }
 
-  /** El catálogo pudo cambiar: la URL se vuelve a resolver y validar en cada envío (anti-SSRF). */
+  /**
+   * El catálogo pudo cambiar: la URL se vuelve a resolver y validar en cada envío (anti-SSRF). Sin URL, usuario o
+   * certificado no se llama a SUNAT: es configuración del emisor (`CREDENCIAL_INVALIDA`), no un rechazo.
+   */
   private async preparar(credenciales: CredencialesPse): Promise<Preparacion> {
     const proveedor = await this.proveedores.obtener(PROVEEDORES_CON_ADAPTADOR.sunat);
     let url: string;
     try {
       url = exigirUrlPermitida(urlSegunAmbiente(proveedor, credenciales.ambiente) ?? '', proveedor.dominiosPermitidos);
     } catch (error) {
-      if (error instanceof UrlProveedorNoPermitidaError) return { rechazo: respuestaSinSunat('RECHAZADO', CODIGOS_ADAPTADOR_SUNAT.urlNoPermitida) };
+      if (error instanceof UrlProveedorNoPermitidaError) return { rechazo: respuestaSinSunat('CREDENCIAL_INVALIDA', CODIGOS_ADAPTADOR_SUNAT.urlNoPermitida) };
       throw error;
     }
-    if (credenciales.usuario === null) return { rechazo: respuestaSinSunat('RECHAZADO', CODIGOS_ADAPTADOR_SUNAT.sinUsuario) };
-    if (!credenciales.certificado) return { rechazo: respuestaSinSunat('RECHAZADO', CODIGOS_ADAPTADOR_SUNAT.sinCertificado) };
+    if (credenciales.usuario === null) return { rechazo: respuestaSinSunat('CREDENCIAL_INVALIDA', CODIGOS_ADAPTADOR_SUNAT.sinUsuario) };
+    if (!credenciales.certificado) return { rechazo: respuestaSinSunat('CREDENCIAL_INVALIDA', CODIGOS_ADAPTADOR_SUNAT.sinCertificado) };
     return { url, usuario: credenciales.usuario, certificado: credenciales.certificado };
   }
 

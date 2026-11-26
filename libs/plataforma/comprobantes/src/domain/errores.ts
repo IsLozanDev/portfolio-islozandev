@@ -283,6 +283,15 @@ export class EmisionConcurrenteError extends ConflictError {
   }
 }
 
+/** Interno: el worker solo registra una respuesta sobre un comprobante PENDIENTE_ENVIO. No llega a HTTP. */
+export class TransicionComprobanteInvalidaError extends ConflictError {
+  override readonly code = 'TRANSICION_COMPROBANTE_INVALIDA';
+
+  constructor(estado: string) {
+    super(`El comprobante en estado ${estado} no admite una respuesta de envío`);
+  }
+}
+
 export class ComprobanteNoEncontradoError extends NotFoundError {
   override readonly code = 'COMPROBANTE_NO_ENCONTRADO';
 

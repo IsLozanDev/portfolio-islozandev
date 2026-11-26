@@ -6,8 +6,8 @@ const ULTIMO_RECHAZO = 3999;
 
 /**
  * Excepciones de autenticación y autorización (tabla CodeErrors de SUNAT): reintentar con la misma clave no las
- * arregla y puede bloquear el usuario SOL, así que se tratan como rechazo. 0109 (autenticación no disponible) no
- * está: es técnica y se reintenta.
+ * arregla y puede bloquear el usuario SOL, así que no se reintentan (`CREDENCIAL_INVALIDA`). SUNAT no procesó el
+ * comprobante: no es un rechazo. 0109 (autenticación no disponible) no está: es técnica y se reintenta.
  */
 export const CODIGOS_CREDENCIAL_INVALIDA: ReadonlySet<number> = new Set([
   102, // Usuario o contraseña incorrectos
@@ -29,7 +29,7 @@ export function resultadoDeCodigo(codigo: string, conObservaciones: boolean): Re
   const numero = Number(codigo);
   if (!Number.isInteger(numero)) return 'ERROR_TECNICO';
   if (numero === CODIGO_ACEPTADO) return conObservaciones ? 'ACEPTADO_CON_OBSERVACIONES' : 'ACEPTADO';
-  if (CODIGOS_CREDENCIAL_INVALIDA.has(numero)) return 'RECHAZADO';
+  if (CODIGOS_CREDENCIAL_INVALIDA.has(numero)) return 'CREDENCIAL_INVALIDA';
   if (numero <= ULTIMA_EXCEPCION) return 'ERROR_TECNICO';
   if (numero <= ULTIMO_RECHAZO) return 'RECHAZADO';
   return 'ACEPTADO_CON_OBSERVACIONES';

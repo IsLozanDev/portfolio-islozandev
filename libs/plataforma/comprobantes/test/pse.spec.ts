@@ -8,7 +8,16 @@ import { APERTURA_MS, CircuitBreaker, UMBRAL_FALLOS } from '../src/infrastructur
 import { comprobanteNubefact, fechaNubefact, respuestaDesdeErrorNubefact, respuestaDesdeNubefact } from '../src/infrastructure/pse/nubefact/mapeo-nubefact.js';
 import { PseNubefact, TIMEOUT_NUBEFACT_MS, type Buscar } from '../src/infrastructure/pse/nubefact/pse.nubefact.js';
 import { ResolutorPseMapa } from '../src/infrastructure/pse/resolutor-pse.js';
-import { PseSimulador, TOKEN_SIMULAR_ERROR, TOKEN_SIMULAR_RECHAZO } from '../src/infrastructure/pse/simulador/pse.simulador.js';
+import {
+  OBSERVACION_SIMULADA,
+  PseSimulador,
+  TOKEN_SIMULAR_CREDENCIAL,
+  TOKEN_SIMULAR_ERROR,
+  TOKEN_SIMULAR_OBSERVACION,
+  TOKEN_SIMULAR_RECHAZO,
+} from '../src/infrastructure/pse/simulador/pse.simulador.js';
+import { descomprimirCdr } from '../src/infrastructure/pse/sunat/zip-sunat.js';
+import { nombreArchivoSunat } from '../src/infrastructure/sunat/generar-xml-firmado.js';
 import { camposEntornoFe, reglasEntornoFe } from '../src/interface/entorno-fe.js';
 import { z } from 'zod';
 
@@ -187,9 +196,24 @@ describe('PseSimulador, ResolutorPseMapa y la cola fe-pruebas', () => {
     const simulador = new PseSimulador();
     expect(await simulador.enviarComprobante({ ...credenciales, token: TOKEN_SIMULAR_RECHAZO }, boleta)).toMatchObject({ resultado: 'RECHAZADO', codigo: '2800' });
     expect(await simulador.enviarComprobante({ ...credenciales, token: TOKEN_SIMULAR_ERROR }, boleta)).toMatchObject({ resultado: 'ERROR_TECNICO' });
+    expect(await simulador.enviarComprobante({ ...credenciales, token: TOKEN_SIMULAR_CREDENCIAL }, boleta)).toMatchObject({
+      resultado: 'CREDENCIAL_INVALIDA',
+      codigo: '0102',
+    });
+    expect(await simulador.enviarComprobante({ ...credenciales, token: TOKEN_SIMULAR_OBSERVACION }, boleta)).toMatchObject({
+      resultado: 'ACEPTADO_CON_OBSERVACIONES',
+      observaciones: [OBSERVACION_SIMULADA],
+    });
     const aceptada = await simulador.enviarComprobante(credenciales, boleta);
-    expect(aceptada).toMatchObject({ resultado: 'ACEPTADO', codigo: '0', hash: expect.any(String) });
+    expect(aceptada).toMatchObject({ resultado: 'ACEPTADO', codigo: '0', hash: expect.any(String), observaciones: [] });
     expect(await simulador.enviarComprobante(credenciales, boleta)).toEqual(aceptada);
+  });
+
+  it('al aceptar, el simulador devuelve un XML y un CDR ficticios con la forma de los de SUNAT', async () => {
+    const aceptada = await new PseSimulador().enviarComprobante(credenciales, boleta);
+
+    expect(new TextDecoder().decode(aceptada.xmlFirmado)).toContain(nombreArchivoSunat(boleta));
+    expect(descomprimirCdr(aceptada.cdr ?? new Uint8Array())).toContain('<ResponseCode>0</ResponseCode>');
   });
 
   it('el resolutor elige por código y, sin adaptador, PROVEEDOR_FE_INVALIDO', () => {

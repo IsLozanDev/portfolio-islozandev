@@ -120,7 +120,7 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 59 | fe-entrega-comprobante | R2-09: TR-RF-062 (correo) | 3-4 | 42, 52, 53 | `tr-fe/fe-entrega-comprobante.md` | Pendiente |
 | 60 | seq-series-ui | UI de TR-RF-035 (deuda de D-05, R1) | 4-5 | 10, 17c | `tr-fe/fe-admin-ui.md` | Pendiente |
 | 61 | cfg-parametros-ui | UI de TR-RF-031, 033 (deuda de D-05, R1) | por estimar | 09, 17c | `tr-pendientes-base/README.md` (pendiente 3) | Pendiente |
-| 62 | fe-admin-emisor-ui | R2-11: UI de 052 | 5-7 | 49, 50, 17c | `tr-fe/fe-admin-ui.md` | Pendiente |
+| 62 | fe-admin-emisor-ui | R2-11: UI de 052 y `GET /v1/fe/emisores` | 7,5-8,5 | 49, 50, 51c, 17c | `tr-fe/fe-admin-ui.md` | Pendiente |
 | 63 | aud-incidentes-datos | R2-17: TR-RF-091 (back) y consumidor de `aud.integridad.rota` | 7 | 20b, 42 | `tr-aud-arco/arco-incidentes-datos.md` | Pendiente |
 | 64 | arco-solicitud-plazos | R2-17: TR-RF-088 (registro por el responsable), alertas 50/80 % | 8 | 10, 19c, 20a, 33, 42 | `tr-aud-arco/arco-registro-atencion.md` | Pendiente |
 | 65 | arco-atencion-compilado | R2-17: TR-RF-089 | 7 | 64, 33 | `tr-aud-arco/arco-registro-atencion.md` | Pendiente |

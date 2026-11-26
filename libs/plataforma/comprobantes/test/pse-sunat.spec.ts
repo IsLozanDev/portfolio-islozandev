@@ -106,22 +106,25 @@ describe('PseSunat (sendBill con respuestas grabadas)', () => {
     expect(llamadas[0].url).toBe(URL_PRODUCCION);
   });
 
-  it('host fuera de dominios_permitidos o sin URL en el ítem: no llama y lo da por rechazado', async () => {
+  it('host fuera de dominios_permitidos o sin URL en el ítem: no llama y es configuración (CREDENCIAL_INVALIDA)', async () => {
     proveedor = { ...SUNAT, urlBeta: 'https://evil.example.com/billService' };
-    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'RECHAZADO', codigo: 'URL_NO_PERMITIDA' });
+    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'CREDENCIAL_INVALIDA', codigo: 'URL_NO_PERMITIDA' });
     proveedor = { ...SUNAT, urlBeta: null };
-    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'RECHAZADO', codigo: 'URL_NO_PERMITIDA' });
+    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'CREDENCIAL_INVALIDA', codigo: 'URL_NO_PERMITIDA' });
     expect(llamadas).toHaveLength(0);
   });
 
-  it('sin usuario SOL, sin certificado o con la clave del .pfx mala: no llama y lo da por rechazado', async () => {
-    expect(await adaptador.enviarComprobante({ ...credenciales, usuario: null }, boleta)).toMatchObject({ resultado: 'RECHAZADO', codigo: 'SIN_USUARIO_SOL' });
+  it('sin usuario SOL, sin certificado o con la clave del .pfx mala: no llama y es configuración (CREDENCIAL_INVALIDA)', async () => {
+    expect(await adaptador.enviarComprobante({ ...credenciales, usuario: null }, boleta)).toMatchObject({
+      resultado: 'CREDENCIAL_INVALIDA',
+      codigo: 'SIN_USUARIO_SOL',
+    });
     expect(await adaptador.enviarComprobante({ ...credenciales, certificado: undefined }, boleta)).toMatchObject({
-      resultado: 'RECHAZADO',
+      resultado: 'CREDENCIAL_INVALIDA',
       codigo: 'SIN_CERTIFICADO',
     });
     expect(await adaptador.enviarComprobante({ ...credenciales, certificado: { pfx, clave: 'otra' } }, boleta)).toMatchObject({
-      resultado: 'RECHAZADO',
+      resultado: 'CREDENCIAL_INVALIDA',
       codigo: 'FIRMA_FALLIDA',
     });
     expect(llamadas).toHaveLength(0);
@@ -134,14 +137,14 @@ describe('PseSunat (sendBill con respuestas grabadas)', () => {
     expect(respuesta.observaciones).toHaveLength(2);
   });
 
-  it('fault 2335 (HTTP 500) → RECHAZADO con código y descripción, y con el XML firmado; credencial inválida → RECHAZADO', async () => {
+  it('fault 2335 (HTTP 500) → RECHAZADO con código y descripción, y con el XML firmado; credencial SOL inválida → CREDENCIAL_INVALIDA', async () => {
     siguiente = () => respuestaHttp(500, leerFixture('fault-2335.xml'));
     const rechazo = await adaptador.enviarComprobante(credenciales, boleta);
     expect(rechazo).toMatchObject({ resultado: 'RECHAZADO', codigo: '2335', descripcion: expect.stringContaining('alterado') });
     expect(rechazo.xmlFirmado).toBeInstanceOf(Uint8Array);
     expect(rechazo.cdr).toBeUndefined();
     siguiente = () => respuestaHttp(500, leerFixture('fault-0102.xml'));
-    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'RECHAZADO', codigo: '0102' });
+    expect(await adaptador.enviarComprobante(credenciales, boleta)).toMatchObject({ resultado: 'CREDENCIAL_INVALIDA', codigo: '0102' });
   });
 
   it('0109, 5xx sin fault, cuerpo ilegible, timeout y red caída → ERROR_TECNICO', async () => {

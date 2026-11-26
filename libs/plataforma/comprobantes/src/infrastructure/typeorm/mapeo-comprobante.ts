@@ -87,6 +87,9 @@ export function comprobanteDesdeFilas(fila: FilaComprobante, lineas: FilaLineaCo
     version: fila.version,
     creadoPor: fila.creadoPor,
     creadoEn: fila.creadoEn,
+    modificadoEn: fila.modificadoEn,
+    // Las columnas de respuesta de 01x se mapean en el paso de persistencia (spec 52, paso 4).
+    respuesta: null,
   });
 }
 
