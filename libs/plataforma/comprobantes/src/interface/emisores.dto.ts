@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { EmpresaConEmisor } from '../application/listar-emisores.js';
 import type { VistaEmisor } from '../application/vista-emisor.js';
 import { AMBIENTES_EMISOR, ESTADOS_EMISOR, ESTADOS_PRUEBA } from '../domain/estado-emisor.js';
 import { REGIMENES_IGV } from '../domain/regimen-igv.js';
@@ -127,6 +128,38 @@ export class EmisorDto {
   version!: number;
 }
 
+class ResumenEmisorDto {
+  @ApiProperty({ enum: ESTADOS_EMISOR })
+  estado!: string;
+
+  @ApiProperty({ example: 'SUNAT' })
+  proveedor!: string;
+
+  @ApiProperty({ enum: AMBIENTES_EMISOR })
+  ambiente!: string;
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  certificado_vence_en!: string | null;
+
+  @ApiProperty({ enum: ESTADOS_PRUEBA, nullable: true, description: 'Estado de la última prueba en beta' })
+  prueba_estado!: string | null;
+}
+
+/** Sin usuario del proveedor, huella, URL ni secretos. */
+export class EmpresaConEmisorDto {
+  @ApiProperty({ format: 'uuid' })
+  empresa_id!: string;
+
+  @ApiProperty({ example: '20601234561' })
+  ruc!: string;
+
+  @ApiProperty({ example: 'RESTAURANTE EL SAZON SAC' })
+  razon_social!: string;
+
+  @ApiProperty({ type: ResumenEmisorDto, nullable: true, description: 'null: la empresa aún no configura su emisor' })
+  emisor!: ResumenEmisorDto | null;
+}
+
 export class ErrorFeDto {
   @ApiProperty({ example: 'CERTIFICADO_OTRO_RUC' })
   codigo!: string;
@@ -162,5 +195,20 @@ export function emisorDto(vista: VistaEmisor): EmisorDto {
     },
     produccion_habilitada_en: vista.produccionHabilitadaEn?.toISOString() ?? null,
     version: vista.version,
+  };
+}
+
+export function empresaConEmisorDto(empresa: EmpresaConEmisor): EmpresaConEmisorDto {
+  return {
+    empresa_id: empresa.empresaId,
+    ruc: empresa.ruc,
+    razon_social: empresa.razonSocial,
+    emisor: empresa.emisor && {
+      estado: empresa.emisor.estado,
+      proveedor: empresa.emisor.proveedor,
+      ambiente: empresa.emisor.ambiente,
+      certificado_vence_en: empresa.emisor.certificadoVenceEn?.toISOString() ?? null,
+      prueba_estado: empresa.emisor.pruebaEstado,
+    },
   };
 }

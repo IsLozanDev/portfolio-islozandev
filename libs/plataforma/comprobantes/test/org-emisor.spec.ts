@@ -2,7 +2,7 @@ import { NotFoundError } from '@vitrina/plataforma/kernel';
 import type { EmpresaListada, SucursalListada } from '@vitrina/plataforma/org';
 import { emisorDePrueba, exigirDatosEmisor } from '../src/domain/emisor-documento.js';
 import { DatosEmisorIncompletosError, EmpresaNoEncontradaError, SucursalNoEncontradaError } from '../src/domain/errores.js';
-import { EmpresaEmisoraOrg } from '../src/infrastructure/org/empresa-emisora.org.js';
+import { EmpresaEmisoraOrg, LIMITE_EMPRESAS_EMISORAS } from '../src/infrastructure/org/empresa-emisora.org.js';
 import { SucursalesEmisorasOrg } from '../src/infrastructure/org/sucursales-emisoras.org.js';
 
 const EMPRESA: EmpresaListada = {
@@ -39,9 +39,11 @@ function consultaQueNoEncuentra() {
   return { ejecutar: () => Promise.reject(new NotFoundError('No existe')) };
 }
 
+const listadoVacio = consultaQueDevuelve({ items: [], total: 0 });
+
 describe('EmpresaEmisoraOrg', () => {
   it('trae razón social, nombre comercial, domicilio fiscal y ubigeo de ORG', async () => {
-    const empresa = await new EmpresaEmisoraOrg(consultaQueDevuelve(EMPRESA)).obtener(EMPRESA.id);
+    const empresa = await new EmpresaEmisoraOrg(consultaQueDevuelve(EMPRESA), listadoVacio).obtener(EMPRESA.id);
     expect(empresa).toEqual({
       id: EMPRESA.id,
       ruc: EMPRESA.ruc,
@@ -55,14 +57,29 @@ describe('EmpresaEmisoraOrg', () => {
   });
 
   it('empresa sin domicilio ni ubigeo: null, que el documento rechaza y la prueba del 50 tolera', async () => {
-    const empresa = await new EmpresaEmisoraOrg(consultaQueDevuelve({ ...EMPRESA, direccionFiscal: null, ubigeo: null })).obtener(EMPRESA.id);
+    const empresa = await new EmpresaEmisoraOrg(consultaQueDevuelve({ ...EMPRESA, direccionFiscal: null, ubigeo: null }), listadoVacio).obtener(EMPRESA.id);
     expect(empresa).toMatchObject({ domicilioFiscal: null, ubigeo: null });
     expect(() => exigirDatosEmisor(empresa, '0001')).toThrow(DatosEmisorIncompletosError);
     expect(emisorDePrueba(empresa)).toMatchObject({ ruc: EMPRESA.ruc, codigoEstablecimiento: '0000' });
   });
 
   it('no existe o es de otro tenant → EMPRESA_NO_ENCONTRADA', async () => {
-    await expect(new EmpresaEmisoraOrg(consultaQueNoEncuentra()).obtener('otra')).rejects.toThrow(EmpresaNoEncontradaError);
+    await expect(new EmpresaEmisoraOrg(consultaQueNoEncuentra(), listadoVacio).obtener('otra')).rejects.toThrow(EmpresaNoEncontradaError);
+  });
+
+  it('listarActivas pide a ORG solo las activas, en una página del límite, y las mapea', async () => {
+    const filtros: unknown[] = [];
+    const listar = {
+      ejecutar: (filtro: unknown) => {
+        filtros.push(filtro);
+        return Promise.resolve({ items: [EMPRESA], total: 1 });
+      },
+    };
+    const empresas = await new EmpresaEmisoraOrg(consultaQueNoEncuentra(), listar).listarActivas();
+    expect(filtros).toEqual([{ activo: true, pagina: 1, tamano: LIMITE_EMPRESAS_EMISORAS }]);
+    expect(empresas).toEqual([
+      expect.objectContaining({ id: EMPRESA.id, razonSocial: 'RESTAURANTE EL SAZON SAC', domicilioFiscal: 'AV. LARCO 123, MIRAFLORES' }),
+    ]);
   });
 });
 

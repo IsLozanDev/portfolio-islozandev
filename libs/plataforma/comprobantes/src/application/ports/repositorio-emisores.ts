@@ -4,6 +4,7 @@ import type { Emisor } from '../../domain/emisor.js';
 export interface RepositorioEmisores {
   porEmpresa(empresaId: string): Promise<Emisor | null>;
   porId(emisorId: string): Promise<Emisor | null>;
+  porEmpresas(empresaIds: string[]): Promise<Emisor[]>;
   /** VersionObsoletaEmisorError si otra operación creó el emisor de la empresa primero. */
   insertar(emisor: Emisor): Promise<void>;
   /** Solo si la fila sigue en `versionEsperada`; si no, VersionObsoletaEmisorError. */

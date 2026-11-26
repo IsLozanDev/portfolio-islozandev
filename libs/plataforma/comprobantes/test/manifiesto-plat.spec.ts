@@ -4,11 +4,12 @@ import { PARAMETRO_DIAS_AVISO_CERTIFICADO, PARAMETRO_UMBRAL_BOLETA, PERMISOS_FE 
 
 const RUTA_MANIFIESTO = new URL('../../seguridad/manifiesto/plat.manifiesto.json', import.meta.url);
 
-describe('Manifiesto PLAT 1.29.0: parte de fe (specs 49 y 51)', () => {
+describe('Manifiesto PLAT 1.30.0: parte de fe (specs 49, 51 y 62)', () => {
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; descripcion: string; alcance_minimo: string; sensible: boolean }[];
-    opciones: { codigo: string; permisos: string[] }[];
+    modulos: { codigo: string; orden: number }[];
+    opciones: { codigo: string; modulo: string; padre: string | null; nombre: string; ruta?: string; permisos: string[] }[];
     roles_predefinidos: { codigo: string; nombre: string; permisos: string[] }[];
     parametros: { codigo: string; tipo: string; valor_defecto: unknown; alcance_maximo: string; esquema?: object }[];
   }
@@ -21,8 +22,8 @@ describe('Manifiesto PLAT 1.29.0: parte de fe (specs 49 y 51)', () => {
     manifiesto = JSON.parse(await readFile(RUTA_MANIFIESTO, 'utf8'));
   });
 
-  it('está en la versión 1.29.0; solo plat.fe.configurar es sensible, los tres con alcance TENANT', () => {
-    expect(manifiesto.version).toBe('1.29.0');
+  it('está en la versión 1.30.0; solo plat.fe.configurar es sensible, los tres con alcance TENANT', () => {
+    expect(manifiesto.version).toBe('1.30.0');
     const deFe = manifiesto.permisos.filter((permiso) => esDeFe(permiso.codigo));
     expect(deFe.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_FE.configurar, 'Configurar el emisor electrónico', 'TENANT', true],
@@ -31,12 +32,25 @@ describe('Manifiesto PLAT 1.29.0: parte de fe (specs 49 y 51)', () => {
     ]);
   });
 
-  it('PLAT_PROPIETARIO tiene los tres; PLAT_ENCARGADO_FACTURACION configura y consulta; ningún otro rol ni opción de menú', () => {
+  it('PLAT_PROPIETARIO tiene los tres; PLAT_ENCARGADO_FACTURACION configura, consulta y lee PROVEEDOR_FE (spec 62); ningún otro rol', () => {
     expect(permisosDe('PLAT_PROPIETARIO').filter(esDeFe)).toEqual(Object.values(PERMISOS_FE));
-    expect(permisosDe('PLAT_ENCARGADO_FACTURACION').filter(esDeFe)).toEqual([PERMISOS_FE.configurar, PERMISOS_FE.consultar]);
+    expect(permisosDe('PLAT_ENCARGADO_FACTURACION')).toEqual([PERMISOS_FE.configurar, PERMISOS_FE.consultar, 'plat.sesion.contexto', 'plat.catalogo.leer']);
     const otros = manifiesto.roles_predefinidos.filter((rol) => !['PLAT_ENCARGADO_FACTURACION', 'PLAT_PROPIETARIO'].includes(rol.codigo));
     expect(otros.flatMap((rol) => rol.permisos).filter(esDeFe)).toEqual([]);
-    expect(manifiesto.opciones.flatMap((opcion) => opcion.permisos).filter(esDeFe)).toEqual([]);
+  });
+
+  it('spec 62: módulo facturacion antes de consola, con «Facturación > Emisor electrónico» solo con plat.fe.consultar', () => {
+    expect(manifiesto.modulos.map((modulo) => [modulo.codigo, modulo.orden]).slice(-2)).toEqual([
+      ['facturacion', 4],
+      ['consola', 5],
+    ]);
+    const deFacturacion = manifiesto.opciones.filter((opcion) => opcion.modulo === 'facturacion');
+    expect(deFacturacion.map(({ codigo, padre, nombre, ruta, permisos }) => [codigo, padre, nombre, ruta, permisos])).toEqual([
+      ['plat.facturacion', null, 'Facturación', undefined, []],
+      ['plat.facturacion.emisores', 'plat.facturacion', 'Emisor electrónico', '/admin/fe/emisores', [PERMISOS_FE.consultar]],
+    ]);
+    const otrasConFe = manifiesto.opciones.filter((opcion) => opcion.modulo !== 'facturacion' && opcion.permisos.some(esDeFe));
+    expect(otrasConFe).toEqual([]);
   });
 
   it('plat.fe.dias_aviso_certificado: número entero de 1 a 90, 30 por defecto y editable por tenant', () => {

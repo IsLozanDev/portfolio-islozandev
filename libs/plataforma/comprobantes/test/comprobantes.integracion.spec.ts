@@ -15,7 +15,7 @@ import {
   TypeOrmUnitOfWork,
   uuidV7,
 } from '@vitrina/plataforma/kernel-infra';
-import { ConsultarEmpresa, ENTIDADES_ORG, LecturaOrganizacionTypeOrm } from '@vitrina/plataforma/org';
+import { ConsultarEmpresa, ENTIDADES_ORG, LecturaOrganizacionTypeOrm, ListarEmpresas } from '@vitrina/plataforma/org';
 import { BOVEDA_SECRETOS, BYTES_CLAVE, ClavesMaestras, ENTIDADES_SEC, SecretosModule, type BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { DataSource } from 'typeorm';
 import { AvisarCertificadosPorVencer } from '../src/application/avisar-certificados-por-vencer.js';
@@ -25,6 +25,7 @@ import { ConsultarEmisor } from '../src/application/consultar-emisor.js';
 import type { DependenciasEmisor } from '../src/application/dependencias-fe.js';
 import { EjecutarPruebaEmisor } from '../src/application/ejecutar-prueba-emisor.js';
 import { HabilitarProduccion } from '../src/application/habilitar-produccion.js';
+import { ListarEmisores } from '../src/application/listar-emisores.js';
 import { SolicitarPruebaEmisor } from '../src/application/solicitar-prueba-emisor.js';
 import { EmisorNoEncontradoError, ProveedorSimuladoEnProduccionError, VersionObsoletaEmisorError } from '../src/domain/errores.js';
 import { EVENTOS_FE } from '../src/domain/eventos-fe.js';
@@ -77,6 +78,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
   const tenantB = uuidV7();
   const empresaA = uuidV7();
   const empresaB = uuidV7();
+  const empresaInactivaA = uuidV7();
   const ahora = new Date();
   const sufijo = randomBytes(4).toString('hex');
 
@@ -115,6 +117,10 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
       `INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version) VALUES ($1, $2, $3, 'FE A SAC', 1), ($4, $5, $6, 'FE B SAC', 1)`,
       [empresaA, tenantA, RUC_EMPRESA, empresaB, tenantB, OTRO_RUC],
     );
+    await crudo(`INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, activo, version) VALUES ($1, $2, '20601234562', 'FE A INACTIVA SAC', false, 1)`, [
+      empresaInactivaA,
+      tenantA,
+    ]);
 
     const validador = new InMemoryEventSchemaValidator();
     registrarEsquemasFe(validador);
@@ -128,6 +134,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
     app = await NestFactory.createApplicationContext(PruebaModule, { logger: false });
     contexto = app.get(TENANT_CONTEXT);
     unidadDeTrabajo = app.get(TypeOrmUnitOfWork);
+    const lecturaOrg = { unidadDeTrabajo, lectura: new LecturaOrganizacionTypeOrm(unidadDeTrabajo, contexto) };
     dependencias = {
       unidadDeTrabajo,
       contexto,
@@ -137,7 +144,7 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
       auditoria: app.get<AuditoriaPort>(AUDITORIA),
       boveda: app.get<BovedaSecretos>(BOVEDA_SECRETOS),
       emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
-      empresas: new EmpresaEmisoraOrg(new ConsultarEmpresa({ unidadDeTrabajo, lectura: new LecturaOrganizacionTypeOrm(unidadDeTrabajo, contexto) })),
+      empresas: new EmpresaEmisoraOrg(new ConsultarEmpresa(lecturaOrg), new ListarEmpresas(lecturaOrg)),
       proveedores: new ProveedoresFeCatalogo(catalogoDeLaBase(unidadDeTrabajo)),
       lector: new LectorCertificadoForge(),
       entorno: { produccionPermitida: true, simuladoPermitido: true },
@@ -249,6 +256,16 @@ describeConDb('Emisor electrónico con TypeORM, bóveda real y RLS (spec 49, Pos
     const [emisorA] = await crudo('SELECT id FROM fe.emisor WHERE tenant_id = $1', [tenantA]);
     await expect(enTenant(tenantB, () => new ConsultarEmisor(dependencias).ejecutar(empresaA))).rejects.toBeInstanceOf(EmisorNoEncontradoError);
     expect(await enTenant(tenantB, () => unidadDeTrabajo.run(() => dependencias.emisores.porId(String(emisorA.id))))).toBeNull();
+  });
+
+  it('spec 62: ListarEmisores ve solo las empresas activas de su tenant, con su emisor o null (TR-RNF-010)', async () => {
+    const deA = await enTenant(tenantA, () => new ListarEmisores(dependencias).ejecutar());
+    expect(deA).toEqual([
+      { empresaId: empresaA, ruc: RUC_EMPRESA, razonSocial: 'FE A SAC', emisor: expect.objectContaining({ proveedor: 'SIMULADO', ambiente: 'BETA' }) },
+    ]);
+    const deB = await enTenant(tenantB, () => new ListarEmisores(dependencias).ejecutar());
+    expect(deB.map((empresa) => empresa.empresaId)).toEqual([empresaB]);
+    expect(JSON.stringify(deB)).not.toContain(empresaA);
   });
 
   it('bloqueo optimista: dos lecturas de la misma versión, solo la primera escritura pasa', async () => {

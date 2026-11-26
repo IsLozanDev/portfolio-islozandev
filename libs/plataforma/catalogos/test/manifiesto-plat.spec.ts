@@ -25,7 +25,7 @@ describe('Manifiesto PLAT 1.27.0: parte de cat (specs 19a a 19e)', () => {
   });
 
   it('está en la versión 1.27.0', () => {
-    expect(manifiesto.version).toBe('1.29.0');
+    expect(manifiesto.version).toBe('1.30.0');
   });
 
   it('declara exactamente PERMISOS_CAT, todos de alcance TENANT; gestionar, item_gestionar e importar son sensibles (TR-RN-009)', () => {
@@ -42,7 +42,7 @@ describe('Manifiesto PLAT 1.27.0: parte de cat (specs 19a a 19e)', () => {
     expect(permisos.map((permiso) => permiso.codigo).sort()).toEqual(Object.values(PERMISOS_CAT).sort());
   });
 
-  it('PLAT_PROPIETARIO lleva los 7 y PLAT_ADMIN_CONFIGURACION leer, personalizar, item_propio y feriado.gestionar', () => {
+  it('PLAT_PROPIETARIO lleva los 7, PLAT_ADMIN_CONFIGURACION leer, personalizar, item_propio y feriado.gestionar, y PLAT_ENCARGADO_FACTURACION leer', () => {
     expect(deCat(permisosDe('PLAT_PROPIETARIO'))).toEqual(Object.values(PERMISOS_CAT).sort());
     expect(deCat(permisosDe('PLAT_ADMIN_CONFIGURACION'))).toEqual([
       'plat.catalogo.item_propio',
@@ -50,7 +50,10 @@ describe('Manifiesto PLAT 1.27.0: parte de cat (specs 19a a 19e)', () => {
       'plat.catalogo.personalizar',
       'plat.feriado.gestionar',
     ]);
-    const otros = manifiesto.roles_predefinidos.filter((rol) => !['PLAT_PROPIETARIO', 'PLAT_ADMIN_CONFIGURACION'].includes(rol.codigo));
+    // Spec 62: lee PROVEEDOR_FE para elegir el proveedor del emisor.
+    expect(deCat(permisosDe('PLAT_ENCARGADO_FACTURACION'))).toEqual(['plat.catalogo.leer']);
+    const conCatalogo = ['PLAT_PROPIETARIO', 'PLAT_ADMIN_CONFIGURACION', 'PLAT_ENCARGADO_FACTURACION'];
+    const otros = manifiesto.roles_predefinidos.filter((rol) => !conCatalogo.includes(rol.codigo));
     expect(otros.flatMap((rol) => deCat(rol.permisos))).toEqual([]);
   });
 
