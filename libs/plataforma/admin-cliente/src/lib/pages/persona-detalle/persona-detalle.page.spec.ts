@@ -7,6 +7,7 @@ import {
   DuplicadosCliente,
   ErrorPersonas,
   PersonaContactosComponent,
+  PersonaDireccionesComponent,
   PersonaRolesComponent,
   PersonasCliente,
   type PaginaDuplicados,
@@ -102,6 +103,36 @@ describe('PersonaDetallePage', () => {
     }
   });
 
+  function expandida(seccion: string): string | null | undefined {
+    return elemento().querySelector(`[data-seccion="${seccion}"] .disparador`)?.getAttribute('aria-expanded');
+  }
+
+  it('abre con datos básicos y contactos expandidos, y el resto contraído con su resumen', async () => {
+    await abrir(async () => JUANA);
+
+    expect(expandida('datos')).toBe('true');
+    expect(expandida('contactos')).toBe('true');
+    expect(expandida('direcciones')).toBe('false');
+    expect(expandida('roles')).toBe('false');
+    expect(expandida('consentimientos')).toBe('false');
+    expect(elemento().querySelector('[data-seccion="direcciones"] .resumen')?.textContent).toContain('Sin direcciones');
+    expect(elemento().querySelector('[data-seccion="roles"] .resumen')?.textContent).toContain('CLI · Paciente');
+    expect(elemento().querySelector('[data-seccion="consentimientos"] .resumen')?.textContent).toContain('Sin decisiones registradas');
+    expect(elemento().textContent).toContain('Expandir todo');
+  });
+
+  it('un error en una sección contraída la expande y el mensaje queda fuera de lo inert', async () => {
+    await abrir(async () => JUANA);
+    const direcciones = harness.fixture.debugElement.query(By.directive(PersonaDireccionesComponent)).componentInstance as PersonaDireccionesComponent;
+    direcciones.error.set('No se pudo guardar la dirección');
+    await estable();
+
+    expect(expandida('direcciones')).toBe('true');
+    const region = elemento().querySelector('[data-seccion="direcciones"] [role="region"]');
+    expect(region?.hasAttribute('inert')).toBe(false);
+    expect(region?.querySelector('[role="alert"]')?.textContent).toContain('No se pudo guardar la dirección');
+  });
+
   it('una persona de otro tenant o inexistente muestra que no existe', async () => {
     await abrir(async () => {
       throw new ErrorPersonas('NO_ENCONTRADA', 'No existe esa persona', 404);
@@ -141,6 +172,7 @@ describe('PersonaDetallePage', () => {
     expect(listarDuplicados).toHaveBeenCalledWith({ pagina: 1, tamano: 1, personaId: 'per-juana' });
     const seccion = elemento().querySelector('[data-seccion="duplicados"]');
     expect(seccion?.textContent).toContain('Posibles duplicados (1)');
+    expect(expandida('duplicados')).toBe('true');
     expect(seccion?.textContent).toContain('Quispe, Juana');
     expect(seccion?.textContent).toContain('Pasaporte 118204573');
     expect(seccion?.textContent).toContain('Puntaje 60');

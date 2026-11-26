@@ -1,6 +1,6 @@
 # SPEC 15e — Diseño UI: secciones plegables en `shared/ui` para páginas con muchas tarjetas
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 15, SPEC 15b, SPEC 15c, SPEC 38
 > **Date:** 2026-11-25
 > **Objective:** Agregar a `shared/ui` los componentes `vit-grupo-plegable` y `vit-seccion-plegable`, que dejan contraer y expandir cada tarjeta de una página con un resumen visible, animación y teclado, y aplicarlos a la ficha de persona como primer consumidor, con la regla en `CLAUDE.md` de usarlos en toda página con tres o más secciones.

@@ -3,9 +3,18 @@ export { CargandoComponent } from './lib/components/cargando/cargando.component'
 export { ChipEstadoComponent } from './lib/components/chip-estado/chip-estado.component';
 export { EstadoVacioComponent } from './lib/components/estado-vacio/estado-vacio.component';
 export { FiltrosComponent } from './lib/components/filtros/filtros.component';
+export {
+  GrupoPlegableComponent,
+  MINIMO_SECCIONES_CONTROLES,
+} from './lib/components/grupo-plegable/grupo-plegable.component';
 export { PanelLateralComponent } from './lib/components/panel-lateral/panel-lateral.component';
-export { TablaComponent } from './lib/components/tabla/tabla.component';export { AccionesFilaDirective } from './lib/directives/acciones-fila.directive';
+export { SeccionPlegableComponent } from './lib/components/seccion-plegable/seccion-plegable.component';
+export { TablaComponent } from './lib/components/tabla/tabla.component';
+export { AccionesFilaDirective } from './lib/directives/acciones-fila.directive';
 export { CeldaTablaDirective } from './lib/directives/celda-tabla.directive';
+export { SeccionEntradaDirective } from './lib/directives/seccion-entrada.directive';
+export { SeccionFinDirective } from './lib/directives/seccion-fin.directive';
+export { SeccionPieDirective } from './lib/directives/seccion-pie.directive';
 export type {
   OpcionesConfirmacion,
   OpcionesConfirmacionDestructiva,

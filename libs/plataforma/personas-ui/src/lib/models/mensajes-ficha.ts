@@ -12,6 +12,7 @@ export const MENSAJES_FICHA = {
     apellidoMaterno: 'Apellido materno',
     razonSocial: 'Razón social',
     opcional: 'Opcional',
+    resumen: (documento: string, tipoPersona: string) => `${documento} · ${tipoPersona}`,
   },
   contactos: {
     titulo: 'Contactos',
@@ -31,6 +32,10 @@ export const MENSAJES_FICHA = {
     confirmarEliminar: '¿Eliminar este contacto?',
     textoEliminar: (tipo: string, valor: string) => `Se borrará el ${tipo} ${valor} de la ficha. El cambio queda en la auditoría.`,
     accionSobre: (accion: string, tipo: string, valor: string) => `${accion} ${tipo} ${valor}`,
+    resumen: (cantidad: number, tipoPrincipal: string | null) => {
+      const total = `${cantidad} ${cantidad === 1 ? 'contacto' : 'contactos'}`;
+      return tipoPrincipal ? `${total} · principal: ${tipoPrincipal.toLowerCase()}` : total;
+    },
   },
   direcciones: {
     titulo: 'Direcciones',
@@ -55,6 +60,10 @@ export const MENSAJES_FICHA = {
     sinDirecciones: 'Sin direcciones',
     confirmarEliminar: '¿Eliminar esta dirección?',
     textoEliminar: (direccion: string) => `Se borrará «${direccion}» de la ficha. El cambio queda en la auditoría.`,
+    resumen: (cantidad: number, distritoPrincipal: string | null) => {
+      const total = `${cantidad} ${cantidad === 1 ? 'dirección' : 'direcciones'}`;
+      return distritoPrincipal ? `${total} · principal: ${distritoPrincipal}` : total;
+    },
   },
   roles: {
     titulo: 'Roles por producto',
@@ -81,5 +90,6 @@ export const MENSAJES_FICHA = {
     fecha: 'Fecha',
     version: (version: string) => `v ${version}`,
     sinDecisiones: 'Sin decisiones registradas',
+    resumen: (aceptadas: number, registradas: number) => `${aceptadas} de ${registradas} vigentes`,
   },
 } as const;

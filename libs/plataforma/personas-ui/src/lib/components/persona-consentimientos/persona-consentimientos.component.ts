@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { TablaComponent, type ColumnaTabla } from '@vitrina/shared/ui';
 import type { DecisionVigente, EstadoConsentimiento } from '../../models/consentimiento';
 import { ETIQUETAS_CANAL, ETIQUETAS_ESTADO_CONSENTIMIENTO, ETIQUETAS_FINALIDAD } from '../../models/etiquetas-personas';
@@ -8,6 +8,8 @@ import { TONOS_ESTADO_CONSENTIMIENTO } from '../../models/tonos-personas';
 import { ConsentimientosCliente } from '../../services/consentimientos.cliente';
 import { mensajeDe } from '../../utils/cambios-ficha';
 import { formatoFechaHora } from '../../utils/fechas';
+
+const ESTADO_ACEPTADO: EstadoConsentimiento = 'ACEPTA';
 
 export interface FilaConsentimiento {
   finalidad: string;
@@ -40,7 +42,14 @@ export class PersonaConsentimientosComponent {
   ];
   protected readonly filas = signal<FilaConsentimiento[]>([]);
   protected readonly cargando = signal(true);
-  protected readonly error = signal<string | null>(null);
+  readonly error = signal<string | null>(null);
+  /** Lo que se ve con la sección contraída: «2 de 3 vigentes» (aceptadas de las finalidades con decisión). */
+  readonly resumen = computed(() => {
+    const filas = this.filas();
+    if (filas.length === 0) return this.mensajes.sinDecisiones;
+    const aceptadas = filas.filter((fila) => fila.estado === ESTADO_ACEPTADO).length;
+    return this.mensajes.resumen(aceptadas, filas.length);
+  });
 
   constructor() {
     effect(() => void this.cargar(this.personaId()));

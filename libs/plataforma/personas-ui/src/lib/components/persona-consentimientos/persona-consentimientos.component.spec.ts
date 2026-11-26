@@ -34,5 +34,11 @@ describe('PersonaConsentimientosComponent', () => {
   it('sin decisiones lo dice', async () => {
     await montar([]);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Sin decisiones registradas');
+    expect(fixture.componentInstance.resumen()).toBe('Sin decisiones registradas');
+  });
+
+  it('el resumen cuenta las aceptadas de las finalidades con decisión', async () => {
+    await montar(DECISIONES);
+    expect(fixture.componentInstance.resumen()).toBe('1 de 2 vigentes');
   });
 });

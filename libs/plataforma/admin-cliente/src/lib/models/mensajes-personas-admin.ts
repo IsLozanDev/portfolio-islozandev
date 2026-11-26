@@ -24,4 +24,5 @@ export const MENSAJES_PERSONAS_ADMIN = {
   textoDuplicados: (cantidad: number) =>
     cantidad === 1 ? 'Hay otra ficha que podría ser esta misma persona.' : `Hay ${cantidad} fichas que podrían ser esta misma persona.`,
   revisar: 'Revisar',
+  resumenDuplicados: (cantidad: number) => `${cantidad} ${cantidad === 1 ? 'posible duplicado' : 'posibles duplicados'}`,
 } as const;

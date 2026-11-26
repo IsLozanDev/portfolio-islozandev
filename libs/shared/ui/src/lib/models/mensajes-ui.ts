@@ -20,4 +20,8 @@ export const MENSAJES_UI = {
   paginaAnterior: 'Página anterior',
   paginaSiguiente: 'Página siguiente',
   ultimaPagina: 'Última página',
+  expandirTodo: 'Expandir todo',
+  contraerTodo: 'Contraer todo',
+  expandirSeccion: (titulo: string) => `Expandir sección ${titulo}`,
+  contraerSeccion: (titulo: string) => `Contraer sección ${titulo}`,
 } as const;

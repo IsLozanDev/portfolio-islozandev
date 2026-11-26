@@ -111,4 +111,5 @@ export { formatoCelular, formatoContacto } from './lib/utils/formato-contacto';
 export { formatoDocumento, formatoRol } from './lib/utils/formato-persona';
 export { formatoFecha, formatoFechaHora } from './lib/utils/fechas';
 export { formatoUbigeo } from './lib/utils/formato-ubigeo';
+export { resumenContactos, resumenDatosBasicos, resumenDirecciones, resumenRoles } from './lib/utils/resumenes-ficha';
 export { validarCelular, validarContacto, validarCorreo } from './lib/utils/validar-contacto';

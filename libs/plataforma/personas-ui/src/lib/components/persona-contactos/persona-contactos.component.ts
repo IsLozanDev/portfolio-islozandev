@@ -52,7 +52,7 @@ export class PersonaContactosComponent {
   protected readonly filas = computed(() => this.persona().contactos.map((contacto) => this.filaDe(contacto)));
   private readonly operaciones = new OperacionesFicha((cambio) => this.cambio.emit(cambio));
   protected readonly ocupado = this.operaciones.ocupado;
-  protected readonly error = this.operaciones.error;
+  readonly error = this.operaciones.error;
 
   protected agregar(): Promise<void> {
     return this.abrirPanel({ persona: this.persona() });

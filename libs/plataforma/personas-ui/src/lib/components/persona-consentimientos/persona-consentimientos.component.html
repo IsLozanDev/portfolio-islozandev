@@ -1,8 +1,5 @@
-<section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4 sm:p-6" aria-labelledby="titulo-consentimientos">
-  <div class="flex min-w-0 flex-col gap-0.5">
-    <h2 id="titulo-consentimientos" class="m-0 text-lg font-medium">{{ mensajes.titulo }}</h2>
-    <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
-  </div>
+<div class="flex flex-col gap-3">
+  <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
   @if (error(); as mensajeError) {
     <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-prueba="error">{{ mensajeError }}</p>
   }
@@ -14,4 +11,4 @@
     [tamanosPagina]="tamanosPagina"
     [textoVacio]="mensajes.sinDecisiones"
   />
-</section>
+</div>
