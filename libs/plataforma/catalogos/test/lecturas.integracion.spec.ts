@@ -93,6 +93,7 @@ describeConDb('ConsultarItems y ValidarItem (TR-RF-024, TR-RF-027, PostgreSQL 16
       motivo: null,
       atributos: { longitud: 8, regex: '^[0-9]{8}$' },
       nombre: 'Documento nacional de identidad',
+      codigoExterno: '1',
     });
     await comoClinica(() =>
       new AjustarItem(entorno.dependencias).ejecutar({
@@ -106,7 +107,13 @@ describeConDb('ConsultarItems y ValidarItem (TR-RF-024, TR-RF-027, PostgreSQL 16
       }),
     );
     expect(await comoClinica(() => validar.validarItem('MEDIO_PAGO', 'PLIN'))).toMatchObject({ valido: false, motivo: 'OCULTO' });
-    expect(await comoClinica(() => validar.validarItem('MEDIO_PAGO', 'BITCOIN'))).toEqual({ valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null });
+    expect(await comoClinica(() => validar.validarItem('MEDIO_PAGO', 'BITCOIN'))).toEqual({
+      valido: false,
+      motivo: 'INEXISTENTE',
+      atributos: null,
+      nombre: null,
+      codigoExterno: null,
+    });
   });
 
   it('con Redis detenido la lectura responde lo mismo desde la base y deja el aviso cat.redis.error', async () => {

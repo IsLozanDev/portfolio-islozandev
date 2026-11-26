@@ -27,6 +27,8 @@ import { ALCANCE_ACTOR } from '@vitrina/plataforma/seguridad';
 import { DataSource } from 'typeorm';
 import { ConsultarComprobante } from '../src/application/consultar-comprobante.js';
 import { EmitirComprobante } from '../src/application/emitir-comprobante.js';
+import { EnviarComprobante } from '../src/application/enviar-comprobante.js';
+import type { EmpresaEmisora } from '../src/application/ports/empresa-emisora.port.js';
 import type { EmitirComprobanteComando } from '../src/application/ports/comprobante.port.js';
 import { Comprobante } from '../src/domain/comprobante/comprobante.js';
 import {
@@ -39,13 +41,17 @@ import {
 } from '../src/domain/errores.js';
 import { EVENTOS_FE } from '../src/domain/eventos-fe.js';
 import { CatalogosSunatCatalogo } from '../src/infrastructure/catalogos/catalogos-sunat.catalogo.js';
+import { ProveedoresFeCatalogo } from '../src/infrastructure/catalogos/proveedores-fe.catalogo.js';
 import { TasaIgvCatalogo } from '../src/infrastructure/catalogos/tasa-igv.catalogo.js';
 import { registrarEsquemasFe } from '../src/infrastructure/event-schemas.js';
 import { PadronAdquirenteOrg } from '../src/infrastructure/org/padron-adquirente.org.js';
 import { SucursalesEmisorasOrg } from '../src/infrastructure/org/sucursales-emisoras.org.js';
 import { UmbralBoletaParametros } from '../src/infrastructure/parametros/umbral-boleta.parametros.js';
+import { ResolutorPseMapa } from '../src/infrastructure/pse/resolutor-pse.js';
+import { PseSimulador, TOKEN_SIMULAR_ERROR } from '../src/infrastructure/pse/simulador/pse.simulador.js';
 import { RepositorioComprobantesTypeOrm } from '../src/infrastructure/typeorm/comprobantes.repositorio.js';
 import { RepositorioEmisoresTypeOrm } from '../src/infrastructure/typeorm/emisores.repositorio.js';
+import { RepositorioEnviosTypeOrm } from '../src/infrastructure/typeorm/envios.repositorio.js';
 import { ENTIDADES_FE } from '../src/infrastructure/typeorm/entidades.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
@@ -60,14 +66,14 @@ function catalogoDeLaBase(unidadDeTrabajo: TypeOrmUnitOfWork): CatalogoPort {
   return {
     async validarItem(catalogo: string, codigo: string): Promise<ResultadoValidacion> {
       const [fila] = (await unidadDeTrabajo.manager.query(
-        `SELECT i.nombre, i.atributos FROM cat.catalogo_item i JOIN cat.catalogo c ON c.id = i.catalogo_id
+        `SELECT i.nombre, i.atributos, i.codigo_externo FROM cat.catalogo_item i JOIN cat.catalogo c ON c.id = i.catalogo_id
           WHERE c.codigo = $1 AND i.codigo = $2 AND i.activo AND i.tenant_id IS NULL
             AND i.vigente_desde <= current_date AND (i.vigente_hasta IS NULL OR i.vigente_hasta >= current_date)`,
         [catalogo, codigo],
-      )) as { nombre: string; atributos: Record<string, unknown> }[];
+      )) as { nombre: string; atributos: Record<string, unknown>; codigo_externo: string | null }[];
       return fila
-        ? { valido: true, motivo: null, atributos: fila.atributos, nombre: fila.nombre }
-        : { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null };
+        ? { valido: true, motivo: null, atributos: fila.atributos, nombre: fila.nombre, codigoExterno: fila.codigo_externo }
+        : { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null, codigoExterno: null };
     },
   };
 }
@@ -288,6 +294,97 @@ describeConDb('Emisión de boleta y factura con TypeORM, SEQ y RLS (spec 51, Pos
     await expect(crudo('UPDATE fe.comprobante SET total = 1 WHERE id = $1', [emitido.comprobanteId])).rejects.toMatchObject({ driverError: { code: '23001' } });
     await expect(crudo('DELETE FROM fe.comprobante_linea WHERE comprobante_id = $1', [emitido.comprobanteId])).rejects.toMatchObject({ driverError: { code: '23001' } });
     await crudo(`UPDATE fe.comprobante SET estado = 'ENVIADO', version = 2 WHERE id = $1`, [emitido.comprobanteId]);
+  });
+
+  describe('Envío con el simulador (spec 52)', () => {
+    let envio: EnviarComprobante;
+    let token = 'token-del-simulador';
+    const archivosGuardados: string[] = [];
+    const empresaConDomicilio = (id: string): Promise<EmpresaEmisora> =>
+      Promise.resolve({ id, ruc: '20601234561', activa: true, razonSocial: 'FE A SAC', nombreComercial: null, domicilioFiscal: 'AV. LARCO 123', ubigeo: '150122' });
+    const guardarArchivo = () => {
+      const archivoId = uuidV7();
+      archivosGuardados.push(archivoId);
+      return Promise.resolve(archivoId);
+    };
+    const enviar = (comprobanteId: string, esUltimo = true) => envio.ejecutar({ tenantId: tenantA, comprobanteId }, { numero: 1, esUltimo });
+    const filaDe = async (id: string) => (await crudo('SELECT * FROM fe.comprobante WHERE id = $1', [id]))[0];
+    const intentosDe = (id: string) => crudo('SELECT intento, resultado, codigo, proveedor FROM fe.envio WHERE comprobante_id = $1 ORDER BY intento', [id]);
+
+    beforeAll(async () => {
+      // El simulador declara dominios_permitidos (01r): el emisor necesita una URL de ellos.
+      await crudo('UPDATE fe.emisor SET secreto_credencial_id = $2, url_proveedor = $3 WHERE tenant_id = $1', [tenantA, uuidV7(), 'https://simulador.invalid/api/v1/ruta']);
+      const catalogo = catalogoDeLaBase(unidadDeTrabajo);
+      envio = new EnviarComprobante({
+        unidadDeTrabajo,
+        contexto,
+        reloj: new SystemClock(),
+        ids: { next: uuidV7 },
+        publicador: app.get<EventPublisher>(EVENT_PUBLISHER),
+        comprobantes: new RepositorioComprobantesTypeOrm(unidadDeTrabajo, contexto),
+        envios: new RepositorioEnviosTypeOrm(unidadDeTrabajo, contexto),
+        emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
+        empresas: { obtener: empresaConDomicilio },
+        sucursales: new SucursalesEmisorasOrg(new ConsultarSucursal({ unidadDeTrabajo, lectura: new LecturaOrganizacionTypeOrm(unidadDeTrabajo, contexto) })),
+        catalogos: new CatalogosSunatCatalogo(catalogo),
+        proveedores: new ProveedoresFeCatalogo(catalogo),
+        boveda: { leer: () => Promise.resolve(new TextEncoder().encode(token)) },
+        resolutor: new ResolutorPseMapa({ SIMULADO: new PseSimulador() }),
+        archivos: { guardarXml: guardarArchivo, guardarCdr: guardarArchivo },
+        informar: () => undefined,
+        avisar: () => undefined,
+      });
+    });
+
+    it('TR-CA-150: deja la factura ACEPTADA con la respuesta y los archivos, un intento en fe.envio y un cpe.aceptado en el outbox', async () => {
+      const { comprobanteId } = await enTenant(tenantA, () => emision.emitir(factura()));
+
+      await enviar(comprobanteId);
+
+      const fila = await filaDe(comprobanteId);
+      expect(fila).toMatchObject({ estado: 'ACEPTADO', version: 2, codigo_respuesta: '0', observaciones: [], xml_archivo_id: archivosGuardados.at(-2), cdr_archivo_id: archivosGuardados.at(-1) });
+      expect(fila.respondido_en).toBeInstanceOf(Date);
+      expect(await intentosDe(comprobanteId)).toEqual([{ intento: 1, resultado: 'ACEPTADO', codigo: '0', proveedor: 'SIMULADO' }]);
+      const eventos = await crudo('SELECT event_type FROM sync.outbox WHERE aggregate_id = $1 ORDER BY created_at, event_type', [comprobanteId]);
+      expect(eventos.map((evento) => evento.event_type).sort()).toEqual([EVENTOS_FE.comprobanteAceptado, EVENTOS_FE.comprobanteEmitido].sort());
+      const leido = await enTenant(tenantA, () => consulta.ejecutar(comprobanteId));
+      expect(leido.estado).toBe('ACEPTADO');
+    });
+
+    it('un ACEPTADO no cambia más en la base (TR-RN-022) y un segundo envío no hace nada', async () => {
+      const { comprobanteId } = await enTenant(tenantA, () => emision.emitir(factura()));
+      await enviar(comprobanteId);
+
+      await expect(crudo(`UPDATE fe.comprobante SET estado = 'RECHAZADO' WHERE id = $1`, [comprobanteId])).rejects.toMatchObject({ driverError: { code: '23001' } });
+      await enviar(comprobanteId);
+      expect(await intentosDe(comprobanteId)).toHaveLength(1);
+    });
+
+    it('ERROR_TECNICO en el último intento: queda PENDIENTE_ENVIO con los intentos numerados', async () => {
+      token = TOKEN_SIMULAR_ERROR;
+      try {
+        const { comprobanteId } = await enTenant(tenantA, () => emision.emitir(factura()));
+        await expect(enviar(comprobanteId, false)).rejects.toThrow();
+        await enviar(comprobanteId, true);
+
+        expect((await filaDe(comprobanteId)).estado).toBe('PENDIENTE_ENVIO');
+        expect((await intentosDe(comprobanteId)).map((intento) => [intento.intento, intento.resultado])).toEqual([
+          [1, 'ERROR_TECNICO'],
+          [2, 'ERROR_TECNICO'],
+        ]);
+      } finally {
+        token = 'token-del-simulador';
+      }
+    });
+
+    it('TR-RNF-010: un trabajo con el tenant B no ve el comprobante de A ni sus intentos', async () => {
+      const { comprobanteId } = await enTenant(tenantA, () => emision.emitir(factura()));
+
+      await envio.ejecutar({ tenantId: tenantB, comprobanteId }, { numero: 1, esUltimo: true });
+
+      expect((await filaDe(comprobanteId)).estado).toBe('PENDIENTE_ENVIO');
+      expect(await intentosDe(comprobanteId)).toEqual([]);
+    });
   });
 
   it('TR-RNF-010: el tenant B no lee el comprobante de A ni numera sobre su empresa; con la misma clave emite lo suyo', async () => {

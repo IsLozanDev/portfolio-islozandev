@@ -1,11 +1,11 @@
-import type { TenantContext } from '@vitrina/plataforma/kernel';
 import type { TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
+import { ConflictError, type TenantContext } from '@vitrina/plataforma/kernel';
 import { QueryFailedError, type EntityManager, type FindOptionsWhere } from 'typeorm';
 import type { RepositorioComprobantes } from '../../application/ports/repositorio-comprobantes.js';
 import type { Comprobante } from '../../domain/comprobante/comprobante.js';
 import { EmisionConcurrenteError } from '../../domain/errores.js';
 import { ComprobanteEntidad, CuotaComprobanteEntidad, LineaComprobanteEntidad, type FilaComprobante } from './entidades-comprobante.js';
-import { comprobanteDesdeFilas, filaDesdeComprobante, filasDeCuotas, filasDeLineas } from './mapeo-comprobante.js';
+import { cambiosDeRespuesta, comprobanteDesdeFilas, filaDesdeComprobante, filasDeCuotas, filasDeLineas } from './mapeo-comprobante.js';
 
 const VIOLACION_UNICA = '23505';
 const RESTRICCION_IDEMPOTENCIA = 'uq_comprobante_idempotencia';
@@ -46,6 +46,15 @@ export class RepositorioComprobantesTypeOrm implements RepositorioComprobantes {
     await this.manager.getRepository(LineaComprobanteEntidad).insert(filasDeLineas(comprobante));
     const cuotas = filasDeCuotas(comprobante);
     if (cuotas.length > 0) await this.manager.getRepository(CuotaComprobanteEntidad).insert(cuotas);
+  }
+
+  /** Bloqueo optimista: el UPDATE filtra por la versión leída. */
+  async actualizarRespuesta(comprobante: Comprobante, versionEsperada: number): Promise<void> {
+    const tenantId = this.contexto.current().tenantId;
+    const resultado = await this.manager
+      .getRepository(ComprobanteEntidad)
+      .update({ id: comprobante.id, tenantId, version: versionEsperada }, cambiosDeRespuesta(comprobante));
+    if (resultado.affected !== 1) throw new ConflictError('Otro envío cambió el comprobante; se reintenta');
   }
 
   private async buscarDelTenant(criterio: FindOptionsWhere<FilaComprobante>): Promise<Comprobante | null> {

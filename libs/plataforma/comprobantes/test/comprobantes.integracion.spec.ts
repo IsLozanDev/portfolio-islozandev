@@ -54,13 +54,13 @@ function catalogoDeLaBase(unidadDeTrabajo: TypeOrmUnitOfWork): CatalogoPort {
   return {
     async validarItem(catalogo: string, codigo: string): Promise<ResultadoValidacion> {
       const [fila] = (await unidadDeTrabajo.manager.query(
-        `SELECT i.nombre, i.atributos FROM cat.catalogo_item i JOIN cat.catalogo c ON c.id = i.catalogo_id
+        `SELECT i.nombre, i.atributos, i.codigo_externo FROM cat.catalogo_item i JOIN cat.catalogo c ON c.id = i.catalogo_id
           WHERE c.codigo = $1 AND i.codigo = $2 AND i.activo`,
         [catalogo, codigo],
-      )) as { nombre: string; atributos: Record<string, unknown> }[];
+      )) as { nombre: string; atributos: Record<string, unknown>; codigo_externo: string | null }[];
       return fila
-        ? { valido: true, motivo: null, atributos: fila.atributos, nombre: fila.nombre }
-        : { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null };
+        ? { valido: true, motivo: null, atributos: fila.atributos, nombre: fila.nombre, codigoExterno: fila.codigo_externo }
+        : { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null, codigoExterno: null };
     },
   };
 }

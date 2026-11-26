@@ -33,6 +33,7 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 17c | admin-org-cliente | U-05 (RF 002-004) y U-06 (app admin cliente con sesión compartida). Front, más `GET` por id de empresa, sucursal y unidad y CORS por variable (`ORIGENES_PERMITIDOS`) | 9 | 16a, 17a | 17c | Implementado |
 | 15b | identidad-visual | Revisión de diseño (sin historia en el plan): tema esmeralda, shell con menú oscuro, marco de `/auth` con la vitrina, chips de estado, `vit-tabla` como lista en celular; adopción en usuarios y tenants. Canvas «Vitrina · Diseño UI» | 9 | 15, 16a, 17b, 17c | — | Implementado |
 | 15d | menu-colapsable-y-busqueda | Revisión de diseño (sin historia en el plan): menú lateral que se oculta a una franja de iconos con submenú, preferencia en `localStorage`, búsqueda de opciones con Ctrl K y teclado. Canvas «Shell · menú» | 6 | 15, 15b | — | Implementado |
+| 15e | ui-secciones-plegables | Revisión de diseño (sin historia en el plan): `vit-grupo-plegable` y `vit-seccion-plegable` en `shared/ui` sobre `CdkAccordion`, con resumen, animación y teclado; primer consumidor la ficha de persona; regla en `CLAUDE.md` para páginas con tres o más secciones. Canvas «15e · Secciones plegables» | 4-5 | 15, 15b, 15c, 38 | — | Pendiente |
 | 15c | tema-oscuro | Revisión de diseño (sin historia en el plan): tema oscuro con selector Sistema / Claro / Oscuro en el menú de usuario, `light-dark()` en tokens, `data-tema` y script anti-parpadeo. Canvas «Tema oscuro» | 6 | 15b, 15d | — | Implementado |
 | 18 | seg-bitacora-soporte | S-06 (RF 019, 020; TR-RN-011) | 4-6 | 08 | 18 | Implementado |
 | 18b | seg-bitacora-ingreso-exportacion | S-06 (RF 019, 020): `LOGIN` y fallos de contraseña o MFA en la bitácora, ingreso por la API con bloqueo de fuerza bruta en Redis y exportación XLSX con permiso propio auditado | 8 | 05, 06, 13, 14, 18 | 18 | Implementado |
@@ -120,7 +121,7 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 59 | fe-entrega-comprobante | R2-09: TR-RF-062 (correo) | 3-4 | 42, 52, 53 | `tr-fe/fe-entrega-comprobante.md` | Pendiente |
 | 60 | seq-series-ui | UI de TR-RF-035 (deuda de D-05, R1) | 4-5 | 10, 17c | `tr-fe/fe-admin-ui.md` | Pendiente |
 | 61 | cfg-parametros-ui | UI de TR-RF-031, 033 (deuda de D-05, R1) | por estimar | 09, 17c | `tr-pendientes-base/README.md` (pendiente 3) | Pendiente |
-| 62 | fe-admin-emisor-ui | R2-11: UI de 052 y `GET /v1/fe/emisores` | 7,5-8,5 | 49, 50, 51c, 17c | `tr-fe/fe-admin-ui.md` | Pendiente |
+| 62 | fe-admin-emisor-ui | R2-11: UI de 052 y `GET /v1/fe/emisores` | 7,5-8,5 | 49, 50, 51c, 17c, 15e | `tr-fe/fe-admin-ui.md` | Pendiente |
 | 63 | aud-incidentes-datos | R2-17: TR-RF-091 (back) y consumidor de `aud.integridad.rota` | 7 | 20b, 42 | `tr-aud-arco/arco-incidentes-datos.md` | Pendiente |
 | 64 | arco-solicitud-plazos | R2-17: TR-RF-088 (registro por el responsable), alertas 50/80 % | 8 | 10, 19c, 20a, 33, 42 | `tr-aud-arco/arco-registro-atencion.md` | Pendiente |
 | 65 | arco-atencion-compilado | R2-17: TR-RF-089 | 7 | 64, 33 | `tr-aud-arco/arco-registro-atencion.md` | Pendiente |

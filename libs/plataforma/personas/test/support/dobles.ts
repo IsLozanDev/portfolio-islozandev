@@ -249,11 +249,11 @@ export class CatalogoFijo implements Pick<CatalogoPort, 'validarItem'> {
 
   async validarItem(catalogo: string, codigo: string): Promise<ResultadoValidacion> {
     this.consultas.push([catalogo, codigo]);
-    if (this.ubigeosCerrados.includes(codigo)) return { valido: false, motivo: 'FUERA_DE_VIGENCIA', atributos: {}, nombre: null };
+    if (this.ubigeosCerrados.includes(codigo)) return { valido: false, motivo: 'FUERA_DE_VIGENCIA', atributos: {}, nombre: null, codigoExterno: null };
     const ubigeo = this.ubigeos[codigo];
-    if (ubigeo) return { valido: true, motivo: null, ...ubigeo };
+    if (ubigeo) return { valido: true, motivo: null, codigoExterno: null, ...ubigeo };
     const valido = this.vigentes.includes(codigo);
-    return { valido, motivo: valido ? null : 'INEXISTENTE', atributos: valido ? {} : null, nombre: valido ? codigo : null };
+    return { valido, motivo: valido ? null : 'INEXISTENTE', atributos: valido ? {} : null, nombre: valido ? codigo : null, codigoExterno: null };
   }
 }
 

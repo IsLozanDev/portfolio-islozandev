@@ -187,13 +187,14 @@ describe('ConsultarItems (TR-RF-024, TR-RNF-102)', () => {
 });
 
 describe('ValidarItem (TR-RF-027, CatalogoPort)', () => {
-  it('TR-CA-070: DNI es válido y devuelve longitud 8', async () => {
+  it('TR-CA-070: DNI es válido y devuelve longitud 8 y su código SUNAT', async () => {
     const { validar } = await lectura();
     expect(await validar.validarItem('TIPO_DOC_IDENTIDAD', 'DNI')).toEqual({
       valido: true,
       motivo: null,
       atributos: { longitud: 8, regex: '^[0-9]{8}$' },
       nombre: 'DNI',
+      codigoExterno: '1',
     });
   });
 
@@ -208,7 +209,7 @@ describe('ValidarItem (TR-RF-027, CatalogoPort)', () => {
       version: null,
       actorId: ANA,
     });
-    expect(await validar.validarItem('MEDIO_PAGO', 'PLIN')).toEqual({ valido: false, motivo: 'OCULTO', atributos: {}, nombre: null });
+    expect(await validar.validarItem('MEDIO_PAGO', 'PLIN')).toEqual({ valido: false, motivo: 'OCULTO', atributos: {}, nombre: null, codigoExterno: null });
     actual.comoTenant(OTRA_CLINICA);
     expect(await validar.validarItem('MEDIO_PAGO', 'PLIN')).toMatchObject({ valido: true });
   });
@@ -221,7 +222,7 @@ describe('ValidarItem (TR-RF-027, CatalogoPort)', () => {
 
     expect(await validar.validarItem('MEDIO_PAGO', 'CHEQUE')).toMatchObject({ valido: false, motivo: 'INACTIVO' });
     expect(await validar.validarItem('MEDIO_PAGO', 'VALE')).toMatchObject({ valido: false, motivo: 'FUERA_DE_VIGENCIA' });
-    expect(await validar.validarItem('MEDIO_PAGO', 'BITCOIN')).toEqual({ valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null });
+    expect(await validar.validarItem('MEDIO_PAGO', 'BITCOIN')).toEqual({ valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null, codigoExterno: null });
   });
 
   it('un catálogo inexistente lanza CatalogoNoExisteError', async () => {

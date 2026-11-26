@@ -31,7 +31,7 @@ Lo que hay en el código hoy (revisado al redactar):
   - publica `archivo.disponible`, como al terminar un análisis.
 
   Lo exportan `ArchivosModule.register` y `registrarWorker`.
-- **Disparo.** Un consumidor de `cpe.emitido` encola en la cola BullMQ `fe-envios` con `jobId = comprobanteId`. Se saltan los comprobantes con `modoEnvio = RESUMEN` (van en el resumen diario del 55).
+- **Disparo.** Un consumidor de `cpe.emitido` encola en la cola BullMQ `fe-envios` con `jobId = comprobanteId`. Los comprobantes con `modoEnvio = RESUMEN` los descarta el procesador (van en el resumen diario del 55).
 - **Procesador `EnviarComprobante`** (en `apps/worker`, con el contexto del tenant del trabajo, fuera de la transacción mientras llama a SUNAT):
   1. Lee el comprobante. Si ya no está en `PENDIENTE_ENVIO`, termina sin enviar.
   2. Prepara el envío: emisor habilitado (`VERIFICADO` o `PRODUCCION`), proveedor con adaptador, datos del emisor, anexo SUNAT **de la sucursal del comprobante**, código SUNAT del tipo de documento del adquirente (`codigo_externo` del cat. 06) y credenciales de la bóveda.
@@ -201,7 +201,7 @@ subir(ruta: string, bytes: Uint8Array, mime: string): Promise<void>;
 - `ports/cola-envios-fe.ts`: `TrabajoEnvioFe { tenantId, comprobanteId }` y `ColaEnviosFe.encolar`.
 - `ports/repositorio-envios.ts`: `RepositorioEnvios.siguienteIntento(comprobanteId)` y `registrar(intento)`.
 - `ports/archivos-cpe.ts`: `ArchivosCpe.guardarXml(comprobante, bytes)` y `guardarCdr(comprobante, bytes)` → `archivoId | null`, con los 3 intentos en memoria. Implementado sobre `ARCHIVO_SISTEMA_PORT`, con nombres `RUC-TT-SERIE-NUMERO.xml` y `R-RUC-TT-SERIE-NUMERO.zip`.
-- `encolar-envio-comprobante.ts`: salta `RESUMEN` y encola los demás.
+- `encolar-envio-comprobante.ts`: encola cada `cpe.emitido`; el procesador descarta `RESUMEN`.
 - `enviar-comprobante.ts` (`EnviarComprobante.ejecutar(trabajo, intento)`):
   1. Transacción de lectura: comprobante, emisor, proveedor, empresa, sucursal y código del adquirente. Termina si el comprobante ya no está `PENDIENTE_ENVIO`. Si algo impide enviar, registra el intento `NO_ENVIADO` con el motivo y termina.
   2. Envía fuera de la transacción.
@@ -274,7 +274,7 @@ subir(ruta: string, bytes: Uint8Array, mime: string): Promise<void>;
 - [ ] `ERROR_TECNICO`: se reintenta hasta 3 veces con backoff; agotados los intentos, el comprobante sigue `PENDIENTE_ENVIO` con un intento `ERROR_TECNICO` por cada vez en `fe.envio`, y no se pierde (TR-RNF-104).
 - [ ] `CREDENCIAL_INVALIDA`: el comprobante sigue `PENDIENTE_ENVIO`, sin reintento ni evento, con log de alerta y un intento registrado. La prueba del emisor la sigue viendo como `RECHAZADA`.
 - [ ] Emisor no habilitado, proveedor `NUBEFACT` o datos del emisor incompletos: intento `NO_ENVIADO` con el motivo, comprobante en `PENDIENTE_ENVIO` y sin llamar al PSE.
-- [ ] Una boleta con `modoEnvio = RESUMEN` no se encola.
+- [ ] Una boleta con `modoEnvio = RESUMEN` no se envía ni registra intentos.
 - [ ] El documento enviado lleva el anexo SUNAT de la sucursal del comprobante y el código SUNAT del tipo de documento del adquirente.
 - [ ] El mismo `cpe.emitido` entregado dos veces no envía dos veces ni duplica eventos: `jobId`, estado y `version`.
 - [ ] Falla de ARC después de la respuesta: el estado final y el evento se registran con el `archivo_id` en `null` y el log `fe.envio.archivo_no_guardado`; no se reenvía a SUNAT.
@@ -308,6 +308,9 @@ subir(ruta: string, bytes: Uint8Array, mime: string): Promise<void>;
 - **Sí:** `fe.envio` cuenta los intentos por comprobante, no por trabajo. El 56 sigue la misma numeración.
 - **Sí:** `registerEnvios` aparte de `registerPruebas`, y el mismo `adaptadoresPse`. Cada cola abre su conexión solo donde se usa; los adaptadores y el breaker no se duplican en el código.
 - **No:** enviar las boletas `RESUMEN` aquí. Van en el resumen diario del 55.
+- **Sí:** el procesador descarta las boletas `RESUMEN`, no el consumidor. `cpe.emitido` no trae el modo de envío y sumarlo cambiaría un esquema que ya consumen otros; el procesador ya lee el comprobante.
+- **Sí:** `CATALOGO_PORT.validarItem` suma `codigoExterno` (cambio aditivo en `catalogos`). Decisión del usuario (2026-11-25, durante la implementación). FE lee de ahí el código SUNAT del tipo de documento del adquirente; la alternativa era un mapa fijo en FE que duplicaba el catálogo.
+- **Sí:** la matriz de límites (`comp('fe', …, 'arc')`) y `boundaries-test` van en el paso 4, junto con el primer import de `archivos` desde `comprobantes`: sin ellos el lint del paso falla.
 - **No:** permiso nuevo. El worker no tiene endpoint y el `GET` sigue con `plat.fe.emitir`.
 
 ## Riesgos

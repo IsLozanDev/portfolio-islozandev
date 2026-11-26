@@ -1,6 +1,6 @@
 import type { AtributosItem, CatalogoPort, ResultadoValidacion } from '@vitrina/plataforma/catalogos';
 import type { CorrelativoPort, NumeroEmitido, SeriesActivasPort, SolicitudNumero, TipoDocumento } from '@vitrina/plataforma/correlativos';
-import type { TenantContext } from '@vitrina/plataforma/kernel';
+import { ConflictError, type TenantContext } from '@vitrina/plataforma/kernel';
 import type { DatosPadron, PadronRucPort } from '@vitrina/plataforma/org';
 import type { ParametroPort } from '@vitrina/plataforma/parametros';
 import type { DependenciasEmision } from '../../src/application/emitir-comprobante.js';
@@ -40,6 +40,11 @@ const ITEMS_DE_PRUEBA: Record<string, Record<string, AtributosItem>> = {
   TASA_IGV: { GENERAL: { tasa: '0.18' }, REDUCIDO_RESTAURANTES: { tasa: '0.105' } },
 };
 
+/** El `codigo_externo` SUNAT (cat. 06) de los tipos de documento, como en docs/datos-oficiales/tipo_doc_identidad.csv. */
+export const CODIGOS_EXTERNOS_DE_PRUEBA: Record<string, Record<string, string>> = {
+  TIPO_DOC_IDENTIDAD: { DOC_0: '0', DNI: '1', CE: '4', RUC: '6' },
+};
+
 /** CatalogoPort con los ítems vigentes hoy; `items` se cambia en la prueba para simular otra vigencia. */
 export class CatalogoMemoria implements CatalogoPort {
   items: Record<string, Record<string, AtributosItem>> = structuredClone(ITEMS_DE_PRUEBA);
@@ -48,9 +53,9 @@ export class CatalogoMemoria implements CatalogoPort {
   validarItem(catalogo: string, codigo: string): Promise<ResultadoValidacion> {
     this.consultas += 1;
     const atributos = this.items[catalogo]?.[codigo];
-    return Promise.resolve(
-      atributos ? { valido: true, motivo: null, atributos, nombre: codigo } : { valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null },
-    );
+    if (!atributos) return Promise.resolve({ valido: false, motivo: 'INEXISTENTE', atributos: null, nombre: null, codigoExterno: null });
+    const codigoExterno = CODIGOS_EXTERNOS_DE_PRUEBA[catalogo]?.[codigo] ?? null;
+    return Promise.resolve({ valido: true, motivo: null, atributos, nombre: codigo, codigoExterno });
   }
 }
 
@@ -155,6 +160,16 @@ export class ComprobantesMemoria implements RepositorioComprobantes {
       return Promise.reject(new EmisionConcurrenteError());
     }
     this.filas.push(Comprobante.reconstituir({ ...comprobante.datos }));
+    return Promise.resolve();
+  }
+
+  /** Como el UPDATE con bloqueo optimista: solo si la fila sigue en la versión leída. */
+  actualizarRespuesta(comprobante: Comprobante, versionEsperada: number): Promise<void> {
+    const posicion = this.filas.findIndex((fila) => fila.id === comprobante.id && fila.datos.tenantId === this.contexto.current().tenantId);
+    if (posicion < 0 || this.filas[posicion]?.datos.version !== versionEsperada) {
+      return Promise.reject(new ConflictError('Otro envío cambió el comprobante; se reintenta'));
+    }
+    this.filas[posicion] = Comprobante.reconstituir({ ...comprobante.datos });
     return Promise.resolve();
   }
 

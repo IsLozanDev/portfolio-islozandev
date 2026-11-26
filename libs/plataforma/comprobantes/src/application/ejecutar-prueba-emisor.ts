@@ -2,10 +2,10 @@ import type { Clock, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/
 import type { BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { boletaDePrueba, type DocumentoElectronico, type EmisorDocumento } from '../domain/documento-electronico.js';
 import { emisorDePrueba, exigirDatosEmisor } from '../domain/emisor-documento.js';
-import type { Emisor } from '../domain/emisor.js';
 import { DatosEmisorIncompletosError, UrlProveedorNoPermitidaError } from '../domain/errores.js';
 import { emisorVerificado } from '../domain/eventos-fe.js';
 import type { RespuestaPse } from '../domain/respuesta-pse.js';
+import { credencialesDelEmisor } from './credenciales-emisor.js';
 import { esSunatDirecto, urlDelProveedor } from './dependencias-fe.js';
 import type { IntentoPrueba, TrabajoPruebaFe } from './ports/cola-pruebas-fe.js';
 import type { EmpresaEmisora, EmpresaEmisoraPort, EstablecimientoPrincipalPort } from './ports/empresa-emisora.port.js';
@@ -54,8 +54,6 @@ interface EnvioPreparado {
 
 /** La configuración no permite enviar: se registra como rechazo sin llamar al PSE. */
 type Preparacion = { envio: EnvioPreparado } | { rechazo: RespuestaPse } | null;
-
-const decodificador = new TextDecoder();
 
 function rechazoPorConfiguracion(codigo: string, descripcion: string): Preparacion {
   return { rechazo: { resultado: 'RECHAZADO', codigo, descripcion, observaciones: [] } };
@@ -119,7 +117,7 @@ export class EjecutarPruebaEmisor {
       throw error;
     }
     const documento = boletaDePrueba(emisorDocumento, proveedor.seriePrueba, numeroPrueba, reloj.now());
-    const credenciales = await this.credencialesDe(emisor, emisor.secretoCredencialId, url, proveedor);
+    const credenciales = await credencialesDelEmisor(emisor, emisor.secretoCredencialId, url, proveedor, this.dependencias.boveda);
     return { envio: { proveedor: proveedor.codigo, credenciales, documento } };
   }
 
@@ -127,22 +125,6 @@ export class EjecutarPruebaEmisor {
   private async emisorDelDocumento(proveedor: ProveedorFe, empresa: EmpresaEmisora): Promise<EmisorDocumento> {
     if (!esSunatDirecto(proveedor)) return emisorDePrueba(empresa);
     return exigirDatosEmisor(empresa, await this.dependencias.establecimientos.codigo(empresa.id));
-  }
-
-  private async credencialesDe(emisor: Emisor, secretoId: string, url: string | null, proveedor: ProveedorFe): Promise<CredencialesPse> {
-    const token = decodificador.decode(await this.dependencias.boveda.leer(secretoId));
-    const credenciales: CredencialesPse = { url, usuario: emisor.usuarioProveedor, token, ambiente: emisor.ambiente };
-    if (!proveedor.requiereCertificado) return credenciales;
-    const certificado = await this.certificadoDe(emisor);
-    return certificado ? { ...credenciales, certificado } : credenciales;
-  }
-
-  /** Solo en el worker y solo si el proveedor lo requiere; no sale del adaptador ni se registra. */
-  private async certificadoDe(emisor: Emisor): Promise<CredencialesPse['certificado']> {
-    const secretos = emisor.secretosCertificado;
-    if (secretos === null) return undefined;
-    const { boveda } = this.dependencias;
-    return { pfx: await boveda.leer(secretos.certificadoId), clave: decodificador.decode(await boveda.leer(secretos.claveId)) };
   }
 
   private enviar({ proveedor, credenciales, documento }: EnvioPreparado): Promise<RespuestaPse> {

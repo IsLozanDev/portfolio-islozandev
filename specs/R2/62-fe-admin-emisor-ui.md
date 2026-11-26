@@ -1,7 +1,7 @@
 # SPEC 62 — Facturación electrónica: lista de emisores por empresa y página del emisor con proveedor, certificado, prueba en beta y paso a producción
 
 > **Status:** Borrador
-> **Depends on:** SPEC 49, SPEC 50, SPEC 51c, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d
+> **Depends on:** SPEC 49, SPEC 50, SPEC 51c, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d, SPEC 15e
 > **Date:** 2026-11-25
 > **Objective:** Dar al encargado de facturación, en la app de administración, una lista de las empresas del tenant con el estado de su emisor electrónico y una página por empresa donde configura el proveedor y la credencial, sube el certificado, lanza la prueba en beta y ve su resultado, y pasa a producción con confirmación y aal2 (UI de TR-RF-052).
 
@@ -35,7 +35,7 @@ Lo que hay en el código hoy (revisado al redactar):
   - `plat.catalogo.leer` en `PLAT_ENCARGADO_FACTURACION`.
 - **Lib nueva `libs/plataforma/comprobantes-ui`** (`scope:plataforma`, `type:feature`) con rutas propias, montadas desde `admin-cliente.routes.ts` bajo `fe`.
 - **Lista `/admin/fe/emisores`** (pantalla tipo Lista). Por fila: empresa, RUC, proveedor, ambiente, estado y vencimiento del certificado, con aviso si vence en 30 días o menos. Tiene vista de celular, y la fila abre la página del emisor.
-- **Página `/admin/fe/emisores/:empresaId`** (pantalla tipo Formulario, con `aal2Guard`). Arriba muestra el encabezado con el estado y debajo cuatro tarjetas en orden:
+- **Página `/admin/fe/emisores/:empresaId`** (pantalla tipo Formulario, con `aal2Guard`). Arriba muestra el encabezado con el estado y debajo cuatro secciones plegables en orden (`vit-grupo-plegable` y `vit-seccion-plegable` del spec 15e), cada una con su resumen cuando está contraída:
   1. **Proveedor y credencial:** proveedor del catálogo, usuario (para `SUNAT`, «Usuario secundario SOL»), clave, URL solo si el proveedor la pide, régimen de IGV y leyenda del pie.
   2. **Certificado:** subida del `.pfx` (50 KB como máximo) con su clave, y RUC y vencimiento leídos.
   3. **Prueba en beta:** botón «Ejecutar prueba» y el resultado, que se consulta solo cada 3 s durante 2 min como máximo.
@@ -64,7 +64,7 @@ Lo que hay en el código hoy (revisado al redactar):
 | `org` (`ListarEmpresas`) | Adaptador de `listarActivas()`. |
 | `personas-ui` (estructura de lib feature: `models`, `services`, `utils`, `solicitar.ts`) | Molde de `comprobantes-ui`. |
 | `admin-cliente` (`empresa-formulario`, `utils/formulario-empresa.ts`, `empresas-lista`) | Patrón de formulario reactivo de página, de lista y de mapeo de errores de la API. |
-| `shared/ui` (`TablaComponent` con `ColumnaTabla.movil`, `ChipEstadoComponent`, `EstadoVacioComponent`, `CargandoComponent`, `AccionesFormularioComponent`, `AvisosService`) | Lista, chips, estados vacíos y de carga, pies de tarjeta y confirmación. |
+| `shared/ui` (`GrupoPlegableComponent`, `SeccionPlegableComponent` del spec 15e, `TablaComponent` con `ColumnaTabla.movil`, `ChipEstadoComponent`, `EstadoVacioComponent`, `CargandoComponent`, `AccionesFormularioComponent`, `AvisosService`) | Lista, chips, estados vacíos y de carga, pies de tarjeta y confirmación. |
 | `shared/auth` (`aal2Guard`, `permisoGuard`, `vitSiPermiso`) | Ruta de la página con aal2; acciones solo con `plat.fe.configurar`. |
 | `consola-tenants.routes.ts` | Patrón de ruta detrás de `aal2Guard`. |
 | Canvas: `IDN-Cuota-Detalle`, `IDN-Proveedores`, `O-Empresas`, `Formulario` | Base visual de los artboards nuevos. |
@@ -127,7 +127,7 @@ Molde de `personas-ui`. Alias `@vitrina/plataforma/comprobantes-ui`, prefijo `vi
 | | `seguimiento-prueba.service.ts` | `seguir(empresaId)`: `timer(0, INTERVALO_CONSULTA_PRUEBA_MS)` de 3000 ms con `switchMap(obtener)`. Termina cuando `prueba.estado !== 'EN_PROCESO'` o tras `MAXIMO_CONSULTAS_PRUEBA` (40, unos 2 min). Se cancela al destruir la página. |
 | `utils/` | `validar-certificado.ts` | `validarArchivoCertificado(archivo)`: extensión `.pfx` o `.p12` y `TAMANO_MAXIMO_CERTIFICADO_BYTES = 50 * 1024`. Devuelve un error con nombre o `null`. |
 | | `vencimiento-certificado.ts` | `diasParaVencer(venceEn, hoy)` y `porVencer(venceEn, hoy)` con `DIAS_AVISO_CERTIFICADO = 30`, en fecha de Lima. |
-| | `reglas-emisor.ts` | Funciones puras que habilitan cada tarjeta: `certificadoHabilitado(emisor)`, `pruebaHabilitada(emisor)`, `produccionHabilitada(emisor, ahora)` (VERIFICADO, prueba ACEPTADA y `resultadoEn` de menos de 24 h) y `motivoProduccionDeshabilitada(emisor, ahora)`. |
+| | `reglas-emisor.ts` | `seccionesIniciales(emisor, ahora)`: qué secciones abren al cargar (ver «Secciones plegables»). Y funciones puras que habilitan cada tarjeta: `certificadoHabilitado(emisor)`, `pruebaHabilitada(emisor)`, `produccionHabilitada(emisor, ahora)` (VERIFICADO, prueba ACEPTADA y `resultadoEn` de menos de 24 h) y `motivoProduccionDeshabilitada(emisor, ahora)`. |
 | | `formulario-emisor.ts` | `FormGroup` tipado del proveedor y su conversión a la carga del `PUT`: `clave` solo si se escribió y `url_proveedor` solo si `pideUrl`. |
 | | `solicitar.ts` | Igual que en `personas-ui`: mapea el `HttpErrorResponse` a `{ codigo, mensaje }`. |
 | `components/` | `tarjeta-proveedor/` | Tarjeta 1, con el formulario reactivo y el pie Guardar y Descartar. |
@@ -155,6 +155,22 @@ Molde de `personas-ui`. Alias `@vitrina/plataforma/comprobantes-ui`, prefijo `vi
 - `409 VERSION_OBSOLETA` → aviso «Otro usuario cambió el emisor. Se recargaron los datos.» y se recarga el emisor.
 - `422 DATOS_EMISOR_INCOMPLETOS` (`SUNAT` sin domicilio fiscal o ubigeo) → mensaje con un enlace a `/admin/empresas/:id` para completarlos.
 - Si la consulta automática se agota con la prueba aún `EN_PROCESO` → «Sigue en proceso. SUNAT puede tardar.» con un botón «Actualizar».
+
+### Secciones plegables
+
+Cada tarjeta es una `vit-seccion-plegable`. Su entrada es el número del paso o una marca de hecho, y al final lleva el chip que corresponda.
+
+| Sección | Resumen contraída | Chip al final |
+| --- | --- | --- |
+| Proveedor y credencial | «{proveedor} · {usuario}» | — |
+| Certificado digital | «RUC {ruc} · vence {dd/mm/aa}» | «Vence en N días» o «Vencido», si aplica |
+| Prueba en beta | «Prueba n.º {n} · {estado} · {dd/mm/aa, hh:mm}» o «Sin pruebas» | Estado de la prueba |
+| Producción | Motivo del bloqueo, o «En producción desde …» | — |
+
+- Al cargar, `seccionesIniciales` expande solo el paso pendiente. Sin emisor o en `BORRADOR`, expande el proveedor (y el certificado si falta); en `CONFIGURADO`, la prueba; en `VERIFICADO`, la producción; en `PRODUCCION`, ninguna. Siempre expande el certificado si está por vencer o vencido. Las secciones completas quedan contraídas con su resumen.
+- Una sección deshabilitada se ve contraída y su resumen explica por qué (los textos de la tabla de comportamiento).
+- Al guardar el proveedor con éxito, se contrae y se expande la siguiente sección pendiente. Un error expande la sección donde ocurrió.
+- Mientras la prueba está `EN_PROCESO`, su sección queda expandida.
 
 ### Mensajes de error
 
@@ -189,7 +205,7 @@ Canvas «Vitrina · Diseño UI» (https://claude.ai/artifact/UGvcmiWUiBsMuWerqMi
 | Artboard | Qué fija |
 | --- | --- |
 | `FE-Emisores` (base editable) | Lista: columnas, chips de estado y de vencimiento, fila sin emisor con «Configurar», menú «Facturación» |
-| `FE-Emisor` (base editable) | Encabezado con estado y ambiente, las cuatro tarjetas, mensajes y estados de cada tarjeta, confirmación de producción |
+| `FE-Emisor` (base editable) | Encabezado con estado y ambiente, las cuatro secciones plegables (resúmenes, chips, «Expandir todo»), mensajes y estados de cada una, confirmación de producción |
 | `FE-Emisor-en-curso` | Claro: proveedor SUNAT, certificado por vencer en 18 días, prueba `EN_PROCESO` |
 | `FE-Emisor-verificado-oscuro` | Oscuro: prueba aceptada, «Pasar a producción» habilitado |
 | `FE-Emisor-confirmar-oscuro` | Oscuro: diálogo de confirmación del paso a producción |
@@ -198,7 +214,7 @@ Canvas «Vitrina · Diseño UI» (https://claude.ai/artifact/UGvcmiWUiBsMuWerqMi
 | Pantalla | Pantalla tipo | Cambia en |
 | --- | --- | --- |
 | Lista de emisores | Lista | Chip de vencimiento al lado de la fecha; fila sin emisor con «Configurar» |
-| Página del emisor | Formulario | Cuatro tarjetas numeradas con pie propio en lugar de un solo formulario |
+| Página del emisor | Formulario | Cuatro secciones plegables numeradas con pie propio, en lugar de un solo formulario |
 | Paso a producción | Confirmación | Destructiva, sin motivo |
 
 Lo que el canvas fije y no esté arriba se anota en Decisiones al implementar.
@@ -210,7 +226,7 @@ Lo que el canvas fije y no esté arriba se anota en Decisiones al implementar.
 3. **Lib y modelos.** Generar `comprobantes-ui` con el generador de `nx.json`, los modelos, los mapeos, `mensajes-emisor`, `reglas-emisor`, `validar-certificado` y `vencimiento-certificado`, con pruebas: prueba aceptada hace 23 h habilita producción y hace 25 h no; archivo de 51 KB o `.txt` rechazado; certificado que vence en 30 días avisa y en 31 no.
 4. **Clientes y servicios.** `emisores.cliente`, `proveedores-fe.service` y `seguimiento-prueba.service`, con `HttpTestingController` y reloj falso: la consulta para al salir de `EN_PROCESO` y a los 40 intentos.
 5. **Lista.** Página `emisores-lista` con `vit-tabla`, vista móvil y estado vacío, y las rutas montadas en `admin-cliente`.
-6. **Página del emisor.** La página y las cuatro tarjetas, la tabla de comportamiento por estado, la confirmación con `AvisosService.confirmarDestructiva` y el modo de solo lectura con `vitSiPermiso`.
+6. **Página del emisor.** La página y las cuatro secciones plegables con `seccionesIniciales` y sus resúmenes, la tabla de comportamiento por estado, la confirmación con `AvisosService.confirmarDestructiva` y el modo de solo lectura con `vitSiPermiso`.
 7. **Cierre.** `code-simplifier` sobre los archivos tocados. `npx nx run-many -t lint test -p comprobantes comprobantes-ui admin-cliente plataforma-admin api seguridad boundaries-test`. Manifiesto `1.30.0` aplicado en Supabase dev. Verificación con Playwright (siguiente sección).
 
 ## Verificación con Playwright
@@ -243,6 +259,7 @@ Se recorre en claro, oscuro y 600 px, con la consola sin errores y capturas comp
 - [ ] Las claves nunca se rellenan: al volver a la página los campos de clave están vacíos con la ayuda «Configurada…», y `localStorage`, `sessionStorage` y la URL no las contienen (TR-RNF-113).
 - [ ] Un archivo de más de 50 KB o con otra extensión se rechaza en el cliente, sin llamar a la API.
 - [ ] Con `SUNAT`, el usuario se rotula «Usuario secundario SOL» y el campo de URL no aparece; con un proveedor que la pide, aparece y es obligatoria.
+- [ ] Al abrir un emisor `CONFIGURADO`, solo la sección «Prueba en beta» está expandida; proveedor y certificado se ven contraídos con su resumen. Con el certificado por vencer, su sección también abre expandida. Guardar el proveedor lo contrae y expande el paso siguiente.
 - [ ] Un usuario con solo `plat.fe.consultar` ve la página en solo lectura, sin botones de guardar, subir, probar ni producción.
 - [ ] `409 VERSION_OBSOLETA` recarga el emisor y avisa; `422 DATOS_EMISOR_INCOMPLETOS` muestra el enlace a la empresa.
 - [ ] Al salir de la página con una prueba en curso, no quedan consultas en la pestaña de red.
@@ -260,6 +277,7 @@ Se recorre en claro, oscuro y 600 px, con la consola sin errores y capturas comp
 - **Sí:** entrar por una lista de empresas desde el menú «Facturación > Emisor electrónico», con una página por empresa. Decisión del usuario.
 - **Sí:** `GET /v1/fe/emisores` en el back en lugar de dar `plat.organizacion.consultar` al rol y hacer N llamadas. Decisión del usuario. Es una sola llamada, el rol queda acotado y la vista ya trae el estado de cada emisor.
 - **Sí:** `plat.catalogo.leer` en `PLAT_ENCARGADO_FACTURACION` para listar los proveedores, sin endpoint propio. Decisión del usuario. Es un permiso no sensible que ya tienen los demás roles de operación.
+- **Sí:** secciones plegables del spec 15e, que expanden solo el paso pendiente. Pedido del usuario al revisar el canvas: con todo abierto, la página era muy larga.
 - **Sí:** una página con cuatro tarjetas en orden, no un stepper. Decisión del usuario. Rotar la credencial o el certificado en producción no encaja en un flujo lineal.
 - **Sí:** `aal2Guard` en la ruta de la página; la lista no lo exige. Decisión del usuario. Es el patrón de la consola, y todas las acciones de la página son sensibles.
 - **Sí:** el resultado de la prueba se consulta solo cada 3 s, durante 2 min como máximo, y después aparece «Actualizar». Decisión del usuario. El back es asíncrono (202) y no hay SSE para este evento.
