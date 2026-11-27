@@ -28,8 +28,8 @@
     <form class="flex flex-col gap-4" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
       <section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4" data-tarjeta="tributarios">
         <h2 class="text-lg font-medium">{{ mensajes.datosTributarios }}</h2>
-        <div class="grid gap-x-4 sm:grid-cols-2">
-          <mat-form-field appearance="outline">
+        <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
             <mat-label>{{ mensajes.ruc }}</mat-label>
             <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required (blur)="alSalirDelRuc()" />
             @if (consultandoPadron()) {
@@ -39,7 +39,7 @@
             }
             <mat-error>{{ mensajeDeError(grupo.controls.ruc.errors) }}</mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
             <mat-label>{{ mensajes.razonSocial }}</mat-label>
             <input matInput formControlName="razonSocial" data-campo="razonSocial" autocomplete="off" required />
             <mat-hint data-ayuda="razon-social">{{ noEstaEnPadron() ? mensajes.noEnPadron : mensajes.ayudaRazonSocial }}</mat-hint>
@@ -121,21 +121,21 @@
           </div>
         </div>
 
-        <div class="grid gap-x-4 sm:grid-cols-2">
-          <mat-form-field appearance="outline">
+        <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
             <mat-label>{{ mensajes.telefono }}</mat-label>
             <mat-icon matPrefix aria-hidden="true">call</mat-icon>
             <input matInput vitTelefono formControlName="telefono" data-campo="telefono" />
             <mat-hint>{{ comunes.ayudaTelefono }}</mat-hint>
             <mat-error>{{ mensajeDeError(grupo.controls.telefono.errors) }}</mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
             <mat-label>{{ mensajes.correo }}</mat-label>
             <input matInput type="email" formControlName="correo" data-campo="correo" autocomplete="email" />
             <mat-hint>{{ mensajes.ayudaCorreo }}</mat-hint>
             <mat-error>{{ mensajeDeError(grupo.controls.correo.errors) }}</mat-error>
           </mat-form-field>
-          <mat-form-field appearance="outline" class="sm:col-span-2">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline" class="sm:col-span-2">
             <mat-label>{{ mensajes.sitioWeb }}</mat-label>
             <mat-icon matPrefix aria-hidden="true">public</mat-icon>
             <input matInput formControlName="sitioWeb" data-campo="sitioWeb" inputmode="url" autocomplete="url" (blur)="alSalirDelSitioWeb()" />

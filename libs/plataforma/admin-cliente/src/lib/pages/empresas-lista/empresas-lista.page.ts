@@ -18,8 +18,8 @@ import { PARAMETRO_URL_ORGANIZACION, paginaDesdeUrl, paginaParaUrl, tamanoDesdeU
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaEmpresa {
   id: string;
-  /** URL firmada de la miniatura; null sin logo o sin permiso: se ve la inicial (spec 17d). */
-  logo: string | null;
+  /** La URL firmada de la miniatura va aparte, en `urlsLogo`: así llega sin volver a crear las filas (spec 17d). */
+  logoArchivoId: string | null;
   ruc: string;
   razonSocial: string;
   nombreComercial: string;
@@ -27,7 +27,7 @@ export interface FilaEmpresa {
 }
 
 const COLUMNAS: ColumnaTabla<FilaEmpresa>[] = [
-  { clave: 'logo', titulo: MENSAJES_EMPRESAS.logo, movil: 'inicio' },
+  { clave: 'logoArchivoId', titulo: MENSAJES_EMPRESAS.logo, movil: 'inicio' },
   { clave: 'ruc', titulo: MENSAJES_EMPRESAS.ruc, movil: 'detalle' },
   { clave: 'razonSocial', titulo: MENSAJES_EMPRESAS.razonSocial, movil: 'titulo' },
   { clave: 'nombreComercial', titulo: MENSAJES_EMPRESAS.nombreComercial },
@@ -54,6 +54,8 @@ export class EmpresasListaPage {
   protected readonly pagina = signal(paginaDesdeUrl(this.ruta.snapshot.queryParamMap));
   protected readonly tamano = signal(tamanoDesdeUrl(this.ruta.snapshot.queryParamMap));
   protected readonly listado = signal<Listado<FilaEmpresa>>({ items: [], total: 0 });
+  /** Por id de archivo; sin entrada (sin logo, sin permiso o aún sin firmar) se ve la inicial. */
+  protected readonly urlsLogo = signal<Readonly<Record<string, string>>>({});
   protected readonly cargando = signal(false);
   protected readonly error = signal<string | null>(null);
   /** Solo se pinta la respuesta de la última consulta: un cambio rápido de página no la pisa con una vieja. */
@@ -84,8 +86,8 @@ export class EmpresasListaPage {
     try {
       const listado = await this.empresas.listar({ pagina: this.pagina(), tamano: this.tamano() });
       if (consulta !== this.consultaActual) return;
-      this.listado.set({ items: listado.items.map((empresa) => filaDe(empresa, null)), total: listado.total });
-      void this.mostrarLogos(consulta, listado);
+      this.listado.set({ items: listado.items.map(filaDe), total: listado.total });
+      void this.firmarLogos(consulta, listado.items);
     } catch (error) {
       if (consulta !== this.consultaActual) return;
       this.listado.set({ items: [], total: 0 });
@@ -95,18 +97,20 @@ export class EmpresasListaPage {
     }
   }
 
-  /** La tabla sale enseguida con las iniciales; cada miniatura llega cuando ARC firma su URL. */
-  private async mostrarLogos(consulta: number, listado: Listado<Empresa>): Promise<void> {
-    const urls = await Promise.all(listado.items.map((empresa) => this.logos.url(empresa.logoArchivoId)));
+  /** La tabla sale enseguida con las iniciales; las miniaturas llegan cuando ARC firma sus URL. */
+  private async firmarLogos(consulta: number, empresas: readonly Empresa[]): Promise<void> {
+    const firmadas = await Promise.all(
+      empresas.map(async (empresa) => [empresa.logoArchivoId, await this.logos.url(empresa.logoArchivoId)] as const),
+    );
     if (consulta !== this.consultaActual) return;
-    this.listado.set({ items: listado.items.map((empresa, indice) => filaDe(empresa, urls[indice] ?? null)), total: listado.total });
+    this.urlsLogo.set(Object.fromEntries(firmadas.filter((firmada): firmada is readonly [string, string] => firmada[0] !== null && firmada[1] !== null)));
   }
 }
 
-function filaDe(empresa: Empresa, logo: string | null): FilaEmpresa {
+function filaDe(empresa: Empresa): FilaEmpresa {
   return {
     id: empresa.id,
-    logo,
+    logoArchivoId: empresa.logoArchivoId,
     ruc: empresa.ruc,
     razonSocial: empresa.razonSocial,
     nombreComercial: empresa.nombreComercial ?? MENSAJES_ORGANIZACION.sinDato,

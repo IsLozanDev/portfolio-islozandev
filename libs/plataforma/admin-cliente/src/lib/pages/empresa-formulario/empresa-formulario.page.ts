@@ -136,8 +136,7 @@ export class EmpresaFormularioPage {
 
   /** El logo subido queda pendiente: se asigna con «Guardar cambios», en el mismo `PUT`. */
   protected async alQuedarDisponible(archivo: ArchivoDisponible): Promise<void> {
-    this.elegirLogo(archivo.archivoId);
-    this.urlLogo.set(await this.logos.url(archivo.archivoId));
+    await this.mostrarLogoElegido(archivo.archivoId);
   }
 
   protected quitarLogo(): void {
@@ -151,9 +150,7 @@ export class EmpresaFormularioPage {
     if (!this.empresaId) return;
     const logoPendiente = this.logoPendiente() ? this.grupo.controls.logoArchivoId.value : null;
     void this.cargar(this.empresaId).then(async () => {
-      if (!logoPendiente) return;
-      this.elegirLogo(logoPendiente);
-      this.urlLogo.set(await this.logos.url(logoPendiente));
+      if (logoPendiente) await this.mostrarLogoElegido(logoPendiente);
     });
   }
 
@@ -179,6 +176,11 @@ export class EmpresaFormularioPage {
 
   protected cancelar(): void {
     void this.router.navigate([RUTA_EMPRESAS], { relativeTo: this.rutaMontaje });
+  }
+
+  private async mostrarLogoElegido(archivoId: string): Promise<void> {
+    this.elegirLogo(archivoId);
+    this.urlLogo.set(await this.logos.url(archivoId));
   }
 
   private elegirLogo(archivoId: string | null): void {

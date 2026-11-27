@@ -112,7 +112,8 @@ export class ConsolaTenants {
     await this.dependencias.exigirOperador.ejecutar(actor);
     const detalle = await this.dependencias.consulta.detalle(tenantId);
     if (!detalle) throw new NotFoundError('El tenant no existe');
-    return { ...detalle, empresaPrincipal: detalle.empresaPrincipal && (await this.conLogo(tenantId, detalle.empresaPrincipal)) };
+    const empresaPrincipal = detalle.empresaPrincipal && (await this.conLogo(tenantId, detalle.empresaPrincipal));
+    return { ...detalle, empresaPrincipal };
   }
 
   private async conLogo(tenantId: string, { logoArchivoId, ...empresa }: EmpresaPrincipalLeida): Promise<EmpresaPrincipal> {

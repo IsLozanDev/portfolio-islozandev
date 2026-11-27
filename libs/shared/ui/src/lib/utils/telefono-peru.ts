@@ -5,6 +5,7 @@ const CODIGO_PAIS = '51';
 const PREFIJO_INTERNACIONAL = '+';
 const PREFIJO_TRONCAL = '0';
 const AREA_LIMA = '1';
+const PRIMER_DIGITO_CELULAR = '9';
 const MAXIMO_DIGITOS = 9;
 /** 51 + un celular (9 dígitos), un fijo (8) o un fijo con el 0 troncal (9). */
 const MINIMO_DIGITOS_CON_CODIGO_PAIS = 10;
@@ -93,7 +94,7 @@ export function formatoMientrasEscribe(texto: string): string {
 }
 
 function formaDe(nacional: string): FormaTelefono | null {
-  if (nacional.startsWith('9')) return CELULAR_FORMA;
+  if (nacional.startsWith(PRIMER_DIGITO_CELULAR)) return CELULAR_FORMA;
   if (!nacional.startsWith(PREFIJO_TRONCAL)) return null;
   const primeroDelArea = nacional.charAt(PREFIJO_TRONCAL.length);
   if (primeroDelArea === AREA_LIMA) return FIJO_LIMA;

@@ -26,7 +26,7 @@
     <vit-cargando />
   } @else {
     <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
-      <div class="grid gap-x-4 sm:grid-cols-2">
+      <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
         <mat-form-field appearance="outline">
           <mat-label>{{ mensajes.codigo }}</mat-label>
           <input matInput formControlName="codigo" data-campo="codigo" autocomplete="off" required />
@@ -37,7 +37,7 @@
           <input matInput formControlName="nombre" data-campo="nombre" autocomplete="off" required />
           <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.establecimientoSunat }}</mat-label>
           <input matInput formControlName="codigoEstablecimientoSunat" data-campo="establecimiento" inputmode="numeric" maxlength="4" autocomplete="off" />
           @if (ayudaEstablecimiento(); as ayuda) {
@@ -57,14 +57,14 @@
           [textos]="textosUbigeo"
           [sinPermiso]="sinPermisoCatalogo"
         />
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.telefono }}</mat-label>
           <mat-icon matPrefix aria-hidden="true">call</mat-icon>
           <input matInput vitTelefono formControlName="telefono" data-campo="telefono" />
           <mat-hint>{{ comunes.ayudaTelefono }}</mat-hint>
           <mat-error data-error="telefono">{{ mensajeDelTelefono() }}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.zonaHoraria }}</mat-label>
           <input matInput formControlName="zonaHoraria" data-campo="zonaHoraria" autocomplete="off" required />
           <mat-hint>{{ mensajes.ayudaZonaHoraria }}</mat-hint>

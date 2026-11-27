@@ -459,6 +459,12 @@ export interface ValidadorLogoPort {
   - El encabezado de la columna dice «Logo» a la vista (en el canvas va oculto), porque `ColumnaTabla` no tiene títulos ocultos.
   - El ancho de 48 px sale de la miniatura de 32 px más el relleno de la celda: `ColumnaTabla` no fija anchos.
 - **Sí (al implementar el paso 10):** la lista de empresas sale enseguida con las iniciales y cada miniatura aparece cuando llega su URL firmada.
+- **Sí (al cerrar, paso 11):** dos ajustes que salieron de verificar en el navegador.
+  - En los formularios de empresa y sucursal, los campos con ayuda usan `subscriptSizing="dynamic"` y la rejilla lleva `items-start gap-y-3`. Con la densidad −4, las ayudas largas (teléfono, razón social) se montaban sobre la fila siguiente.
+  - En la lista de empresas, las URL firmadas van en una señal aparte (`urlsLogo`, por id de archivo). Antes reemplazaban las filas, y `vit-tabla`, que sigue por identidad, las volvía a crear todas (aviso NG0956 en consola).
+- **Sí (al cerrar, paso 11):** la verificación en el navegador se hizo con la API simulada (`context.route`), no con la API real.
+  - Cubre todo el recorrido de ARC (carga, Storage, confirmación, SSE del análisis, descarga), además de los formularios, la lista, la consola y los permisos.
+  - La prueba de humo contra la API y Supabase dev, con un usuario real con MFA y un operador, queda pendiente para staging, junto con los pendientes de los specs 32 y 35.
 - **Sí (al implementar el paso 3):** `Empresa.editar(datos, logo)` recibe un `LogoEdicion`: un `LogoValidado` (logo nuevo), el id que ya tenía (sin cambio) o `null` (quitar). Un id nuevo sin validar es un error de programación (500), no de usuario.
 
 ## Riesgos
