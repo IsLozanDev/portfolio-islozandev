@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { ConsultarEmpresa, EditarEmpresa, ListarEmpresas, PERMISOS_ORG, RegistrarEmpresa } from '@vitrina/plataforma/org';
 import { Permiso } from '@vitrina/plataforma/seguridad';
+import type { z } from 'zod';
 import { validar } from '../eventos/fallidos.http.js';
 import { OrgFiltro } from './org.filtro.js';
 import {
@@ -79,16 +80,16 @@ export class EmpresasController {
   @Permiso(PERMISOS_ORG.empresaCrear)
   @ApiBody({ type: RegistrarEmpresaDto })
   @ApiCreatedResponse({ type: EmpresaRegistradaDto })
-  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (campos, «RUC inválido», razón social, ubigeo)' })
+  @ApiBadRequestResponse({
+    description: 'SOLICITUD_INVALIDA (campos, «RUC inválido», razón social, ubigeo), TELEFONO_INVALIDO, CORREO_INVALIDO o SITIO_WEB_INVALIDO',
+  })
   @ApiConflictResponse({ description: 'CONFLICTO («La empresa ya está registrada en este tenant», tope de sucursales o tenant no operativo)' })
   async registrar(@Body() cuerpo: unknown): Promise<EmpresaRegistradaDto> {
     const datos = validar(EsquemaRegistrarEmpresa, cuerpo);
     const { empresaId, sucursalPrincipalId, advertencias } = await this.registrarEmpresa.ejecutar({
       ruc: datos.ruc,
       razonSocial: datos.razon_social,
-      nombreComercial: datos.nombre_comercial ?? null,
-      direccionFiscal: datos.direccion_fiscal ?? null,
-      ubigeo: datos.ubigeo ?? null,
+      ...datosOpcionalesDe(datos),
     });
     return { empresa_id: empresaId, sucursal_principal_id: sucursalPrincipalId, advertencias };
   }
@@ -98,7 +99,11 @@ export class EmpresasController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: EditarEmpresaDto })
   @ApiNoContentResponse()
-  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA' })
+  @ApiBadRequestResponse({
+    description:
+      'SOLICITUD_INVALIDA, TELEFONO_INVALIDO, CORREO_INVALIDO, SITIO_WEB_INVALIDO o LOGO_INVALIDO con `motivo`: ' +
+      'NO_ENCONTRADO (inexistente o de otro tenant), NO_DISPONIBLE, CATEGORIA u OTRA_ENTIDAD',
+  })
   @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (inexistente o de otro tenant)' })
   @ApiConflictResponse({ description: 'VERSION_OBSOLETA o CONFLICTO' })
   async editar(@Param('id') id: string, @Body() cuerpo: unknown): Promise<void> {
@@ -108,9 +113,22 @@ export class EmpresasController {
       empresaId,
       version: datos.version,
       razonSocial: datos.razon_social,
-      nombreComercial: datos.nombre_comercial ?? null,
-      direccionFiscal: datos.direccion_fiscal ?? null,
-      ubigeo: datos.ubigeo ?? null,
+      ...datosOpcionalesDe(datos),
+      logoArchivoId: datos.logo_archivo_id,
     });
   }
+}
+
+type DatosOpcionales = Omit<z.infer<typeof EsquemaEditarEmpresa>, 'version' | 'razon_social' | 'logo_archivo_id'>;
+
+/** Campos opcionales comunes al alta y la edición; lo que no llega se guarda como null. */
+function datosOpcionalesDe(datos: DatosOpcionales) {
+  return {
+    nombreComercial: datos.nombre_comercial ?? null,
+    direccionFiscal: datos.direccion_fiscal ?? null,
+    ubigeo: datos.ubigeo ?? null,
+    telefono: datos.telefono ?? null,
+    correo: datos.correo ?? null,
+    sitioWeb: datos.sitio_web ?? null,
+  };
 }

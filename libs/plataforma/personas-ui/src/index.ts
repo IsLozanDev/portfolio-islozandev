@@ -85,7 +85,7 @@ export type {
   RegistroPersona,
 } from './lib/models/solicitudes-persona';
 export { TONO_DESCARTADO, TONO_ROL, TONOS_COINCIDENCIA, TONOS_ESTADO_CONSENTIMIENTO, TONOS_PUNTAJE } from './lib/models/tonos-personas';
-export { type Ubigeo } from './lib/models/ubigeo';
+export { type Ubigeo, type ValorUbigeo } from './lib/models/ubigeo';
 export { ConsentimientosCliente } from './lib/services/consentimientos.cliente';
 export { ContactosCliente } from './lib/services/contactos.cliente';
 export { DireccionesCliente } from './lib/services/direcciones.cliente';

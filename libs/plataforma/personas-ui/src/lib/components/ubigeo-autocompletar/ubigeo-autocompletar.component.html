@@ -1,5 +1,5 @@
 <mat-form-field appearance="outline" class="w-full">
-  <mat-label>{{ mensajes.distrito }}</mat-label>
+  <mat-label>{{ etiqueta() }}</mat-label>
   <input matInput autocomplete="off" data-campo="ubigeo" [formControl]="control()" [matAutocomplete]="sugerencias" />
   <mat-hint data-prueba="ayuda-ubigeo">{{ errorCarga() ? mensajes.errorUbigeos : ayuda() }}</mat-hint>
   <mat-error>{{ mensajes.ubigeoObligatorio }}</mat-error>

@@ -1,6 +1,7 @@
 import { CategoriaArchivo } from '../../src/domain/categoria.js';
 
 const MEGABYTE = 1024 * 1024;
+export const UN_MEGABYTE = MEGABYTE;
 export const DIEZ_MEGABYTES = 10 * MEGABYTE;
 export const VEINTICINCO_MEGABYTES = 25 * MEGABYTE;
 export const MIME_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';

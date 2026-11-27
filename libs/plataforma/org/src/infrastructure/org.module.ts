@@ -13,6 +13,7 @@ import {
 } from '../application/lecturas-organizacion.js';
 import type { PadronRucPort } from '../application/ports/padron-ruc.port.js';
 import type { UsoUsuariosPort } from '../application/ports/uso-usuarios.port.js';
+import { VALIDADOR_LOGO_PORT, type ValidadorLogoPort } from '../application/ports/validador-logo.port.js';
 import { EditarSucursal, InactivarSucursal, MarcarSucursalPrincipal, RegistrarSucursal } from '../application/sucursal.casos-de-uso.js';
 import { CambiarEstadoTenant, GestionarSuscripcion } from '../application/tenant.casos-de-uso.js';
 import { EditarUnidad, InactivarUnidad, RegistrarUnidad } from '../application/unidad.casos-de-uso.js';
@@ -24,6 +25,7 @@ import { SuscripcionRepositorioTypeOrm } from './typeorm/suscripcion.repositorio
 import { TenantRepositorioTypeOrm } from './typeorm/tenant.repositorio.js';
 import { UnidadRepositorioTypeOrm } from './typeorm/unidad.repositorio.js';
 import { UsoUsuariosProvisional } from './uso-usuarios.provisional.js';
+import { ValidadorLogoRechazaTodo } from './validador-logo.rechaza-todo.js';
 
 export const PADRON_RUC = Symbol('PADRON_RUC');
 export const USO_USUARIOS = Symbol('USO_USUARIOS');
@@ -58,11 +60,14 @@ const conIds = <T>(provide: abstract new (...args: never[]) => T, crear: (...dep
 export interface OpcionesOrg {
   /** Enlace de PADRON_RUC; sin él queda PadronRucNulo. */
   padronRuc?: Provider;
-  /** Módulos que necesita el proveedor de padronRuc. */
+  /** Enlace de VALIDADOR_LOGO_PORT; sin él queda ValidadorLogoRechazaTodo. */
+  validadorLogo?: Provider;
+  /** Módulos que necesitan los proveedores de padronRuc y validadorLogo. */
   imports?: ModuleMetadata['imports'];
 }
 
 const PADRON_RUC_POR_DEFECTO: Provider = { provide: PADRON_RUC, useClass: PadronRucNulo };
+const VALIDADOR_LOGO_POR_DEFECTO: Provider = { provide: VALIDADOR_LOGO_PORT, useClass: ValidadorLogoRechazaTodo };
 
 // Las clases de application no llevan decoradores: todo se arma con useFactory y los tokens de
 // KernelInfraModule (global), que la app debe importar.
@@ -126,7 +131,12 @@ const PROVEEDORES: Provider[] = [
       new RegistrarEmpresa(uow, ctx, ids, ev, r, padron),
     inject: [...BASE, ID_GENERATOR, PADRON_RUC],
   },
-  conBase(EditarEmpresa, (uow, ctx, ev, r) => new EditarEmpresa(uow, ctx, ev, r)),
+  {
+    provide: EditarEmpresa,
+    useFactory: (uow: UnitOfWork, ctx: TenantContext, ev: EventPublisher, r: Repos, validadorLogo: ValidadorLogoPort) =>
+      new EditarEmpresa(uow, ctx, ev, r, validadorLogo),
+    inject: [...BASE, VALIDADOR_LOGO_PORT],
+  },
   conIds(RegistrarSucursal, (uow, ctx, ev, r, ids) => new RegistrarSucursal(uow, ctx, ev, r, ids)),
   conBase(EditarSucursal, (uow, ctx, ev, r) => new EditarSucursal(uow, ctx, ev, r)),
   conBase(InactivarSucursal, (uow, ctx, ev, r) => new InactivarSucursal(uow, ctx, ev, r)),
@@ -175,7 +185,11 @@ export class OrgModule {
     return {
       module: OrgModule,
       imports: opciones.imports ?? [],
-      providers: [...PROVEEDORES, opciones.padronRuc ?? PADRON_RUC_POR_DEFECTO],
+      providers: [
+        ...PROVEEDORES,
+        opciones.padronRuc ?? PADRON_RUC_POR_DEFECTO,
+        opciones.validadorLogo ?? VALIDADOR_LOGO_POR_DEFECTO,
+      ],
       // PADRON_RUC: FE advierte de un adquirente no ACTIVO o NO HABIDO (spec 51, TR-RN-019).
       exports: [...CASOS_DE_USO_EXPORTADOS, PADRON_RUC],
     };

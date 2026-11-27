@@ -101,4 +101,11 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- La consola lee el logo de la empresa principal con org.tenant_detalle.
+DO $$ BEGIN
+  IF (SELECT empresa_principal ->> 'logo_archivo_id' FROM org.tenant_detalle('17d00000-0000-0000-0000-00000000000a')) IS NULL THEN
+    RAISE EXCEPTION 'org.tenant_detalle debía traer el logo_archivo_id de la empresa principal';
+  END IF;
+END $$;
+
 ROLLBACK;

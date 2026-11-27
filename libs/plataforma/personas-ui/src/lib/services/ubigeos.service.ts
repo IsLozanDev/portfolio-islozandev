@@ -24,6 +24,11 @@ export class UbigeosService {
   readonly estado = this.estadoCarga.asReadonly();
   readonly listos = computed(() => this.estadoCarga() === 'LISTO');
 
+  /** Busca en la lista ya cargada; null si no cargó o si el código no está en el catálogo. */
+  porCodigo(codigo: string): Ubigeo | null {
+    return this.lista().find((ubigeo) => ubigeo.codigo === codigo) ?? null;
+  }
+
   /** Idempotente: una sola petición aunque varios componentes la pidan; tras un error se puede reintentar. */
   cargar(): Promise<void> {
     if (this.estadoCarga() === 'LISTO') return Promise.resolve();

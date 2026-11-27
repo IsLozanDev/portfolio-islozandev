@@ -11,6 +11,8 @@ import { EditarUnidad, InactivarUnidad, RegistrarUnidad } from '../src/applicati
 import type { PadronRucPort } from '../src/application/ports/padron-ruc.port.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
 import { OrgModule, PADRON_RUC, type OpcionesOrg } from '../src/infrastructure/org.module.js';
+import { VALIDADOR_LOGO_PORT, type ValidadorLogoPort } from '../src/application/ports/validador-logo.port.js';
+import { ValidadorLogoRechazaTodo } from '../src/infrastructure/validador-logo.rechaza-todo.js';
 
 const compilar = (opciones?: OpcionesOrg) =>
   Test.createTestingModule({
@@ -57,5 +59,18 @@ describe('OrgModule', () => {
     const padronFalso: PadronRucPort = { consultar: async () => null };
     const modulo = await compilar({ padronRuc: { provide: PADRON_RUC, useValue: padronFalso } });
     expect(modulo.get(PADRON_RUC)).toBe(padronFalso);
+  });
+
+  it('sin validadorLogo enlaza ValidadorLogoRechazaTodo, que rechaza todo logo', async () => {
+    const validador = (await compilar()).get<ValidadorLogoPort>(VALIDADOR_LOGO_PORT);
+
+    expect(validador).toBeInstanceOf(ValidadorLogoRechazaTodo);
+    await expect(validador.validar('archivo', 'empresa')).resolves.toEqual({ valido: false, motivo: 'NO_ENCONTRADO' });
+  });
+
+  it('con validadorLogo usa el proveedor recibido', async () => {
+    const validadorFalso: ValidadorLogoPort = { validar: async () => ({ valido: true }) };
+    const modulo = await compilar({ validadorLogo: { provide: VALIDADOR_LOGO_PORT, useValue: validadorFalso } });
+    expect(modulo.get(VALIDADOR_LOGO_PORT)).toBe(validadorFalso);
   });
 });

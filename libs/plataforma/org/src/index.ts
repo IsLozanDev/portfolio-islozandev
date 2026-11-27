@@ -76,6 +76,12 @@ export {
 export type { DatosPadron, PadronRucPort } from './application/ports/padron-ruc.port.js';
 export { PadronRucNulo } from './infrastructure/padron-ruc.nulo.js';
 export {
+  VALIDADOR_LOGO_PORT,
+  type ResultadoValidacionLogo,
+  type ValidadorLogoPort,
+} from './application/ports/validador-logo.port.js';
+export { ValidadorLogoRechazaTodo } from './infrastructure/validador-logo.rechaza-todo.js';
+export {
   EditarSucursal,
   InactivarSucursal,
   MarcarSucursalPrincipal,

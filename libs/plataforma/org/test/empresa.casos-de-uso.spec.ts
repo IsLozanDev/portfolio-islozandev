@@ -2,6 +2,8 @@ import { ConflictError, NotFoundError, ValidationError } from '@vitrina/platafor
 import { CrearTenant } from '../src/application/crear-tenant.js';
 import { EditarEmpresa, RegistrarEmpresa, type RegistrarEmpresaComando } from '../src/application/empresa.casos-de-uso.js';
 import type { PadronRucPort } from '../src/application/ports/padron-ruc.port.js';
+import type { ResultadoValidacionLogo, ValidadorLogoPort } from '../src/application/ports/validador-logo.port.js';
+import { LogoInvalidoError } from '../src/domain/errores.js';
 import { VersionObsoletaError } from '../src/application/version-obsoleta.js';
 import { Suscripcion } from '../src/domain/suscripcion.js';
 import { PadronRucNulo } from '../src/infrastructure/padron-ruc.nulo.js';
@@ -18,6 +20,21 @@ const COMANDO: RegistrarEmpresaComando = {
   correo: null,
   sitioWeb: null,
 };
+
+const LOGO = '0190a8e0-0000-7000-8000-00000000a001';
+
+/** Responde lo que se le indique y anota cada validación. */
+class ValidadorLogoFalso implements ValidadorLogoPort {
+  resultado: ResultadoValidacionLogo = { valido: true };
+  readonly validaciones: { archivoId: string; empresaId: string }[] = [];
+
+  async validar(archivoId: string, empresaId: string): Promise<ResultadoValidacionLogo> {
+    this.validaciones.push({ archivoId, empresaId });
+    return this.resultado;
+  }
+}
+
+const validadorLogo = new ValidadorLogoFalso();
 
 describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
   let e: Entorno;
@@ -165,13 +182,76 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
   });
 
   describe('EditarEmpresa', () => {
+    const SIN_CAMBIOS = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null };
+
+    beforeEach(() => {
+      validadorLogo.resultado = { valido: true };
+      validadorLogo.validaciones.length = 0;
+    });
+
+    const logoDe = async (empresaId: string) =>
+      (await e.dataSource.query('SELECT logo_archivo_id FROM org.empresa WHERE id = $1', [empresaId]))[0].logo_archivo_id;
+
+    it('valida un logo nuevo con su empresa y lo guarda junto al contacto', async () => {
+      const tenantId = await nuevoTenant('editar-logo');
+      const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
+
+      const version = await e.versionDe('empresa', empresaId);
+      await e.en(tenantId, () =>
+        editar.ejecutar({ empresaId, version, ...SIN_CAMBIOS, telefono: '987 654 321', correo: 'Ventas@Empresa.PE', logoArchivoId: LOGO }),
+      );
+
+      expect(validadorLogo.validaciones).toEqual([{ archivoId: LOGO, empresaId }]);
+      const [fila] = await e.dataSource.query('SELECT logo_archivo_id, telefono, correo FROM org.empresa WHERE id = $1', [empresaId]);
+      expect(fila).toEqual({ logo_archivo_id: LOGO, telefono: '+51987654321', correo: 'ventas@empresa.pe' });
+    });
+
+    it('un logo inválido lanza LogoInvalidoError con el motivo, sin escribir ni publicar', async () => {
+      const tenantId = await nuevoTenant('editar-logo-invalido');
+      const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
+      validadorLogo.resultado = { valido: false, motivo: 'OTRA_ENTIDAD' };
+
+      const version = await e.versionDe('empresa', empresaId);
+      await expect(
+        e.en(tenantId, () => editar.ejecutar({ empresaId, version, ...SIN_CAMBIOS, nombreComercial: 'Otra', logoArchivoId: LOGO })),
+      ).rejects.toThrow(expect.objectContaining({ code: 'LOGO_INVALIDO', motivo: 'OTRA_ENTIDAD' }));
+      await expect(
+        e.en(tenantId, () => editar.ejecutar({ empresaId, version, ...SIN_CAMBIOS, logoArchivoId: LOGO })),
+      ).rejects.toThrow(LogoInvalidoError);
+
+      expect(await logoDe(empresaId)).toBeNull();
+      expect(await e.versionDe('empresa', empresaId)).toBe(version);
+      expect(await e.eventosDe(empresaId)).toEqual(['empresa.creada']);
+    });
+
+    it('sin cambiar el logo no lo valida, y con null lo quita sin validar', async () => {
+      const tenantId = await nuevoTenant('editar-logo-igual');
+      const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
+      const editarConLogo = async (logoArchivoId: string | null, nombreComercial: string | null = null) => {
+        const version = await e.versionDe('empresa', empresaId);
+        await e.en(tenantId, () => editar.ejecutar({ empresaId, version, ...SIN_CAMBIOS, nombreComercial, logoArchivoId }));
+      };
+      await editarConLogo(LOGO);
+      validadorLogo.validaciones.length = 0;
+
+      await editarConLogo(LOGO, 'Sabores');
+      expect(await logoDe(empresaId)).toBe(LOGO);
+
+      await editarConLogo(null);
+      expect(await logoDe(empresaId)).toBeNull();
+      expect(validadorLogo.validaciones).toEqual([]);
+    });
+
     it('actualiza los datos y publica empresa.actualizada', async () => {
       const tenantId = await nuevoTenant('editar-empresa');
       const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
-      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
 
       const version = await e.versionDe('empresa', empresaId);
-      await e.en(tenantId, () => editar.ejecutar({ empresaId, version, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null }));
+      await e.en(tenantId, () => editar.ejecutar({ empresaId, version, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null, logoArchivoId: null }));
 
       const [fila] = await e.dataSource.query('SELECT nombre_comercial, version FROM org.empresa WHERE id = $1', [empresaId]);
       expect(fila.nombre_comercial).toBe('Sabores Arequipa');
@@ -183,17 +263,17 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const a = await nuevoTenant('editar-tenant-a');
       const b = await nuevoTenant('editar-tenant-b');
       const { empresaId } = await e.en(a, () => registrar().ejecutar(COMANDO));
-      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
       await expect(
-        e.en(b, () => editar.ejecutar({ empresaId, version: 1, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null })),
+        e.en(b, () => editar.ejecutar({ empresaId, version: 1, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null, logoArchivoId: null })),
       ).rejects.toThrow(NotFoundError);
     });
 
     it('con una versión vieja lanza VersionObsoletaError sin escribir ni publicar', async () => {
       const tenantId = await nuevoTenant('editar-version-vieja');
       const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
-      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
-      const datos = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null };
+      const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos, validadorLogo);
+      const datos = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null, logoArchivoId: null };
       const leida = await e.versionDe('empresa', empresaId);
       await e.en(tenantId, () => editar.ejecutar({ empresaId, version: leida, ...datos, nombreComercial: 'Primera' }));
 

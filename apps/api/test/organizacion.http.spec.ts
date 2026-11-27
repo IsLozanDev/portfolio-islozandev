@@ -16,10 +16,12 @@ import {
   ListarEmpresas,
   ListarSucursales,
   ListarUnidades,
+  LogoInvalidoError,
   MarcarSucursalPrincipal,
   RegistrarEmpresa,
   RegistrarSucursal,
   RegistrarUnidad,
+  TelefonoInvalidoError,
   VersionObsoletaError,
 } from '@vitrina/plataforma/org';
 import { PermisoGuard } from '@vitrina/plataforma/seguridad';
@@ -33,6 +35,22 @@ const PROPIETARIO = '0193f3a0-0000-7000-8000-000000000901';
 const EMPRESA = '0193f3a0-0000-7000-8000-0000000000e1';
 const SUCURSAL = '0193f3a0-0000-7000-8000-0000000000f1';
 const UNIDAD = '0193f3a0-0000-7000-8000-0000000000a1';
+const LOGO = '0193f3a0-0000-7000-8000-00000000a0a0';
+/** La empresa de los dobles, como la devuelve la API. */
+const EMPRESA_DTO = {
+  id: EMPRESA,
+  ruc: '20512345671',
+  razon_social: 'Sabores del Sur SAC',
+  nombre_comercial: null,
+  direccion_fiscal: null,
+  ubigeo: '040101',
+  telefono: '+51987654321',
+  correo: 'ventas@sabores.pe',
+  sitio_web: 'https://sabores.pe',
+  logo_archivo_id: LOGO,
+  activo: true,
+  version: 3,
+};
 const MFA_MAX_EDAD_SEG = 900;
 const PERMISOS_PROPIETARIO = ['plat.organizacion.consultar', 'plat.empresa.crear', 'plat.sucursal.gestionar', 'plat.unidad.gestionar'];
 
@@ -65,7 +83,20 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
   const conCabeceras = <T extends request.Test>(solicitud: T) => solicitud.set('X-Sucursal-Id', SUCURSAL_ACTOR);
 
   beforeAll(async () => {
-    const empresa = { id: EMPRESA, ruc: '20512345671', razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: '040101', activo: true, version: 3 };
+    const empresa = {
+      id: EMPRESA,
+      ruc: '20512345671',
+      razonSocial: 'Sabores del Sur SAC',
+      nombreComercial: null,
+      direccionFiscal: null,
+      ubigeo: '040101',
+      telefono: '+51987654321',
+      correo: 'ventas@sabores.pe',
+      sitioWeb: 'https://sabores.pe',
+      logoArchivoId: LOGO,
+      activo: true,
+      version: 3,
+    };
     const sucursal = {
       id: SUCURSAL,
       empresaId: EMPRESA,
@@ -126,7 +157,7 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
 
     expect(respuesta.status).toBe(200);
     expect(respuesta.body).toEqual({
-      items: [{ id: EMPRESA, ruc: '20512345671', razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: null, ubigeo: '040101', activo: true, version: 3 }],
+      items: [EMPRESA_DTO],
       total: 21,
     });
     expect(llamadas).toEqual([{ caso: 'ListarEmpresas', argumentos: [{ pagina: 1, tamano: 20, activo: true }] }]);
@@ -137,7 +168,7 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
       'empresas',
       `/v1/org/empresas/${EMPRESA}`,
       'ConsultarEmpresa',
-      { id: EMPRESA, ruc: '20512345671', razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: null, ubigeo: '040101', activo: true, version: 3 },
+      EMPRESA_DTO,
     ],
     [
       'sucursales',
@@ -208,7 +239,92 @@ describe('HTTP /v1/org empresas, sucursales y unidades (TR-RF-002 a 004)', () =>
 
     expect(respuesta.status).toBe(201);
     expect(respuesta.body).toEqual({ empresa_id: EMPRESA, sucursal_principal_id: SUCURSAL, advertencias: [] });
-    expect(llamadas[0].argumentos).toEqual([{ ruc: '20512345671', razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null }]);
+    expect(llamadas[0].argumentos).toEqual([
+      { ruc: '20512345671', razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null },
+    ]);
+  });
+
+  it('POST /empresas pasa teléfono, correo y web tal como llegan: el dominio los normaliza', async () => {
+    const respuesta = await conCabeceras(servidor().post('/v1/org/empresas')).send({
+      ruc: '20512345671',
+      razon_social: 'Sabores del Sur SAC',
+      telefono: '987 654 321',
+      correo: 'Ventas@Sabores.PE',
+      sitio_web: 'https://sabores.pe',
+    });
+
+    expect(respuesta.status).toBe(201);
+    expect(llamadas[0].argumentos).toEqual([expect.objectContaining({ telefono: '987 654 321', correo: 'Ventas@Sabores.PE', sitioWeb: 'https://sabores.pe' })]);
+  });
+
+  describe('PUT /empresas/:id (spec 17d)', () => {
+    const cuerpo = { version: 3, razon_social: 'Sabores del Sur SAC', telefono: '(01) 555-0101', logo_archivo_id: LOGO };
+    const editar = (datos: object = cuerpo) => conCabeceras(servidor().put(`/v1/org/empresas/${EMPRESA}`)).send(datos);
+
+    it('responde 204 y pasa el contacto y el logo', async () => {
+      const respuesta = await editar();
+
+      expect(respuesta.status).toBe(204);
+      expect(llamadas).toEqual([
+        {
+          caso: 'EditarEmpresa',
+          argumentos: [
+            {
+              empresaId: EMPRESA,
+              version: 3,
+              razonSocial: 'Sabores del Sur SAC',
+              nombreComercial: null,
+              direccionFiscal: null,
+              ubigeo: null,
+              telefono: '(01) 555-0101',
+              correo: null,
+              sitioWeb: null,
+              logoArchivoId: LOGO,
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('logo_archivo_id null quita el logo', async () => {
+      await editar({ ...cuerpo, logo_archivo_id: null });
+      expect(llamadas[0].argumentos).toEqual([expect.objectContaining({ logoArchivoId: null })]);
+    });
+
+    it.each([
+      ['sin logo_archivo_id', { version: 3, razon_social: 'Sabores del Sur SAC' }],
+      ['logo_archivo_id que no es UUID', { ...cuerpo, logo_archivo_id: 'logo.png' }],
+    ])('%s responde 400 sin llamar al caso de uso', async (_caso, datos) => {
+      const respuesta = await editar(datos);
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.errores).toContain('logo_archivo_id');
+      expect(llamadas).toEqual([]);
+    });
+
+    it.each(['NO_ENCONTRADO', 'NO_DISPONIBLE', 'CATEGORIA', 'OTRA_ENTIDAD'] as const)('LOGO_INVALIDO %s responde 400 con su motivo', async (motivo) => {
+      fallo = new LogoInvalidoError(motivo);
+      const respuesta = await editar();
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body).toEqual({ codigo: 'LOGO_INVALIDO', mensaje: 'El archivo no sirve como logo de esta empresa', motivo });
+    });
+
+    it('un teléfono que no es peruano responde 400 TELEFONO_INVALIDO, sin motivo', async () => {
+      fallo = new TelefonoInvalidoError();
+      const respuesta = await editar();
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body).toEqual({ codigo: 'TELEFONO_INVALIDO', mensaje: 'Celular de 9 dígitos que empieza con 9, o fijo con código de área' });
+    });
+
+    it('con una versión vieja responde 409 VERSION_OBSOLETA', async () => {
+      fallo = new VersionObsoletaError();
+      const respuesta = await editar();
+
+      expect(respuesta.status).toBe(409);
+      expect(respuesta.body.codigo).toBe('VERSION_OBSOLETA');
+    });
   });
 
   it('POST /empresas/:id/sucursales usa America/Lima si no llega zona horaria', async () => {

@@ -12,6 +12,10 @@ export interface FilaEmpresa {
   nombreComercial: string | null;
   direccionFiscal: string | null;
   ubigeo: string | null;
+  telefono: string | null;
+  correo: string | null;
+  sitioWeb: string | null;
+  logoArchivoId: string | null;
   activo: boolean;
   version: string;
 }
@@ -58,6 +62,10 @@ export const EmpresaLecturaEntidad = new EntitySchema<FilaEmpresa>({
     nombreComercial: { name: 'nombre_comercial', type: 'varchar', nullable: true },
     direccionFiscal: { name: 'direccion_fiscal', type: 'varchar', nullable: true },
     ubigeo: { type: 'char', nullable: true },
+    telefono: { type: 'varchar', nullable: true },
+    correo: { type: 'varchar', nullable: true },
+    sitioWeb: { name: 'sitio_web', type: 'varchar', nullable: true },
+    logoArchivoId: { name: 'logo_archivo_id', type: 'uuid', nullable: true },
     activo: { type: 'boolean' },
     version: { type: 'bigint' },
   },

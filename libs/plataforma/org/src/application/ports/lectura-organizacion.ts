@@ -33,6 +33,11 @@ export interface EmpresaListada {
   nombreComercial: string | null;
   direccionFiscal: string | null;
   ubigeo: string | null;
+  /** E.164. */
+  telefono: string | null;
+  correo: string | null;
+  sitioWeb: string | null;
+  logoArchivoId: string | null;
   activo: boolean;
   version: number;
 }

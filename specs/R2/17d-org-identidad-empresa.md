@@ -425,6 +425,23 @@ export interface ValidadorLogoPort {
   - el `0` troncal solo va antes de un fijo. Por eso `0987654321` se rechaza, como pide la prueba, y `+51 (01) 555-0101` se acepta;
   - la migración normaliza con la regla simple. Solo difiere en casos raros de datos viejos, y lo que escriba la app pasa por `Telefono`.
 - **Sí (al implementar el paso 3):** `empresa.repositorio.ts` es SQL del spec 03 (regla 11: los specs 01 a 09 conservan su SQL). Se le suman las cuatro columnas al `INSERT`, al `UPDATE` y al mapeo; pasarlo a TypeORM es el spec aparte de la regla 11.
+- **Sí (al implementar el paso 4):** `LOGO` entra también en `CODIGOS_CATEGORIA` de ARC.
+  - El spec no lo mencionaba, pero sin eso el esquema de los eventos de archivo (`enum` de categoría) rechazaría los de un logo, y la subida fallaría.
+  - La prueba que compara la lista con lo sembrado ahora lee 01m y 01y.
+- **Sí (al implementar el paso 4):** `ValidadorLogoArchivos` se prueba con un `ArchivoPort` falso: los cuatro motivos, el caso válido y otro error que se propaga. El recorrido con ARC real lo cubren las pruebas HTTP del paso 5. Orden de las verificaciones: existe, categoría, entidad, disponible.
+- **Sí (al implementar el paso 5):** `logo_archivo_id` es obligatorio en el `PUT` (uuid o `null`). Si fuera opcional, un cliente que no lo manda borraría el logo sin querer.
+- **Sí (al implementar el paso 5):** 01y reemplaza `org.tenant_detalle` (`CREATE OR REPLACE`, conserva el dueño `org_lector`) para que `empresa_principal` traiga `logo_archivo_id`.
+  - La función armaba el JSON con claves fijas: «la consulta de hoy» no lo traía.
+  - El inverso repone el cuerpo anterior antes de quitar la columna.
+- **Sí (al implementar el paso 5):** la URL del logo en la consola usa `TenantContext.run({ tenantId })`, el mismo cambio de contexto del worker, sobre `ArchivoPort.urlDescarga`. Sirve desde la API, así que no hace falta `urlDescargaDeTenant` en `ArchivoSistemaPort`.
+  - Va `inline`, por 300 s, en `UrlLogoEmpresaArchivos`.
+  - Un logo inexistente, no disponible o con la versión no disponible da `null`.
+- **Sí (al implementar el paso 5):** los criterios HTTP del logo se prueban por partes:
+  - el `400 LOGO_INVALIDO` con cada motivo, en `organizacion.http.spec.ts`;
+  - el recorrido HTTP → caso de uso → base, con un validador falso, en `organizacion.integracion.spec.ts`;
+  - el adaptador sobre ARC, en `validador-logo.archivos.spec.ts`;
+  - el aislamiento de ARC entre tenants, en su TR-CA-205.
+  - `ConsultarEstadoArchivo` no se exporta de ARC y no se abre solo para una prueba.
 - **Sí (al implementar el paso 3):** `Empresa.editar(datos, logo)` recibe un `LogoEdicion`: un `LogoValidado` (logo nuevo), el id que ya tenía (sin cambio) o `null` (quitar). Un id nuevo sin validar es un error de programación (500), no de usuario.
 
 ## Riesgos

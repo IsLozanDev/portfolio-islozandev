@@ -18,7 +18,7 @@ describe('Manifiesto PLAT 1.27.0: parte de arc (specs 33 y 35)', () => {
   });
 
   it('está en la versión 1.27.0 y declara los tres permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.30.0');
+    expect(manifiesto.version).toBe('1.31.0');
     const deArchivos = manifiesto.permisos.filter((permiso) => esDeArchivos(permiso.codigo));
     expect(deArchivos.map((permiso) => [permiso.codigo, permiso.descripcion, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_ARC.subir, 'Subir archivos', 'TENANT', false],
@@ -27,10 +27,13 @@ describe('Manifiesto PLAT 1.27.0: parte de arc (specs 33 y 35)', () => {
     ]);
   });
 
-  it('ningún rol predefinido ni opción de menú los incluye: cada producto o tenant los suma a sus roles', () => {
-    const enRoles = manifiesto.roles_predefinidos.flatMap((rol) => rol.permisos).filter(esDeArchivos);
+  it('solo PLAT_PROPIETARIO sube y descarga, para el logo de la empresa (spec 17d); ninguna opción de menú los incluye', () => {
+    const conArchivos = manifiesto.roles_predefinidos
+      .map((rol) => [rol.codigo, rol.permisos.filter(esDeArchivos)] as const)
+      .filter(([, permisos]) => permisos.length > 0);
     const enMenu = manifiesto.opciones.flatMap((opcion) => opcion.permisos).filter(esDeArchivos);
 
-    expect([enRoles, enMenu]).toEqual([[], []]);
+    expect(conArchivos).toEqual([['PLAT_PROPIETARIO', [PERMISOS_ARC.subir, PERMISOS_ARC.descargar]]]);
+    expect(enMenu).toEqual([]);
   });
 });

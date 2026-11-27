@@ -76,6 +76,8 @@ describeConDb('Consola de tenants contra PostgreSQL 16 (TR-RF-006)', () => {
       exigirOperador: new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador: TENANT_OPERADOR }),
       consulta,
       cambiarEstadoTenant: app.get(CambiarEstadoTenant),
+      // El cliente de esta prueba no tiene logo: la firma con ARC la cubre url-logo-empresa.archivos.spec.ts.
+      logos: { firmar: async () => null },
     });
 
     await consultar(`INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ($1, $2, 'Plataforma', 'ACTIVO', 1), ($3, 'consola-cliente', 'Cliente', 'ACTIVO', 1)`, [

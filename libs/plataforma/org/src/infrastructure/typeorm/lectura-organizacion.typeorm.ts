@@ -91,6 +91,10 @@ function empresaListada(fila: FilaEmpresa): EmpresaListada {
     nombreComercial: fila.nombreComercial,
     direccionFiscal: fila.direccionFiscal,
     ubigeo: fila.ubigeo,
+    telefono: fila.telefono,
+    correo: fila.correo,
+    sitioWeb: fila.sitioWeb,
+    logoArchivoId: fila.logoArchivoId,
     activo: fila.activo,
     version: Number(fila.version),
   };

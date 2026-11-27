@@ -1,6 +1,6 @@
 import type { EstadoTenant, Listado, ProductoCodigo } from '@vitrina/plataforma/org';
 import type { DataSource } from 'typeorm';
-import type { CambioDeEstado, ConsultaTenants, FiltroTenants, SuscripcionResumen, TenantDetalle, TenantListado } from './consulta-tenants.js';
+import type { CambioDeEstado, ConsultaTenants, FiltroTenants, SuscripcionResumen, TenantDetalleLeido, TenantListado } from './consulta-tenants.js';
 
 // SQL crudo justificado (regla 11): llamadas a las funciones SECURITY DEFINER de db/01a_org_consola.sql,
 // que el ORM no expresa. Van sin transacción de tenant: leen entre todos.
@@ -38,7 +38,7 @@ interface FilaDetalle extends Omit<FilaListado, 'total'> {
   estado_motivo: string | null;
   estado_cambiado_en: Date | null;
   version: string;
-  empresa_principal: { id: string; ruc: string; razon_social: string } | null;
+  empresa_principal: { id: string; ruc: string; razon_social: string; logo_archivo_id: string | null } | null;
   historial: CambioJson[];
 }
 
@@ -62,7 +62,7 @@ export class ConsultaTenantsTypeOrm implements ConsultaTenants {
     return primera ? Number(primera.total) : 0;
   }
 
-  async detalle(tenantId: string): Promise<TenantDetalle | null> {
+  async detalle(tenantId: string): Promise<TenantDetalleLeido | null> {
     const [fila]: FilaDetalle[] = await this.dataSource.query(DETALLE, [tenantId]);
     if (!fila) return null;
     return {
@@ -74,6 +74,7 @@ export class ConsultaTenantsTypeOrm implements ConsultaTenants {
         id: fila.empresa_principal.id,
         ruc: fila.empresa_principal.ruc,
         razonSocial: fila.empresa_principal.razon_social,
+        logoArchivoId: fila.empresa_principal.logo_archivo_id,
       },
       historial: fila.historial.map(cambioDeEstado),
     };

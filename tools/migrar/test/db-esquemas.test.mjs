@@ -476,7 +476,8 @@ async function inversoEnvioConIntentos() {
   }
 }
 
-// Columnas, CHECK de sucursal y categoría LOGO que agrega 01y_org_identidad_empresa (spec 17d, 6 en total).
+// Columnas, CHECK de sucursal, categoría LOGO y logo en org.tenant_detalle que agrega 01y_org_identidad_empresa
+// (spec 17d, 7 en total).
 const objetosIdentidadEmpresa = async () =>
   (
     await ejecutar(
@@ -484,11 +485,21 @@ const objetosIdentidadEmpresa = async () =>
       `SELECT column_name AS o FROM information_schema.columns
         WHERE table_schema = 'org' AND table_name = 'empresa' AND column_name IN ('logo_archivo_id', 'telefono', 'correo', 'sitio_web')
        UNION ALL SELECT conname FROM pg_constraint WHERE conname = 'ck_sucursal_telefono_e164'
-       UNION ALL SELECT codigo FROM arc.categoria WHERE codigo = 'LOGO'`,
+       UNION ALL SELECT codigo FROM arc.categoria WHERE codigo = 'LOGO'
+       UNION ALL SELECT 'tenant_detalle con logo' FROM pg_proc
+        WHERE oid = 'org.tenant_detalle(uuid)'::regprocedure AND prosrc LIKE '%logo_archivo_id%'`,
     )
   ).rows.map((r) => r.o);
 
-const OBJETOS_IDENTIDAD_EMPRESA = ['LOGO', 'ck_sucursal_telefono_e164', 'correo', 'logo_archivo_id', 'sitio_web', 'telefono'];
+const OBJETOS_IDENTIDAD_EMPRESA = [
+  'LOGO',
+  'ck_sucursal_telefono_e164',
+  'correo',
+  'logo_archivo_id',
+  'sitio_web',
+  'telefono',
+  'tenant_detalle con logo',
+];
 
 // Ejecuta `preparar` en una transacción, corre el inverso de 01y_org_identidad_empresa y devuelve el SQLSTATE con
 // que falla (o null); la transacción se revierte.

@@ -154,7 +154,14 @@ describe('ConfirmarCarga', () => {
   it('pasa el archivo a EN_ANALISIS y encola su análisis después de la transacción', async () => {
     const estado = await confirmar.ejecutar(archivoId);
 
-    expect(estado).toEqual({ archivoId, estado: 'EN_ANALISIS', categoria: 'DOCUMENTO', nombreOriginal: 'contrato.pdf' });
+    expect(estado).toEqual({
+      archivoId,
+      estado: 'EN_ANALISIS',
+      categoria: 'DOCUMENTO',
+      entidadTipo: ENTIDAD_CON_AUTORIZADOR,
+      entidadId: 'E-1',
+      nombreOriginal: 'contrato.pdf',
+    });
     expect([...dobles.cola.vivos.values()]).toEqual([{ tenantId: TENANT_A, archivoId, numero: 1 }]);
     expect(dobles.unidadDeTrabajo.enCurso).toBe(0);
   });
@@ -223,6 +230,8 @@ describe('ConsultarEstadoArchivo', () => {
       archivoId,
       estado: 'PENDIENTE_CARGA',
       categoria: 'DOCUMENTO',
+      entidadTipo: ENTIDAD_CON_AUTORIZADOR,
+      entidadId: 'E-1',
       nombreOriginal: 'contrato.pdf',
     });
   });

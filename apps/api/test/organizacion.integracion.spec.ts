@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { InMemoryEventSchemaValidator, KernelInfraModule, TENANT_CONTEXT, uuidV7 } from '@vitrina/plataforma/kernel-infra';
-import { ENTIDADES_ORG, OrgModule, registrarEsquemasOrg } from '@vitrina/plataforma/org';
+import { ENTIDADES_ORG, OrgModule, registrarEsquemasOrg, VALIDADOR_LOGO_PORT, type ValidadorLogoPort } from '@vitrina/plataforma/org';
 import { ContextoTenantInterceptor } from '@vitrina/plataforma/seguridad';
 import { EmpresasController } from '../src/org/empresas.controller.js';
 import { SucursalesController } from '../src/org/sucursales.controller.js';
@@ -14,6 +14,13 @@ import { crearBaseTemporal, describeConDb, type BaseTemporal } from './support/t
 const RUC_SABORES = '20512345671';
 const RUC_AMAUTA = '20498765433';
 const CABECERA_TENANT = 'x-prueba-tenant';
+const LOGO_VALIDO = '0193f3a0-0000-7000-8000-00000000a0a1';
+const LOGO_DE_OTRA_EMPRESA = '0193f3a0-0000-7000-8000-00000000a0a2';
+
+/** El adaptador sobre ARC lo cubre validador-logo.archivos.spec.ts: aquí importan el caso de uso, el filtro y la base. */
+const validadorLogo: ValidadorLogoPort = {
+  validar: async (archivoId) => (archivoId === LOGO_VALIDO ? { valido: true } : { valido: false, motivo: 'OTRA_ENTIDAD' }),
+};
 
 /**
  * Deja el principal con el tenant de la cabecera, como AutenticacionGuard con el token. Los permisos
@@ -70,7 +77,10 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
     registrarEsquemasOrg(validator);
 
     const modulo = await Test.createTestingModule({
-      imports: [KernelInfraModule.register({ dataSource, validator }), OrgModule.register()],
+      imports: [
+        KernelInfraModule.register({ dataSource, validator }),
+        OrgModule.register({ validadorLogo: { provide: VALIDADOR_LOGO_PORT, useValue: validadorLogo } }),
+      ],
       controllers: [EmpresasController, SucursalesController, UnidadesController],
     }).compile();
     app = modulo.createNestApplication({ logger: false });
@@ -120,7 +130,7 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
     it('la edición con la versión de la lista responde 204; repetirla con esa versión responde 409 VERSION_OBSOLETA', async () => {
       const { tenantId, empresaId } = await conEmpresa('http-version-empresa');
       const [{ version }] = (await como(tenantId).get('/empresas')).body.items;
-      const cuerpo = { version, razon_social: 'Sabores del Sur SAC', nombre_comercial: 'Sabores Arequipa' };
+      const cuerpo = { version, razon_social: 'Sabores del Sur SAC', nombre_comercial: 'Sabores Arequipa', logo_archivo_id: null };
 
       expect((await como(tenantId).put(`/empresas/${empresaId}`, cuerpo)).status).toBe(204);
       const repetida = await como(tenantId).put(`/empresas/${empresaId}`, { ...cuerpo, nombre_comercial: 'Pisada' });
@@ -128,6 +138,64 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
       expect(repetida.status).toBe(409);
       expect(repetida.body.codigo).toBe('VERSION_OBSOLETA');
       expect((await consultar('SELECT nombre_comercial FROM org.empresa WHERE id = $1', [empresaId]))[0].nombre_comercial).toBe('Sabores Arequipa');
+    });
+  });
+
+  describe('identidad y contacto (spec 17d)', () => {
+    const editarEmpresa = async (tenantId: string, empresaId: string, cambios: object) => {
+      const { version } = (await como(tenantId).get(`/empresas/${empresaId}`)).body;
+      return como(tenantId).put(`/empresas/${empresaId}`, { version, razon_social: 'Sabores del Sur SAC', logo_archivo_id: null, ...cambios });
+    };
+
+    it('el contacto se guarda normalizado y el logo validado queda en la fila', async () => {
+      const { tenantId, empresaId } = await conEmpresa('http-identidad');
+
+      const respuesta = await editarEmpresa(tenantId, empresaId, {
+        telefono: '+51 987-654-321',
+        correo: 'Ventas@Empresa.PE',
+        sitio_web: 'https://www.empresa.pe',
+        logo_archivo_id: LOGO_VALIDO,
+      });
+
+      expect(respuesta.status).toBe(204);
+      expect((await como(tenantId).get(`/empresas/${empresaId}`)).body).toMatchObject({
+        telefono: '+51987654321',
+        correo: 'ventas@empresa.pe',
+        sitio_web: 'https://www.empresa.pe',
+        logo_archivo_id: LOGO_VALIDO,
+      });
+      expect(await eventosDe(empresaId)).toEqual(['empresa.creada', 'empresa.actualizada']);
+    });
+
+    it('quitar el logo con null lo deja vacío', async () => {
+      const { tenantId, empresaId } = await conEmpresa('http-identidad-quitar');
+      await editarEmpresa(tenantId, empresaId, { logo_archivo_id: LOGO_VALIDO });
+
+      expect((await editarEmpresa(tenantId, empresaId, { logo_archivo_id: null })).status).toBe(204);
+      expect((await como(tenantId).get(`/empresas/${empresaId}`)).body.logo_archivo_id).toBeNull();
+    });
+
+    it.each([
+      ['un logo de otra empresa', { logo_archivo_id: LOGO_DE_OTRA_EMPRESA }, { codigo: 'LOGO_INVALIDO', motivo: 'OTRA_ENTIDAD' }],
+      ['un celular incompleto', { telefono: '98765' }, { codigo: 'TELEFONO_INVALIDO' }],
+      ['un correo sin @', { correo: 'ventas.empresa.pe' }, { codigo: 'CORREO_INVALIDO' }],
+      ['un sitio web con http://', { sitio_web: 'http://empresa.pe' }, { codigo: 'SITIO_WEB_INVALIDO' }],
+    ])('%s responde 400 y no cambia la fila', async (_caso, cambios, error) => {
+      const { tenantId, empresaId } = await conEmpresa(`http-17d-${Object.keys(cambios)[0].replaceAll('_', '-')}`);
+      const antes = (await como(tenantId).get(`/empresas/${empresaId}`)).body;
+
+      const respuesta = await editarEmpresa(tenantId, empresaId, cambios);
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body).toMatchObject(error);
+      expect((await como(tenantId).get(`/empresas/${empresaId}`)).body).toEqual(antes);
+    });
+
+    it('el teléfono de la sucursal se devuelve en E.164', async () => {
+      const { tenantId, empresaId } = await conEmpresa('http-identidad-sucursal');
+      const { sucursal_id: sucursalId } = (await como(tenantId).post(`/empresas/${empresaId}/sucursales`, { ...sucursalCayma, telefono: '(054) 123-456' })).body;
+
+      expect((await como(tenantId).get(`/sucursales/${sucursalId}`)).body.telefono).toBe('+5154123456');
     });
   });
 
@@ -224,7 +292,7 @@ describeConDb('HTTP /v1/org contra PostgreSQL 16 (TR-CA-004 a 012)', () => {
 
     const intentos = [
       await como(b.tenantId).get(`/empresas/${a.empresaId}/sucursales`),
-      await como(b.tenantId).put(`/empresas/${a.empresaId}`, { version: 1, razon_social: 'Tomada SAC' }),
+      await como(b.tenantId).put(`/empresas/${a.empresaId}`, { version: 1, razon_social: 'Tomada SAC', logo_archivo_id: null }),
       await como(b.tenantId).post(`/empresas/${a.empresaId}/sucursales`, sucursalCayma),
       await como(b.tenantId).post(`/sucursales/${caymaDeA}/inactivar`),
       await como(b.tenantId).post(`/unidades/${almacenDeA}/inactivar`),

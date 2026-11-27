@@ -20,6 +20,34 @@ BEGIN
 END
 $$;
 
+-- Antes de quitar la columna: el cuerpo de una función SQL no registra dependencias y fallaría al llamarse.
+CREATE OR REPLACE FUNCTION org.tenant_detalle(p_id uuid)
+RETURNS TABLE (id uuid, codigo varchar, nombre varchar, estado varchar, estado_motivo varchar,
+               estado_cambiado_en timestamptz, version bigint, creado_en timestamptz,
+               suscripciones jsonb, empresa_principal jsonb, historial jsonb)
+LANGUAGE sql STABLE STRICT SECURITY DEFINER SET search_path = '' AS $$
+  SELECT t.id, t.codigo, t.nombre, t.estado, t.estado_motivo, t.estado_cambiado_en, t.version, t.creado_en,
+         COALESCE((SELECT jsonb_agg(jsonb_build_object(
+                            'producto_codigo', s.producto_codigo, 'plan', s.plan,
+                            'estado', s.estado, 'vigente_hasta', s.vigente_hasta)
+                          ORDER BY s.producto_codigo)
+                     FROM org.suscripcion s WHERE s.tenant_id = t.id), '[]'::jsonb),
+         (SELECT jsonb_build_object('id', e.id, 'ruc', e.ruc, 'razon_social', e.razon_social)
+            FROM org.empresa e
+           WHERE e.tenant_id = t.id AND e.activo
+             AND EXISTS (SELECT 1 FROM org.sucursal su WHERE su.empresa_id = e.id AND su.es_principal)
+           ORDER BY e.razon_social, e.id
+           LIMIT 1),
+         COALESCE((SELECT jsonb_agg(jsonb_build_object(
+                            'estado_anterior', h.estado_anterior, 'estado_nuevo', h.estado_nuevo,
+                            'motivo', h.motivo, 'fecha_efectiva', h.fecha_efectiva,
+                            'actor_id', h.actor_id, 'registrado_en', h.registrado_en)
+                          ORDER BY h.registrado_en DESC, h.id)
+                     FROM org.tenant_estado_historial h WHERE h.tenant_id = t.id), '[]'::jsonb)
+    FROM org.tenant t
+   WHERE t.id = p_id;
+$$;
+
 ALTER TABLE org.sucursal
   DROP CONSTRAINT ck_sucursal_telefono_e164;
 

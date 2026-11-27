@@ -24,6 +24,8 @@ export class UbigeoAutocompletarComponent implements OnInit {
   private readonly destruccion = inject(DestroyRef);
 
   readonly control = input.required<FormControl<ValorUbigeo>>();
+  /** «Distrito» en la ficha de persona; empresa y sucursal piden «Ubigeo (departamento / provincia / distrito)». */
+  readonly etiqueta = input<string>(MENSAJES_FICHA.direcciones.distrito);
 
   protected readonly mensajes = MENSAJES_FICHA.direcciones;
   private readonly escrito = signal('');

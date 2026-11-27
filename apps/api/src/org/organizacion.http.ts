@@ -12,8 +12,22 @@ const RUC = /^\d{11}$/;
 /** Los query params llegan como texto. */
 const BOOLEANOS_TEXTO = ['true', 'false'] as const;
 
-// Cotas de entrada iguales a las columnas de db/01a_org.sql. El formato fino lo valida el dominio, con sus mensajes.
-const LONGITUD = { razonSocial: 200, nombre: 150, direccion: 250, ubigeo: 6, codigo: 20, establecimiento: 4, telefono: 30, zonaHoraria: 40 } as const;
+// Cotas de entrada iguales a las columnas de db/01a_org.sql y db/01y_org_identidad_empresa.sql. El formato fino lo
+// valida el dominio, con sus códigos. El teléfono entra con formato («987 654 321»): su cota es la de la entrada.
+const LONGITUD = {
+  razonSocial: 200,
+  nombre: 150,
+  direccion: 250,
+  ubigeo: 6,
+  codigo: 20,
+  establecimiento: 4,
+  telefono: 30,
+  zonaHoraria: 40,
+  correo: 254,
+  sitioWeb: 200,
+} as const;
+const PATRON_TELEFONO_E164 = '^\\+51(9\\d{8}|[1-8]\\d{7})$';
+const PATRON_SITIO_WEB = '^https://';
 
 const uuid = z.string().regex(UUID);
 const textoOpcional = (maximo: number) => z.string().max(maximo).nullish();
@@ -38,10 +52,14 @@ const datosEmpresa = {
   nombre_comercial: textoOpcional(LONGITUD.nombre),
   direccion_fiscal: textoOpcional(LONGITUD.direccion),
   ubigeo: textoOpcional(LONGITUD.ubigeo),
+  telefono: textoOpcional(LONGITUD.telefono),
+  correo: textoOpcional(LONGITUD.correo),
+  sitio_web: textoOpcional(LONGITUD.sitioWeb),
 };
 
 export const EsquemaRegistrarEmpresa = z.object({ ruc: z.string().regex(RUC), ...datosEmpresa });
-export const EsquemaEditarEmpresa = z.object({ version, ...datosEmpresa });
+/** logo_archivo_id es obligatorio: null quita el logo, y omitirlo no debe borrarlo sin querer. */
+export const EsquemaEditarEmpresa = z.object({ version, ...datosEmpresa, logo_archivo_id: uuid.nullable() });
 
 const datosSucursal = {
   codigo: z.string().min(1).max(LONGITUD.codigo),
@@ -105,6 +123,18 @@ export class EmpresaDto {
   @ApiProperty({ nullable: true, example: '040101' })
   ubigeo!: string | null;
 
+  @ApiProperty({ nullable: true, example: '+51987654321', pattern: PATRON_TELEFONO_E164, description: 'E.164 peruano' })
+  telefono!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'ventas@empresa.pe', description: 'En minúsculas' })
+  correo!: string | null;
+
+  @ApiProperty({ nullable: true, example: 'https://www.empresa.pe', pattern: PATRON_SITIO_WEB })
+  sitio_web!: string | null;
+
+  @ApiProperty({ format: 'uuid', nullable: true, description: 'Archivo de TR-ARC de categoría LOGO; la URL se pide a /v1/archivos' })
+  logo_archivo_id!: string | null;
+
   @ApiProperty()
   activo!: boolean;
 
@@ -134,7 +164,7 @@ export class SucursalDto {
   @ApiProperty({ nullable: true })
   ubigeo!: string | null;
 
-  @ApiProperty({ nullable: true })
+  @ApiProperty({ nullable: true, example: '+51987654321', description: 'E.164 peruano; uno guardado antes del spec 17d puede venir tal cual' })
   telefono!: string | null;
 
   @ApiProperty({ example: ZONA_HORARIA_DEFECTO })
@@ -206,10 +236,8 @@ export class ListadoUnidadesDto {
   total!: number;
 }
 
-export class RegistrarEmpresaDto {
-  @ApiProperty({ example: '20512345671', description: '11 dígitos con dígito verificador de SUNAT' })
-  ruc!: string;
-
+/** Lo editable de la empresa: lo comparten el alta y la edición. */
+class DatosEmpresaDto {
   @ApiProperty({ example: 'Sabores del Sur SAC' })
   razon_social!: string;
 
@@ -221,23 +249,36 @@ export class RegistrarEmpresaDto {
 
   @ApiPropertyOptional({ nullable: true, example: '040101' })
   ubigeo?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: '987 654 321',
+    description: 'Celular de 9 dígitos que empieza con 9 o fijo con código de área; se guarda y devuelve en E.164',
+  })
+  telefono?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'Ventas@Empresa.PE', description: 'Se guarda en minúsculas' })
+  correo?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 'https://www.empresa.pe', pattern: PATRON_SITIO_WEB, description: 'Solo https://' })
+  sitio_web?: string | null;
 }
 
-export class EditarEmpresaDto {
+export class RegistrarEmpresaDto extends DatosEmpresaDto {
+  @ApiProperty({ example: '20512345671', description: '11 dígitos con dígito verificador de SUNAT' })
+  ruc!: string;
+}
+
+export class EditarEmpresaDto extends DatosEmpresaDto {
   @ApiProperty({ description: 'La que devolvió la lista' })
   version!: number;
 
-  @ApiProperty()
-  razon_social!: string;
-
-  @ApiPropertyOptional({ nullable: true })
-  nombre_comercial?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  direccion_fiscal?: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  ubigeo?: string | null;
+  @ApiProperty({
+    format: 'uuid',
+    nullable: true,
+    description: 'Archivo LOGO DISPONIBLE de esta empresa (entidad EMPRESA); null quita el logo. Obligatorio: omitirlo es 400',
+  })
+  logo_archivo_id!: string | null;
 }
 
 export class EmpresaRegistradaDto {
@@ -271,7 +312,11 @@ export class RegistrarSucursalDto {
   @ApiPropertyOptional({ nullable: true, example: '040103' })
   ubigeo?: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({
+    nullable: true,
+    example: '987 654 321',
+    description: 'Celular de 9 dígitos que empieza con 9 o fijo con código de área; se guarda y devuelve en E.164',
+  })
   telefono?: string | null;
 
   @ApiPropertyOptional({ default: ZONA_HORARIA_DEFECTO, description: 'Zona IANA' })
@@ -351,6 +396,10 @@ export function empresaDto(empresa: EmpresaListada): EmpresaDto {
     nombre_comercial: empresa.nombreComercial,
     direccion_fiscal: empresa.direccionFiscal,
     ubigeo: empresa.ubigeo,
+    telefono: empresa.telefono,
+    correo: empresa.correo,
+    sitio_web: empresa.sitioWeb,
+    logo_archivo_id: empresa.logoArchivoId,
     activo: empresa.activo,
     version: empresa.version,
   };

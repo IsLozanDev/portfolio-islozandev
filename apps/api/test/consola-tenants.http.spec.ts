@@ -6,7 +6,7 @@ import request from 'supertest';
 import { ConflictError, ValidationError } from '@vitrina/plataforma/kernel';
 import { PermisoGuard } from '@vitrina/plataforma/seguridad';
 import { ConsolaTenantsController } from '../src/org/consola-tenants.controller.js';
-import { ConsolaTenants, type FiltroTenants, type TenantDetalle } from '../src/org/consulta-tenants.js';
+import { ConsolaTenants, type FiltroTenants, type LogoFirmado, type TenantDetalleLeido } from '../src/org/consulta-tenants.js';
 import { OperadorRequeridoError } from '../src/org/operador.js';
 
 const OPERADOR = '0193f3a0-0000-7000-8000-0000000000aa';
@@ -17,8 +17,10 @@ const MFA_MAX_EDAD_SEG = 900;
 const MILISEGUNDOS_POR_SEGUNDO = 1000;
 const PERMISO_SENSIBLE = 'plat.tenant.cambiar_estado';
 const MOTIVO = 'Falta de pago de dos meses consecutivos';
+const LOGO = '0193f3a0-0000-7000-8000-00000000a0a0';
+const LOGO_FIRMADO: LogoFirmado = { url: 'https://storage.ejemplo/firmada/logo.png', expiraEn: new Date('2026-11-27T15:05:00Z') };
 
-const gym: TenantDetalle = {
+const gym: TenantDetalleLeido = {
   id: GYM,
   codigo: 'gym-fuerza-total',
   nombre: 'Gym Fuerza Total',
@@ -28,7 +30,7 @@ const gym: TenantDetalle = {
   estadoMotivo: 'Fin del periodo de gracia de la suscripción',
   estadoCambiadoEn: new Date('2026-10-06T11:00:00Z'),
   version: 3,
-  empresaPrincipal: { id: '0193f3a0-0000-7000-8000-0000000000e1', ruc: '20512345671', razonSocial: 'Fuerza Total SAC' },
+  empresaPrincipal: { id: '0193f3a0-0000-7000-8000-0000000000e1', ruc: '20512345671', razonSocial: 'Fuerza Total SAC', logoArchivoId: null },
   historial: [
     { estadoAnterior: 'ACTIVO', estadoNuevo: 'SUSPENDIDO', motivo: 'Fin del periodo de gracia de la suscripción', fechaEfectiva: '2026-10-06T11:00:00+00:00', actorId: null, registradoEn: '2026-10-06T11:00:00+00:00' },
   ],
@@ -52,6 +54,10 @@ describe('HTTP /v1/org/tenants de la consola (TR-RF-001 y 006)', () => {
   let permisosDelActor: string[];
   let esOperador: boolean;
   let falloAlCambiar: Error | null;
+  let logoDelGym: string | null;
+  /** null: el logo existe en la empresa pero ARC ya no lo tiene disponible. */
+  let logoFirmado: LogoFirmado | null;
+  const firmas: { tenantId: string; archivoId: string }[] = [];
   const filtros: FiltroTenants[] = [];
   const detalles: string[] = [];
   const cambios: unknown[] = [];
@@ -74,7 +80,13 @@ describe('HTTP /v1/org/tenants de la consola (TR-RF-001 y 006)', () => {
         },
         detalle: async (tenantId) => {
           detalles.push(tenantId);
-          return tenantId === GYM ? gym : null;
+          return tenantId === GYM ? { ...gym, empresaPrincipal: gym.empresaPrincipal && { ...gym.empresaPrincipal, logoArchivoId: logoDelGym } } : null;
+        },
+      },
+      logos: {
+        firmar: async (tenantId, archivoId) => {
+          firmas.push({ tenantId, archivoId });
+          return logoFirmado;
         },
       },
       cambiarEstadoTenant: {
@@ -106,6 +118,9 @@ describe('HTTP /v1/org/tenants de la consola (TR-RF-001 y 006)', () => {
     permisosDelActor = ['plat.tenant.consultar', PERMISO_SENSIBLE];
     esOperador = true;
     falloAlCambiar = null;
+    logoDelGym = null;
+    logoFirmado = LOGO_FIRMADO;
+    firmas.length = 0;
     filtros.length = 0;
     detalles.length = 0;
     cambios.length = 0;
@@ -153,6 +168,35 @@ describe('HTTP /v1/org/tenants de la consola (TR-RF-001 y 006)', () => {
       estado_cambiado_en: '2026-10-06T11:00:00.000Z',
       empresa_principal: { ruc: '20512345671', razon_social: 'Fuerza Total SAC' },
       historial: [{ estado_anterior: 'ACTIVO', estado_nuevo: 'SUSPENDIDO', actor_id: null }],
+    });
+  });
+
+  describe('logo de la empresa principal (spec 17d)', () => {
+    const empresaPrincipal = async () => (await conCabeceras(servidor().get(`/v1/org/tenants/${GYM}`))).body.empresa_principal;
+
+    it('con logo trae la URL firmada en el tenant consultado y su vencimiento', async () => {
+      logoDelGym = LOGO;
+
+      expect(await empresaPrincipal()).toEqual({
+        id: '0193f3a0-0000-7000-8000-0000000000e1',
+        ruc: '20512345671',
+        razon_social: 'Fuerza Total SAC',
+        logo_url: LOGO_FIRMADO.url,
+        logo_expira_en: '2026-11-27T15:05:00.000Z',
+      });
+      expect(firmas).toEqual([{ tenantId: GYM, archivoId: LOGO }]);
+    });
+
+    it('sin logo trae nulos sin pedir firma', async () => {
+      expect(await empresaPrincipal()).toMatchObject({ logo_url: null, logo_expira_en: null });
+      expect(firmas).toEqual([]);
+    });
+
+    it('con un logo que ya no está disponible trae nulos, sin error', async () => {
+      logoDelGym = LOGO;
+      logoFirmado = null;
+
+      expect(await empresaPrincipal()).toMatchObject({ logo_url: null, logo_expira_en: null });
     });
   });
 

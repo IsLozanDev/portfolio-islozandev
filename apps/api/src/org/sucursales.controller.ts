@@ -94,7 +94,7 @@ export class SucursalesController {
   @Permiso(PERMISOS_ORG.sucursalGestionar)
   @ApiBody({ type: RegistrarSucursalDto })
   @ApiCreatedResponse({ type: SucursalRegistradaDto })
-  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (campos, establecimiento 0000 fuera de la principal, zona horaria)' })
+  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (campos, establecimiento 0000 fuera de la principal, zona horaria) o TELEFONO_INVALIDO' })
   @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (empresa inexistente o de otro tenant)' })
   @ApiConflictResponse({ description: 'CONFLICTO («Su plan permite N sucursales; amplíe su plan», código o establecimiento repetido)' })
   async registrar(@Param('id') id: string, @Body() cuerpo: unknown): Promise<SucursalRegistradaDto> {
@@ -109,7 +109,7 @@ export class SucursalesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBody({ type: EditarSucursalDto })
   @ApiNoContentResponse()
-  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA' })
+  @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA o TELEFONO_INVALIDO (un teléfono guardado antes del spec 17d se corrige al guardar)' })
   @ApiNotFoundResponse({ description: 'NO_ENCONTRADO (inexistente o de otro tenant)' })
   @ApiConflictResponse({ description: 'VERSION_OBSOLETA o CONFLICTO (tope del plan al reactivar, principal sin reemplazo)' })
   async editar(@Param('id') id: string, @Body() cuerpo: unknown): Promise<void> {
