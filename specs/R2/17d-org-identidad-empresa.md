@@ -1,6 +1,6 @@
 # SPEC 17d — Organización: logo, teléfono, correo y página web de la empresa, con ubigeo autocompletado y teléfono con máscara en empresa y sucursal
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 17a, SPEC 17b, SPEC 17c, SPEC 19a, SPEC 33, SPEC 36, SPEC 38, SPEC 15b, SPEC 15c, SPEC 15d
 > **Date:** 2026-11-27
 > **Objective:** Agregar a la empresa de ORG el logo, el teléfono, el correo y la página web, editables en el formulario de empresa de `admin-cliente`, con el logo subido a TR-ARC en una categoría propia, visible en la lista de empresas y en el detalle del tenant de la consola, y listos para que los lea la representación impresa del spec 53; además, los formularios de empresa y de sucursal eligen el ubigeo con autocompletado («LIMA / LIMA / MIRAFLORES») y escriben el teléfono con una máscara peruana que lo guarda en E.164.

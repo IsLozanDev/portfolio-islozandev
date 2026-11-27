@@ -112,6 +112,7 @@ const CASOS = [
   { migracion: '01w_arc_carga_sistema.sql', esquema: 'arc', prueba: 'tests/01w_arc_carga_sistema.test.sql' },
   { migracion: '01x_fe_envio.sql', esquema: 'fe', prueba: 'tests/01x_fe_envio.test.sql' },
   { migracion: '01y_org_identidad_empresa.sql', esquema: 'org', prueba: 'tests/01y_org_identidad_empresa.test.sql' },
+  { migracion: '02a_not_bajas.sql', esquema: 'ntf', prueba: 'tests/02a_not_bajas.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -244,6 +245,38 @@ async function inversoProgramacionesConVivas() {
     await c.end();
   }
 }
+
+// Con una baja registrada el inverso de 02a_not_bajas se niega (spec 46); la transacción se revierte.
+async function inversoBajasConFilas() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    const tenantId = '46000000-0000-0000-0000-0000000000ff';
+    await c.query(`SELECT set_config('app.tenant_id', '${tenantId}', true)`);
+    await c.query(
+      `INSERT INTO ntf.baja (id, tenant_id, canal, alcance, destino_hash)
+       VALUES (gen_random_uuid(), '${tenantId}', 'CORREO', 'CANAL', 'sha256:prueba')`,
+    );
+    return await c.query(await readFile(rutaDb('rollback/02a_not_bajas.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Tabla y función del trigger que agrega 02a_not_bajas (2 en total).
+const objetosBajas = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT table_name::text AS o FROM information_schema.tables WHERE table_schema = 'ntf' AND table_name = 'baja'
+       UNION ALL SELECT proname::text FROM pg_proc WHERE proname = 'baja_solo_insercion'`,
+    )
+  ).rows.map((r) => r.o);
 
 // Tabla y función que agrega 01t_not_programacion (2 en total).
 const objetosProgramacion = async () =>
@@ -1110,9 +1143,19 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 02a_not_bajas se niega con bajas; sin ellas borra la tabla y su trigger, y se puede reaplicar.
+    // Va primero: es la última migración. Queda revertida hasta reaplicar 01o_not y 01t_not_programacion.
+    expect((await objetosBajas()).sort()).toEqual(['baja', 'baja_solo_insercion']);
+    expect(await inversoBajasConFilas()).toBe('55006');
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/02a_not_bajas.sql'), 'utf8'));
+    expect(await objetosBajas()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('02a_not_bajas.sql'), 'utf8'));
+    expect((await objetosBajas()).sort()).toEqual(['baja', 'baja_solo_insercion']);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/02a_not_bajas.sql'), 'utf8'));
+
     // El inverso de 01y_org_identidad_empresa se niega con archivos LOGO o empresas con datos de contacto; sin ellos
     // quita las columnas, el CHECK de sucursal y la categoría, y se puede reaplicar. Al reaplicarla normaliza los
-    // teléfonos de sucursal que puede y deja los demás. Va primero: es la última migración.
+    // teléfonos de sucursal que puede y deja los demás. Va después del de 02a_not_bajas.
     expect((await objetosIdentidadEmpresa()).sort()).toEqual(OBJETOS_IDENTIDAD_EMPRESA);
     expect(await inversoIdentidadEmpresaCon(empresaConTelefono)).toBe('55006');
     expect(await inversoIdentidadEmpresaCon(archivoLogo)).toBe('55006');
@@ -1226,6 +1269,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await plantillasAvisos()).toHaveLength(4);
     await ejecutar(urlDb, await readFile(rutaDb('01t_not_programacion.sql'), 'utf8'));
     expect(await objetosProgramacion()).toHaveLength(2);
+    await ejecutar(urlDb, await readFile(rutaDb('02a_not_bajas.sql'), 'utf8'));
+    expect(await objetosBajas()).toHaveLength(2);
 
     // El inverso de 01n_sec se niega con secretos guardados; sin ellos borra sec y se puede reaplicar.
     expect(await inversoSecretosConFilas()).toBe('55006');

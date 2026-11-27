@@ -19,7 +19,7 @@ Lo que hay en el código hoy (revisado al redactar):
 - `LimiteTasaGuard` (08) vive en `seguridad/src/interface/membresias.http.ts` y no se exporta por `index.ts`.
 - `plataforma-admin` monta `/auth` fuera del shell (`app.routes.ts`); `vit-marco-auth` es el marco de esas pantallas.
 - Matriz de límites: `comp('not', 'kernel', 'seg', 'org', 'evt', 'per', 'obs', 'aud')`.
-- Última letra de migración: `01x`. Este spec usa `01y`; el 53, en paralelo, `01z`.
+- Última letra de migración: `01y` (spec 17d). Este spec usa `02a`; el 53, en paralelo, `01z`.
 
 ## Alcance
 
@@ -40,7 +40,7 @@ Lo que hay en el código hoy (revisado al redactar):
   - El token va en el cuerpo, nunca en la URL.
 - **Página pública `/preferencias`** en `plataforma-admin`, fuera del shell y sin sesión, en la lib nueva `libs/plataforma/preferencias-ui` (`type:feature`). Muestra el destino enmascarado y dos acciones: «Dejar de recibir promociones» y «Dejar de recibir todos los correos», esta con aviso de que también deja recordatorios y comprobantes.
 - `LimiteTasaGuard` exportado desde `@vitrina/plataforma/seguridad` (hoy es interno del 08).
-- Migración `db/01y_not_bajas.sql` con inverso y prueba SQL.
+- Migración `db/02a_not_bajas.sql` con inverso y prueba SQL.
 
 **No entra (specs futuros):**
 
@@ -67,7 +67,7 @@ Lo que hay en el código hoy (revisado al redactar):
 
 ## Modelo de datos
 
-### Migración `db/01y_not_bajas.sql` (+ `db/rollback/01y_not_bajas.sql`, `db/tests/01y_not_bajas.test.sql`)
+### Migración `db/02a_not_bajas.sql` (+ `db/rollback/02a_not_bajas.sql`, `db/tests/02a_not_bajas.test.sql`)
 
 ```sql
 CREATE TABLE ntf.baja (
@@ -153,7 +153,7 @@ export interface RepositorioBajas {
 
 ## Plan de implementación
 
-1. **Migración.** `01y_not_bajas.sql`, inverso y prueba SQL.
+1. **Migración.** `02a_not_bajas.sql`, inverso y prueba SQL.
 2. **Dominio.** `Baja`, `bloqueaEnvio`, carga del enlace, `enmascararCorreo` y error, con pruebas: baja `CANAL` bloquea las dos finalidades; `PROMOCIONAL` solo las promocionales; enmascarado de correos cortos.
 3. **Firmador y repositorio.** `FirmadorEnlace` HMAC (`node:crypto`, `timingSafeEqual`) y `RepositorioBajas` con TypeORM. Pruebas: token alterado en un byte, vencido, firmado con otra clave → `null`.
 4. **Efecto en el envío y pie.** Cambios en `EnviarNotificacion`, variables de entorno. Pruebas:
@@ -191,7 +191,7 @@ export interface RepositorioBajas {
 - [ ] Página `/preferencias` verificada con Playwright en tema claro y oscuro y a 600 px, consola sin errores y axe-core sin violaciones WCAG 2.1 AA (TR-RNF-019).
 - [ ] En producción la API y el worker no arrancan sin `NOT_CLAVE_ENLACE_PREFERENCIAS` y `NOT_URL_PREFERENCIAS`.
 - [ ] Endpoints con OpenAPI bajo `/v1`.
-- [ ] Migración `01y_not_bajas` reversible y probada en CI contra PostgreSQL 16.
+- [ ] Migración `02a_not_bajas` reversible y probada en CI contra PostgreSQL 16.
 - [ ] Cobertura de dominio de `notificaciones` ≥ 70 %.
 - [ ] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md`; persistencia con TypeORM; el único SQL nuevo es el `ON CONFLICT DO NOTHING` del registro, encapsulado en el adaptador.
 - [ ] `npx nx run-many -t lint test -p notificaciones seguridad preferencias-ui plataforma-admin api worker migrar` verde; `nx affected` verde en el CI del PR.
@@ -210,7 +210,7 @@ export interface RepositorioBajas {
 - **Sí:** `actorId = personaId` al revocar en PER. La revocación la hace el titular, sin usuario de plataforma; `revocado_por` queda con quien decidió.
 - **Sí:** el destino se muestra enmascarado desde el último mensaje del hash. El token no lleva el correo en claro.
 - **Sí:** el pie se agrega después del saneado de la plantilla. Una plantilla del tenant no puede quitarlo ni alterarlo.
-- **Sí:** migración `01y`. El 53, en paralelo, usa `01z`.
+- **Sí (al implementar):** migración `02a`. `01y` la tomó el 17d y el 53 usa `01z`. Decisión del usuario.
 
 ## Riesgos
 
@@ -227,7 +227,7 @@ export interface RepositorioBajas {
 - Se implementa en un worktree propio (`spec-46-not-preferencias-bajas`), en paralelo con el 53.
 - Archivos compartidos con el 53:
   - `apps/api` y `apps/worker` (registro de módulos y esquema de entorno): líneas distintas;
-  - letras de migración: `01y` aquí, `01z` en el 53.
+  - letras de migración: `02a` aquí, `01z` en el 53.
 - El manifiesto PLAT no se toca aquí.
 - El segundo PR se rebasa sobre el primero.
 

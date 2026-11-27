@@ -9,23 +9,28 @@ import type {
   FiltroPlantillas,
   LocalizadorMensajes,
   Pagina,
+  RepositorioBajas,
   RepositorioContactosInvalidos,
   RepositorioMensajes,
   RepositorioPlantillas,
   ResumenPlantilla,
 } from '../../src/application/ports/repositorios.js';
 import type { EventoProveedor, VerificadorWebhook } from '../../src/application/ports/verificador-webhook.js';
+import type { Baja } from '../../src/domain/baja.js';
 import { CANAL_CORREO, type CanalNotificacion } from '../../src/domain/canal.js';
 import { MensajeModificadoError, VersionObsoletaPlantillaError } from '../../src/domain/errores.js';
 import type { IntentoEntrega } from '../../src/domain/intento-entrega.js';
 import { Mensaje } from '../../src/domain/mensaje.js';
 import { IDIOMA_POR_DEFECTO, origenDe, type Plantilla } from '../../src/domain/plantilla.js';
+import { FirmadorEnlaceHmac } from '../../src/infrastructure/crypto/firmador-enlace.hmac.js';
 import { SaneadorHtmlSanitize } from '../../src/infrastructure/sanitize-html/saneador-html.sanitize.js';
 
 export const TENANT_A = '42000000-0000-7000-8000-00000000000a';
 export const TENANT_B = '42000000-0000-7000-8000-00000000000b';
 /** 15:00 UTC = 10:00 de Lima: dentro de la ventana de promocionales. */
 export const AHORA = new Date('2026-11-20T15:00:00.000Z');
+export const CLAVE_ENLACE_PRUEBA = 'clave-de-enlace-de-prueba-de-32-caracteres';
+export const URL_PREFERENCIAS_PRUEBA = 'https://admin.vitrina.test';
 
 export const PLANTILLA_PRUEBA: Plantilla = {
   id: '42000000-0000-0000-0000-000000000001',
@@ -220,6 +225,32 @@ export class ContactosInvalidosMemoria implements RepositorioContactosInvalidos 
   }
 }
 
+/** Bajas de todos los tenants; cada lectura filtra por el tenant del contexto, como la RLS. */
+export class BajasMemoria implements RepositorioBajas {
+  readonly bajas: Baja[] = [];
+
+  constructor(private readonly contexto: TenantContext) {}
+
+  async delDestino(canal: CanalNotificacion, destinoHash: string): Promise<Baja[]> {
+    return this.bajas.filter((baja) => {
+      const datos = baja.instantanea();
+      return datos.tenantId === this.tenantId && datos.canal === canal && datos.destinoHash === destinoHash;
+    });
+  }
+
+  async registrar(baja: Baja): Promise<Baja> {
+    const datos = baja.instantanea();
+    const existente = (await this.delDestino(datos.canal, datos.destinoHash)).find((guardada) => guardada.alcance === datos.alcance);
+    if (existente) return existente;
+    this.bajas.push(baja);
+    return baja;
+  }
+
+  private get tenantId(): string {
+    return this.contexto.current().tenantId;
+  }
+}
+
 /** Personas con sus correos. */
 export class PersonasMemoria implements Pick<PersonaPort, 'obtener'> {
   readonly correos = new Map<string, { valor: string; principal: boolean }[]>();
@@ -317,6 +348,8 @@ export function escenario() {
   const reloj = new RelojFijo();
   const mensajes = new MensajesMemoria(contexto);
   const contactosInvalidos = new ContactosInvalidosMemoria(contexto);
+  const bajas = new BajasMemoria(contexto);
+  const firmador = new FirmadorEnlaceHmac(CLAVE_ENLACE_PRUEBA);
   const publicador = new PublicadorMemoria();
   const personas = new PersonasMemoria();
   const consentimientos = new ConsentimientosMemoria();
@@ -330,6 +363,9 @@ export function escenario() {
     publicador,
     plantillas,
     contactosInvalidos,
+    bajas,
+    enlacePreferencias: { firmador, urlBase: URL_PREFERENCIAS_PRUEBA },
+    avisar: avisos,
     personas,
     consentimientos,
     hashearDestino: (destino) => `sha256:${destino}`,
@@ -345,6 +381,8 @@ export function escenario() {
     reloj,
     mensajes,
     contactosInvalidos,
+    bajas,
+    firmador,
     publicador,
     personas,
     consentimientos,

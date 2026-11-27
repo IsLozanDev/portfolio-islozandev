@@ -1,3 +1,4 @@
+import type { Baja } from '../../domain/baja.js';
 import type { CanalNotificacion } from '../../domain/canal.js';
 import type { IntentoEntrega } from '../../domain/intento-entrega.js';
 import type { Mensaje } from '../../domain/mensaje.js';
@@ -67,6 +68,12 @@ export interface RepositorioContactosInvalidos {
   esInvalido(canal: CanalNotificacion, destinoHash: string): Promise<boolean>;
   /** Idempotente. */
   marcar(canal: CanalNotificacion, destinoHash: string, motivo: string): Promise<void>;
+}
+
+export interface RepositorioBajas {
+  delDestino(canal: CanalNotificacion, destinoHash: string): Promise<Baja[]>;
+  /** Idempotente: si ya existe la del mismo canal, alcance y destino, devuelve la existente. */
+  registrar(baja: Baja): Promise<Baja>;
 }
 
 export interface RepositorioProgramaciones {

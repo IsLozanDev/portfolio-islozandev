@@ -1,3 +1,4 @@
+import { bloqueaEnvio } from '../domain/baja.js';
 import { CANAL_CORREO, estaHabilitado } from '../domain/canal.js';
 import { normalizarCorreo } from '../domain/correo-destino.js';
 import {
@@ -8,6 +9,8 @@ import {
   PromocionalSinPersonaError,
 } from '../domain/errores.js';
 import { AGREGADO_MENSAJE, EVENTOS_NOT, VERSION_ESQUEMA_NOT, type MensajeSolicitado } from '../domain/eventos-not.js';
+import { agregarPiePreferencias, llevaPiePreferencias, urlPreferencias, vencimientoEnlace } from '../domain/enlace-preferencias.js';
+import { MOTIVO_BAJA_CANAL } from '../domain/estado-mensaje.js';
 import { CONSENTIMIENTO_PROMOCIONAL, FINALIDAD_PROMOCIONAL } from '../domain/finalidad-notificacion.js';
 import { Mensaje } from '../domain/mensaje.js';
 import { IDIOMA_POR_DEFECTO } from '../domain/plantilla.js';
@@ -19,6 +22,7 @@ import type { Destinatario, EnviarNotificacionComando, NotificacionPort, Notific
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TIPO_CONTACTO_CORREO = 'CORREO';
 export const MOTIVO_CONTACTO_INVALIDO = 'CONTACTO_INVALIDO';
+const EVENTO_PIE_SIN_CONFIGURAR = 'not.pie_preferencias_sin_configurar';
 
 interface DestinoResuelto {
   correo: string;
@@ -68,6 +72,9 @@ export class EnviarNotificacion implements Pick<NotificacionPort, 'enviar'> {
     const contenido = renderizar(plantilla, comando.variables);
     const destinoHash = hashearDestino(destino.correo);
     const { tenantId, actorId } = contexto.current();
+    const cuerpo = llevaPiePreferencias(comando.plantilla)
+      ? this.conPiePreferencias(contenido.cuerpo, { tenantId, destinoHash, personaId: destino.personaId, plantilla: comando.plantilla })
+      : contenido.cuerpo;
     return Mensaje.registrar({
       id: ids.next(),
       tenantId,
@@ -78,7 +85,7 @@ export class EnviarNotificacion implements Pick<NotificacionPort, 'enviar'> {
       personaId: destino.personaId,
       finalidad: comando.finalidad,
       asunto: contenido.asunto,
-      cuerpo: contenido.cuerpo,
+      cuerpo,
       claveIdempotencia: comando.claveIdempotencia,
       creadoPor: actorId ?? null,
       ...(await this.decidir(comando, destino, destinoHash)),
@@ -94,13 +101,33 @@ export class EnviarNotificacion implements Pick<NotificacionPort, 'enviar'> {
     return { correo: normalizarCorreo(elegido.valor), personaId: destinatario.personaId };
   }
 
-  /** TR-RN-025: consentimiento, contactos inválidos y ventana horaria, en ese orden. */
+  /** El pie con el enlace firmado de preferencias (spec 46), después de renderizar la plantilla. */
+  private conPiePreferencias(cuerpo: string, destino: { tenantId: string; destinoHash: string; personaId: string | null; plantilla: string }): string {
+    const { enlacePreferencias, reloj, avisar } = this.dependencias;
+    if (!enlacePreferencias) {
+      avisar(EVENTO_PIE_SIN_CONFIGURAR, { plantilla: destino.plantilla, destino_hash: destino.destinoHash });
+      return cuerpo;
+    }
+    const token = enlacePreferencias.firmador.firmar({
+      tenantId: destino.tenantId,
+      canal: CANAL_CORREO,
+      destinoHash: destino.destinoHash,
+      ...(destino.personaId ? { personaId: destino.personaId } : {}),
+      venceEn: vencimientoEnlace(reloj.now()),
+    });
+    return agregarPiePreferencias(cuerpo, urlPreferencias(enlacePreferencias.urlBase, token));
+  }
+
+  /** TR-RN-025: consentimiento, bajas del destinatario, contactos inválidos y ventana horaria, en ese orden. */
   private async decidir(comando: EnviarNotificacionComando, destino: DestinoResuelto, destinoHash: string): Promise<Decision> {
-    const { consentimientos, contactosInvalidos, reloj, zonaHoraria } = this.dependencias;
+    const { consentimientos, bajas, contactosInvalidos, reloj, zonaHoraria } = this.dependencias;
     const esPromocional = comando.finalidad === FINALIDAD_PROMOCIONAL;
     if (esPromocional && destino.personaId && !(await consentimientos.vigente(destino.personaId, CONSENTIMIENTO_PROMOCIONAL))) {
       return { estado: 'OMITIDO_SIN_CONSENTIMIENTO', motivoFallo: null, programadoPara: null };
     }
+    const bloqueo = bloqueaEnvio(await bajas.delDestino(CANAL_CORREO, destinoHash), comando.finalidad);
+    if (bloqueo === MOTIVO_BAJA_CANAL) return { estado: 'DESCARTADO', motivoFallo: bloqueo, programadoPara: null };
+    if (bloqueo) return { estado: 'OMITIDO_SIN_CONSENTIMIENTO', motivoFallo: bloqueo, programadoPara: null };
     if (await contactosInvalidos.esInvalido(CANAL_CORREO, destinoHash)) {
       return { estado: 'DESCARTADO', motivoFallo: MOTIVO_CONTACTO_INVALIDO, programadoPara: null };
     }

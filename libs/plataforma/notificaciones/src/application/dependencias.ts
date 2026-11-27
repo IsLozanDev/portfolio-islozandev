@@ -3,12 +3,14 @@ import type { Clock, EventPublisher, IdGenerator, TenantContext, UnitOfWork } fr
 import type { ConsentimientoPort, PersonaPort } from '@vitrina/plataforma/personas';
 import type { ColaEnvios } from './ports/cola-envios.js';
 import type { ColaProgramaciones } from './ports/cola-programaciones.js';
+import type { FirmadorEnlace } from './ports/firmador-enlace.js';
 import type { NotificacionPort } from './ports/notificacion.port.js';
 import type { ProveedorCorreo } from './ports/proveedor-correo.js';
 import type { SaneadorHtml } from './ports/saneador-html.js';
 import type {
   LocalizadorMensajes,
   LocalizadorProgramaciones,
+  RepositorioBajas,
   RepositorioContactosInvalidos,
   RepositorioMensajes,
   RepositorioPlantillas,
@@ -29,11 +31,21 @@ interface Transaccional {
   mensajes: RepositorioMensajes;
 }
 
+/** Firmador y URL base (`NOT_CLAVE_ENLACE_PREFERENCIAS`, `NOT_URL_PREFERENCIAS`) del pie de cada correo (spec 46). */
+export interface EnlacePreferencias {
+  firmador: FirmadorEnlace;
+  urlBase: string;
+}
+
 /** `EnviarNotificacion`, en el proceso del llamador. */
 export interface DependenciasEnvio extends Transaccional {
   publicador: EventPublisher;
   plantillas: RepositorioPlantillas;
   contactosInvalidos: RepositorioContactosInvalidos;
+  bajas: RepositorioBajas;
+  /** null fuera de producción sin las variables: el correo sale sin pie y queda un aviso en el log. */
+  enlacePreferencias: EnlacePreferencias | null;
+  avisar: Registrar;
   personas: Pick<PersonaPort, 'obtener'>;
   consentimientos: Pick<ConsentimientoPort, 'vigente'>;
   hashearDestino: HashearDestino;

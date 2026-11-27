@@ -8,6 +8,7 @@ import { EnviarNotificacion } from '../src/application/enviar-notificacion.js';
 import type { EnviarNotificacionComando } from '../src/application/ports/notificacion.port.js';
 import { MensajeModificadoError } from '../src/domain/errores.js';
 import { registrarEsquemasNot } from '../src/infrastructure/event-schemas.js';
+import { RepositorioBajasTypeOrm } from '../src/infrastructure/typeorm/bajas.repositorio.js';
 import { RepositorioContactosInvalidosTypeOrm } from '../src/infrastructure/typeorm/contactos-invalidos.repositorio.js';
 import { ENTIDADES_NOT } from '../src/infrastructure/typeorm/entidades.js';
 import { MensajePorIdExternoSql } from '../src/infrastructure/typeorm/mensaje-por-id-externo.sql.js';
@@ -75,6 +76,9 @@ describeConDb('Notificaciones con TypeORM (spec 42, PostgreSQL 16)', () => {
       mensajes,
       plantillas: new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto),
       contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+      bajas: new RepositorioBajasTypeOrm(unidadDeTrabajo, contexto),
+      enlacePreferencias: null,
+      avisar: () => undefined,
       personas: new PersonasMemoria(),
       consentimientos: new ConsentimientosMemoria(),
       hashearDestino: (destino) => `sha256:${destino}`,

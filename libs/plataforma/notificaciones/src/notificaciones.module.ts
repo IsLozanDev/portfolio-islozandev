@@ -12,7 +12,7 @@ import { AvisarSoporteSolicitado } from './application/avisos/avisar-soporte-sol
 import { AvisarSuscripcionPorVencer } from './application/avisos/avisar-suscripcion-por-vencer.js';
 import { AvisarTenantSuspendido } from './application/avisos/avisar-tenant-suspendido.js';
 import { EnvioAvisos } from './application/avisos/envio-avisos.js';
-import type { DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
+import type { DependenciasPlantillas, EnlacePreferencias, HashearDestino, Registrar } from './application/dependencias.js';
 import { EncolarEnvio } from './application/encolar-envio.js';
 import { EntregarMensaje } from './application/entregar-mensaje.js';
 import { EnviarNotificacion } from './application/enviar-notificacion.js';
@@ -38,12 +38,14 @@ import {
   EVENTO_ERROR_COLA_PROGRAMACIONES,
   type ColaProgramacionesAbierta,
 } from './infrastructure/bullmq/cola-programaciones.js';
+import { FirmadorEnlaceHmac } from './infrastructure/crypto/firmador-enlace.hmac.js';
 import { NombreTenantOrg } from './infrastructure/org/nombre-tenant.org.js';
 import { CircuitBreaker } from './infrastructure/resend/circuit-breaker.js';
 import { PROVEEDOR_NO_CONFIGURADO, VERIFICADOR_NO_CONFIGURADO } from './infrastructure/resend/no-configurado.js';
 import { ProveedorCorreoResend } from './infrastructure/resend/proveedor-correo.resend.js';
 import { VerificadorWebhookResend } from './infrastructure/resend/verificador-webhook.resend.js';
 import { SaneadorHtmlSanitize } from './infrastructure/sanitize-html/saneador-html.sanitize.js';
+import { RepositorioBajasTypeOrm } from './infrastructure/typeorm/bajas.repositorio.js';
 import { RepositorioContactosInvalidosTypeOrm } from './infrastructure/typeorm/contactos-invalidos.repositorio.js';
 import { MensajePorIdExternoSql, type EjecutorSql } from './infrastructure/typeorm/mensaje-por-id-externo.sql.js';
 import { RepositorioMensajesTypeOrm } from './infrastructure/typeorm/mensajes.repositorio.js';
@@ -97,6 +99,12 @@ function hasheadorDestino(entorno: EntornoNotificaciones): HashearDestino {
   return (destino) => hashDocumento(destino, sal);
 }
 
+/** Sin las dos variables (solo fuera de producción) el correo sale sin pie. */
+function crearEnlacePreferencias(entorno: EntornoNotificaciones): EnlacePreferencias | null {
+  if (!entorno.NOT_CLAVE_ENLACE_PREFERENCIAS || !entorno.NOT_URL_PREFERENCIAS) return null;
+  return { firmador: new FirmadorEnlaceHmac(entorno.NOT_CLAVE_ENLACE_PREFERENCIAS), urlBase: entorno.NOT_URL_PREFERENCIAS };
+}
+
 function crearProveedor(entorno: EntornoNotificaciones, reloj: Clock): ProveedorCorreo {
   if (!entorno.RESEND_API_KEY) return PROVEEDOR_NO_CONFIGURADO;
   return new ProveedorCorreoResend(new Resend(entorno.RESEND_API_KEY).emails, new CircuitBreaker(reloj));
@@ -118,6 +126,8 @@ function casoDeUsoDePlantillas<CasoDeUso>(clase: new (dependencias: Dependencias
  * `PERSONA_PORT` y `CONSENTIMIENTO_PORT` de los imports.
  */
 function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
+  const avisar = crearAviso();
+  const enlacePreferencias = crearEnlacePreferencias(entorno);
   return {
     provide: NOTIFICACION_PORT,
     useFactory: (
@@ -142,6 +152,9 @@ function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
           mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
           plantillas,
           contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+          bajas: new RepositorioBajasTypeOrm(unidadDeTrabajo, contexto),
+          enlacePreferencias,
+          avisar,
           personas,
           consentimientos,
           hashearDestino: hasheadorDestino(entorno),

@@ -64,7 +64,7 @@ describe('casos de uso de plantillas (spec 43)', () => {
 
     expect(mundo.mensajes.guardado(deA.mensajeId).instantanea()).toMatchObject({
       asunto: 'Asunto de A SazónPOS',
-      cuerpo: '<p>Hola Ana, este es el correo propio de A en SazónPOS.</p>',
+      cuerpo: expect.stringMatching(/^<p>Hola Ana, este es el correo propio de A en SazónPOS\.<\/p><hr>/),
     });
     expect(mundo.mensajes.guardado(deB.mensajeId).instantanea()).toMatchObject({ asunto: 'Prueba de correo de SazónPOS' });
   });

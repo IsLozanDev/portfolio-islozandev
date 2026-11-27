@@ -185,4 +185,31 @@ export const ProgramacionEntidad = new EntitySchema<FilaProgramacion>({
   },
 });
 
-export const ENTIDADES_NOT = [PlantillaEntidad, MensajeEntidad, IntentoEntregaEntidad, ContactoInvalidoEntidad, ProgramacionEntidad];
+export interface FilaBaja {
+  id: string;
+  tenantId: string;
+  canal: string;
+  alcance: string;
+  destinoHash: string;
+  personaId: string | null;
+  origen: string;
+  registradaEn: Date;
+}
+
+export const BajaEntidad = new EntitySchema<FilaBaja>({
+  name: 'BajaNotificacion',
+  schema: 'ntf',
+  tableName: 'baja',
+  columns: {
+    id: { type: 'uuid', primary: true },
+    tenantId: { name: 'tenant_id', type: 'uuid' },
+    canal: { type: 'varchar', length: 10 },
+    alcance: { type: 'varchar', length: 12 },
+    destinoHash: { name: 'destino_hash', type: 'varchar', length: 80 },
+    personaId: { name: 'persona_id', type: 'uuid', nullable: true },
+    origen: { type: 'varchar', length: 10, default: 'ENLACE' },
+    registradaEn: { name: 'registrada_en', type: 'timestamptz', createDate: true },
+  },
+});
+
+export const ENTIDADES_NOT = [PlantillaEntidad, MensajeEntidad, IntentoEntregaEntidad, ContactoInvalidoEntidad, ProgramacionEntidad, BajaEntidad];

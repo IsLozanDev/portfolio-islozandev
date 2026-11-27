@@ -171,3 +171,12 @@ export class SinPersonalizacionError extends NotFoundError {
     super(`La plantilla ${codigo} no está personalizada`);
   }
 }
+
+/** TR-CA-194: la misma respuesta para firma mala, vencido o formato roto, sin datos del token. */
+export class EnlaceInvalidoError extends ValidationError {
+  override readonly code = 'ENLACE_INVALIDO';
+
+  constructor() {
+    super('Enlace inválido o vencido');
+  }
+}

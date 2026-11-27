@@ -26,3 +26,6 @@ export function avanzar(actual: EstadoMensaje, nuevo: EstadoMensaje): EstadoMens
   if (esFinal(nuevo)) return null;
   return ORDEN_DE_AVANCE.indexOf(nuevo) > ORDEN_DE_AVANCE.indexOf(actual) ? nuevo : null;
 }
+
+/** Motivo de un DESCARTADO por baja del canal del destinatario (spec 46). */
+export const MOTIVO_BAJA_CANAL = 'BAJA_CANAL';

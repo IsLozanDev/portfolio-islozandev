@@ -54,7 +54,7 @@ function reemplazar(texto: string, variables: ValoresVariables, formatear: (valo
   return texto.replace(MARCADOR, (_marcador, nombre: string) => formatear(String(variables[nombre])));
 }
 
-function escaparHtml(valor: string): string {
+export function escaparHtml(valor: string): string {
   return valor.replace(CARACTERES_HTML, (caracter) => ESCAPES_HTML[caracter]);
 }
 
