@@ -16,6 +16,7 @@ export function plantillaDesdeFila(fila: FilaPlantilla): Plantilla {
     id: fila.id,
     tenantId: fila.tenantId,
     codigo: fila.codigo,
+    nombre: fila.nombre,
     canal: fila.canal as CanalNotificacion,
     idioma: fila.idioma,
     version: fila.version,
@@ -24,6 +25,7 @@ export function plantillaDesdeFila(fila: FilaPlantilla): Plantilla {
     variables: fila.variables,
     plantillaBaseId: fila.plantillaBaseId,
     activa: fila.activa,
+    personalizable: fila.personalizable,
     creadoPor: fila.creadoPor,
     creadoEn: fila.creadoEn,
   };

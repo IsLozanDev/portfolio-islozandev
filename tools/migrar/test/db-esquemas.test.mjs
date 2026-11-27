@@ -113,6 +113,7 @@ const CASOS = [
   { migracion: '01x_fe_envio.sql', esquema: 'fe', prueba: 'tests/01x_fe_envio.test.sql' },
   { migracion: '01y_org_identidad_empresa.sql', esquema: 'org', prueba: 'tests/01y_org_identidad_empresa.test.sql' },
   { migracion: '02a_not_bajas.sql', esquema: 'ntf', prueba: 'tests/02a_not_bajas.test.sql' },
+  { migracion: '02b_not_plantilla_personalizable.sql', esquema: 'ntf', prueba: 'tests/02b_not_plantilla_personalizable.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -262,6 +263,42 @@ async function inversoBajasConFilas() {
       () => null,
       (error) => error.code,
     );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Columnas y CHECK que agrega 02b_not_plantilla_personalizable (3 en total).
+const objetosPlantillaPersonalizable = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name::text AS o FROM information_schema.columns
+        WHERE table_schema = 'ntf' AND table_name = 'plantilla' AND column_name IN ('personalizable', 'nombre')
+       UNION ALL SELECT conname::text FROM pg_constraint WHERE conname = 'ck_plantilla_nombre'`,
+    )
+  ).rows.map((r) => r.o);
+
+// Con 02b revertida, un tenant personaliza INTEGRIDAD_ROTA y SUSCRIPCION_POR_VENCER; al reaplicarla, la de
+// INTEGRIDAD_ROTA queda inactiva y las dos toman el nombre de su base (spec 47). La transacción se revierte.
+async function personalizacionesTrasReaplicarPersonalizable() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(await readFile(rutaDb('rollback/02b_not_plantilla_personalizable.sql'), 'utf8'));
+    const tenantId = '47000000-0000-0000-0000-0000000000ff';
+    await c.query(
+      `INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id)
+       VALUES (gen_random_uuid(), '${tenantId}', 'INTEGRIDAD_ROTA', 'CORREO', 1, 'Rota', '<p>Rota</p>', '44000000-0000-0000-0000-000000000004'),
+              (gen_random_uuid(), '${tenantId}', 'SUSCRIPCION_POR_VENCER', 'CORREO', 1, 'Vence', '<p>Vence</p>', '44000000-0000-0000-0000-000000000001')`,
+    );
+    await c.query(await readFile(rutaDb('02b_not_plantilla_personalizable.sql'), 'utf8'));
+    const { rows } = await c.query(
+      `SELECT codigo, activa, nombre FROM ntf.plantilla WHERE tenant_id = '${tenantId}' ORDER BY codigo`,
+    );
+    return rows;
   } finally {
     await c.query('ROLLBACK');
     await c.end();
@@ -1143,8 +1180,23 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 02b_not_plantilla_personalizable quita las columnas y el CHECK, y se puede reaplicar; reaplicada
+    // sobre personalizaciones, desactiva la de INTEGRIDAD_ROTA y copia el nombre de la base. Va primero: es la última
+    // migración. Queda revertida hasta reaplicar 01o_not y 02a_not_bajas.
+    const OBJETOS_PERSONALIZABLE = ['ck_plantilla_nombre', 'nombre', 'personalizable'];
+    expect((await objetosPlantillaPersonalizable()).sort()).toEqual(OBJETOS_PERSONALIZABLE);
+    expect(await personalizacionesTrasReaplicarPersonalizable()).toEqual([
+      { codigo: 'INTEGRIDAD_ROTA', activa: false, nombre: 'Alerta de integridad de la auditoría' },
+      { codigo: 'SUSCRIPCION_POR_VENCER', activa: true, nombre: 'Aviso de suscripción por vencer' },
+    ]);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/02b_not_plantilla_personalizable.sql'), 'utf8'));
+    expect(await objetosPlantillaPersonalizable()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('02b_not_plantilla_personalizable.sql'), 'utf8'));
+    expect((await objetosPlantillaPersonalizable()).sort()).toEqual(OBJETOS_PERSONALIZABLE);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/02b_not_plantilla_personalizable.sql'), 'utf8'));
+
     // El inverso de 02a_not_bajas se niega con bajas; sin ellas borra la tabla y su trigger, y se puede reaplicar.
-    // Va primero: es la última migración. Queda revertida hasta reaplicar 01o_not y 01t_not_programacion.
+    // Va después del de 02b_not_plantilla_personalizable. Queda revertida hasta reaplicar 01o_not y 01t_not_programacion.
     expect((await objetosBajas()).sort()).toEqual(['baja', 'baja_solo_insercion']);
     expect(await inversoBajasConFilas()).toBe('55006');
     await ejecutar(urlDb, await readFile(rutaDb('rollback/02a_not_bajas.sql'), 'utf8'));
@@ -1271,6 +1323,8 @@ describeConDb('db/ y supabase/migrations', () => {
     expect(await objetosProgramacion()).toHaveLength(2);
     await ejecutar(urlDb, await readFile(rutaDb('02a_not_bajas.sql'), 'utf8'));
     expect(await objetosBajas()).toHaveLength(2);
+    await ejecutar(urlDb, await readFile(rutaDb('02b_not_plantilla_personalizable.sql'), 'utf8'));
+    expect(await objetosPlantillaPersonalizable()).toHaveLength(3);
 
     // El inverso de 01n_sec se niega con secretos guardados; sin ellos borra sec y se puede reaplicar.
     expect(await inversoSecretosConFilas()).toBe('55006');

@@ -9,6 +9,8 @@ import { ORIGENES_PLANTILLA, type VariableDeclarada } from '../domain/plantilla.
 import { LARGO_MAXIMO_ASUNTO } from '../domain/renderizador-plantilla.js';
 
 const CODIGO_EJEMPLO = 'PRUEBA_CORREO';
+const NOMBRE_EJEMPLO = 'Correo de prueba';
+const DESCRIPCION_NOMBRE = 'Título legible de la plataforma; el tenant no lo edita';
 
 export class PersonalizarPlantillaDto {
   @ApiProperty({ minLength: 1, maxLength: LARGO_MAXIMO_ASUNTO, example: 'Prueba de correo de {{producto}}', description: 'Una línea' })
@@ -70,6 +72,9 @@ export class PlantillaDto {
   @ApiProperty({ example: CODIGO_EJEMPLO })
   codigo!: string;
 
+  @ApiProperty({ example: NOMBRE_EJEMPLO, description: DESCRIPCION_NOMBRE })
+  nombre!: string;
+
   @ApiProperty({ enum: CANALES_HABILITADOS })
   canal!: string;
 
@@ -101,6 +106,9 @@ export class PlantillaDto {
 class ResumenPlantillaDto {
   @ApiProperty({ example: CODIGO_EJEMPLO })
   codigo!: string;
+
+  @ApiProperty({ example: NOMBRE_EJEMPLO, description: DESCRIPCION_NOMBRE })
+  nombre!: string;
 
   @ApiProperty({ enum: CANALES_HABILITADOS })
   canal!: string;
@@ -167,6 +175,7 @@ function variableDto(variable: VariableDeclarada): VariableDeclaradaDto {
 export function plantillaDto(detalle: DetallePlantilla): PlantillaDto {
   return {
     codigo: detalle.codigo,
+    nombre: detalle.nombre,
     canal: detalle.canal,
     idioma: detalle.idioma,
     origen: detalle.origen,
@@ -182,6 +191,7 @@ export function plantillaDto(detalle: DetallePlantilla): PlantillaDto {
 function resumenPlantillaDto(resumen: ResumenPlantilla): ResumenPlantillaDto {
   return {
     codigo: resumen.codigo,
+    nombre: resumen.nombre,
     canal: resumen.canal,
     idioma: resumen.idioma,
     origen: resumen.origen,

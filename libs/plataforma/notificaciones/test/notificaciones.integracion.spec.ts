@@ -151,8 +151,8 @@ describeConDb('Notificaciones con TypeORM (spec 42, PostgreSQL 16)', () => {
     const tenantB = uuidV7();
     const { mensajeId } = await enTenant(tenantA, () => enviar.enviar(comando()));
     await dataSource.query(
-      `INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, variables, plantilla_base_id)
-       VALUES ($1, $2, 'PRUEBA_CORREO', 'CORREO', 2, 'Propia de A {{producto}}', '<p>{{nombre}}</p>', '[{"nombre":"nombre","tipo":"texto"},{"nombre":"producto","tipo":"texto"}]', $3)`,
+      `INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, variables, plantilla_base_id, nombre)
+       VALUES ($1, $2, 'PRUEBA_CORREO', 'CORREO', 2, 'Propia de A {{producto}}', '<p>{{nombre}}</p>', '[{"nombre":"nombre","tipo":"texto"},{"nombre":"producto","tipo":"texto"}]', $3, 'Correo de prueba')`,
       [uuidV7(), tenantA, PLANTILLA_BASE],
     );
     const plantillas = new RepositorioPlantillasTypeOrm(unidadDeTrabajo, contexto);

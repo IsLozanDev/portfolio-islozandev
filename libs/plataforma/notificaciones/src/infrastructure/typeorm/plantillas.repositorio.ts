@@ -20,12 +20,15 @@ export class RepositorioPlantillasTypeOrm implements RepositorioPlantillas {
     private readonly contexto: TenantContext,
   ) {}
 
+  /** El envío usa también las no personalizables (INTEGRIDAD_ROTA): no filtra por `personalizable`. */
   async vigente(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
-    return (await this.vigenteDelTenant(codigo, canal, idioma)) ?? this.base(codigo, canal, idioma);
+    return (
+      (await this.vigenteDelTenant(codigo, canal, idioma)) ?? this.mayorVersion({ codigo, canal, idioma, activa: true, tenantId: IsNull() })
+    );
   }
 
-  async base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
-    return this.mayorVersion({ codigo, canal, idioma, activa: true, tenantId: IsNull() });
+  async basePersonalizable(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    return this.mayorVersion({ codigo, canal, idioma, activa: true, personalizable: true, tenantId: IsNull() });
   }
 
   async vigenteDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
@@ -43,7 +46,7 @@ export class RepositorioPlantillasTypeOrm implements RepositorioPlantillas {
    */
   async listar(filtro: FiltroPlantillas): Promise<Pagina<ResumenPlantilla>> {
     const activas = { idioma: IDIOMA_POR_DEFECTO, activa: true, ...(filtro.canal ? { canal: filtro.canal } : {}) };
-    const bases = await this.activasPorCodigo({ ...activas, tenantId: IsNull() });
+    const bases = await this.activasPorCodigo({ ...activas, personalizable: true, tenantId: IsNull() });
     const personalizadas = await this.activasPorCodigo({ ...activas, tenantId: this.tenantId });
     const vigentes = [...bases.values()].map((base) => personalizadas.get(claveDe(base)) ?? base);
     const coincidentes = vigentes.filter((plantilla) => coincideTexto(plantilla, filtro.texto)).sort(porCodigoYCanal);
@@ -136,7 +139,7 @@ function claveDe(plantilla: Pick<Plantilla, 'codigo' | 'canal'>): string {
 function coincideTexto(plantilla: Plantilla, texto: string | undefined): boolean {
   if (!texto) return true;
   const buscado = texto.toLocaleLowerCase();
-  return [plantilla.codigo, plantilla.asunto ?? ''].some((campo) => campo.toLocaleLowerCase().includes(buscado));
+  return [plantilla.nombre, plantilla.codigo, plantilla.asunto ?? ''].some((campo) => campo.toLocaleLowerCase().includes(buscado));
 }
 
 function porCodigoYCanal(una: Plantilla, otra: Plantilla): number {
@@ -146,6 +149,7 @@ function porCodigoYCanal(una: Plantilla, otra: Plantilla): number {
 function resumenDe(plantilla: Plantilla): ResumenPlantilla {
   return {
     codigo: plantilla.codigo,
+    nombre: plantilla.nombre,
     canal: plantilla.canal,
     idioma: plantilla.idioma,
     origen: origenDe(plantilla),

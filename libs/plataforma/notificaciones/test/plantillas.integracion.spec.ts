@@ -12,7 +12,7 @@ import { ListarVersionesPlantilla } from '../src/application/plantillas/listar-v
 import { PersonalizarPlantilla } from '../src/application/plantillas/personalizar-plantilla.js';
 import { RestaurarPlantillaBase } from '../src/application/plantillas/restaurar-plantilla-base.js';
 import { VistaPreviaPlantilla } from '../src/application/plantillas/vista-previa-plantilla.js';
-import { SinPersonalizacionError, VersionObsoletaPlantillaError } from '../src/domain/errores.js';
+import { PlantillaBaseNoEncontradaError, SinPersonalizacionError, VersionObsoletaPlantillaError } from '../src/domain/errores.js';
 import { registrarEsquemasNot } from '../src/infrastructure/event-schemas.js';
 import { SaneadorHtmlSanitize } from '../src/infrastructure/sanitize-html/saneador-html.sanitize.js';
 import { RepositorioBajasTypeOrm } from '../src/infrastructure/typeorm/bajas.repositorio.js';
@@ -27,6 +27,8 @@ const CODIGO = 'PRUEBA_CORREO';
 const CORREO = 'CORREO';
 const PLANTILLA_BASE = '42000000-0000-0000-0000-000000000001';
 const ACTOR = '43000000-0000-7000-8000-0000000000f1';
+const CODIGO_OPERACION = 'INTEGRIDAD_ROTA';
+const BASE_OPERACION = '44000000-0000-0000-0000-000000000004';
 
 describeConDb('Plantillas personalizadas con TypeORM (spec 43, PostgreSQL 16)', () => {
   let baseTemporal: TempDb;
@@ -181,13 +183,48 @@ describeConDb('Plantillas personalizadas con TypeORM (spec 43, PostgreSQL 16)', 
 
     expect(await enTenant(tenantB, () => consultar.ejecutar(CODIGO, CORREO))).toMatchObject({ origen: 'BASE' });
     await expect(enTenant(tenantB, () => restaurar.ejecutar(CODIGO, CORREO))).rejects.toThrow(SinPersonalizacionError);
-    expect((await enTenant(tenantB, () => listar.ejecutar({ pagina: 1, tamano: 25 }))).items).toEqual([
+    expect((await enTenant(tenantB, () => listar.ejecutar({ pagina: 1, tamano: 25 }))).items).toContainEqual(
       expect.objectContaining({ codigo: CODIGO, origen: 'BASE', version: 1 }),
-    ]);
+    );
     expect((await enTenant(tenantA, () => listar.ejecutar({ q: 'propia', pagina: 1, tamano: 25 }))).items).toEqual([
       expect.objectContaining({ codigo: CODIGO, origen: 'PERSONALIZADA', version: 1, asunto: 'Propia {{producto}}' }),
     ]);
     expect((await filasDe(tenantA)).map((fila) => fila.activa)).toEqual([true]);
+  });
+
+  it('spec 47: la lista no trae INTEGRIDAD_ROTA, busca por nombre y la API no la consulta ni la personaliza', async () => {
+    const tenantId = uuidV7();
+    const listar = new ListarPlantillas(dependencias);
+
+    const pagina = await enTenant(tenantId, () => listar.ejecutar({ pagina: 1, tamano: 25 }));
+    expect(pagina.items.map((item) => item.codigo)).toEqual(['PRUEBA_CORREO', 'SOPORTE_SOLICITADO', 'SUSCRIPCION_POR_VENCER', 'TENANT_SUSPENDIDO']);
+    expect((await enTenant(tenantId, () => listar.ejecutar({ q: 'suspendida', pagina: 1, tamano: 25 }))).items).toEqual([
+      expect.objectContaining({ codigo: 'TENANT_SUSPENDIDO', nombre: 'Aviso de cuenta suspendida' }),
+    ]);
+    await expect(enTenant(tenantId, () => consultar.ejecutar(CODIGO_OPERACION, CORREO))).rejects.toThrow(PlantillaBaseNoEncontradaError);
+    await expect(
+      enTenant(tenantId, () => personalizar.ejecutar(CODIGO_OPERACION, CORREO, { asunto: 'Rota', cuerpo: '<p>Rota</p>', version: null })),
+    ).rejects.toThrow(PlantillaBaseNoEncontradaError);
+    await expect(enTenant(tenantId, () => restaurar.ejecutar(CODIGO_OPERACION, CORREO))).rejects.toThrow(PlantillaBaseNoEncontradaError);
+  });
+
+  it('spec 47: el envío de INTEGRIDAD_ROTA sigue usando su base y la versión nueva copia el nombre de la base', async () => {
+    const tenantId = uuidV7();
+    const enviado = await enTenant(tenantId, () =>
+      enviar.enviar({
+        plantilla: CODIGO_OPERACION,
+        destinatario: { correo: 'operacion@ejemplo.pe' },
+        variables: { tenant_id: tenantId, numero_roto: '1532', motivo: 'HASH', modo: 'INCREMENTAL' },
+        finalidad: 'TRANSACCIONAL',
+        claveIdempotencia: uuidV7(),
+      }),
+    );
+    const [mensaje] = await dataSource.query('SELECT plantilla_id FROM ntf.mensaje WHERE id = $1', [enviado.mensajeId]);
+    expect(mensaje.plantilla_id).toBe(BASE_OPERACION);
+
+    expect((await guardar(tenantId, null)).nombre).toBe('Correo de prueba');
+    const [fila] = await dataSource.query('SELECT nombre FROM ntf.plantilla WHERE tenant_id = $1', [tenantId]);
+    expect(fila.nombre).toBe('Correo de prueba');
   });
 
   it('la vista previa usa los ejemplos de la base sembrada y no inserta en ntf.mensaje', async () => {

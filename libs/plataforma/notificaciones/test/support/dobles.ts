@@ -43,6 +43,7 @@ export const PLANTILLA_PRUEBA: Plantilla = {
   id: '42000000-0000-0000-0000-000000000001',
   tenantId: null,
   codigo: 'PRUEBA_CORREO',
+  nombre: 'Correo de prueba',
   canal: 'CORREO',
   idioma: 'es',
   version: 1,
@@ -54,6 +55,7 @@ export const PLANTILLA_PRUEBA: Plantilla = {
   ],
   plantillaBaseId: null,
   activa: true,
+  personalizable: true,
   creadoPor: null,
   creadoEn: new Date('2026-11-01T00:00:00.000Z'),
 };
@@ -97,8 +99,9 @@ export class PlantillasMemoria implements RepositorioPlantillas {
     return (await this.vigenteDelTenant(codigo, canal, idioma)) ?? this.base(codigo, canal, idioma);
   }
 
-  async base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
-    return this.mayor(this.delCodigo(codigo, canal, idioma).filter((plantilla) => plantilla.tenantId === null && plantilla.activa));
+  async basePersonalizable(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    const base = await this.base(codigo, canal, idioma);
+    return base?.personalizable ? base : null;
   }
 
   async vigenteDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
@@ -110,7 +113,8 @@ export class PlantillasMemoria implements RepositorioPlantillas {
   }
 
   async listar(filtro: FiltroPlantillas): Promise<Pagina<ResumenPlantilla>> {
-    const codigos = [...new Set(this.plantillas.filter((plantilla) => plantilla.tenantId === null).map((plantilla) => plantilla.codigo))].sort();
+    const bases = this.plantillas.filter((plantilla) => plantilla.tenantId === null && plantilla.personalizable);
+    const codigos = [...new Set(bases.map((plantilla) => plantilla.codigo))].sort();
     const vigentes: Plantilla[] = [];
     for (const codigo of codigos) {
       const vigente = await this.vigente(codigo, CANAL_CORREO, IDIOMA_POR_DEFECTO);
@@ -118,7 +122,7 @@ export class PlantillasMemoria implements RepositorioPlantillas {
     }
     const texto = filtro.texto?.toLowerCase();
     const filtradas = vigentes.filter(
-      (plantilla) => !texto || plantilla.codigo.toLowerCase().includes(texto) || (plantilla.asunto ?? '').toLowerCase().includes(texto),
+      (plantilla) => !texto || [plantilla.nombre, plantilla.codigo, plantilla.asunto ?? ''].some((campo) => campo.toLowerCase().includes(texto)),
     );
     const desde = (filtro.pagina - 1) * filtro.tamano;
     const items = filtradas.slice(desde, desde + filtro.tamano).map(resumenDe);
@@ -140,6 +144,10 @@ export class PlantillasMemoria implements RepositorioPlantillas {
     const activas = this.delTenant(codigo, canal, idioma).filter((plantilla) => plantilla.activa);
     for (const activa of activas) this.reemplazar({ ...activa, activa: false });
     return activas.length;
+  }
+
+  private async base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null> {
+    return this.mayor(this.delCodigo(codigo, canal, idioma).filter((plantilla) => plantilla.tenantId === null && plantilla.activa));
   }
 
   private delCodigo(codigo: string, canal: CanalNotificacion, idioma: string): Plantilla[] {
@@ -346,8 +354,8 @@ export class LocalizadorMemoria implements LocalizadorMensajes {
 }
 
 function resumenDe(plantilla: Plantilla): ResumenPlantilla {
-  const { codigo, canal, idioma, version, asunto } = plantilla;
-  return { codigo, canal, idioma, origen: origenDe(plantilla), version, asunto, actualizadoEn: plantilla.creadoEn };
+  const { codigo, nombre, canal, idioma, version, asunto } = plantilla;
+  return { codigo, nombre, canal, idioma, origen: origenDe(plantilla), version, asunto, actualizadoEn: plantilla.creadoEn };
 }
 
 export class AuditoriaMemoria implements Pick<AuditoriaPort, 'registrar'> {

@@ -12,6 +12,8 @@ export interface Plantilla {
   id: string;
   tenantId: string | null;
   codigo: string;
+  /** Título legible; lo siembra la migración de la base y la personalizada lo copia. */
+  nombre: string;
   canal: CanalNotificacion;
   idioma: string;
   version: number;
@@ -21,6 +23,8 @@ export interface Plantilla {
   /** La base de la que sale una personalizada; nulo en las base. */
   plantillaBaseId: string | null;
   activa: boolean;
+  /** Falso en las de operación de la plataforma: el tenant no las ve ni las personaliza; el envío no lo mira. */
+  personalizable: boolean;
   /** Nulo en las base, que siembra una migración. */
   creadoPor: string | null;
   creadoEn: Date;

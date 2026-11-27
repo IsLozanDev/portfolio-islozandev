@@ -44,20 +44,20 @@ SET ROLE not_plantillas_test_app;
 -- ---------------------------------------------------------------------
 SELECT set_config('app.tenant_id', '43000000-0000-0000-0000-00000000000a', false);
 
-INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por)
+INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por, nombre)
 VALUES ('43000000-0000-0000-0000-0000000000a1', '43000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 1,
-        'Prueba de A', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f1');
+        'Prueba de A', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f1', 'Correo de prueba');
 
 SELECT not_plantillas_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id)
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, nombre)
   VALUES (gen_random_uuid(), '43000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 2, 'x', 'x',
-          '42000000-0000-0000-0000-000000000001')$$,
+          '42000000-0000-0000-0000-000000000001', 'Correo de prueba')$$,
   '23505', 'dos versiones activas del mismo tenant y código');
 
 UPDATE ntf.plantilla SET activa = false WHERE id = '43000000-0000-0000-0000-0000000000a1';
-INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por)
+INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por, nombre)
 VALUES ('43000000-0000-0000-0000-0000000000a2', '43000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 2,
-        'Prueba de A v2', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f1');
+        'Prueba de A v2', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f1', 'Correo de prueba');
 
 -- Reactivar la versión vieja con otra activa también falla.
 SELECT not_plantillas_test.debe_fallar($$
@@ -78,9 +78,9 @@ END $$;
 -- ---------------------------------------------------------------------
 SELECT set_config('app.tenant_id', '43000000-0000-0000-0000-00000000000b', false);
 
-INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por)
+INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, creado_por, nombre)
 VALUES ('43000000-0000-0000-0000-0000000000b1', '43000000-0000-0000-0000-00000000000b', 'PRUEBA_CORREO', 'CORREO', 1,
-        'Prueba de B', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f2');
+        'Prueba de B', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', '43000000-0000-0000-0000-0000000000f2', 'Correo de prueba');
 
 DO $$
 DECLARE filas int;
@@ -93,8 +93,8 @@ BEGIN
   IF filas <> 0 THEN RAISE EXCEPTION 'B no debía desactivar la personalización de A'; END IF;
 END $$;
 SELECT not_plantillas_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), '43000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 3, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '43000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 3, 'x', 'x', 'Correo de prueba')$$,
   '42501', 'B inserta una versión con el tenant de A');
 
 -- A sigue con su versión 2 activa.
