@@ -1,0 +1,32 @@
+<vit-panel-lateral [titulo]="plantilla.nombre">
+  <div class="flex flex-col gap-4">
+    <span class="font-mono text-xs text-sobre-superficie-variante" data-codigo>{{ plantilla.codigo }}</span>
+
+    <div class="flex flex-wrap items-center gap-2 text-[13px] text-sobre-superficie-variante">
+      <vit-chip-estado [texto]="canal"><mat-icon class="!size-4 !text-base" aria-hidden="true">{{ iconoCanal }}</mat-icon></vit-chip-estado>
+      <vit-chip-estado [texto]="origen" [tono]="tonoOrigen" data-origen />
+      <span>{{ actualizada }}</span>
+    </div>
+
+    @if (error(); as mensajeError) {
+      <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+    } @else if (vista(); as previa) {
+      <vit-vista-previa-correo [asunto]="previa.asunto" [cuerpoHtml]="previa.cuerpoHtml" />
+      <p class="m-0 flex items-center gap-1.5 text-xs text-sobre-superficie-variante">
+        <mat-icon class="!size-4 !text-base" aria-hidden="true">science</mat-icon>{{ mensajes.notaEjemplo }}
+      </p>
+    } @else {
+      <vit-cargando [texto]="mensajesPrevia.generando" />
+    }
+  </div>
+
+  <div accionesPanel class="flex justify-end gap-2">
+    <button mat-button type="button" (click)="cerrar()" data-accion="cerrar">{{ mensajes.cerrar }}</button>
+    @if (puedeEditar) {
+      <button mat-flat-button type="button" (click)="editar()" data-accion="editar">
+        <mat-icon aria-hidden="true">edit</mat-icon>
+        {{ mensajes.editar }}
+      </button>
+    }
+  </div>
+</vit-panel-lateral>

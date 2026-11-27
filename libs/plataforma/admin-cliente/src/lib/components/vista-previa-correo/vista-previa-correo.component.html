@@ -1,0 +1,7 @@
+<div class="flex flex-col gap-2 transition-opacity" [class.opacity-50]="atenuado()" data-vista-previa>
+  <p class="m-0 flex items-baseline gap-2 px-1 text-sm">
+    <span class="text-xs tracking-wide text-sobre-superficie-variante uppercase">{{ mensajes.asunto }}</span>
+    <b class="font-medium" data-asunto-previa>{{ asunto() }}</b>
+  </p>
+  <iframe class="block h-80 w-full rounded-lg border-0 shadow-sm" sandbox="" [srcdoc]="documento()" [title]="mensajes.tituloMarco"></iframe>
+</div>

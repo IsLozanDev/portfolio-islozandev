@@ -10,6 +10,7 @@ import { API_URL } from '../testing/http-de-prueba';
 import { ADMIN_CLIENTE_ROUTES } from './admin-cliente.routes';
 import { PERMISOS_ADMIN } from './models/permisos-admin';
 import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
+import { PERMISOS_PLANTILLAS } from './models/permisos-plantillas';
 
 @Component({ template: '' })
 class Prohibido {}
@@ -32,6 +33,7 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
         import('./pages/empresas-lista/empresas-lista.page'),
         import('./pages/bitacora-lista/bitacora-lista.page'),
         import('./pages/auditoria-lista/auditoria-lista.page'),
+        import('./pages/plantillas-lista/plantillas-lista.page'),
       ]),
     ESPERA_PRECARGA_MS,
   );
@@ -84,6 +86,15 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
   it('/admin/soporte sin plat.soporte.autorizar va a /403 (spec 18)', async () => {
     sesion.conPermisos(PERMISOS_ADMIN.seguridadBitacora);
     expect((await navegar('/admin/soporte')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/plantillas abre con plat.plantilla_notificacion.consultar y sin él va a /403 (spec 47)', async () => {
+    sesion.conPermisos(PERMISOS_PLANTILLAS.consultar);
+    expect((await navegar('/admin/plantillas')).titulo).toBe('Plantillas de notificación');
+
+    TestBed.resetTestingModule();
+    sesion = new DobleSesion().conPermisos(PERMISOS_ADMIN.usuarioInvitar);
+    expect((await navegar('/admin/plantillas')).url).toBe(RUTA_PROHIBIDO);
   });
 
   it('/admin/usuarios sin el permiso va a /403', async () => {

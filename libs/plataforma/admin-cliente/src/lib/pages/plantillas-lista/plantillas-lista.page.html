@@ -1,0 +1,57 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-col gap-1">
+    <h1 class="text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <p class="m-0 max-w-[720px] text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+  </header>
+
+  <vit-filtros [placeholderBusqueda]="mensajes.buscar" [valorInicial]="valorInicialFiltros" (cambio)="filtrar($event)" />
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas()"
+    [filas]="listado().items"
+    [total]="listado().total"
+    [cargando]="cargando()"
+    [indicePagina]="filtro().pagina - 1"
+    [tamanoPagina]="filtro().tamano"
+    [textoVacio]="mensajes.sinPlantillas"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitCeldaTabla="nombre" let-fila>
+      <span class="flex flex-col gap-0.5 leading-[18px]">
+        <span class="font-medium">{{ fila.nombre }}</span>
+        <small class="font-mono text-xs text-sobre-superficie-variante">{{ fila.codigo }}</small>
+      </span>
+    </ng-template>
+    <ng-template vitCeldaTabla="asunto" let-fila>
+      <span class="text-sobre-superficie-variante">{{ fila.asunto }}</span>
+    </ng-template>
+    <ng-template vitCeldaTabla="canal" let-fila>
+      <vit-chip-estado [texto]="fila.canal"><mat-icon class="!size-4 !text-base" aria-hidden="true">{{ fila.iconoCanal }}</mat-icon></vit-chip-estado>
+    </ng-template>
+    <ng-template vitCeldaTabla="actualizada" let-fila>
+      <span class="text-sobre-superficie-variante">{{ fila.actualizada }}</span>
+    </ng-template>
+    <ng-template vitAccionesFila let-fila>
+      <div class="flex justify-end gap-1">
+        <button mat-button type="button" (click)="ver(fila)" [attr.aria-label]="mensajes.ver + ': ' + fila.nombre" data-accion="ver">
+          <mat-icon aria-hidden="true">visibility</mat-icon>
+          <span class="max-[599.98px]:sr-only">{{ mensajes.ver }}</span>
+        </button>
+        <a
+          *siPermiso="permisos.gestionar"
+          mat-button
+          [routerLink]="rutaEditor(fila)"
+          [attr.aria-label]="mensajes.editar + ': ' + fila.nombre"
+          data-accion="editar"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          <span class="max-[599.98px]:sr-only">{{ mensajes.editar }}</span>
+        </a>
+      </div>
+    </ng-template>
+  </vit-tabla>
+</section>
