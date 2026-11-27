@@ -7,7 +7,7 @@ describe('Manifiesto PLAT 1.27.0: plantillas de notificación (spec 43)', () => 
   interface Manifiesto {
     version: string;
     permisos: { codigo: string; descripcion: string; alcance_minimo: string; sensible: boolean }[];
-    opciones: { codigo: string; permisos: string[] }[];
+    opciones: { codigo: string; permisos: string[]; [campo: string]: unknown }[];
     roles_predefinidos: { codigo: string; permisos: string[] }[];
   }
   let manifiesto: Manifiesto;
@@ -18,7 +18,7 @@ describe('Manifiesto PLAT 1.27.0: plantillas de notificación (spec 43)', () => 
   });
 
   it('está en la versión 1.27.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.31.0');
+    expect(manifiesto.version).toBe('1.32.0');
     const dePlantillas = manifiesto.permisos.filter((permiso) => esDePlantillas(permiso.codigo));
     expect(dePlantillas.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_PLANTILLAS.consultar, 'TENANT', false],
@@ -26,11 +26,24 @@ describe('Manifiesto PLAT 1.27.0: plantillas de notificación (spec 43)', () => 
     ]);
   });
 
-  it('solo PLAT_PROPIETARIO los tiene; sin opción de menú hasta el spec 47', () => {
+  it('solo PLAT_PROPIETARIO los tiene', () => {
     const propietario = manifiesto.roles_predefinidos.find((rol) => rol.codigo === 'PLAT_PROPIETARIO');
     expect(propietario?.permisos.filter(esDePlantillas)).toEqual(Object.values(PERMISOS_PLANTILLAS));
     const otros = manifiesto.roles_predefinidos.filter((rol) => rol.codigo !== 'PLAT_PROPIETARIO');
     expect(otros.flatMap((rol) => rol.permisos).filter(esDePlantillas)).toEqual([]);
-    expect(manifiesto.opciones.flatMap((opcion) => opcion.permisos).filter(esDePlantillas)).toEqual([]);
+  });
+
+  it('spec 47 (1.32.0): «Plantillas» en Configuración, después de Feriados, con consultar', () => {
+    const opcion = manifiesto.opciones.find((candidata) => candidata.codigo === 'plat.configuracion.plantillas');
+    expect(opcion).toMatchObject({
+      modulo: 'configuracion',
+      padre: 'plat.configuracion',
+      nombre: 'Plantillas',
+      ruta: '/admin/plantillas',
+      icono: 'mail',
+      orden: 5,
+      permisos: [PERMISOS_PLANTILLAS.consultar],
+    });
+    expect(manifiesto.opciones.flatMap((candidata) => candidata.permisos).filter(esDePlantillas)).toEqual([PERMISOS_PLANTILLAS.consultar]);
   });
 });

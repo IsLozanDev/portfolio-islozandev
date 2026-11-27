@@ -51,4 +51,10 @@ export const detalleSuscripcion = (cambios: Partial<DetallePlantillaRespuesta> =
   ...cambios,
 });
 
+export const USUARIO_ACTUAL = '47000000-0000-7000-8000-0000000000f1';
+export const VERSIONES = [
+  { version: 2, activa: true, creado_por: USUARIO_ACTUAL, creado_en: '2026-11-24T16:02:00.000Z' },
+  { version: 1, activa: false, creado_por: '47000000-0000-7000-8000-0000000000f2', creado_en: '2026-11-21T21:45:00.000Z' },
+];
+
 export const VISTA_PREVIA = { asunto: 'Tu suscripción a REST vence en 3 días', cuerpo_html: '<p>Hola:</p><p>Vence en 3 días.</p>' };

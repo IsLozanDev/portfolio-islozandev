@@ -88,6 +88,7 @@ describe('PlantillasListaPage (admin)', () => {
     document.querySelector<HTMLButtonElement>('.vit-panel-lateral [data-accion="editar"]')?.click();
     await pantalla.estable();
     pantalla.http.expectOne({ method: 'GET', url: URL_SUSCRIPCION }).flush(detalleSuscripcion());
+    pantalla.http.expectOne({ method: 'GET', url: `${URL_SUSCRIPCION}/versiones` }).flush([]);
     await pantalla.estable();
 
     expect(pantalla.url()).toBe('/admin/plantillas/SUSCRIPCION_POR_VENCER/CORREO');

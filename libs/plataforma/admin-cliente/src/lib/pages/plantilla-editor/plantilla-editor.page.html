@@ -122,6 +122,12 @@
 
             @if (editable) {
               <div class="flex flex-wrap items-center justify-end gap-2 border-t border-borde px-5 py-3">
+                @if (puedeRestaurar()) {
+                  <button mat-button type="button" class="vit-destructivo mr-auto" [disabled]="restaurando()" (click)="restaurarBase()" data-accion="restaurar">
+                    <mat-icon aria-hidden="true">restart_alt</mat-icon>
+                    {{ mensajes.restaurar }}
+                  </button>
+                }
                 <button mat-button type="button" [disabled]="!hayCambios()" (click)="descartar()" data-accion="descartar">{{ mensajes.descartar }}</button>
                 <button mat-flat-button type="button" [disabled]="guardarBloqueado()" (click)="guardar()" data-accion="guardar">
                   <mat-icon aria-hidden="true">save</mat-icon>
@@ -173,6 +179,8 @@
             </div>
           </section>
         </div>
+
+        <vit-historial-plantilla [versiones]="versiones()" />
       }
     }
   }

@@ -50,7 +50,7 @@ describe('Manifiesto PLAT 1.27.0: parte de idn (specs 28, 29 y 30)', () => {
   });
 
   it('está en la versión 1.27.0 y declara los permisos con alcance TENANT; los de gestión son sensibles (spec 29)', () => {
-    expect(manifiesto.version).toBe('1.31.0');
+    expect(manifiesto.version).toBe('1.32.0');
     const deIdn = manifiesto.permisos.filter((permiso) => permiso.codigo.startsWith('plat.identidad.'));
     expect(deIdn.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_IDN.validar, 'TENANT', false],

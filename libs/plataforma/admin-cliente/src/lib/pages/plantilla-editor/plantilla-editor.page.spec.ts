@@ -1,12 +1,14 @@
 import type { TestRequest } from '@angular/common/http/testing';
 import { abrirAdmin, crearDobleAvisos, type AdminDePrueba, type DobleAvisosCatalogos } from '../../../testing/catalogos-de-prueba';
 import { DobleSesion } from '../../../testing/doble-sesion';
-import { detalleSuscripcion, URL_SUSCRIPCION, VISTA_PREVIA } from '../../../testing/plantillas-de-prueba';
-import { MENSAJES_EDITOR_PLANTILLA } from '../../models/mensajes-plantillas';
+import { detalleSuscripcion, URL_SUSCRIPCION, USUARIO_ACTUAL, VERSIONES, VISTA_PREVIA } from '../../../testing/plantillas-de-prueba';
+import { MENSAJES_CAMBIOS_SIN_GUARDAR } from '../../models/mensajes-admin';
+import { MENSAJES_EDITOR_PLANTILLA, MENSAJES_HISTORIAL_PLANTILLA } from '../../models/mensajes-plantillas';
 import { PERMISOS_PLANTILLAS } from '../../models/permisos-plantillas';
 
 const RUTA = '/admin/plantillas/SUSCRIPCION_POR_VENCER/CORREO';
 const URL_VISTA_PREVIA = `${URL_SUSCRIPCION}/vista-previa`;
+const URL_VERSIONES = `${URL_SUSCRIPCION}/versiones`;
 /** Un poco más que la espera de 600 ms de la vista previa. */
 const ESPERA_DEBOUNCE_MS = 700;
 const GESTIONAR = [PERMISOS_PLANTILLAS.consultar, PERMISOS_PLANTILLAS.gestionar];
@@ -33,10 +35,18 @@ describe('PlantillaEditorPage (admin)', () => {
     await pantalla.estable();
   }
 
-  async function abrir(permisos: string[] = GESTIONAR, detalle = detalleSuscripcion()): Promise<void> {
+  async function abrir(permisos: string[] = GESTIONAR, detalle = detalleSuscripcion(), versiones: object[] = []): Promise<void> {
     avisos = crearDobleAvisos();
-    pantalla = await abrirAdmin(RUTA, new DobleSesion().conPermisos(...permisos), avisos);
+    const sesion = new DobleSesion().conPermisos(...permisos);
+    sesion.contexto.update((contexto) => (contexto ? { ...contexto, usuarioId: USUARIO_ACTUAL } : contexto));
+    pantalla = await abrirAdmin(RUTA, sesion, avisos);
+    await responderCarga(detalle, versiones);
+  }
+
+  /** `obtener` y `versiones` van en paralelo al cargar y al recargar. */
+  async function responderCarga(detalle: object, versiones: object[]): Promise<void> {
     pantalla.http.expectOne({ method: 'GET', url: URL_SUSCRIPCION }).flush(detalle);
+    pantalla.http.expectOne({ method: 'GET', url: URL_VERSIONES }).flush(versiones);
     await pantalla.estable();
   }
 
@@ -153,6 +163,8 @@ describe('PlantillaEditorPage (admin)', () => {
     });
     pedido.flush(detalleSuscripcion({ origen: 'PERSONALIZADA', version: 1, cuerpo: '<p>Hola {{tenant}}</p>' }));
     await pantalla.estable();
+    pantalla.http.expectOne({ method: 'GET', url: URL_VERSIONES }).flush([VERSIONES[1]].map((version) => ({ ...version, activa: true })));
+    await pantalla.estable();
 
     expect(campo('cuerpo').value).toBe('<p>Hola {{tenant}}</p>');
     expect(elemento().querySelector('[data-aviso="saneado"]')?.textContent).toContain('Guardada como versión 1.');
@@ -218,11 +230,92 @@ describe('PlantillaEditorPage (admin)', () => {
   it('una plantilla que no existe o no es personalizable muestra el estado vacío', async () => {
     avisos = crearDobleAvisos();
     pantalla = await abrirAdmin('/admin/plantillas/INTEGRIDAD_ROTA/CORREO', new DobleSesion().conPermisos(...GESTIONAR), avisos);
-    pantalla.http
-      .expectOne(`${URL_SUSCRIPCION.replace('SUSCRIPCION_POR_VENCER', 'INTEGRIDAD_ROTA')}`)
-      .flush({ codigo: 'PLANTILLA_NO_ENCONTRADA', mensaje: 'No existe' }, { status: 404, statusText: 'Not Found' });
+    const urlOperacion = URL_SUSCRIPCION.replace('SUSCRIPCION_POR_VENCER', 'INTEGRIDAD_ROTA');
+    pantalla.http.expectOne(urlOperacion).flush({ codigo: 'PLANTILLA_NO_ENCONTRADA', mensaje: 'No existe' }, { status: 404, statusText: 'Not Found' });
+    pantalla.http.expectOne(`${urlOperacion}/versiones`).flush([]);
     await pantalla.estable();
 
     expect(elemento().querySelector('vit-estado-vacio')?.textContent).toContain(MENSAJES_EDITOR_PLANTILLA.noExiste);
+  });
+
+  it('el historial abre contraído y lista versión, estado, autor y fecha, con la base al final', async () => {
+    await abrir(GESTIONAR, detalleSuscripcion({ origen: 'PERSONALIZADA', version: 2 }), VERSIONES);
+    await responderVistaPreviaInicial();
+
+    const seccion = elemento().querySelector('[data-seccion="historial"]');
+    expect(seccion?.querySelector('[aria-expanded]')?.getAttribute('aria-expanded')).toBe('false');
+    expect(seccion?.textContent).toContain(MENSAJES_HISTORIAL_PLANTILLA.conVigente(2, 2));
+    const filas = [...elemento().querySelectorAll('[data-fila-version]')].map((fila) =>
+      [...fila.querySelectorAll('td')].slice(0, 3).map((celda) => celda.textContent?.trim()),
+    );
+    expect(filas).toEqual([
+      ['v2', 'Vigente', 'Usted'],
+      ['v1', 'Inactiva', 'Otro usuario'],
+    ]);
+    expect(elemento().querySelector('[data-fila-base]')?.textContent).toContain(MENSAJES_HISTORIAL_PLANTILLA.baseSiempre);
+  });
+
+  it('«Restaurar la base» pide confirmación destructiva sin motivo; al confirmar vuelve la base y el historial queda inactivo', async () => {
+    await abrir(GESTIONAR, detalleSuscripcion({ origen: 'PERSONALIZADA', version: 2, cuerpo: '<p>Propio {{tenant}}</p>' }), VERSIONES);
+    await responderVistaPreviaInicial();
+    expect(boton('restaurar')?.classList).toContain('vit-destructivo');
+
+    boton('restaurar')?.click();
+    await pantalla.estable();
+    expect(avisos.confirmarDestructiva).toHaveBeenCalledWith({
+      titulo: MENSAJES_EDITOR_PLANTILLA.restaurarTitulo,
+      texto: MENSAJES_EDITOR_PLANTILLA.restaurarTexto(2),
+      textoConfirmar: MENSAJES_EDITOR_PLANTILLA.restaurar,
+    });
+    pantalla.http.expectOne({ method: 'DELETE', url: `${URL_SUSCRIPCION}/personalizacion` }).flush(null, { status: 204, statusText: 'No Content' });
+    await pantalla.estable();
+    await responderCarga(detalleSuscripcion(), VERSIONES.map((version) => ({ ...version, activa: false })));
+
+    expect(elemento().querySelector('[data-origen]')?.textContent?.trim()).toBe('Base');
+    expect(campo('cuerpo').value).toBe(detalleSuscripcion().cuerpo);
+    expect(boton('restaurar')).toBeNull();
+    expect([...elemento().querySelectorAll('[data-fila-version]')].every((fila) => fila.textContent?.includes('Inactiva'))).toBe(true);
+    expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_EDITOR_PLANTILLA.restaurada);
+    await esperarDebounce();
+    pedidosDeVistaPrevia().forEach((pedido) => pedido.flush(VISTA_PREVIA));
+  });
+
+  it('restaurar con 404 SIN_PERSONALIZACION recarga sin mostrar error', async () => {
+    await abrir(GESTIONAR, detalleSuscripcion({ origen: 'PERSONALIZADA', version: 2 }), VERSIONES);
+    await responderVistaPreviaInicial();
+
+    boton('restaurar')?.click();
+    await pantalla.estable();
+    pantalla.http
+      .expectOne({ method: 'DELETE', url: `${URL_SUSCRIPCION}/personalizacion` })
+      .flush({ codigo: 'SIN_PERSONALIZACION', mensaje: 'No hay' }, { status: 404, statusText: 'Not Found' });
+    await pantalla.estable();
+    await responderCarga(detalleSuscripcion(), []);
+
+    expect(avisos.toast).not.toHaveBeenCalledWith('error', expect.anything());
+    expect(elemento().querySelector('[data-origen]')?.textContent?.trim()).toBe('Base');
+    await esperarDebounce();
+    pedidosDeVistaPrevia().forEach((pedido) => pedido.flush(VISTA_PREVIA));
+  });
+
+  it('salir con cambios sin guardar pide confirmación; sin cambios sale directo', async () => {
+    await abrir();
+    await responderVistaPreviaInicial();
+
+    await escribir('cuerpo', '<p>Cambio {{tenant}}</p>');
+    avisos.confirmar.mockResolvedValueOnce(false);
+    elemento().querySelector<HTMLElement>('[data-accion="volver"]')?.click();
+    await pantalla.estable();
+    expect(avisos.confirmar).toHaveBeenCalledWith(expect.objectContaining({ titulo: MENSAJES_CAMBIOS_SIN_GUARDAR.titulo }));
+    expect(pantalla.url()).toBe(RUTA);
+
+    elemento().querySelector<HTMLButtonElement>('[data-accion="descartar"]')?.click();
+    await pantalla.estable();
+    avisos.confirmar.mockClear();
+    elemento().querySelector<HTMLElement>('[data-accion="volver"]')?.click();
+    await pantalla.estable();
+    expect(avisos.confirmar).not.toHaveBeenCalled();
+    expect(pantalla.url()).toBe('/admin/plantillas');
+    pantalla.http.match(() => true).forEach((pedido) => pedido.flush(pedido.request.method === 'GET' ? { items: [], total: 0, pagina: 1, tamano: 25 } : VISTA_PREVIA));
   });
 });

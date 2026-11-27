@@ -11,9 +11,11 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SesionService } from '@vitrina/shared/auth';
 import { AvisosService, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
 import { catchError, debounce, distinctUntilChanged, filter, from, map, of, switchMap, timer } from 'rxjs';
+import { HistorialPlantillaComponent } from '../../components/historial-plantilla/historial-plantilla.component';
 import { VistaPreviaCorreoComponent } from '../../components/vista-previa-correo/vista-previa-correo.component';
+import type { ConCambiosSinGuardar } from '../../models/con-cambios-sin-guardar';
 import { ContenidoPlantillaInvalidoError, VariableNoPermitidaError, VersionObsoletaPlantillaError, type CampoPlantilla } from '../../models/errores-plantilla';
-import { aErrorAdmin } from '../../models/error-admin';
+import { aErrorAdmin, ErrorAdmin } from '../../models/error-admin';
 import {
   ERRORES_CAMPO_PLANTILLA,
   ETIQUETAS_CANAL_PLANTILLA,
@@ -23,7 +25,7 @@ import {
   MENSAJES_VISTA_PREVIA,
 } from '../../models/mensajes-plantillas';
 import { PERMISOS_PLANTILLAS } from '../../models/permisos-plantillas';
-import { LARGO_MAXIMO_ASUNTO, type CanalPlantilla, type DetallePlantilla, type VariableDeclarada, type VistaPrevia } from '../../models/plantilla';
+import { LARGO_MAXIMO_ASUNTO, type CanalPlantilla, type DetallePlantilla, type VariableDeclarada, type VersionPlantilla, type VistaPrevia } from '../../models/plantilla';
 import { TONOS_ORIGEN_PLANTILLA } from '../../models/tonos-plantilla';
 import { PlantillasCliente } from '../../services/plantillas.cliente';
 import { formatearFechaCorta } from '../../utils/formato';
@@ -37,6 +39,8 @@ const ESTADO_NO_ENCONTRADO = 404;
 const CANALES: readonly CanalPlantilla[] = ['CORREO'];
 const ERROR_LOCAL = 'plantilla';
 const ERROR_SERVIDOR = 'servidor';
+/** El `DELETE` de una plantilla que ya no tenía personalización: se recarga sin error. */
+const CODIGO_SIN_PERSONALIZACION = 'SIN_PERSONALIZACION';
 
 export type VersionVista = 'propia' | 'base';
 type EstadoCarga = 'cargando' | 'lista' | 'no-encontrada' | 'error';
@@ -72,11 +76,12 @@ class ErrorAlEscribir implements ErrorStateMatcher {
     CargandoComponent,
     ChipEstadoComponent,
     EstadoVacioComponent,
+    HistorialPlantillaComponent,
     VistaPreviaCorreoComponent,
   ],
   templateUrl: './plantilla-editor.page.html',
 })
-export class PlantillaEditorPage {
+export class PlantillaEditorPage implements ConCambiosSinGuardar {
   private readonly plantillas = inject(PlantillasCliente);
   private readonly avisos = inject(AvisosService);
   private readonly injector = inject(Injector);
@@ -94,6 +99,8 @@ export class PlantillaEditorPage {
   protected readonly estadoCarga = signal<EstadoCarga>('cargando');
   protected readonly errorCarga = signal<string | null>(null);
   protected readonly detalle = signal<DetallePlantilla | null>(null);
+  /** `null` si no se pudo cargar. */
+  protected readonly versiones = signal<readonly VersionPlantilla[] | null>([]);
   protected readonly variables = computed<readonly VariableDeclarada[]>(() => this.detalle()?.variables ?? []);
 
   protected readonly asunto = new FormControl('', { nonNullable: true, validators: this.validador((texto) => errorDelAsunto(texto, this.variables())) });
@@ -112,6 +119,7 @@ export class PlantillaEditorPage {
   protected readonly vistaPrevia = signal<VistaPrevia | null>(null);
   protected readonly estadoVistaPrevia = signal<EstadoVistaPrevia>('generando');
   protected readonly guardando = signal(false);
+  protected readonly restaurando = signal(false);
   /** Versión guardada cuyo cuerpo devolvió el servidor distinto del enviado (TR-RNF-012). */
   protected readonly versionSaneada = signal<number | null>(null);
 
@@ -123,12 +131,17 @@ export class PlantillaEditorPage {
   });
   protected readonly guardarBloqueado = computed(() => !this.hayCambios() || this.conErrorLocal() || this.guardando());
   protected readonly rigeBase = computed(() => this.detalle()?.origen === 'BASE');
+  protected readonly puedeRestaurar = computed(() => this.editable && this.detalle()?.origen === 'PERSONALIZADA');
   protected readonly vistaAtenuada = computed(() => this.versionVista() === 'propia' && this.conErrorLocal());
   protected readonly encabezado = computed(() => this.encabezadoDe(this.detalle()));
 
   constructor() {
     this.escucharVistaPrevia();
     void this.cargar();
+  }
+
+  tieneCambiosSinGuardar(): boolean {
+    return this.hayCambios() && !this.guardando();
   }
 
   protected mensajeDeError(control: FormControl<string>): string | null {
@@ -175,11 +188,41 @@ export class PlantillaEditorPage {
       this.tomarContenido(guardada);
       this.versionSaneada.set(guardada.cuerpo === enviado.cuerpo ? null : guardada.version);
       this.avisos.toast('exito', this.mensajes.guardadaComo(guardada.version ?? 0));
+      void this.cargarHistorial();
     } catch (error) {
       await this.mostrarErrorAlGuardar(error);
     } finally {
       this.guardando.set(false);
     }
+  }
+
+  /** El `DELETE` no recibe motivo y la auditoría ya registra quién y cuándo: confirmación destructiva sin motivo. */
+  protected async restaurarBase(): Promise<void> {
+    const detalle = this.detalle();
+    if (!detalle || !this.canal || !this.puedeRestaurar() || this.restaurando()) return;
+    const respuesta = await this.avisos.confirmarDestructiva({
+      titulo: this.mensajes.restaurarTitulo,
+      texto: this.mensajes.restaurarTexto(detalle.version ?? 0),
+      textoConfirmar: this.mensajes.restaurar,
+    });
+    if (!respuesta.confirmado) return;
+    this.restaurando.set(true);
+    try {
+      await this.plantillas.restaurarBase(this.codigo, this.canal);
+      this.avisos.toast('exito', this.mensajes.restaurada);
+      await this.recargarTrasRestaurar();
+    } catch (error) {
+      if (esSinPersonalizacion(error)) await this.recargarTrasRestaurar();
+      else this.avisos.toast('error', aErrorAdmin(error).message);
+    } finally {
+      this.restaurando.set(false);
+    }
+  }
+
+  private async recargarTrasRestaurar(): Promise<void> {
+    this.versionSaneada.set(null);
+    this.versionVista.set('propia');
+    await this.cargar();
   }
 
   private async mostrarErrorAlGuardar(error: unknown): Promise<void> {
@@ -225,7 +268,7 @@ export class PlantillaEditorPage {
       return;
     }
     try {
-      const detalle = await this.plantillas.obtener(this.codigo, this.canal);
+      const [detalle] = await Promise.all([this.plantillas.obtener(this.codigo, this.canal), this.cargarHistorial()]);
       this.detalle.set(detalle);
       this.tomarContenido(detalle);
       this.estadoCarga.set('lista');
@@ -237,6 +280,16 @@ export class PlantillaEditorPage {
       }
       this.errorCarga.set(errorAdmin.message);
       this.estadoCarga.set('error');
+    }
+  }
+
+  /** Un historial que falla no impide editar: la sección lo dice. */
+  private async cargarHistorial(): Promise<void> {
+    if (!this.canal) return;
+    try {
+      this.versiones.set(await this.plantillas.versiones(this.codigo, this.canal));
+    } catch {
+      this.versiones.set(null);
     }
   }
 
@@ -296,6 +349,10 @@ export class PlantillaEditorPage {
       guardada: detalle.origen === 'BASE' ? this.mensajes.textoBase : this.mensajes.guardada(formatearFechaCorta(new Date(detalle.actualizadoEn))),
     };
   }
+}
+
+function esSinPersonalizacion(error: unknown): boolean {
+  return error instanceof ErrorAdmin && error.codigo === CODIGO_SIN_PERSONALIZACION;
 }
 
 function ponerCursor(elemento: HTMLInputElement | HTMLTextAreaElement | undefined, cursor: number): void {

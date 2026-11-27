@@ -95,6 +95,32 @@ export const MENSAJES_EDITOR_PLANTILLA = {
   copiado: 'Su cuerpo se copió al portapapeles.',
   noSeCopio: 'No se pudo copiar al portapapeles',
   noSeCopioTexto: 'Su texto sigue en el editor: cópielo a mano antes de recargar.',
+  restaurar: 'Restaurar la base',
+  restaurarTitulo: '¿Restaurar la base?',
+  restaurarTexto: (version: number) =>
+    `Los próximos correos de su empresa usarán el texto original de la plataforma. La versión ${version} deja de regir, pero queda en el historial.`,
+  restaurada: 'Se restauró el texto original de la plataforma.',
+} as const;
+
+export const MENSAJES_HISTORIAL_PLANTILLA = {
+  titulo: 'Historial de versiones',
+  sinVersiones: 'Sin versiones propias · rige la base',
+  conVigente: (cantidad: number, vigente: number) => `${cantidad} ${cantidad === 1 ? 'versión' : 'versiones'} · vigente v${vigente}`,
+  sinVigente: (cantidad: number) => `${cantidad} ${cantidad === 1 ? 'versión' : 'versiones'} · rige la base`,
+  noSePudo: 'No se pudo cargar el historial.',
+  version: 'Versión',
+  estado: 'Estado',
+  guardadaPor: 'Guardada por',
+  fecha: 'Fecha',
+  numero: (version: number) => `v${version}`,
+  vigente: 'Vigente',
+  inactiva: 'Inactiva',
+  usted: 'Usted',
+  otroUsuario: 'Otro usuario',
+  base: 'Base',
+  baseSiempre: 'Siempre disponible',
+  plataforma: 'Plataforma',
+  sinFecha: '—',
 } as const;
 
 export const ERRORES_CAMPO_PLANTILLA = {
