@@ -1,3 +1,5 @@
+import { uuidV7 } from '@vitrina/plataforma/kernel-infra';
+import { Baja } from '../src/domain/baja.js';
 import { BarrerProgramacionesAtrasadas, LIMITE_BARRIDO, MARGEN_ATRASO_MS } from '../src/application/programaciones/barrer-programaciones-atrasadas.js';
 import { CancelarProgramaciones } from '../src/application/programaciones/cancelar-programaciones.js';
 import { EjecutarProgramacion } from '../src/application/programaciones/ejecutar-programacion.js';
@@ -207,6 +209,22 @@ describe('Recordatorios programados (spec 45, TR-RF-076)', () => {
       const { estado, motivo, mensajeId } = piezas.programaciones.guardada(programacionId).instantanea();
       expect({ estado, motivo }).toEqual({ estado: 'DESCARTADA', motivo: 'DESCARTADO' });
       expect(piezas.mensajes.guardado(mensajeId ?? '').estado).toBe('DESCARTADO');
+      expect(piezas.publicador.eventos.filter((evento) => evento.eventType === 'not.mensaje.solicitado')).toEqual([]);
+    });
+
+    it('spec 46: una baja CANAL hecha después de programar → DESCARTADA con el motivo, sin correo', async () => {
+      const { programacionId } = await programarEnA();
+      await enA(() =>
+        piezas.bajas.registrar(
+          Baja.registrar({ id: uuidV7(), tenantId: TENANT_A, canal: 'CORREO', alcance: 'CANAL', destinoHash: 'sha256:ana@ejemplo.pe', personaId: null }),
+        ),
+      );
+
+      expect(await alaHora(programacionId)).toBe('DESCARTADA');
+
+      const { motivo, mensajeId } = piezas.programaciones.guardada(programacionId).instantanea();
+      expect(motivo).toBe('DESCARTADO');
+      expect(piezas.mensajes.guardado(mensajeId ?? '').instantanea().motivoFallo).toBe('BAJA_CANAL');
       expect(piezas.publicador.eventos.filter((evento) => evento.eventType === 'not.mensaje.solicitado')).toEqual([]);
     });
 

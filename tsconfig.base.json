@@ -131,6 +131,9 @@
       ],
       "@vitrina/plataforma/comprobantes-ui": [
         "./libs/plataforma/comprobantes-ui/src/index.ts"
+      ],
+      "@vitrina/plataforma/preferencias-ui": [
+        "./libs/plataforma/preferencias-ui/src/index.ts"
       ]
     }
   }

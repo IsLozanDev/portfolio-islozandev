@@ -62,6 +62,8 @@ export interface RepositorioMensajes {
   registrarIntento(intento: IntentoEntrega): Promise<void>;
   /** Para numerar los avisos del proveedor después de los intentos de entrega. */
   siguienteNumeroIntento(mensajeId: string): Promise<number>;
+  /** El correo del mensaje más reciente con ese hash: el token del enlace de preferencias no lo lleva en claro. */
+  ultimoDestino(destinoHash: string): Promise<string | null>;
 }
 
 export interface RepositorioContactosInvalidos {

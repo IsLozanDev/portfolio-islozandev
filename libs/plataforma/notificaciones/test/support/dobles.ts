@@ -2,7 +2,14 @@ import type { AuditoriaPort, EntradaAuditoria } from '@vitrina/plataforma/audito
 import type { Clock, DomainEvent, EventPublisher, TenantContext, UnitOfWork } from '@vitrina/plataforma/kernel';
 import { AlsTenantContext, uuidV7 } from '@vitrina/plataforma/kernel-infra';
 import type { ConsentimientoPort, PersonaDetalle, PersonaPort } from '@vitrina/plataforma/personas';
-import type { DependenciasEntrega, DependenciasEnvio, DependenciasPlantillas, DependenciasWebhook, Registrar } from '../../src/application/dependencias.js';
+import type {
+  DependenciasEntrega,
+  DependenciasEnvio,
+  DependenciasPlantillas,
+  DependenciasPreferencias,
+  DependenciasWebhook,
+  Registrar,
+} from '../../src/application/dependencias.js';
 import type { ColaEnvios, TrabajoEnvio } from '../../src/application/ports/cola-envios.js';
 import type { CorreoSaliente, ProveedorCorreo } from '../../src/application/ports/proveedor-correo.js';
 import type {
@@ -195,6 +202,14 @@ export class MensajesMemoria implements RepositorioMensajes {
     return this.intentos.filter((intento) => intento.mensajeId === mensajeId).length + 1;
   }
 
+  /** El orden de inserción hace de `creado_en`. */
+  async ultimoDestino(destinoHash: string): Promise<string | null> {
+    const delDestino = [...this.filas.values()]
+      .map((mensaje) => mensaje.instantanea())
+      .filter((datos) => datos.tenantId === this.tenantId && datos.destinoHash === destinoHash);
+    return delDestino.at(-1)?.destino ?? null;
+  }
+
   guardado(mensajeId: string): Mensaje {
     const fila = this.filas.get(mensajeId);
     if (!fila) throw new Error(`Sin mensaje ${mensajeId}`);
@@ -267,9 +282,19 @@ export class PersonasMemoria implements Pick<PersonaPort, 'obtener'> {
   }
 }
 
-export class ConsentimientosMemoria implements Pick<ConsentimientoPort, 'vigente'> {
+export class ConsentimientosMemoria implements Pick<ConsentimientoPort, 'vigente' | 'revocar'> {
   readonly conPromociones = new Set<string>();
   readonly consultas: string[] = [];
+  readonly revocaciones: { personaId: string; finalidad: string; canal: string; actorId: string | undefined }[] = [];
+
+  /** Con contexto, cada revocación guarda el actor, como `exigirUsuario` de PER. */
+  constructor(private readonly contexto?: TenantContext) {}
+
+  async revocar(personaId: string, finalidad: string, canal: string): ReturnType<ConsentimientoPort['revocar']> {
+    this.revocaciones.push({ personaId, finalidad, canal, actorId: this.contexto?.current().actorId });
+    this.conPromociones.delete(personaId);
+    return {} as Awaited<ReturnType<ConsentimientoPort['revocar']>>;
+  }
 
   async vigente(personaId: string, finalidad: string): ReturnType<ConsentimientoPort['vigente']> {
     this.consultas.push(finalidad);
@@ -352,7 +377,7 @@ export function escenario() {
   const firmador = new FirmadorEnlaceHmac(CLAVE_ENLACE_PRUEBA);
   const publicador = new PublicadorMemoria();
   const personas = new PersonasMemoria();
-  const consentimientos = new ConsentimientosMemoria();
+  const consentimientos = new ConsentimientosMemoria(contexto);
   const proveedor = new ProveedorFalso();
   const avisos = registro();
   const plantillas = new PlantillasMemoria(contexto);
@@ -374,6 +399,8 @@ export function escenario() {
   const entrega: DependenciasEntrega = { ...comun, proveedor, remitente: 'Vitrina <no-responder@vitrina.pe>', avisar: avisos };
   const verificador = new VerificadorFalso({ tipo: 'IGNORADO' });
   const webhook: DependenciasWebhook = { ...comun, verificador, localizador: new LocalizadorMemoria(mensajes), contactosInvalidos, avisar: avisos };
+  const informes = registro();
+  const preferencias: DependenciasPreferencias = { ...comun, bajas, consentimientos, firmador, informar: informes };
   const gestionPlantillas: DependenciasPlantillas = { ...comun, plantillas, saneador: new SaneadorHtmlSanitize(), auditoria };
   const enTenant = <T>(tenantId: string, trabajo: () => Promise<T>, actorId?: string) => contexto.run({ tenantId, actorId }, trabajo);
   return {
@@ -395,6 +422,8 @@ export function escenario() {
     entrega,
     webhook,
     gestionPlantillas,
+    preferencias,
+    informes,
     enTenant,
   };
 }

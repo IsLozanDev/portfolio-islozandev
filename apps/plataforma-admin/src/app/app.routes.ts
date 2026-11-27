@@ -14,6 +14,8 @@ const RUTAS_DE_DESARROLLO: Route[] = [
 
 export const appRoutes: Route[] = [
   { path: 'auth', loadChildren: () => import('@vitrina/shared/auth-ui').then((modulo) => modulo.AUTH_UI_ROUTES) },
+  // Pública y sin sesión: el enlace firmado del pie de cada correo (spec 46).
+  { path: 'preferencias', loadChildren: () => import('@vitrina/plataforma/preferencias-ui').then((modulo) => modulo.PREFERENCIAS_UI_ROUTES) },
   ...rutasDelShell([
     { path: '', pathMatch: 'full', loadComponent: () => import('./pages/inicio/inicio.page').then((modulo) => modulo.InicioPage) },
     { path: 'admin', loadChildren: () => import('@vitrina/plataforma/admin-cliente').then((modulo) => modulo.ADMIN_CLIENTE_ROUTES) },

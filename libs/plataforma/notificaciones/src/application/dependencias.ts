@@ -105,6 +105,20 @@ export interface DependenciasPlantillas {
   auditoria: Pick<AuditoriaPort, 'registrar'>;
 }
 
+/** `ConsultarPreferencias` y `RegistrarBaja`, la página pública de preferencias en la API (spec 46). */
+export interface DependenciasPreferencias {
+  unidadDeTrabajo: UnitOfWork;
+  contexto: TenantContext;
+  reloj: Clock;
+  ids: IdGenerator;
+  mensajes: Pick<RepositorioMensajes, 'ultimoDestino'>;
+  bajas: RepositorioBajas;
+  consentimientos: Pick<ConsentimientoPort, 'vigente' | 'revocar'>;
+  /** null fuera de producción sin `NOT_CLAVE_ENLACE_PREFERENCIAS`: todo enlace es inválido. */
+  firmador: FirmadorEnlace | null;
+  informar: Registrar;
+}
+
 /** `ProcesarEventoProveedor`, el webhook en la API. */
 export interface DependenciasWebhook extends Transaccional {
   verificador: VerificadorWebhook;
