@@ -12,7 +12,11 @@ export const empresa = (cambios: Partial<EmpresaProps> = {}, id = EMPRESA) =>
     nombreComercial: null,
     direccionFiscal: 'Av. Ejército 101',
     ubigeo: '040101',
+    telefono: null,
+    correo: null,
+    sitioWeb: null,
     activo: true,
+    logoArchivoId: null,
     ...cambios,
   });
 

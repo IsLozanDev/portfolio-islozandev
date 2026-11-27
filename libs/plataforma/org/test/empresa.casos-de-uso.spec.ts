@@ -14,6 +14,9 @@ const COMANDO: RegistrarEmpresaComando = {
   nombreComercial: 'Sabores',
   direccionFiscal: 'Av. Ejército 101',
   ubigeo: '040101',
+  telefono: null,
+  correo: null,
+  sitioWeb: null,
 };
 
 describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
@@ -168,7 +171,7 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
 
       const version = await e.versionDe('empresa', empresaId);
-      await e.en(tenantId, () => editar.ejecutar({ empresaId, version, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null }));
+      await e.en(tenantId, () => editar.ejecutar({ empresaId, version, razonSocial: 'Sabores del Sur SAC', nombreComercial: 'Sabores Arequipa', direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null }));
 
       const [fila] = await e.dataSource.query('SELECT nombre_comercial, version FROM org.empresa WHERE id = $1', [empresaId]);
       expect(fila.nombre_comercial).toBe('Sabores Arequipa');
@@ -182,7 +185,7 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const { empresaId } = await e.en(a, () => registrar().ejecutar(COMANDO));
       const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
       await expect(
-        e.en(b, () => editar.ejecutar({ empresaId, version: 1, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null })),
+        e.en(b, () => editar.ejecutar({ empresaId, version: 1, razonSocial: 'Tomada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null })),
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -190,7 +193,7 @@ describeConDb('Casos de uso de tenant y empresa (PostgreSQL 16)', () => {
       const tenantId = await nuevoTenant('editar-version-vieja');
       const { empresaId } = await e.en(tenantId, () => registrar().ejecutar(COMANDO));
       const editar = new EditarEmpresa(e.uow, e.contexto, e.eventos, e.repos);
-      const datos = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null };
+      const datos = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null };
       const leida = await e.versionDe('empresa', empresaId);
       await e.en(tenantId, () => editar.ejecutar({ empresaId, version: leida, ...datos, nombreComercial: 'Primera' }));
 

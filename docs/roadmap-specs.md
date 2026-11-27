@@ -46,7 +46,7 @@ Versión 2: partida tras revisar los paquetes de contexto (`docs/spec-context/`)
 | 20b | aud-consulta-integridad | E-01 (RF 086, TR-RNF-112): consulta paginada con alcance (TR-CA-213, 214), detalle, exportación XLSX auditada con aal2, permisos `plat.auditoria.consultar` y `plat.auditoria.exportar`, rol `PLAT_AUDITOR`, `VerificarIntegridad` incremental y tarea diaria en el worker | 6-7 | 06, 11, 18b, 20a | 20 | Implementado |
 | 20c | aud-visor-ui | UI de RF 086 en `admin-cliente`: lista de auditoría con filtros y detalle con diferencias antes/después; exportar | 6-7 | 20b, 15, 15b, 15c, 15d, 17c | 20 | Aprobado (implementado, PR #38) |
 | 21 | obs-y-staging | E-03, E-04 | 8 | 11 | 21 | Implementado |
-| 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05 | 10 | 03, 09, 10 | — | Pendiente |
+| 22 | sazonpos-org-seq-cfg | C-01, C-02: CC-01, CC-03, CC-05. Restaurante = sucursal: coordenadas de la sucursal, parámetros de delivery como CFG `rest.*` (costo, pedido mínimo, radio), `slug` y descripción (producto o CMS, a decidir). Análisis de `core.restaurants` del 2026-11-27 | 10 | 03, 09, 10 | — | Pendiente |
 | 23 | sazonpos-auth | C-03: CC-10 | 8 | 05, 08 | — | Pendiente |
 | 24 | sazonpos-permisos-sombra | C-04, Q-02, P-03: CC-02 | 13 | 07, 23 | — | Pendiente |
 | 25 | sazonpos-catalogos-eventos | C-05, C-06, C-08: CC-04, CC-07 | 12 | 11, 19a, 19b, 20a | — | Pendiente |
@@ -112,7 +112,8 @@ Migraciones: la letra `db/01<letra>_*.sql` se asigna al implementar, en el orden
 | 51b | fe-ubl-firma | Documento electrónico completo, UBL 2.1 de factura y boleta y firma XMLDSig con el certificado del emisor | 9-10 | 51 | `tr-fe/fe-boleta-factura-cdr.md` | Implementado |
 | 51c | fe-adaptador-sunat-directo | Adaptador SEE-Del Contribuyente de `PseOsePort`: `sendBill`, ZIP, CDR y prueba en la beta de SUNAT; Nubefact queda como alterno | 9-10 | 51b, 50 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
 | 52 | fe-envio-cdr | R2-05: TR-RF-059 | 6-7 | 51, 51c, 33, 11 | `tr-fe/fe-boleta-factura-cdr.md` | Pendiente |
-| 53 | fe-representacion-impresa | R2-06: TR-RF-061 | 6-7 | 51, 33 | `tr-fe/fe-representacion-impresa.md` | Pendiente |
+| 17d | org-identidad-empresa | Sin historia en el plan: `logo_archivo_id`, `telefono`, `correo` y `sitio_web` en `org.empresa`, con `ValidadorLogoPort` en ORG (adaptador sobre ARC en `apps/api`, porque ORG solo depende de kernel); logo en el alta y en la edición de `empresa-formulario` con `vit-archivo-carga`. Correo solo en la empresa. Categoría ARC `LOGO`; logo también en la lista de empresas y en el detalle de tenant de la consola. Además, ubigeo autocompletado («DEPARTAMENTO / PROVINCIA / DISTRITO») y teléfono con máscara guardado en E.164 en empresa y sucursal. Los lee el 53 para la cabecera del PDF. Pasa el tope de 10 h por decisión del usuario | 11-12 | 17a, 17b, 17c, 19a, 33, 36, 38 | — | Pendiente (spec en Draft) |
+| 53 | fe-representacion-impresa | R2-06: TR-RF-061. Logo y contacto desde la empresa (17d), no desde `fe.emisor` | 6-7 | 51, 33, 17d | `tr-fe/fe-representacion-impresa.md` | Pendiente |
 | 54 | fe-notas-credito-debito | R2-07: TR-RF-055, 056 | 7-8 | 52 | `tr-fe/fe-notas-resumen-baja.md` | Pendiente |
 | 55 | fe-resumen-diario-baja | R2-07: TR-RF-057, 058 | 8-9 | 54 | `tr-fe/fe-notas-resumen-baja.md` | Pendiente |
 | 56 | fe-reintentos-contingencia | R2-08: TR-RF-060 | 5-6 | 52 | `tr-fe/fe-contingencia-monitor.md` | Pendiente |
@@ -229,7 +230,7 @@ Frente A: notificaciones, auditoría y reportes. Frente B: backend de facturaci�
 | 1 | 46 not-preferencias-bajas | 51b fe-ubl-firma | 62 fe-admin-emisor-ui |
 | 2 | 47 not-plantillas-ui | 51c fe-adaptador-sunat-directo | 60 seq-series-ui |
 | 3 | 63 aud-incidentes-datos | 52 fe-envio-cdr | 40 per-fusion-ui |
-| 4 | 80 rep-definiciones-motor | 53 fe-representacion-impresa | 61 cfg-parametros-ui |
+| 4 | 80 rep-definiciones-motor | 17d org-identidad-empresa → 53 fe-representacion-impresa | 61 cfg-parametros-ui |
 | 5 | 64 arco-solicitud-plazos | 54 fe-notas-credito-debito | 83 cms-sitio-dominio-marca |
 | 6 | 65 arco-atencion-compilado | 55 fe-resumen-diario-baja | 84 cms-paginas-bloques |
 | 7 | 66, 67, 68 | 59 fe-entrega → 56 fe-reintentos | 85 cms-render-ssr |

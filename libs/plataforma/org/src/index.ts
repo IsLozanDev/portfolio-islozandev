@@ -3,7 +3,19 @@ export { DIAS_AVISO, type AvisoVencimiento, type DiasAviso } from './domain/avis
 export { CodigoTenant } from './domain/codigo-tenant.js';
 export { exigirCupo, topeSucursales, type CupoSucursales } from './domain/cupo-sucursales.js';
 export { diasEntre, fechaCalendarioDe, sumarDias, ZONA_VENCIMIENTOS, type FechaCalendario } from './domain/fecha-calendario.js';
-export { Empresa, type DatosEmpresa, type EmpresaProps } from './domain/empresa.js';
+export { Empresa, type DatosEmpresa, type EmpresaProps, type LogoEdicion } from './domain/empresa.js';
+export {
+  CorreoInvalidoError,
+  LogoInvalidoError,
+  SitioWebInvalidoError,
+  TelefonoInvalidoError,
+} from './domain/errores.js';
+export {
+  CATEGORIA_LOGO,
+  ENTIDAD_ARCHIVO_EMPRESA,
+  MOTIVOS_LOGO_INVALIDO,
+  type MotivoLogoInvalido,
+} from './domain/logo.js';
 export { Sucursal, type DatosSucursal, type SucursalProps } from './domain/sucursal.js';
 export { PERMISOS_ORG } from './domain/permisos-org.js';
 export { debeSuspenderse, MOTIVO_FIN_DE_GRACIA } from './domain/regla-gracia.js';
@@ -35,7 +47,15 @@ export {
   type TipoUnidad,
   type UnidadProps,
 } from './domain/unidad-operativa.js';
-export { CodigoEstablecimiento, Ruc, Ubigeo } from './domain/valores.js';
+export {
+  CodigoEstablecimiento,
+  CorreoEmpresa,
+  formatoTelefono,
+  Ruc,
+  SitioWeb,
+  Telefono,
+  Ubigeo,
+} from './domain/valores.js';
 export type {
   RepositorioEmpresas,
   RepositorioSucursales,

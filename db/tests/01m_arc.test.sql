@@ -37,7 +37,11 @@ SET ROLE arc_test_app;
 -- Siembra: cinco categorías con su máximo y su marca de sensible. Solo lectura.
 -- ---------------------------------------------------------------------
 DO $$ BEGIN
-  IF (SELECT count(*) FROM arc.categoria) <> 5 THEN RAISE EXCEPTION 'debían sembrarse cinco categorías'; END IF;
+  -- Migraciones posteriores siembran otras (LOGO, 01y): se cuentan solo las de 01m_arc.
+  IF (SELECT count(*) FROM arc.categoria
+       WHERE codigo IN ('IMAGEN', 'DOCUMENTO', 'CPE_XML', 'EVIDENCIA', 'ADJUNTO_SOPORTE')) <> 5 THEN
+    RAISE EXCEPTION 'debían sembrarse cinco categorías';
+  END IF;
   IF (SELECT array_agg(codigo ORDER BY codigo) FROM arc.categoria WHERE sensible) <> ARRAY['DOCUMENTO', 'EVIDENCIA']::varchar[] THEN
     RAISE EXCEPTION 'las sensibles debían ser DOCUMENTO y EVIDENCIA';
   END IF;

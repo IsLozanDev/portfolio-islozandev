@@ -16,6 +16,9 @@ export interface RegistrarEmpresaComando {
   nombreComercial: string | null;
   direccionFiscal: string | null;
   ubigeo: string | null;
+  telefono: string | null;
+  correo: string | null;
+  sitioWeb: string | null;
 }
 
 export interface EditarEmpresaComando extends DatosEmpresa {
@@ -85,7 +88,7 @@ export class EditarEmpresa {
       const empresa = existe(await this.repos.empresas.buscar(empresaId), 'La empresa no existe');
       exigirVersion(empresa, version);
 
-      empresa.editar(datos);
+      empresa.editar(datos, empresa.logoArchivoId);
       await this.repos.empresas.guardar(empresa);
       await publicarEventos(this.eventos, empresa);
     });

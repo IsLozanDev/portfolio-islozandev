@@ -1,6 +1,7 @@
 import { EventSchemaValidationError, type DomainEvent } from '@vitrina/plataforma/kernel';
 import { InMemoryEventSchemaValidator } from '@vitrina/plataforma/kernel-infra';
 import { Empresa } from '../src/domain/empresa.js';
+import { LogoValidado } from '../src/domain/logo.js';
 import { Sucursal } from '../src/domain/sucursal.js';
 import { Suscripcion } from '../src/domain/suscripcion.js';
 import { Tenant } from '../src/domain/tenant.js';
@@ -23,8 +24,8 @@ function eventosDelDominio(): DomainEvent[] {
   suscripcion.avisarVencimiento('2026-12-28');
   suscripcion.vencer('2027-01-01');
 
-  const e = Empresa.crear(ID, ID, '20512345671', { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null });
-  e.editar({ ...e.datos, nombreComercial: 'Sabores' });
+  const e = Empresa.crear(ID, ID, '20512345671', { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null });
+  e.editar({ ...e.datos, nombreComercial: 'Sabores' }, LogoValidado.confirmado(ID));
 
   const s = Sucursal.crear('0190a8e0-0000-7000-8000-000000000102', empresa(), datosSucursal(), { activas: 0, tope: null });
   s.editar(datosSucursal({ nombre: 'Cayma Norte' }));
