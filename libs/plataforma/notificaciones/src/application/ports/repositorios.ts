@@ -11,6 +11,7 @@ import type { ReferenciaProgramacion } from '../../domain/referencia-programacio
 /** Una fila por código: la personalizada vigente si existe; si no, la base. */
 export interface ResumenPlantilla {
   codigo: string;
+  nombre: string;
   canal: CanalNotificacion;
   idioma: string;
   origen: OrigenPlantilla;
@@ -21,7 +22,7 @@ export interface ResumenPlantilla {
 
 export interface FiltroPlantillas {
   canal?: CanalNotificacion;
-  /** Busca en código y asunto, sin distinguir mayúsculas. */
+  /** Busca en nombre, código y asunto, sin distinguir mayúsculas. */
   texto?: string;
   /** Desde 1. */
   pagina: number;
@@ -38,11 +39,12 @@ export interface Pagina<Elemento> {
 export interface RepositorioPlantillas {
   /** La del tenant activa de mayor versión; si no hay, la base activa de mayor versión. */
   vigente(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
-  /** La base activa de mayor versión. */
-  base(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
+  /** La base activa de mayor versión, si el tenant puede personalizarla. */
+  basePersonalizable(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
   vigenteDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla | null>;
   /** 0 si el tenant nunca personalizó el código; cuenta las activas y las inactivas. */
   mayorVersionDelTenant(codigo: string, canal: CanalNotificacion, idioma: string): Promise<number>;
+  /** Solo los códigos con base personalizable. */
   listar(filtro: FiltroPlantillas): Promise<Pagina<ResumenPlantilla>>;
   /** Las del tenant, de mayor a menor versión. */
   versiones(codigo: string, canal: CanalNotificacion, idioma: string): Promise<Plantilla[]>;

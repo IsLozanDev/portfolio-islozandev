@@ -25,7 +25,7 @@ describe('Manifiesto PLAT 1.27.0: parte de cat (specs 19a a 19e)', () => {
   });
 
   it('está en la versión 1.27.0', () => {
-    expect(manifiesto.version).toBe('1.31.0');
+    expect(manifiesto.version).toBe('1.32.0');
   });
 
   it('declara exactamente PERMISOS_CAT, todos de alcance TENANT; gestionar, item_gestionar e importar son sensibles (TR-RN-009)', () => {

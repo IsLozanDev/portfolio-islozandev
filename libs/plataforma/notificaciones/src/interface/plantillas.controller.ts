@@ -66,7 +66,7 @@ const EsquemaVistaPrevia = z.object({
 
 const CODIGO_EJEMPLO = 'PRUEBA_CORREO';
 const CANAL_NO_HABILITADO = 'CANAL_NO_HABILITADO: canal distinto de CORREO';
-const SIN_BASE = 'PLANTILLA_NO_ENCONTRADA: el código no tiene base';
+const SIN_BASE = 'PLANTILLA_NO_ENCONTRADA: el código no tiene base o no es personalizable';
 const VALIDACION_CONTENIDO = `VARIABLE_NO_PERMITIDA (con \`variables\`), CONTENIDO_PLANTILLA_INVALIDO, ASUNTO_DEMASIADO_LARGO, ${CANAL_NO_HABILITADO} o SOLICITUD_INVALIDA`;
 
 /**
@@ -93,7 +93,7 @@ export class PlantillasController {
   @Get()
   @Permiso(PERMISOS_PLANTILLAS.consultar)
   @ApiQuery({ name: 'canal', required: false, enum: CANALES_HABILITADOS })
-  @ApiQuery({ name: 'q', required: false, description: `Busca en código y asunto, sin distinguir mayúsculas; hasta ${TEXTO_BUSQUEDA_MAXIMO} caracteres` })
+  @ApiQuery({ name: 'q', required: false, description: `Busca en nombre, código y asunto, sin distinguir mayúsculas; hasta ${TEXTO_BUSQUEDA_MAXIMO} caracteres` })
   @ApiQuery({ name: 'pagina', required: false, example: PAGINA_POR_DEFECTO, description: 'Desde 1' })
   @ApiQuery({ name: 'tamano', required: false, example: TAMANO_POR_DEFECTO, description: `De 1 a ${TAMANO_MAXIMO}` })
   @ApiOkResponse({ type: PaginaPlantillasDto, description: 'Una fila por código: la personalizada vigente o la base' })
@@ -159,7 +159,7 @@ export class PlantillasController {
   @ApiParam({ name: 'canal', enum: CANALES_HABILITADOS })
   @ApiNoContentResponse({ description: 'Vuelve a regir la base; las versiones del tenant quedan inactivas en el historial' })
   @ApiBadRequestResponse({ type: ErrorPlantillaDto, description: CANAL_NO_HABILITADO })
-  @ApiNotFoundResponse({ type: ErrorPlantillaDto, description: 'SIN_PERSONALIZACION: no hay versión activa del tenant' })
+  @ApiNotFoundResponse({ type: ErrorPlantillaDto, description: `SIN_PERSONALIZACION: no hay versión activa del tenant. ${SIN_BASE}` })
   async restaurar(@Param('codigo') codigo: string, @Param('canal') canal: string): Promise<void> {
     await this.restaurarBase.ejecutar(codigo, canal);
   }

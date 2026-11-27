@@ -221,3 +221,11 @@ export const MENSAJES_POR_CODIGO: Readonly<Record<string, string>> = {
 };
 
 export const MENSAJE_ERROR_DESCONOCIDO = 'Ocurrió un error. Inténtelo de nuevo.';
+
+/** Confirmación de `cambiosSinGuardarGuard` (spec 47). */
+export const MENSAJES_CAMBIOS_SIN_GUARDAR = {
+  titulo: '¿Salir sin guardar?',
+  texto: 'Se perderán los cambios que no guardó.',
+  salir: 'Salir sin guardar',
+  seguir: 'Seguir editando',
+} as const;

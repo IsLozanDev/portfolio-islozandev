@@ -29,7 +29,7 @@ export interface ContextoPersonalizacion {
 }
 
 /**
- * TR-RF-074: la versión nueva del tenant. Copia código, canal, idioma y variables de la base (el tenant no
+ * TR-RF-074: la versión nueva del tenant. Copia código, nombre, canal, idioma y variables de la base (el tenant no
  * declara variables) y numera después de la mayor versión del tenant, aunque se haya restaurado la base.
  */
 export function nuevaVersionPersonalizada(
@@ -44,6 +44,7 @@ export function nuevaVersionPersonalizada(
     id: contexto.id,
     tenantId: contexto.tenantId,
     codigo: base.codigo,
+    nombre: base.nombre,
     canal: base.canal,
     idioma: base.idioma,
     version: contexto.mayorVersionDelTenant + INCREMENTO_DE_VERSION,
@@ -52,6 +53,7 @@ export function nuevaVersionPersonalizada(
     variables: base.variables,
     plantillaBaseId: base.id,
     activa: true,
+    personalizable: base.personalizable,
     creadoPor: contexto.creadoPor,
     creadoEn: contexto.ahora,
   };

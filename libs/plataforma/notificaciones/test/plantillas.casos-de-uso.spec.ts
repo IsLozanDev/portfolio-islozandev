@@ -176,6 +176,66 @@ describe('casos de uso de plantillas (spec 43)', () => {
     await expect(enA(() => listar.ejecutar({ canal: 'PUSH', pagina: 1, tamano: 25 }))).rejects.toThrow(CanalNoHabilitadoError);
   });
 
+  describe('plantillas no personalizables y nombre (spec 47)', () => {
+    const CODIGO_OPERACION = 'INTEGRIDAD_ROTA';
+    const ID_BASE_OPERACION = '47000000-0000-0000-0000-000000000004';
+
+    beforeEach(() => {
+      mundo.plantillas.plantillas.push({
+        ...PLANTILLA_PRUEBA,
+        id: ID_BASE_OPERACION,
+        codigo: CODIGO_OPERACION,
+        nombre: 'Alerta de integridad de la auditoría',
+        personalizable: false,
+      });
+    });
+
+    it('la lista no trae INTEGRIDAD_ROTA y busca también por el nombre', async () => {
+      const listar = new ListarPlantillas(mundo.gestionPlantillas);
+
+      const todas = await enA(() => listar.ejecutar({ pagina: 1, tamano: 25 }));
+      expect(todas.items.map((item) => [item.codigo, item.nombre])).toEqual([[CODIGO, 'Correo de prueba']]);
+      expect((await enA(() => listar.ejecutar({ q: 'correo de PRUEBA', pagina: 1, tamano: 25 }))).total).toBe(1);
+      expect((await enA(() => listar.ejecutar({ q: 'integridad', pagina: 1, tamano: 25 }))).total).toBe(0);
+    });
+
+    it('consultar, vista previa, personalizar y restaurar INTEGRIDAD_ROTA → PLANTILLA_NO_ENCONTRADA', async () => {
+      const previa = new VistaPreviaPlantilla(mundo.gestionPlantillas);
+
+      await expect(enA(() => consultar.ejecutar(CODIGO_OPERACION, CORREO))).rejects.toThrow(PlantillaBaseNoEncontradaError);
+      await expect(enA(() => previa.ejecutar(CODIGO_OPERACION, CORREO, {}))).rejects.toThrow(PlantillaBaseNoEncontradaError);
+      await expect(
+        enA(() => personalizar.ejecutar(CODIGO_OPERACION, CORREO, { asunto: 'Rota', cuerpo: '<p>Rota</p>', version: null })),
+      ).rejects.toThrow(PlantillaBaseNoEncontradaError);
+      await expect(enA(() => restaurar.ejecutar(CODIGO_OPERACION, CORREO))).rejects.toThrow(PlantillaBaseNoEncontradaError);
+      expect(mundo.auditoria.entradas).toEqual([]);
+    });
+
+    it('el envío de INTEGRIDAD_ROTA sigue usando su base', async () => {
+      const enviado = await enA(() =>
+        new EnviarNotificacion(mundo.envio).enviar({
+          plantilla: CODIGO_OPERACION,
+          destinatario: { correo: 'operacion@ejemplo.pe' },
+          variables: { nombre: 'Operación', producto: 'Vitrina' },
+          finalidad: 'TRANSACCIONAL',
+          claveIdempotencia: uuidV7(),
+        }),
+      );
+
+      expect(mundo.mensajes.guardado(enviado.mensajeId).instantanea()).toMatchObject({ plantillaId: ID_BASE_OPERACION });
+    });
+
+    it('la versión nueva conserva el nombre de la base y el detalle lo devuelve', async () => {
+      const guardada = await enA(() => guardar(null));
+
+      expect(guardada.nombre).toBe('Correo de prueba');
+      expect(mundo.plantillas.plantillas.find((plantilla) => plantilla.tenantId === TENANT_A)).toMatchObject({
+        nombre: 'Correo de prueba',
+        personalizable: true,
+      });
+    });
+  });
+
   describe('vista previa', () => {
     let previa: VistaPreviaPlantilla;
     beforeEach(() => {

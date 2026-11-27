@@ -44,39 +44,39 @@ DO $$ BEGIN
   END IF;
 END $$;
 
-INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id)
+INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, plantilla_base_id, nombre)
 VALUES ('42000000-0000-0000-0000-0000000000a1', '42000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 2,
-        'Prueba de A', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001');
+        'Prueba de A', '<p>Hola {{nombre}}</p>', '42000000-0000-0000-0000-000000000001', 'Correo de prueba');
 
 -- CHECK de la plantilla.
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'prueba', 'CORREO', 1, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'prueba', 'CORREO', 1, 'x', 'x', 'Correo de prueba')$$,
   '23514', 'código en minúsculas');
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'FAX', 1, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'FAX', 1, 'x', 'x', 'Correo de prueba')$$,
   '23514', 'canal desconocido');
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, cuerpo)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 1, 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 1, 'x', 'Correo de prueba')$$,
   '23514', 'correo sin asunto');
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 0, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 0, 'x', 'x', 'Correo de prueba')$$,
   '23514', 'versión cero');
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, variables)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 1, 'x', 'x', '{}')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, variables, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'OTRA', 'CORREO', 1, 'x', 'x', '{}', 'Correo de prueba')$$,
   '23514', 'variables que no son arreglo');
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 2, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), '42000000-0000-0000-0000-00000000000a', 'PRUEBA_CORREO', 'CORREO', 2, 'x', 'x', 'Correo de prueba')$$,
   '23505', 'misma versión de la plantilla del tenant');
 -- Las base solo por migración.
 SELECT not_test.debe_fallar($$
-  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo)
-  VALUES (gen_random_uuid(), NULL, 'OTRA', 'CORREO', 1, 'x', 'x')$$,
+  INSERT INTO ntf.plantilla (id, tenant_id, codigo, canal, version, asunto, cuerpo, nombre)
+  VALUES (gen_random_uuid(), NULL, 'OTRA', 'CORREO', 1, 'x', 'x', 'Correo de prueba')$$,
   '42501', 'plantilla base desde un tenant');
 DO $$
 DECLARE filas int;

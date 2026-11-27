@@ -1,8 +1,10 @@
 import type { Routes } from '@angular/router';
 import { permisoGuard } from '@vitrina/shared/auth';
 import { PERMISOS_PERSONAS } from '@vitrina/plataforma/personas-ui';
+import { cambiosSinGuardarGuard } from './guards/cambios-sin-guardar.guard';
 import { PERMISOS_ADMIN } from './models/permisos-admin';
 import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
+import { PERMISOS_PLANTILLAS } from './models/permisos-plantillas';
 
 /** En admin se gestionan los feriados de la empresa y de sus sucursales; los globales se ven en solo lectura (spec 19e). */
 const ALCANCES_FERIADOS_ADMIN = ['TENANT', 'SUCURSAL'];
@@ -192,6 +194,17 @@ export const ADMIN_CLIENTE_ROUTES: Routes = [
     path: 'personas/:personaId',
     canMatch: [permisoGuard(PERMISOS_PERSONAS.leer)],
     loadComponent: () => import('./pages/persona-detalle/persona-detalle.page').then((modulo) => modulo.PersonaDetallePage),
+  },
+  {
+    path: 'plantillas',
+    canMatch: [permisoGuard(PERMISOS_PLANTILLAS.consultar)],
+    loadComponent: () => import('./pages/plantillas-lista/plantillas-lista.page').then((modulo) => modulo.PlantillasListaPage),
+  },
+  {
+    path: 'plantillas/:codigo/:canal',
+    canMatch: [permisoGuard(PERMISOS_PLANTILLAS.consultar)],
+    canDeactivate: [cambiosSinGuardarGuard],
+    loadComponent: () => import('./pages/plantilla-editor/plantilla-editor.page').then((modulo) => modulo.PlantillaEditorPage),
   },
   // Facturación electrónica (spec 62): cada ruta de la lib exige su permiso.
   {

@@ -12,6 +12,7 @@ export const ACCIONES_PLANTILLA = {
 /** La vigente para el tenant y, aparte, el texto de la base para mostrar o comparar la original. */
 export interface DetallePlantilla {
   codigo: string;
+  nombre: string;
   canal: CanalNotificacion;
   idioma: string;
   origen: OrigenPlantilla;
@@ -28,6 +29,7 @@ export function detalleDe(vigente: Plantilla, base: Plantilla): DetallePlantilla
   const origen = origenDe(vigente);
   return {
     codigo: vigente.codigo,
+    nombre: vigente.nombre,
     canal: vigente.canal,
     idioma: vigente.idioma,
     origen,
@@ -40,9 +42,9 @@ export function detalleDe(vigente: Plantilla, base: Plantilla): DetallePlantilla
   };
 }
 
-/** Solo se personalizan códigos con base (precondición de TR-RF-074). */
+/** Solo se consultan y personalizan códigos con base personalizable (precondición de TR-RF-074). */
 export async function exigirBase(plantillas: RepositorioPlantillas, codigo: string, canal: CanalNotificacion): Promise<Plantilla> {
-  const base = await plantillas.base(codigo, canal, IDIOMA_POR_DEFECTO);
+  const base = await plantillas.basePersonalizable(codigo, canal, IDIOMA_POR_DEFECTO);
   if (!base) throw new PlantillaBaseNoEncontradaError(codigo);
   return base;
 }

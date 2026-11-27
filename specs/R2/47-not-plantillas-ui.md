@@ -35,7 +35,7 @@ Lo que hay en el código hoy (revisado al redactar):
 - **Back (`notificaciones`):**
   - columna `personalizable` en `ntf.plantilla`; `INTEGRIDAD_ROTA` queda en `false`. La API de plantillas no lista ni deja consultar, previsualizar, personalizar ni restaurar las no personalizables (404 `PLANTILLA_NO_ENCONTRADA`). El envío (`vigente()`) no cambia;
   - columna `nombre` en `ntf.plantilla` con el título legible de cada plantilla («Aviso de suscripción por vencer»). La siembran las migraciones de cada base; la versión personalizada lo copia de la base y el tenant no lo edita. La lista y el detalle de la API lo devuelven.
-- **Manifiesto PLAT `1.30.0` → `1.31.0`:** opción de menú «Plantillas» en «Configuración», ruta `/admin/plantillas`, permiso `plat.plantilla_notificacion.consultar`.
+- **Manifiesto PLAT `1.31.0` → `1.32.0`** (el spec 62 tomó la `1.31.0`): opción de menú «Plantillas» en «Configuración», ruta `/admin/plantillas`, permiso `plat.plantilla_notificacion.consultar`.
 - **Lista** `/admin/plantillas`: plantilla (nombre con el código debajo), asunto, canal (chip), origen (chip), versión y actualizado; filtro de texto (`q`); paginada; vista de celular.
 - **Vista rápida:** panel lateral de solo lectura con el asunto y el cuerpo vigentes renderizados, origen y versión, y un enlace «Editar» si hay `gestionar`.
 - **Editor** `/admin/plantillas/:codigo/:canal`:
@@ -66,11 +66,11 @@ Lo que hay en el código hoy (revisado al redactar):
 | `catalogos-lista` + `item-propio-formulario` (spec 19e) | Patrón de lista con página de formulario, manejo del 409 y mapeo de errores a campos. |
 | `shared/ui` | Tabla, chips, filtros, vacío, cargando, acciones de formulario, panel lateral, avisos, sección plegable. |
 | `shared/auth` (`permisoGuard`, `vitSiPermiso`) | Ruta con `consultar`; controles de edición con `gestionar`. |
-| Manifiesto y su CLI | Opción de menú y versión `1.31.0`. |
+| Manifiesto y su CLI | Opción de menú y versión `1.32.0`. |
 
 ## Modelo de datos
 
-### Migración `db/01y_not_plantilla_personalizable.sql` (+ `db/rollback/01y_not_plantilla_personalizable.sql`, `db/tests/01y_not_plantilla_personalizable.test.sql`)
+### Migración `db/02b_not_plantilla_personalizable.sql` (+ `db/rollback/02b_not_plantilla_personalizable.sql`, `db/tests/02b_not_plantilla_personalizable.test.sql`)
 
 ```sql
 ALTER TABLE ntf.plantilla
@@ -109,7 +109,7 @@ UPDATE ntf.plantilla
 - Inverso: quita las dos columnas. No reactiva filas desactivadas: no se sabe cuáles estaban activas.
 - `NOT NULL` obliga a que toda base sembrada después traiga su nombre. Si el `UPDATE` deja alguna base sin nombre, el `SET NOT NULL` falla y la migración no se aplica: así se detecta una base olvidada.
 - Prueba SQL: `INTEGRIDAD_ROTA` base con `personalizable = false`; las otras cuatro con `true`; una personalización de `INTEGRIDAD_ROTA` sembrada en la prueba queda inactiva; toda fila tiene `nombre` y una versión del tenant tiene el de su base.
-- La letra `01y` se confirma al implementar (otros frentes en paralelo pueden tomarla).
+- La letra quedó en `02b`: `01y` y `02a` ya estaban tomadas al implementar. Las pruebas SQL anteriores que insertan en `ntf.plantilla` llevan `nombre` (decisión del usuario al implementar).
 
 ### Back (`libs/plataforma/notificaciones`)
 
@@ -174,13 +174,13 @@ export interface ContenidoPlantilla { asunto: string; cuerpo: string; version: n
 ## Plan de implementación
 
 1. **Canvas.** Hecho y aprobado: página «47 · Plantillas» del canvas «Vitrina · Diseño UI». Las pantallas se implementan contra sus artboards.
-2. **Back.** Migración `01y` con inverso y prueba SQL; `personalizable` y `nombre` en entidad, mapeo, repositorio y DTO; filtro en `listar` y en la base que usan los cuatro casos de uso. Pruebas: la lista no trae `INTEGRIDAD_ROTA`; `GET`, `PUT`, vista previa y `DELETE` de `INTEGRIDAD_ROTA` → 404; el envío de `INTEGRIDAD_ROTA` sigue funcionando; una versión nueva conserva el nombre de la base; `q=suspendida` encuentra `TENANT_SUSPENDIDO` por el nombre.
+2. **Back.** Migración `02b` con inverso y prueba SQL; `personalizable` y `nombre` en entidad, mapeo, repositorio y DTO; filtro en `listar` y en la base que usan los cuatro casos de uso. Pruebas: la lista no trae `INTEGRIDAD_ROTA`; `GET`, `PUT`, vista previa y `DELETE` de `INTEGRIDAD_ROTA` → 404; el envío de `INTEGRIDAD_ROTA` sigue funcionando; una versión nueva conserva el nombre de la base; `q=suspendida` encuentra `TENANT_SUSPENDIDO` por el nombre.
 3. **Modelos, utilidades y cliente.** `plantilla.ts`, permisos, tonos, `marcadores-plantilla.ts` y `plantillas.cliente.ts` con pruebas (mapeo, errores traducidos, `{{ nombre }}` con espacios aceptado, `{{diagnostico}}` rechazado, inserción en el cursor).
 4. **Lista y vista rápida.** `plantillas-lista`, `plantilla-vista-rapida` y `vista-previa-correo`; ruta `plantillas`. Pruebas de la página (filtro, vacío, «Editar» solo con `gestionar`).
 5. **Editor.** `plantilla-editor` con validación local, chips, vista previa en vivo, selector base, guardar, 400 y 409. Pruebas de la página con dobles del cliente.
 6. **Historial, restaurar y guard.** Sección plegable del historial, restaurar con confirmación y `cambios-sin-guardar.guard.ts` con su prueba; ruta del editor con `canDeactivate`.
-7. **Manifiesto.** Opción `plat.configuracion.plantillas` («Plantillas», icono `mail`, orden 5) y versión `1.31.0`; se aplica con el CLI del manifiesto en dev.
-8. **Cierre.** `code-simplifier` sobre los archivos tocados; `pnpm db:up:remoto` y el CLI del manifiesto en Supabase dev; verificación con el MCP Playwright (criterios de UI, claro, oscuro y 600 px, consola sin errores, capturas); `npx nx run-many -t lint test -p notificaciones admin-cliente plataforma-admin migrar seguridad`.
+7. **Manifiesto.** Opción `plat.configuracion.plantillas` («Plantillas», icono `mail`, orden 5) y versión `1.32.0`; se aplica con el CLI del manifiesto en dev.
+8. **Cierre.** `code-simplifier` sobre los archivos tocados; `pnpm db:up:remoto` y el CLI del manifiesto en Supabase dev; verificación con el MCP Playwright (criterios de UI, claro, oscuro y 600 px, consola sin errores, capturas); `npx nx run-many -t lint test -p notificaciones plataforma-admin-cliente plataforma-admin migrar seguridad` (más las libs cuyas pruebas fijan la versión del manifiesto).
 
 ## Criterios de aceptación
 
@@ -205,10 +205,10 @@ export interface ContenidoPlantilla { asunto: string; cuerpo: string; version: n
 - [ ] Verificado con el MCP Playwright en tema claro y oscuro y a 600 px (vista previa debajo del editor, lista en vista de celular); consola sin errores; capturas de lista, vista rápida y editor.
 - [ ] Las capturas coinciden con los artboards de «47 · Plantillas» (textos, íconos, tonos y ubicación de acciones). Una diferencia se corrige en el código o en el canvas antes de cerrar.
 - [ ] Colores solo por tokens (`--color-*` y tema M3); sin hex sueltos en los componentes nuevos.
-- [ ] Migración `01y` reversible y probada en CI contra PostgreSQL 16.
-- [ ] Manifiesto `1.31.0` aplicado en dev.
+- [ ] Migración `02b` reversible y probada en CI contra PostgreSQL 16.
+- [ ] Manifiesto `1.32.0` aplicado en dev.
 - [ ] El código nuevo sigue la sección «Código limpio» de `CLAUDE.md` y la estructura de libs Angular (un artefacto por archivo, `templateUrl` y `styleUrl`, pruebas junto al archivo).
-- [ ] `npx nx run-many -t lint test -p notificaciones admin-cliente plataforma-admin migrar seguridad` verde; `nx affected` verde en el CI del PR.
+- [ ] `npx nx run-many -t lint test -p notificaciones plataforma-admin-cliente plataforma-admin migrar seguridad` verde; `nx affected` verde en el CI del PR.
 
 ## Decisiones
 

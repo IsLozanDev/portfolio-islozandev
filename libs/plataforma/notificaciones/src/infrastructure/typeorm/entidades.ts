@@ -7,6 +7,7 @@ export interface FilaPlantilla {
   id: string;
   tenantId: string | null;
   codigo: string;
+  nombre: string;
   canal: string;
   idioma: string;
   version: number;
@@ -15,6 +16,7 @@ export interface FilaPlantilla {
   variables: { nombre: string; tipo: string; ejemplo?: string }[];
   plantillaBaseId: string | null;
   activa: boolean;
+  personalizable: boolean;
   creadoPor: string | null;
   creadoEn: Date;
 }
@@ -69,6 +71,7 @@ export const PlantillaEntidad = new EntitySchema<FilaPlantilla>({
     id: { type: 'uuid', primary: true },
     tenantId: { name: 'tenant_id', type: 'uuid', nullable: true },
     codigo: { type: 'varchar', length: 60 },
+    nombre: { type: 'varchar', length: 120 },
     canal: { type: 'varchar', length: 10 },
     idioma: { type: 'varchar', length: 5 },
     // Versión de la plantilla, no bloqueo optimista: las versiones son filas nuevas.
@@ -78,6 +81,7 @@ export const PlantillaEntidad = new EntitySchema<FilaPlantilla>({
     variables: { type: 'jsonb' },
     plantillaBaseId: { name: 'plantilla_base_id', type: 'uuid', nullable: true },
     activa: { type: 'boolean' },
+    personalizable: { type: 'boolean' },
     creadoPor: { name: 'creado_por', type: 'uuid', nullable: true },
     creadoEn: { name: 'creado_en', type: 'timestamptz', createDate: true },
   },

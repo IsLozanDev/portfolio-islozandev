@@ -58,13 +58,14 @@ describe('marcadores de la plantilla', () => {
 });
 
 describe('nueva versión personalizada', () => {
-  it('la primera es la versión 1, copia código, canal, idioma y variables de la base y apunta a ella', () => {
+  it('la primera es la versión 1, copia código, nombre, canal, idioma y variables de la base y apunta a ella', () => {
     const nueva = nuevaVersionPersonalizada(PLANTILLA_PRUEBA, null, contenido(), contexto());
 
     expect(nueva).toEqual({
       id: ID_NUEVA,
       tenantId: TENANT_A,
       codigo: 'PRUEBA_CORREO',
+      nombre: 'Correo de prueba',
       canal: 'CORREO',
       idioma: 'es',
       version: 1,
@@ -73,6 +74,7 @@ describe('nueva versión personalizada', () => {
       variables: PLANTILLA_PRUEBA.variables,
       plantillaBaseId: PLANTILLA_PRUEBA.id,
       activa: true,
+      personalizable: true,
       creadoPor: ACTOR,
       creadoEn: AHORA,
     });

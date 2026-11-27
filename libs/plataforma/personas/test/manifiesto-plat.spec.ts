@@ -18,7 +18,7 @@ describe('Manifiesto PLAT 1.28.0: parte de per (specs 31, 32, 37, 38 y 39)', () 
   });
 
   it('está en la versión 1.28.0 y declara los siete permisos con alcance TENANT; solo fusionar es sensible', () => {
-    expect(manifiesto.version).toBe('1.31.0');
+    expect(manifiesto.version).toBe('1.32.0');
     const dePersonas = manifiesto.permisos.filter((permiso) => esDePersonas(permiso.codigo));
     expect(dePersonas.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_PER.leer, 'TENANT', false],

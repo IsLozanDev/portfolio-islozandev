@@ -2,6 +2,12 @@ const ZONA_PERU = 'America/Lima';
 const LOCALE_PERU = 'es-PE';
 
 const FORMATO_FECHA_HORA = new Intl.DateTimeFormat(LOCALE_PERU, { timeZone: ZONA_PERU, dateStyle: 'short', timeStyle: 'short' });
+const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat(LOCALE_PERU, { timeZone: ZONA_PERU, dateStyle: 'short' });
+
+/** Fecha de Perú de un instante, p. ej. `24/11/26`. */
+export function formatearFechaCorta(instante: Date): string {
+  return FORMATO_FECHA_CORTA.format(instante);
+}
 
 /** Fecha y hora de Perú, p. ej. `23/10/26, 10:00`. */
 export function formatearFechaHora(instante: Date): string {

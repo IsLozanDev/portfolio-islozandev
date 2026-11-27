@@ -4,14 +4,14 @@ import type { Pagina, ResumenPlantilla } from '../ports/repositorios.js';
 
 export interface ListarPlantillasConsulta {
   canal?: string;
-  /** Busca en código y asunto, sin distinguir mayúsculas. */
+  /** Busca en nombre, código y asunto, sin distinguir mayúsculas. */
   q?: string;
   /** Desde 1. */
   pagina: number;
   tamano: number;
 }
 
-/** Una fila por código: la personalizada vigente del tenant o la base. */
+/** Una fila por código personalizable: la personalizada vigente del tenant o la base. */
 export class ListarPlantillas {
   constructor(private readonly dependencias: Pick<DependenciasPlantillas, 'unidadDeTrabajo' | 'plantillas'>) {}
 
