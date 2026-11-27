@@ -13,8 +13,9 @@ const TOKEN_MAXIMO = 2048;
 const ENLACE_INVALIDO = 'ENLACE_INVALIDO «Enlace inválido o vencido»: firma alterada, vencido o de otra clave, sin datos (TR-CA-194)';
 const DEMASIADAS_SOLICITUDES = 'DEMASIADAS_SOLICITUDES con Retry-After: más de 10 por minuto desde la misma IP';
 
-const EsquemaConsultar = z.object({ token: z.string().min(1).max(TOKEN_MAXIMO) });
-const EsquemaRegistrar = z.object({ token: z.string().min(1).max(TOKEN_MAXIMO), baja: z.enum(ALCANCES_BAJA) });
+const EsquemaToken = z.string().min(1).max(TOKEN_MAXIMO);
+const EsquemaConsultar = z.object({ token: EsquemaToken });
+const EsquemaRegistrar = z.object({ token: EsquemaToken, baja: z.enum(ALCANCES_BAJA) });
 
 /**
  * TR-RF-077: la página pública `/preferencias` de plataforma-admin. Sin sesión: la autoriza el token firmado del

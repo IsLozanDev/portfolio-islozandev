@@ -48,6 +48,8 @@ export class PreferenciasPage implements OnInit {
 
   protected readonly mensajes = MENSAJES_PREFERENCIAS;
   protected readonly iconoEnlaceInvalido = ICONO_ENLACE_INVALIDO;
+  protected readonly bajaPromociones = BAJA_PROMOCIONES;
+  protected readonly bajaTodoElCorreo = BAJA_TODO_EL_CORREO;
   protected readonly estado = signal<EstadoPagina>('cargando');
   protected readonly destino = signal('');
   protected readonly bajas = signal<readonly AlcanceBaja[]>([]);

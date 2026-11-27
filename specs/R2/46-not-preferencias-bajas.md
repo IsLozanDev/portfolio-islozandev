@@ -1,6 +1,6 @@
 # SPEC 46 — Notificaciones: bajas del destinatario por enlace firmado, con efecto en el envío y página pública de preferencias
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 45, SPEC 42, SPEC 37, SPEC 14
 > **Date:** 2026-11-26
 > **Objective:** Agregar un enlace firmado de 30 días en el pie de cada correo, que abre la página pública `/preferencias` de `plataforma-admin`, donde el destinatario se da de baja de las promociones o del correo entero, baja que NOT guarda en `ntf.baja`, refleja en PER y respeta al enviar.
@@ -211,6 +211,11 @@ export interface RepositorioBajas {
 - **Sí:** el destino se muestra enmascarado desde el último mensaje del hash. El token no lleva el correo en claro.
 - **Sí:** el pie se agrega después del saneado de la plantilla. Una plantilla del tenant no puede quitarlo ni alterarlo.
 - **Sí (al implementar):** migración `02a`. `01y` la tomó el 17d y el 53 usa `01z`. Decisión del usuario.
+- **Sí (al implementar):** el `OMITIDO_SIN_CONSENTIMIENTO` por baja `PROMOCIONAL` guarda `motivo_fallo = 'BAJA_PROMOCIONAL'`, para distinguirlo del omitido por falta de consentimiento (motivo nulo).
+- **Sí (al implementar):** `MarcoAuthComponent` se exporta desde `@vitrina/shared/auth-ui` para reutilizarlo; el componente no cambia. Decisión del usuario.
+- **Sí (al implementar):** la ruta de `preferencias-ui` provee `MAT_ICON_DEFAULT_OPTIONS` con `material-symbols-outlined`: esa clase solo la fija el layout del shell y la página vive fuera de él.
+- **Sí (al implementar):** el token se quita de la barra con `router.navigate([], { replaceUrl: true })`, que usa `history.replaceState` y deja al router sin el fragmento.
+- **Pendiente:** el humo con Resend (enviar `PRUEBA_CORREO`, abrir el enlace y darse de baja) queda para cuando se prueben los pendientes de staging. Decisión del usuario.
 
 ## Riesgos
 

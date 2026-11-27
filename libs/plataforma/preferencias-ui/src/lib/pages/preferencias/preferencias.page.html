@@ -21,7 +21,7 @@
 
         <section class="flex flex-col gap-2">
           <button mat-flat-button type="button" data-accion="promociones" [disabled]="sinPromociones() || enviando() !== null" (click)="dejarPromociones()">
-            @if (enviando() === 'PROMOCIONAL') {
+            @if (enviando() === bajaPromociones) {
               <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
             } @else if (sinPromociones()) {
               Ya no recibe promociones
@@ -41,7 +41,7 @@
             [disabled]="sinTodoElCorreo() || enviando() !== null"
             (click)="dejarTodoElCorreo()"
           >
-            @if (enviando() === 'CANAL') {
+            @if (enviando() === bajaTodoElCorreo) {
               <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
             } @else if (sinTodoElCorreo()) {
               Ya no recibe correos
