@@ -1,0 +1,20 @@
+<span
+  class="border-borde bg-superficie inline-flex items-center justify-center overflow-hidden rounded-md border"
+  [class.size-8]="!grande()"
+  [class.size-24]="grande()"
+  data-prueba="logo-empresa"
+>
+  @if (url() && !fallo()) {
+    <img class="size-full object-contain" [src]="url()" [alt]="'Logo de ' + nombre()" (error)="fallo.set(true)" />
+  } @else {
+    <span
+      class="bg-contenedor-secundario text-sobre-contenedor-secundario flex size-full items-center justify-center font-medium"
+      [class.text-sm]="!grande()"
+      [class.text-3xl]="grande()"
+      aria-hidden="true"
+      data-prueba="inicial-logo"
+    >
+      {{ inicial() }}
+    </span>
+  }
+</span>

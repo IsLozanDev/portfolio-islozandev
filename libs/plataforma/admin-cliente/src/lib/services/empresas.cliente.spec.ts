@@ -10,6 +10,10 @@ const FILA_SABORES = {
   nombre_comercial: 'Sabores',
   direccion_fiscal: null,
   ubigeo: '040101',
+  telefono: '+51987654321',
+  correo: 'ventas@sabores.pe',
+  sitio_web: 'https://sabores.pe',
+  logo_archivo_id: 'logo-1',
   activo: true,
   version: 3,
 };
@@ -21,12 +25,32 @@ const SABORES = {
   nombreComercial: 'Sabores',
   direccionFiscal: null,
   ubigeo: '040101',
+  telefono: '+51987654321',
+  correo: 'ventas@sabores.pe',
+  sitioWeb: 'https://sabores.pe',
+  logoArchivoId: 'logo-1',
   activo: true,
   version: 3,
 };
 
-const DATOS = { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: 'Av. Ejército 101', ubigeo: '040101' };
-const CUERPO_DATOS = { razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: 'Av. Ejército 101', ubigeo: '040101' };
+const DATOS = {
+  razonSocial: 'Sabores del Sur SAC',
+  nombreComercial: null,
+  direccionFiscal: 'Av. Ejército 101',
+  ubigeo: '040101',
+  telefono: '+5115550101',
+  correo: 'ventas@sabores.pe',
+  sitioWeb: null,
+};
+const CUERPO_DATOS = {
+  razon_social: 'Sabores del Sur SAC',
+  nombre_comercial: null,
+  direccion_fiscal: 'Av. Ejército 101',
+  ubigeo: '040101',
+  telefono: '+5115550101',
+  correo: 'ventas@sabores.pe',
+  sitio_web: null,
+};
 
 describe('EmpresasCliente', () => {
   let cliente: EmpresasCliente;
@@ -73,12 +97,12 @@ describe('EmpresasCliente', () => {
     });
   });
 
-  it('editar envía PUT con la versión y sin RUC', async () => {
-    const respuesta = cliente.editar('e-sabores', 3, DATOS);
+  it('editar envía PUT con la versión y el logo, y sin RUC', async () => {
+    const respuesta = cliente.editar('e-sabores', 3, { ...DATOS, logoArchivoId: 'logo-2' });
 
     const peticion = http.expectOne(`${API_URL}/org/empresas/e-sabores`);
     expect(peticion.request.method).toBe('PUT');
-    expect(peticion.request.body).toEqual({ version: 3, ...CUERPO_DATOS });
+    expect(peticion.request.body).toEqual({ version: 3, ...CUERPO_DATOS, logo_archivo_id: 'logo-2' });
     peticion.flush(null, { status: 204, statusText: 'No Content' });
 
     await expect(respuesta).resolves.toBeUndefined();

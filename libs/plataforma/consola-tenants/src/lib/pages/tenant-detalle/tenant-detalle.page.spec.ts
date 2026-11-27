@@ -30,7 +30,7 @@ function gym(estado: string, cambios: object = {}): object {
     estado_cambiado_en: null,
     version: 1,
     suscripciones: [{ producto_codigo: 'GYM', plan: 'PRO', estado: 'ACTIVA', vigente_hasta: '2026-12-31' }],
-    empresa_principal: { id: 'e-1', ruc: '20512345671', razon_social: 'Fuerza Total S.A.C.' },
+    empresa_principal: { id: 'e-1', ruc: '20512345671', razon_social: 'Fuerza Total S.A.C.', logo_url: null, logo_expira_en: null },
     historial: [],
     ...cambios,
   };
@@ -199,5 +199,35 @@ describe('TenantDetallePage', () => {
 
     expect(elemento().textContent).toContain(MENSAJES_DETALLE.noExiste);
     expect(elemento().querySelector('vit-estado-vacio a')?.getAttribute('href')).toBe('/consola/tenants');
+  });
+
+  describe('logo de la empresa principal (spec 17d)', () => {
+    const URL_LOGO = 'https://storage.ejemplo/firmada/logo.png';
+    const conLogo = (logoUrl: string | null) =>
+      gym('ACTIVO', { empresa_principal: { id: 'e-1', ruc: '20512345671', razon_social: 'Fuerza Total S.A.C.', logo_url: logoUrl, logo_expira_en: null } });
+    const logo = () => elemento().querySelector<HTMLImageElement>('[data-logo-empresa]');
+    const inicial = () => elemento().querySelector('[data-inicial-empresa]')?.textContent?.trim();
+
+    it('con logo muestra la imagen firmada junto a RUC y razón social', async () => {
+      await abrir(conLogo(URL_LOGO));
+
+      expect(logo()?.src).toBe(URL_LOGO);
+      expect(logo()?.alt).toBe('Logo de Fuerza Total S.A.C.');
+      expect(logo()?.classList).toContain('size-12');
+      expect(inicial()).toBeUndefined();
+    });
+
+    it('sin logo, o si la imagen no carga, muestra la inicial', async () => {
+      await abrir(conLogo(null));
+      expect(logo()).toBeNull();
+      expect(inicial()).toBe('F');
+
+      TestBed.resetTestingModule();
+      await abrir(conLogo(URL_LOGO));
+      logo()?.dispatchEvent(new Event('error'));
+      await estable();
+      expect(logo()).toBeNull();
+      expect(inicial()).toBe('F');
+    });
   });
 });

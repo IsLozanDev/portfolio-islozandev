@@ -291,3 +291,33 @@ describe('TablaComponent con vitCeldaTabla', () => {
   });
 });
 
+@Component({
+  imports: [TablaComponent, CeldaTablaDirective],
+  template: `
+    <vit-tabla [columnas]="columnas" [filas]="filas" [total]="1">
+      <ng-template vitCeldaTabla="estado" let-fila>
+        <span data-prueba="avatar">{{ fila.nombre.charAt(0) }}</span>
+      </ng-template>
+    </vit-tabla>
+  `,
+})
+class TablaConInicio {
+  readonly columnas: ColumnaTabla<Contacto>[] = [
+    { clave: 'estado', titulo: 'Avatar', movil: 'inicio' },
+    { clave: 'nombre', titulo: 'Nombre', movil: 'titulo' },
+  ];
+  readonly filas: Contacto[] = [{ nombre: 'Ana Torres', correo: 'ana@vitrina.pe', telefono: '999888777', estado: 'Invitado' }];
+}
+
+describe('TablaComponent con rol inicio (spec 17d)', () => {
+  it('en celular pinta la plantilla de la columna inicio antes del título', async () => {
+    simularAncho(true);
+    const fixture = TestBed.createComponent(TablaConInicio);
+    await fixture.whenStable();
+    const item: HTMLElement | null = fixture.nativeElement.querySelector('li');
+
+    expect(item?.firstElementChild?.querySelector('[data-prueba=avatar]')?.textContent).toBe('A');
+    expect(item?.querySelector('.font-medium')?.textContent?.trim()).toBe('Ana Torres');
+  });
+});
+

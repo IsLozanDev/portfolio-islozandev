@@ -1,15 +1,17 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { ArchivoCargaComponent, type ArchivoDisponible } from '@vitrina/plataforma/archivos-ui';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
 import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
-import { MENSAJES_EMPRESAS, MENSAJES_ORGANIZACION } from '../../models/mensajes-organizacion';
+import { MENSAJES_EMPRESAS, MENSAJES_LOGO_INVALIDO, MENSAJES_ORGANIZACION, MENSAJES_VALIDACION_ORGANIZACION, TEXTOS_UBIGEO_ORGANIZACION } from '../../models/mensajes-organizacion';
 import { PERMISO_CONSULTAR_IDENTIDAD } from '../../models/padron';
 import { RecargaContextoService } from '../../services/recarga-contexto.service';
 import { EmpresaFormularioPage } from './empresa-formulario.page';
@@ -29,12 +31,40 @@ const SABORES = {
   nombre_comercial: null,
   direccion_fiscal: 'Av. Ejército 101',
   ubigeo: '040101',
+  telefono: null,
+  correo: null,
+  sitio_web: null,
+  logo_archivo_id: null,
   activo: true,
   version: 3,
 };
 
 @Component({ selector: 'vit-destino-empresa-formulario', template: '' })
 class Destino {}
+
+/** La zona real sube a Storage y sigue el análisis por SSE: aquí solo importa qué recibe y qué avisa. */
+@Component({ selector: 'vit-archivo-carga', template: '' })
+class ArchivoCargaDoble {
+  readonly categoria = input('');
+  readonly entidadTipo = input('');
+  readonly entidadId = input('');
+  readonly etiqueta = input<string | undefined>(undefined);
+  readonly deshabilitado = input(false);
+  readonly disponible = output<ArchivoDisponible>();
+}
+
+const URL_UBIGEOS = `${API_URL}/catalogos/UBIGEO/items`;
+const ITEMS_UBIGEO = [
+  { codigo: '150122', nombre: 'MIRAFLORES', atributos: { departamento: 'LIMA', provincia: 'LIMA' } },
+  { codigo: '040103', nombre: 'CAYMA', atributos: { departamento: 'AREQUIPA', provincia: 'AREQUIPA' } },
+];
+const PERMISO_SUBIR = 'plat.archivo.subir';
+const PERMISO_DESCARGAR = 'plat.archivo.descargar';
+const PERMISO_CATALOGO = 'plat.catalogo.leer';
+const LOGO_NUEVO = 'logo-nuevo';
+const URL_LOGO_NUEVO = 'https://storage.ejemplo/logo-nuevo.png';
+const URL_LOGO_GUARDADO = 'https://storage.ejemplo/logo-1.png';
+const VIGENCIA_URL_MS = 900_000;
 
 describe('EmpresaFormularioPage', () => {
   let harness: RouterTestingHarness;
@@ -73,6 +103,7 @@ describe('EmpresaFormularioPage', () => {
         { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL } },
       ],
     });
+    TestBed.overrideComponent(EmpresaFormularioPage, { remove: { imports: [ArchivoCargaComponent] }, add: { imports: [ArchivoCargaDoble] } });
     http = TestBed.inject(HttpTestingController);
     harness = await RouterTestingHarness.create(ruta);
     await estable();
@@ -105,6 +136,12 @@ describe('EmpresaFormularioPage', () => {
     await estable();
   }
 
+  /** Tras registrar, la pantalla pasa a la edición de la empresa nueva y la carga (spec 17d). */
+  async function pasarAEdicion(empresaId: string): Promise<void> {
+    http.expectOne(`${URL_EMPRESAS}/${empresaId}`).flush({ ...SABORES, id: empresaId });
+    await estable();
+  }
+
   const conflicto = (codigo: string, mensaje: string) => ({ body: { codigo, mensaje }, opciones: { status: 409, statusText: 'Conflict' } });
 
   beforeEach(() => {
@@ -115,7 +152,7 @@ describe('EmpresaFormularioPage', () => {
 
   afterEach(() => http.verify());
 
-  it('TR-CA-004: registra, recarga mi-contexto y va a las sucursales de la empresa nueva', async () => {
+  it('TR-CA-004: registra, recarga mi-contexto y pasa a la edición con el aviso para subir el logo', async () => {
     await abrir('/admin/empresas/nueva');
     await escribir('ruc', '20512345671');
     await escribir('razonSocial', ' Sabores del Sur SAC ');
@@ -123,13 +160,24 @@ describe('EmpresaFormularioPage', () => {
 
     const peticion = http.expectOne(URL_EMPRESAS);
     expect(peticion.request.method).toBe('POST');
-    expect(peticion.request.body).toEqual({ ruc: '20512345671', razon_social: 'Sabores del Sur SAC', nombre_comercial: null, direccion_fiscal: null, ubigeo: null });
+    expect(peticion.request.body).toEqual({
+      ruc: '20512345671',
+      razon_social: 'Sabores del Sur SAC',
+      nombre_comercial: null,
+      direccion_fiscal: null,
+      ubigeo: null,
+      telefono: null,
+      correo: null,
+      sitio_web: null,
+    });
     peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
     await estable();
 
-    expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_EMPRESAS.registrada);
     expect(recarga.recargar).toHaveBeenCalled();
-    expect(url()).toBe('/admin/sucursales?empresa=e-sabores');
+    expect(url()).toBe('/admin/empresas/e-sabores/editar');
+    await pasarAEdicion('e-sabores');
+    expect(elemento().querySelector('[data-aviso=recien-registrada]')?.textContent).toContain('Empresa registrada. Ahora puede subir el logo.');
+    expect(avisos.toast).not.toHaveBeenCalled();
   });
 
   describe('padrón RUC (spec 28b)', () => {
@@ -152,6 +200,7 @@ describe('EmpresaFormularioPage', () => {
       expect(registro.request.body).toMatchObject({ ruc: RUC_ANDINA, razon_social: 'Comercial Andina S.A.C.' });
       registro.flush({ empresa_id: 'e-andina', sucursal_principal_id: 's-centro', advertencias: [] });
       await estable();
+      await pasarAEdicion('e-andina');
       expect(avisos.advertencia).not.toHaveBeenCalled();
     });
 
@@ -216,7 +265,8 @@ describe('EmpresaFormularioPage', () => {
 
       expect(avisos.advertencia).toHaveBeenCalledWith(MENSAJES_EMPRESAS.registradaConObservaciones, ADVERTENCIA_NO_HABIDO);
       expect(avisos.toast).not.toHaveBeenCalled();
-      expect(url()).toBe('/admin/sucursales?empresa=e-misti');
+      expect(url()).toBe('/admin/empresas/e-misti/editar');
+      await pasarAEdicion('e-misti');
     });
 
     it('sin plat.identidad.consultar no consulta el padrón y registra con la razón social escrita', async () => {
@@ -230,7 +280,8 @@ describe('EmpresaFormularioPage', () => {
       await enviar();
       http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
       await estable();
-      expect(avisos.toast).toHaveBeenCalledWith('exito', MENSAJES_EMPRESAS.registrada);
+      await pasarAEdicion('e-sabores');
+      expect(url()).toBe('/admin/empresas/e-sabores/editar');
     });
 
     it('un RUC inválido no consulta el padrón', async () => {
@@ -283,6 +334,7 @@ describe('EmpresaFormularioPage', () => {
 
     http.expectOne(URL_EMPRESAS).flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
     await estable();
+    await pasarAEdicion('e-sabores');
   });
 
   it('la edición carga por id con el RUC en solo lectura y guarda con la versión', async () => {
@@ -297,7 +349,17 @@ describe('EmpresaFormularioPage', () => {
 
     const peticion = http.expectOne(`${URL_EMPRESAS}/e-sabores`);
     expect(peticion.request.method).toBe('PUT');
-    expect(peticion.request.body).toEqual({ version: 3, razon_social: 'Sabores del Sur SAC', nombre_comercial: 'Sabores', direccion_fiscal: 'Av. Ejército 101', ubigeo: '040101' });
+    expect(peticion.request.body).toEqual({
+      version: 3,
+      razon_social: 'Sabores del Sur SAC',
+      nombre_comercial: 'Sabores',
+      direccion_fiscal: 'Av. Ejército 101',
+      ubigeo: '040101',
+      telefono: null,
+      correo: null,
+      sitio_web: null,
+      logo_archivo_id: null,
+    });
     peticion.flush(null, { status: 204, statusText: 'No Content' });
     await estable();
 
@@ -342,5 +404,214 @@ describe('EmpresaFormularioPage', () => {
     await estable();
 
     expect(url()).toBe('/admin/empresas');
+  });
+
+  describe('identidad y contacto (spec 17d)', () => {
+    const zona = () => harness.fixture.debugElement.query(By.directive(ArchivoCargaDoble))?.componentInstance as ArchivoCargaDoble | undefined;
+    const enPagina = (selector: string) => elemento().querySelector<HTMLElement>(selector);
+    const expiraEnUnRato = () => new Date(Date.now() + VIGENCIA_URL_MS).toISOString();
+    const descargaDe = (archivoId: string) => http.expectOne((solicitud) => solicitud.url === `${API_URL}/archivos/${archivoId}/descarga`);
+    const edicion = () => http.expectOne((solicitud) => solicitud.method === 'PUT' && solicitud.url === `${URL_EMPRESAS}/e-sabores`);
+    const imagenDelLogo = () => elemento().querySelector<HTMLImageElement>('vit-logo-empresa img');
+
+    async function abrirEdicionCon(cambios: object): Promise<void> {
+      await abrir('/admin/empresas/e-sabores/editar');
+      http.expectOne(`${URL_EMPRESAS}/e-sabores`).flush({ ...SABORES, ...cambios });
+      await estable();
+    }
+
+    async function subirLogo(): Promise<void> {
+      zona()?.disponible.emit({ archivoId: LOGO_NUEVO, numero: 1 });
+      await estable();
+      descargaDe(LOGO_NUEVO).flush({ url: URL_LOGO_NUEVO, expira_en: expiraEnUnRato() });
+      await estable();
+    }
+
+    async function salirDe(nombre: string): Promise<void> {
+      campo(nombre)?.dispatchEvent(new Event('blur'));
+      await estable();
+    }
+
+    async function guardarSinError(): Promise<void> {
+      edicion().flush(null, { status: 204, statusText: 'No Content' });
+      await estable();
+    }
+
+    it('en el alta la zona del logo está deshabilitada y el contacto se llena y viaja normalizado', async () => {
+      sesion.conPermisos(PERMISO_SUBIR);
+      await abrir('/admin/empresas/nueva');
+
+      expect(zona()?.deshabilitado()).toBe(true);
+      expect(enPagina('[data-ayuda=logo-al-registrar]')?.textContent).toContain(MENSAJES_EMPRESAS.logoAlRegistrar);
+
+      await escribir('ruc', '20512345671');
+      await escribir('razonSocial', 'Sabores del Sur SAC');
+      await escribir('telefono', '987654321');
+      await escribir('correo', 'Ventas@Empresa.PE');
+      await escribir('sitioWeb', 'www.empresa.pe');
+      await salirDe('sitioWeb');
+      expect(campo('telefono')?.value).toBe('987 654 321');
+      expect(campo('sitioWeb')?.value).toBe('https://www.empresa.pe');
+
+      await enviar();
+      const peticion = http.expectOne(URL_EMPRESAS);
+      expect(peticion.request.body).toMatchObject({ telefono: '+51987654321', correo: 'ventas@empresa.pe', sitio_web: 'https://www.empresa.pe' });
+      peticion.flush({ empresa_id: 'e-sabores', sucursal_principal_id: 's-centro', advertencias: [] });
+      await estable();
+      await pasarAEdicion('e-sabores');
+
+      expect(zona()?.deshabilitado()).toBe(false);
+      expect(zona()?.entidadId()).toBe('e-sabores');
+      expect([zona()?.categoria(), zona()?.entidadTipo()]).toEqual(['LOGO', 'EMPRESA']);
+    });
+
+    it('un logo subido queda pendiente con su miniatura y se asigna con «Guardar cambios»', async () => {
+      sesion.conPermisos(PERMISO_SUBIR, PERMISO_DESCARGAR);
+      await abrirEdicion();
+      expect(enPagina('[data-chip=logo-pendiente]')).toBeNull();
+
+      await subirLogo();
+      expect(enPagina('[data-chip=logo-pendiente]')?.textContent).toContain(MENSAJES_EMPRESAS.logoPendiente);
+      expect(imagenDelLogo()?.src).toBe(URL_LOGO_NUEVO);
+
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ version: 3, logo_archivo_id: LOGO_NUEVO });
+    });
+
+    it('«Quitar logo» muestra la inicial y guarda logo_archivo_id en null', async () => {
+      sesion.conPermisos(PERMISO_SUBIR, PERMISO_DESCARGAR);
+      await abrirEdicionCon({ logo_archivo_id: 'logo-1' });
+      descargaDe('logo-1').flush({ url: URL_LOGO_GUARDADO, expira_en: expiraEnUnRato() });
+      await estable();
+      expect(imagenDelLogo()?.src).toBe(URL_LOGO_GUARDADO);
+
+      enPagina('[data-accion=quitar-logo]')?.click();
+      await estable();
+      expect(imagenDelLogo()).toBeNull();
+      expect(enPagina('[data-prueba=inicial-logo]')?.textContent?.trim()).toBe('S');
+      expect(enPagina('[data-chip=logo-por-quitar]')).not.toBeNull();
+
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ logo_archivo_id: null });
+    });
+
+    it.each(['OTRA_ENTIDAD', 'NO_DISPONIBLE'] as const)('LOGO_INVALIDO %s se muestra bajo la zona del logo', async (motivo) => {
+      sesion.conPermisos(PERMISO_SUBIR, PERMISO_DESCARGAR);
+      await abrirEdicion();
+      await subirLogo();
+      await enviar();
+
+      edicion().flush({ codigo: 'LOGO_INVALIDO', mensaje: 'El archivo no sirve como logo de esta empresa', motivo }, { status: 400, statusText: 'Bad Request' });
+      await estable();
+
+      expect(enPagina('[data-zona=logo] [data-error=logo]')?.textContent).toContain(MENSAJES_LOGO_INVALIDO[motivo]);
+      expect(enPagina('[data-error=api]')).toBeNull();
+      expect(url()).toBe('/admin/empresas/e-sabores/editar');
+    });
+
+    it('con una versión vieja conserva el logo recién subido, también al recargar', async () => {
+      sesion.conPermisos(PERMISO_SUBIR, PERMISO_DESCARGAR);
+      await abrirEdicion();
+      await subirLogo();
+      await enviar();
+      const { body, opciones } = conflicto('VERSION_OBSOLETA', 'El registro cambió desde que lo abrió; recargue y vuelva a intentar');
+      edicion().flush(body, opciones);
+      await estable();
+      expect(enPagina('[data-chip=logo-pendiente]')).not.toBeNull();
+
+      enPagina('[data-accion=recargar]')?.click();
+      await estable();
+      http.expectOne(`${URL_EMPRESAS}/e-sabores`).flush({ ...SABORES, version: 4 });
+      await estable();
+      expect(enPagina('[data-chip=logo-pendiente]')).not.toBeNull();
+      expect(imagenDelLogo()?.src).toBe(URL_LOGO_NUEVO);
+
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ version: 4, logo_archivo_id: LOGO_NUEVO });
+    });
+
+    it('guardar con el logo nuevo navega a la lista', async () => {
+      sesion.conPermisos(PERMISO_SUBIR, PERMISO_DESCARGAR);
+      await abrirEdicion();
+      await subirLogo();
+      await enviar();
+      await guardarSinError();
+
+      expect(url()).toBe('/admin/empresas');
+    });
+
+    it('sin plat.archivo.subir no muestra la zona de carga y avisa', async () => {
+      await abrirEdicion();
+
+      expect(zona()).toBeUndefined();
+      expect(enPagina('[data-aviso=sin-permiso-subir]')?.textContent).toContain(MENSAJES_EMPRESAS.sinPermisoSubir);
+      expect(enPagina('[data-accion=quitar-logo]')).toBeNull();
+    });
+
+    it('sin plat.archivo.descargar muestra la inicial sin pedir la URL del logo', async () => {
+      sesion.conPermisos(PERMISO_SUBIR);
+      await abrirEdicionCon({ logo_archivo_id: 'logo-1' });
+
+      http.expectNone((solicitud) => solicitud.url.includes('/archivos/'));
+      expect(imagenDelLogo()).toBeNull();
+      expect(enPagina('[data-prueba=inicial-logo]')?.textContent?.trim()).toBe('S');
+    });
+
+    it('con el catálogo, el ubigeo guardado se muestra con su nombre y uno nuevo se elige de la lista', async () => {
+      sesion.conPermisos(PERMISO_CATALOGO);
+      await abrir('/admin/empresas/e-sabores/editar');
+      http.expectOne(`${URL_EMPRESAS}/e-sabores`).flush({ ...SABORES, ubigeo: '150122' });
+      await estable();
+      http.expectOne(URL_UBIGEOS).flush(ITEMS_UBIGEO);
+      await estable();
+
+      expect(campo('ubigeo')?.value).toBe('LIMA / LIMA / MIRAFLORES');
+      expect(enPagina('[data-prueba=ayuda-ubigeo]')?.textContent?.trim()).toBe('Se guarda el código 150122.');
+
+      campo('ubigeo')?.focus();
+      await escribir('ubigeo', 'cayma');
+      const opciones = [...document.querySelectorAll<HTMLElement>('[data-prueba="opcion-ubigeo"]')];
+      expect(opciones.map((opcion) => opcion.textContent?.trim())).toEqual(['AREQUIPA / AREQUIPA / CAYMA']);
+      opciones[0]?.click();
+      await estable();
+      expect(campo('ubigeo')?.value).toBe('AREQUIPA / AREQUIPA / CAYMA');
+
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ ubigeo: '040103' });
+    });
+
+    it('un distrito escrito sin elegirlo de la lista muestra «Elija un distrito de la lista» y no envía', async () => {
+      sesion.conPermisos(PERMISO_CATALOGO);
+      await abrir('/admin/empresas/nueva');
+      http.expectOne(URL_UBIGEOS).flush(ITEMS_UBIGEO);
+      await escribir('ruc', '20512345671');
+      await escribir('razonSocial', 'Sabores del Sur SAC');
+      await escribir('ubigeo', 'cayma');
+      await enviar();
+
+      http.expectNone(URL_EMPRESAS);
+      expect(enPagina('vit-ubigeo-autocompletar mat-error')?.textContent?.trim()).toBe(TEXTOS_UBIGEO_ORGANIZACION.error);
+    });
+
+    it('sin plat.catalogo.leer el ubigeo queda deshabilitado con su aviso y conserva el código', async () => {
+      await abrirEdicion();
+
+      http.expectNone(URL_UBIGEOS);
+      expect(campo('ubigeo')?.disabled).toBe(true);
+      expect(campo('ubigeo')?.value).toBe('040101');
+      expect(enPagina('[data-prueba=ayuda-ubigeo]')?.textContent?.trim()).toBe(TEXTOS_UBIGEO_ORGANIZACION.sinPermiso);
+    });
+
+    it('un celular incompleto muestra su error y no envía', async () => {
+      await abrir('/admin/empresas/nueva');
+      await escribir('ruc', '20512345671');
+      await escribir('razonSocial', 'Sabores del Sur SAC');
+      await escribir('telefono', '98765');
+      await enviar();
+
+      http.expectNone(URL_EMPRESAS);
+      const errores = [...elemento().querySelectorAll('mat-error')].map((mensaje) => mensaje.textContent?.trim());
+      expect(errores).toContain(MENSAJES_VALIDACION_ORGANIZACION.telefonoPeru);
+    });
   });
 });

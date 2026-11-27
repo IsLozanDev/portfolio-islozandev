@@ -4,18 +4,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, Router, RouterLink, type Params } from '@angular/router';
 import { SiPermisoDirective } from '@vitrina/shared/auth';
-import { AccionesFilaDirective, TablaComponent, tamanoPaginaParaUrl, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
+import { AccionesFilaDirective, CeldaTablaDirective, TablaComponent, tamanoPaginaParaUrl, type CambioPagina, type ColumnaTabla } from '@vitrina/shared/ui';
+import { LogoEmpresaComponent } from '../../components/logo-empresa/logo-empresa.component';
 import type { Empresa } from '../../models/empresa';
 import { aErrorAdmin } from '../../models/error-admin';
 import type { Listado } from '../../models/listado';
 import { MENSAJES_EMPRESAS, MENSAJES_ORGANIZACION } from '../../models/mensajes-organizacion';
 import { PERMISOS_ADMIN } from '../../models/permisos-admin';
 import { EmpresasCliente } from '../../services/empresas.cliente';
+import { LogosEmpresaService } from '../../services/logos-empresa.service';
 import { PARAMETRO_URL_ORGANIZACION, paginaDesdeUrl, paginaParaUrl, tamanoDesdeUrl } from '../../utils/filtro-url-organizacion';
 
 /** Lo que muestra cada celda, ya como texto. */
 export interface FilaEmpresa {
   id: string;
+  /** URL firmada de la miniatura; null sin logo o sin permiso: se ve la inicial (spec 17d). */
+  logo: string | null;
   ruc: string;
   razonSocial: string;
   nombreComercial: string;
@@ -23,8 +27,9 @@ export interface FilaEmpresa {
 }
 
 const COLUMNAS: ColumnaTabla<FilaEmpresa>[] = [
-  { clave: 'ruc', titulo: MENSAJES_EMPRESAS.ruc },
-  { clave: 'razonSocial', titulo: MENSAJES_EMPRESAS.razonSocial },
+  { clave: 'logo', titulo: MENSAJES_EMPRESAS.logo, movil: 'inicio' },
+  { clave: 'ruc', titulo: MENSAJES_EMPRESAS.ruc, movil: 'detalle' },
+  { clave: 'razonSocial', titulo: MENSAJES_EMPRESAS.razonSocial, movil: 'titulo' },
   { clave: 'nombreComercial', titulo: MENSAJES_EMPRESAS.nombreComercial },
   { clave: 'ubigeo', titulo: MENSAJES_EMPRESAS.ubigeo },
 ];
@@ -32,11 +37,12 @@ const COLUMNAS: ColumnaTabla<FilaEmpresa>[] = [
 /** Empresas del tenant con la página en la URL (U-05, TR-RF-002). */
 @Component({
   selector: 'vit-empresas-lista',
-  imports: [MatButtonModule, MatIconModule, RouterLink, SiPermisoDirective, AccionesFilaDirective, TablaComponent],
+  imports: [MatButtonModule, MatIconModule, RouterLink, SiPermisoDirective, AccionesFilaDirective, CeldaTablaDirective, LogoEmpresaComponent, TablaComponent],
   templateUrl: './empresas-lista.page.html',
 })
 export class EmpresasListaPage {
   private readonly empresas = inject(EmpresasCliente);
+  private readonly logos = inject(LogosEmpresaService);
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
 
@@ -78,7 +84,8 @@ export class EmpresasListaPage {
     try {
       const listado = await this.empresas.listar({ pagina: this.pagina(), tamano: this.tamano() });
       if (consulta !== this.consultaActual) return;
-      this.listado.set({ items: listado.items.map(filaDe), total: listado.total });
+      this.listado.set({ items: listado.items.map((empresa) => filaDe(empresa, null)), total: listado.total });
+      void this.mostrarLogos(consulta, listado);
     } catch (error) {
       if (consulta !== this.consultaActual) return;
       this.listado.set({ items: [], total: 0 });
@@ -87,11 +94,19 @@ export class EmpresasListaPage {
       if (consulta === this.consultaActual) this.cargando.set(false);
     }
   }
+
+  /** La tabla sale enseguida con las iniciales; cada miniatura llega cuando ARC firma su URL. */
+  private async mostrarLogos(consulta: number, listado: Listado<Empresa>): Promise<void> {
+    const urls = await Promise.all(listado.items.map((empresa) => this.logos.url(empresa.logoArchivoId)));
+    if (consulta !== this.consultaActual) return;
+    this.listado.set({ items: listado.items.map((empresa, indice) => filaDe(empresa, urls[indice] ?? null)), total: listado.total });
+  }
 }
 
-function filaDe(empresa: Empresa): FilaEmpresa {
+function filaDe(empresa: Empresa, logo: string | null): FilaEmpresa {
   return {
     id: empresa.id,
+    logo,
     ruc: empresa.ruc,
     razonSocial: empresa.razonSocial,
     nombreComercial: empresa.nombreComercial ?? MENSAJES_ORGANIZACION.sinDato,

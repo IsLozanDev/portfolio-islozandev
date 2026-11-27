@@ -21,6 +21,9 @@
     [textoVacio]="mensajes.sinEmpresas"
     (pagina)="paginar($event)"
   >
+    <ng-template vitCeldaTabla="logo" let-empresa>
+      <vit-logo-empresa [url]="empresa.logo" [nombre]="empresa.razonSocial" />
+    </ng-template>
     <ng-template vitAccionesFila let-empresa>
       <a
         mat-icon-button

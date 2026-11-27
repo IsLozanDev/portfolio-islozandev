@@ -7,7 +7,7 @@ export { PersonaContactosComponent } from './lib/components/persona-contactos/pe
 export { PersonaDatosBasicosComponent } from './lib/components/persona-datos-basicos/persona-datos-basicos.component';
 export { PersonaDireccionesComponent } from './lib/components/persona-direcciones/persona-direcciones.component';
 export { PersonaRolesComponent } from './lib/components/persona-roles/persona-roles.component';
-export { UbigeoAutocompletarComponent } from './lib/components/ubigeo-autocompletar/ubigeo-autocompletar.component';
+export { TEXTOS_UBIGEO_FICHA, UbigeoAutocompletarComponent } from './lib/components/ubigeo-autocompletar/ubigeo-autocompletar.component';
 export { type CambioFicha } from './lib/models/ficha';
 export { MENSAJES_FICHA } from './lib/models/mensajes-ficha';
 export { PanelNuevaPersonaComponent, type DatosPanelNuevaPersona, type ResultadoNuevaPersona } from './lib/components/panel-nueva-persona/panel-nueva-persona.component';
@@ -85,7 +85,7 @@ export type {
   RegistroPersona,
 } from './lib/models/solicitudes-persona';
 export { TONO_DESCARTADO, TONO_ROL, TONOS_COINCIDENCIA, TONOS_ESTADO_CONSENTIMIENTO, TONOS_PUNTAJE } from './lib/models/tonos-personas';
-export { type Ubigeo, type ValorUbigeo } from './lib/models/ubigeo';
+export { type TextosUbigeo, type Ubigeo, type ValorUbigeo } from './lib/models/ubigeo';
 export { ConsentimientosCliente } from './lib/services/consentimientos.cliente';
 export { ContactosCliente } from './lib/services/contactos.cliente';
 export { DireccionesCliente } from './lib/services/direcciones.cliente';
@@ -111,5 +111,6 @@ export { formatoCelular, formatoContacto } from './lib/utils/formato-contacto';
 export { formatoDocumento, formatoRol } from './lib/utils/formato-persona';
 export { formatoFecha, formatoFechaHora } from './lib/utils/fechas';
 export { formatoUbigeo } from './lib/utils/formato-ubigeo';
+export { ubigeoElegido } from './lib/utils/validadores-formulario';
 export { resumenContactos, resumenDatosBasicos, resumenDirecciones, resumenRoles } from './lib/utils/resumenes-ficha';
 export { validarCelular, validarContacto, validarCorreo } from './lib/utils/validar-contacto';

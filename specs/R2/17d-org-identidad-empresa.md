@@ -442,6 +442,23 @@ export interface ValidadorLogoPort {
   - el adaptador sobre ARC, en `validador-logo.archivos.spec.ts`;
   - el aislamiento de ARC entre tenants, en su TR-CA-205.
   - `ConsultarEstadoArchivo` no se exporta de ARC y no se abre solo para una prueba.
+- **Sí (al implementar el paso 8):** `vit-ubigeo-autocompletar` suma `textos` (`TextosUbigeo`: ayuda, ayuda con el distrito elegido, error, error de carga y sin permiso) y `sinPermiso`. Decisión del usuario.
+  - Los textos de hoy quedan por defecto (`TEXTOS_UBIGEO_FICHA`), así que la ficha de persona no cambia.
+  - Empresa y sucursal pasan `TEXTOS_UBIGEO_ORGANIZACION`, de usted: «Elija un distrito de la lista», «Se guarda el código 150122.».
+  - Con `sinPermiso` no pide el catálogo, para que no aparezca un 403 en la consola.
+  - Amplía lo que el spec decía de `personas-ui` (solo `etiqueta`).
+- **Sí (al implementar el paso 8):** en el formulario de empresa:
+  - sin `plat.archivo.subir` se muestra el aviso en lugar de la zona, también en el alta (criterio «no muestra la zona de carga»);
+  - al registrar ya no sale el toast de «registrada»: lo reemplaza el aviso de la edición; las advertencias del padrón siguen saliendo;
+  - «Recargar» tras un 409 conserva el logo recién subido y su miniatura;
+  - la zona se vuelve a crear al quitar el logo: `vit-archivo-carga` solo lee `archivoId` al iniciar.
+- **No (al implementar el paso 8):** deshabilitar «Guardar cambios» hasta que haya cambios. `vit-acciones-formulario` no tiene esa entrada, y hoy ningún formulario lo hace; el botón queda siempre activo, como en el resto de las pantallas.
+- **Sí (al implementar el paso 8):** la regla bajo la zona dice «JPG o PNG · hasta 1 MB», el formato común de `vit-archivo-carga`, en vez de «JPG o PNG, hasta 1 MB».
+- **Sí (al implementar el paso 10):** `vit-tabla` suma el rol de celular `inicio`, que pinta su plantilla `vitCeldaTabla` antes del título. Hacía falta para poner la miniatura al inicio de la fila en celular; la tabla solo tenía título, detalle y estado.
+  - La lista de empresas define sus roles de celular, como en el canvas: logo al inicio, razón social de título y RUC de detalle.
+  - El encabezado de la columna dice «Logo» a la vista (en el canvas va oculto), porque `ColumnaTabla` no tiene títulos ocultos.
+  - El ancho de 48 px sale de la miniatura de 32 px más el relleno de la celda: `ColumnaTabla` no fija anchos.
+- **Sí (al implementar el paso 10):** la lista de empresas sale enseguida con las iniciales y cada miniatura aparece cuando llega su URL firmada.
 - **Sí (al implementar el paso 3):** `Empresa.editar(datos, logo)` recibe un `LogoEdicion`: un `LogoValidado` (logo nuevo), el id que ya tenía (sin cambio) o `null` (quitar). Un id nuevo sin validar es un error de programación (500), no de usuario.
 
 ## Riesgos

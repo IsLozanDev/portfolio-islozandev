@@ -1,3 +1,6 @@
+import type { TextosUbigeo } from '@vitrina/plataforma/personas-ui';
+import type { MotivoLogoInvalido } from './empresa';
+
 /** Textos de empresas, sucursales y unidades (spec 17c), en español de Perú. */
 export const MENSAJES_ORGANIZACION = {
   /** TR-RNF-008: reemplaza el texto de `VERSION_OBSOLETA` de la API. */
@@ -6,6 +9,9 @@ export const MENSAJES_ORGANIZACION = {
   editar: 'Editar',
   guardarCambios: 'Guardar cambios',
   sinDato: '—',
+  // Spec 17d: campos que comparten empresa y sucursal.
+  etiquetaUbigeo: 'Ubigeo (departamento / provincia / distrito)',
+  ayudaTelefono: 'Solo dígitos: se da formato solo. Celular 987 654 321 · fijo (01) 555-0101',
 } as const;
 
 export const MENSAJES_EMPRESAS = {
@@ -15,6 +21,7 @@ export const MENSAJES_EMPRESAS = {
   tituloEdicion: 'Editar empresa',
   sinEmpresas: 'No hay empresas registradas.',
   verSucursales: 'Sucursales',
+  logo: 'Logo',
   ruc: 'RUC',
   razonSocial: 'Razón social',
   nombreComercial: 'Nombre comercial',
@@ -31,7 +38,44 @@ export const MENSAJES_EMPRESAS = {
   actualizada: 'Empresa actualizada',
   noExiste: 'La empresa no existe',
   volver: 'Volver a empresas',
+  // Spec 17d: dos tarjetas, identidad y contacto.
+  datosTributarios: 'Datos tributarios',
+  identidadContacto: 'Identidad y contacto',
+  ayudaIdentidad: 'Se imprimen en sus comprobantes y aparecen en los correos de su empresa.',
+  logoPendiente: 'Logo nuevo sin guardar',
+  logoPorQuitar: 'El logo se quitará al guardar',
+  quitarLogo: 'Quitar logo',
+  sinLogo: 'Sin logo',
+  zonaLogo: 'Arrastra el logo aquí',
+  logoAlRegistrar: 'Se habilita al registrar la empresa',
+  sinPermisoSubir: 'No tiene permiso para subir archivos',
+  pidaAlPropietario: 'Pida a un propietario que suba el logo.',
+  logoAlGuardar: 'El logo se asigna al guardar.',
+  recienRegistrada: 'Empresa registrada.',
+  ahoraPuedeSubirLogo: 'Ahora puede subir el logo.',
+  telefono: 'Teléfono (opcional)',
+  correo: 'Correo (opcional)',
+  ayudaCorreo: 'Se guarda en minúsculas.',
+  sitioWeb: 'Página web (opcional)',
+  ayudaSitioWeb: 'Puede escribir www.suempresa.pe: al salir del campo se completa con https://',
 } as const;
+
+/** Bajo la zona del logo, por cada motivo de `LOGO_INVALIDO` (spec 17d). */
+export const MENSAJES_LOGO_INVALIDO: Readonly<Record<MotivoLogoInvalido, string>> = {
+  NO_ENCONTRADO: 'No se encontró ese archivo. Súbalo de nuevo desde aquí.',
+  NO_DISPONIBLE: 'El archivo todavía no está disponible. Espere el análisis o súbalo de nuevo.',
+  CATEGORIA: 'Ese archivo no es un logo. Súbalo de nuevo desde aquí.',
+  OTRA_ENTIDAD: 'Ese archivo no es un logo de esta empresa. Súbalo de nuevo desde aquí.',
+};
+
+/** Empresa y sucursal tratan de usted; la ficha de persona conserva los suyos (spec 17d). */
+export const TEXTOS_UBIGEO_ORGANIZACION: TextosUbigeo = {
+  ayuda: 'Escriba el distrito, la provincia o el departamento y elija de la lista.',
+  ayudaElegido: (ubigeo) => `Se guarda el código ${ubigeo.codigo}.`,
+  error: 'Elija un distrito de la lista',
+  errorCarga: 'No se pudo cargar el catálogo de ubigeos: se conserva el código guardado.',
+  sinPermiso: 'No tiene permiso para ver el catálogo de ubigeos',
+};
 
 export const ETIQUETAS_ESTADO_FILTRO = { activas: 'Activas', inactivas: 'Inactivas', todas: 'Todas' } as const;
 
@@ -72,7 +116,10 @@ export const MENSAJES_SUCURSALES = {
   tituloEdicion: 'Editar sucursal',
   establecimientoSunat: 'Establecimiento SUNAT',
   direccion: 'Dirección',
-  telefono: 'Teléfono',
+  telefono: 'Teléfono (opcional)',
+  /** Spec 17d: un teléfono guardado antes del formato E.164. */
+  telefonoAnterior: (telefono: string) => `El teléfono guardado («${telefono}») no tiene el formato nuevo. Corríjalo para poder guardar.`,
+  corregirTelefono: 'Corrija el teléfono para guardar.',
   zonaHoraria: 'Zona horaria',
   ayudaZonaHoraria: 'Nombre IANA, p. ej. America/Lima',
   ayudaPrincipal: 'La sucursal principal conserva el establecimiento 0000.',
@@ -127,10 +174,11 @@ export const MENSAJES_UNIDADES = {
 
 export const MENSAJES_VALIDACION_ORGANIZACION = {
   rucInvalido: 'RUC inválido',
-  ubigeoFormato: 'El ubigeo tiene 6 dígitos',
   establecimientoFormato: 'El establecimiento SUNAT tiene 4 dígitos',
   establecimientoPrincipal: 'El establecimiento 0000 corresponde a la sucursal principal',
   /** TR-CA-011, el mismo texto que el dominio. */
   sucursalRequerida: 'Solo los almacenes pueden registrarse sin sucursal',
   capacidadEntera: 'La capacidad es un número entero mayor o igual a 0',
+  telefonoPeru: 'Celular de 9 dígitos que empieza con 9, o fijo con código de área',
+  sitioWeb: 'Ingrese una dirección que empiece con https://',
 } as const;

@@ -44,6 +44,9 @@ export class TenantDetallePage {
   protected readonly noExiste = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly ocupado = signal(false);
+  /** La URL firmada venció o el archivo no carga: se muestra la inicial (spec 17d). */
+  protected readonly falloLogo = signal(false);
+  protected readonly inicialEmpresa = computed(() => this.tenant()?.empresaPrincipal?.razonSocial.trim().charAt(0).toLocaleUpperCase('es-PE') ?? '');
   /** TR-RN-005: solo los destinos válidos desde el estado actual; en BAJA, ninguno. */
   protected readonly destinos = computed(() => {
     const tenant = this.tenant();
@@ -93,6 +96,7 @@ export class TenantDetallePage {
   private async cargar(): Promise<void> {
     try {
       this.tenant.set(await this.tenants.consultar(this.tenantId));
+      this.falloLogo.set(false);
     } catch (error) {
       const errorConsola = aErrorConsola(error);
       if (errorConsola.codigo === CODIGO_NO_ENCONTRADO) {
