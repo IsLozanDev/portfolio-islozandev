@@ -47,7 +47,7 @@ describe('EnviarNotificacion (TR-RF-075, TR-RN-025)', () => {
       destino: 'ana@ejemplo.pe',
       destinoHash: 'sha256:ana@ejemplo.pe',
       asunto: 'Prueba de correo de SazónPOS',
-      cuerpo: '<p>Hola Ana:</p><p>Prueba de SazónPOS.</p>',
+      cuerpo: expect.stringMatching(/^<p>Hola Ana:<\/p><p>Prueba de SazónPOS\.<\/p><hr>.*preferencias#t=/),
       programadoPara: null,
     });
     expect(piezas.publicador.eventos).toHaveLength(1);

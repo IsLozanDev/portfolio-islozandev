@@ -5,14 +5,14 @@ import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork
 import { hashDocumento } from '@vitrina/plataforma/observabilidad';
 import { TenantRepositorioTypeOrm, ZONA_VENCIMIENTOS } from '@vitrina/plataforma/org';
 import { CONSENTIMIENTO_PORT, PERSONA_PORT, type ConsentimientoPort, type PersonaPort } from '@vitrina/plataforma/personas';
-import { PropietariosTenantTypeOrm } from '@vitrina/plataforma/seguridad';
+import { LIMITE_TASA, LimiteTasaGuard, PropietariosTenantTypeOrm, type OpcionesLimiteTasa } from '@vitrina/plataforma/seguridad';
 import { Resend } from 'resend';
 import { AvisarIntegridadRota } from './application/avisos/avisar-integridad-rota.js';
 import { AvisarSoporteSolicitado } from './application/avisos/avisar-soporte-solicitado.js';
 import { AvisarSuscripcionPorVencer } from './application/avisos/avisar-suscripcion-por-vencer.js';
 import { AvisarTenantSuspendido } from './application/avisos/avisar-tenant-suspendido.js';
 import { EnvioAvisos } from './application/avisos/envio-avisos.js';
-import type { DependenciasPlantillas, HashearDestino, Registrar } from './application/dependencias.js';
+import type { DependenciasPlantillas, DependenciasPreferencias, EnlacePreferencias, HashearDestino, Registrar } from './application/dependencias.js';
 import { EncolarEnvio } from './application/encolar-envio.js';
 import { EntregarMensaje } from './application/entregar-mensaje.js';
 import { EnviarNotificacion } from './application/enviar-notificacion.js';
@@ -23,6 +23,8 @@ import { PersonalizarPlantilla } from './application/plantillas/personalizar-pla
 import { RestaurarPlantillaBase } from './application/plantillas/restaurar-plantilla-base.js';
 import { VistaPreviaPlantilla } from './application/plantillas/vista-previa-plantilla.js';
 import { NOTIFICACION_PORT, type NotificacionPort } from './application/ports/notificacion.port.js';
+import { ConsultarPreferencias } from './application/preferencias/consultar-preferencias.js';
+import { RegistrarBaja } from './application/preferencias/registrar-baja.js';
 import type { ProveedorCorreo } from './application/ports/proveedor-correo.js';
 import type { VerificadorWebhook } from './application/ports/verificador-webhook.js';
 import { ProcesarEventoProveedor } from './application/procesar-evento-proveedor.js';
@@ -38,12 +40,14 @@ import {
   EVENTO_ERROR_COLA_PROGRAMACIONES,
   type ColaProgramacionesAbierta,
 } from './infrastructure/bullmq/cola-programaciones.js';
+import { FirmadorEnlaceHmac } from './infrastructure/crypto/firmador-enlace.hmac.js';
 import { NombreTenantOrg } from './infrastructure/org/nombre-tenant.org.js';
 import { CircuitBreaker } from './infrastructure/resend/circuit-breaker.js';
 import { PROVEEDOR_NO_CONFIGURADO, VERIFICADOR_NO_CONFIGURADO } from './infrastructure/resend/no-configurado.js';
 import { ProveedorCorreoResend } from './infrastructure/resend/proveedor-correo.resend.js';
 import { VerificadorWebhookResend } from './infrastructure/resend/verificador-webhook.resend.js';
 import { SaneadorHtmlSanitize } from './infrastructure/sanitize-html/saneador-html.sanitize.js';
+import { RepositorioBajasTypeOrm } from './infrastructure/typeorm/bajas.repositorio.js';
 import { RepositorioContactosInvalidosTypeOrm } from './infrastructure/typeorm/contactos-invalidos.repositorio.js';
 import { MensajePorIdExternoSql, type EjecutorSql } from './infrastructure/typeorm/mensaje-por-id-externo.sql.js';
 import { RepositorioMensajesTypeOrm } from './infrastructure/typeorm/mensajes.repositorio.js';
@@ -54,6 +58,7 @@ import type { EntornoNotificaciones } from './interface/entorno-notificaciones.j
 import { AvisosPlataformaConsumidor } from './interface/avisos-plataforma.consumidor.js';
 import { NotificacionesConsumidor } from './interface/notificaciones.consumidor.js';
 import { PlantillasController } from './interface/plantillas.controller.js';
+import { PreferenciasController } from './interface/preferencias.controller.js';
 import { ProgramacionesConsumidor } from './interface/programaciones.consumidor.js';
 import { WebhooksController } from './interface/webhooks.controller.js';
 
@@ -63,6 +68,9 @@ const SAL_DESTINO_SIN_CONFIGURAR = 'not-sal-destino-local-no-apta-para-produccio
 const COLA_ENVIOS_ABIERTA = Symbol('ColaEnviosAbierta');
 const COLA_PROGRAMACIONES_ABIERTA = Symbol('ColaProgramacionesAbierta');
 const DEPENDENCIAS_PLANTILLAS = Symbol('DependenciasPlantillas');
+const DEPENDENCIAS_PREFERENCIAS = Symbol('DependenciasPreferencias');
+/** TR-CA-194 y spec 46: 10 solicitudes por minuto por IP y ruta en la página pública de preferencias. */
+const LIMITE_PREFERENCIAS: OpcionesLimiteTasa = { limite: 10, ventanaMs: 60_000 };
 
 export interface NotificacionesOpciones {
   entorno: EntornoNotificaciones;
@@ -97,6 +105,12 @@ function hasheadorDestino(entorno: EntornoNotificaciones): HashearDestino {
   return (destino) => hashDocumento(destino, sal);
 }
 
+/** Sin las dos variables (solo fuera de producción) el correo sale sin pie. */
+function crearEnlacePreferencias(entorno: EntornoNotificaciones): EnlacePreferencias | null {
+  if (!entorno.NOT_CLAVE_ENLACE_PREFERENCIAS || !entorno.NOT_URL_PREFERENCIAS) return null;
+  return { firmador: new FirmadorEnlaceHmac(entorno.NOT_CLAVE_ENLACE_PREFERENCIAS), urlBase: entorno.NOT_URL_PREFERENCIAS };
+}
+
 function crearProveedor(entorno: EntornoNotificaciones, reloj: Clock): ProveedorCorreo {
   if (!entorno.RESEND_API_KEY) return PROVEEDOR_NO_CONFIGURADO;
   return new ProveedorCorreoResend(new Resend(entorno.RESEND_API_KEY).emails, new CircuitBreaker(reloj));
@@ -118,6 +132,8 @@ function casoDeUsoDePlantillas<CasoDeUso>(clase: new (dependencias: Dependencias
  * `PERSONA_PORT` y `CONSENTIMIENTO_PORT` de los imports.
  */
 function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
+  const avisar = crearAviso();
+  const enlacePreferencias = crearEnlacePreferencias(entorno);
   return {
     provide: NOTIFICACION_PORT,
     useFactory: (
@@ -142,6 +158,9 @@ function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
           mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
           plantillas,
           contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+          bajas: new RepositorioBajasTypeOrm(unidadDeTrabajo, contexto),
+          enlacePreferencias,
+          avisar,
           personas,
           consentimientos,
           hashearDestino: hasheadorDestino(entorno),
@@ -152,6 +171,33 @@ function proveedorNotificacionPort(entorno: EntornoNotificaciones): Provider {
       });
     },
     inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, PERSONA_PORT, CONSENTIMIENTO_PORT],
+  };
+}
+
+/** La página pública de preferencias: sin la clave del enlace todo token es inválido. */
+function proveedorDependenciasPreferencias(entorno: EntornoNotificaciones): Provider {
+  const enlacePreferencias = crearEnlacePreferencias(entorno);
+  const informar = crearInforme();
+  return {
+    provide: DEPENDENCIAS_PREFERENCIAS,
+    useFactory: (
+      unidadDeTrabajo: TypeOrmUnitOfWork,
+      contexto: TenantContext,
+      reloj: Clock,
+      ids: IdGenerator,
+      consentimientos: ConsentimientoPort,
+    ): DependenciasPreferencias => ({
+      unidadDeTrabajo,
+      contexto,
+      reloj,
+      ids,
+      consentimientos,
+      mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
+      bajas: new RepositorioBajasTypeOrm(unidadDeTrabajo, contexto),
+      firmador: enlacePreferencias?.firmador ?? null,
+      informar,
+    }),
+    inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, CONSENTIMIENTO_PORT],
   };
 }
 
@@ -173,14 +219,19 @@ const CIERRE_COLA_PROGRAMACIONES = Symbol('CierreColaProgramaciones');
 // Las entidades ENTIDADES_NOT van en el DataSource de la app.
 @Module({})
 export class NotificacionesModule {
-  /** `NOTIFICACION_PORT` en proceso, el webhook del proveedor y las plantillas por HTTP, para apps/api. */
+  /** `NOTIFICACION_PORT` en proceso, el webhook del proveedor, las plantillas y las preferencias por HTTP, para apps/api. */
   static register({ entorno, dataSource, imports }: NotificacionesOpciones): DynamicModule {
     const avisar = crearAviso();
     return {
       module: NotificacionesModule,
       imports,
-      controllers: [WebhooksController, PlantillasController],
+      controllers: [WebhooksController, PlantillasController, PreferenciasController],
       providers: [
+        { provide: LIMITE_TASA, useValue: LIMITE_PREFERENCIAS },
+        LimiteTasaGuard,
+        proveedorDependenciasPreferencias(entorno),
+        { provide: ConsultarPreferencias, useFactory: (dependencias: DependenciasPreferencias) => new ConsultarPreferencias(dependencias), inject: [DEPENDENCIAS_PREFERENCIAS] },
+        { provide: RegistrarBaja, useFactory: (dependencias: DependenciasPreferencias) => new RegistrarBaja(dependencias), inject: [DEPENDENCIAS_PREFERENCIAS] },
         {
           provide: DEPENDENCIAS_PLANTILLAS,
           useFactory: (

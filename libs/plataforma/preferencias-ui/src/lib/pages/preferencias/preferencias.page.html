@@ -1,0 +1,65 @@
+<vit-marco-auth>
+  <div class="flex flex-col gap-6">
+    @switch (estado()) {
+      @case ('cargando') {
+        <vit-cargando texto="Revisando el enlace…" />
+      }
+      @case ('invalido') {
+        <vit-estado-vacio [icono]="iconoEnlaceInvalido" [titulo]="mensajes.enlaceInvalido" [texto]="mensajes.enlaceInvalidoDetalle" />
+      }
+      @case ('preferencias') {
+        <header class="flex flex-col gap-1">
+          <h1 class="text-2xl font-medium">Preferencias de correo</h1>
+          <p class="text-sm text-sobre-superficie-variante">
+            Correos a <strong class="text-sobre-superficie" data-destino>{{ destino() }}</strong>
+          </p>
+        </header>
+
+        @if (error(); as mensaje) {
+          <p role="alert" class="rounded-md bg-contenedor-error p-3 text-sm text-sobre-contenedor-error">{{ mensaje }}</p>
+        }
+
+        <section class="flex flex-col gap-2">
+          <button mat-flat-button type="button" data-accion="promociones" [disabled]="sinPromociones() || enviando() !== null" (click)="dejarPromociones()">
+            @if (enviando() === bajaPromociones) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
+            } @else if (sinPromociones()) {
+              Ya no recibe promociones
+            } @else {
+              Dejar de recibir promociones
+            }
+          </button>
+          <p class="text-sm text-sobre-superficie-variante">Seguirá recibiendo recordatorios y comprobantes.</p>
+        </section>
+
+        <section class="flex flex-col gap-2">
+          <button
+            mat-stroked-button
+            class="vit-destructivo"
+            type="button"
+            data-accion="todo-el-correo"
+            [disabled]="sinTodoElCorreo() || enviando() !== null"
+            (click)="dejarTodoElCorreo()"
+          >
+            @if (enviando() === bajaTodoElCorreo) {
+              <mat-progress-spinner mode="indeterminate" diameter="18" aria-label="Guardando" />
+            } @else if (sinTodoElCorreo()) {
+              Ya no recibe correos
+            } @else {
+              Dejar de recibir todos los correos
+            }
+          </button>
+          <p class="text-sm text-sobre-superficie-variante">También deja los recordatorios y los comprobantes.</p>
+        </section>
+      }
+      @case ('confirmada') {
+        <header class="flex flex-col gap-1" role="status">
+          <h1 class="text-2xl font-medium">Listo</h1>
+          <p class="text-sm text-sobre-superficie-variante">
+            {{ confirmada() }} <strong class="text-sobre-superficie" data-destino>{{ destino() }}</strong>.
+          </p>
+        </header>
+      }
+    }
+  </div>
+</vit-marco-auth>

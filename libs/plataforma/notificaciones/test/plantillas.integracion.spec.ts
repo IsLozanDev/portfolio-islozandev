@@ -15,6 +15,7 @@ import { VistaPreviaPlantilla } from '../src/application/plantillas/vista-previa
 import { SinPersonalizacionError, VersionObsoletaPlantillaError } from '../src/domain/errores.js';
 import { registrarEsquemasNot } from '../src/infrastructure/event-schemas.js';
 import { SaneadorHtmlSanitize } from '../src/infrastructure/sanitize-html/saneador-html.sanitize.js';
+import { RepositorioBajasTypeOrm } from '../src/infrastructure/typeorm/bajas.repositorio.js';
 import { RepositorioContactosInvalidosTypeOrm } from '../src/infrastructure/typeorm/contactos-invalidos.repositorio.js';
 import { ENTIDADES_NOT } from '../src/infrastructure/typeorm/entidades.js';
 import { RepositorioMensajesTypeOrm } from '../src/infrastructure/typeorm/mensajes.repositorio.js';
@@ -75,6 +76,9 @@ describeConDb('Plantillas personalizadas con TypeORM (spec 43, PostgreSQL 16)', 
       mensajes: new RepositorioMensajesTypeOrm(unidadDeTrabajo, contexto),
       plantillas,
       contactosInvalidos: new RepositorioContactosInvalidosTypeOrm(unidadDeTrabajo, contexto),
+      bajas: new RepositorioBajasTypeOrm(unidadDeTrabajo, contexto),
+      enlacePreferencias: null,
+      avisar: () => undefined,
       personas: new PersonasMemoria(),
       consentimientos: new ConsentimientosMemoria(),
       hashearDestino: (destino) => `sha256:${destino}`,

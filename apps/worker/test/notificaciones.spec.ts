@@ -42,7 +42,7 @@ describe('notificaciones en el worker (spec 42)', () => {
   it('en production sin las variables de Resend el worker no arranca; en development sí', () => {
     const produccion = { ...ENV_MINIMO, APP_ENV: 'production', OBS_SAL_DOCUMENTO: 's'.repeat(32), SEC_CLAVES_MAESTRAS: `1:${Buffer.alloc(32).toString('base64')}`, SEC_CLAVE_ACTIVA: '1', ARC_ANTIVIRUS: 'clamav' };
 
-    expect(() => cargarConfig(produccion)).toThrow(/RESEND_API_KEY.*RESEND_WEBHOOK_SECRET.*NOT_REMITENTE.*NOT_SAL_DESTINO/);
+    expect(() => cargarConfig(produccion)).toThrow(/RESEND_API_KEY.*RESEND_WEBHOOK_SECRET.*NOT_REMITENTE.*NOT_SAL_DESTINO.*NOT_CLAVE_ENLACE_PREFERENCIAS.*NOT_URL_PREFERENCIAS/);
     expect(cargarConfig(ENV_MINIMO).RESEND_API_KEY).toBeUndefined();
   });
 

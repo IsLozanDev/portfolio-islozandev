@@ -16,6 +16,8 @@ export { AutenticacionGuard } from './interface/autenticacion.guard.js';
 export { MfaGuard } from './interface/mfa.guard.js';
 export { PermisoGuard } from './interface/permiso.guard.js';
 export { ContextoTenantInterceptor } from './interface/contexto-tenant.interceptor.js';
+// Spec 46: el endpoint público de preferencias de NOT usa el mismo límite de tasa que aceptar invitación.
+export { LIMITE_TASA, LimiteTasaGuard, type OpcionesLimiteTasa } from './interface/membresias.http.js';
 export { MiContextoDto } from './interface/mi-contexto.controller.js';
 export { SeguridadModule, type SeguridadOpciones } from './seguridad.module.js';
 

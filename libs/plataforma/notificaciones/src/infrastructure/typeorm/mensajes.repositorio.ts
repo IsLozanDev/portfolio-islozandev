@@ -45,6 +45,13 @@ export class RepositorioMensajesTypeOrm implements RepositorioMensajes {
     if (resultado.affected !== 1) throw new MensajeModificadoError();
   }
 
+  async ultimoDestino(destinoHash: string): Promise<string | null> {
+    const fila = await this.manager
+      .getRepository(MensajeEntidad)
+      .findOne({ select: { destino: true }, where: { tenantId: this.tenantId, destinoHash }, order: { creadoEn: 'DESC' } });
+    return fila?.destino ?? null;
+  }
+
   async registrarIntento(intento: IntentoEntrega): Promise<void> {
     await this.manager.getRepository(IntentoEntregaEntidad).insert(filaDesdeIntento(intento));
   }

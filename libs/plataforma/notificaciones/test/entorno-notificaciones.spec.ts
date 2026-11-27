@@ -12,6 +12,8 @@ const COMPLETO = {
   RESEND_WEBHOOK_SECRET: 'whsec_secreto',
   NOT_REMITENTE: 'Vitrina <no-responder@vitrina.pe>',
   NOT_SAL_DESTINO: 's'.repeat(32),
+  NOT_CLAVE_ENLACE_PREFERENCIAS: 'c'.repeat(32),
+  NOT_URL_PREFERENCIAS: 'https://admin.vitrina.pe',
 };
 
 function problemas(entorno: Record<string, string | undefined>): string[] {
@@ -26,18 +28,26 @@ describe('entorno de notificaciones', () => {
     expect(esquema.parse({ RESEND_API_KEY: '' }).RESEND_API_KEY).toBeUndefined();
   });
 
-  it('en production las cuatro son obligatorias y el mensaje no lleva valores', () => {
+  it('en production las seis son obligatorias y el mensaje no lleva valores', () => {
     expect(problemas({ APP_ENV: 'production' })).toEqual([
       'RESEND_API_KEY: obligatoria en producción',
       'RESEND_WEBHOOK_SECRET: obligatoria en producción',
       'NOT_REMITENTE: obligatoria en producción',
       'NOT_SAL_DESTINO: obligatoria en producción',
+      'NOT_CLAVE_ENLACE_PREFERENCIAS: obligatoria en producción',
+      'NOT_URL_PREFERENCIAS: obligatoria en producción',
     ]);
     expect(problemas({ APP_ENV: 'production', ...COMPLETO })).toEqual([]);
   });
 
   it('la sal del destino tiene al menos 32 caracteres', () => {
     expect(problemas({ NOT_SAL_DESTINO: 'corta' })).toHaveLength(1);
+  });
+
+  it('la clave del enlace tiene al menos 32 caracteres y la URL de preferencias es una URL', () => {
+    expect(problemas({ NOT_CLAVE_ENLACE_PREFERENCIAS: 'corta' })).toHaveLength(1);
+    expect(problemas({ NOT_URL_PREFERENCIAS: 'admin' })).toHaveLength(1);
+    expect(problemas({ NOT_CLAVE_ENLACE_PREFERENCIAS: '', NOT_URL_PREFERENCIAS: '' })).toEqual([]);
   });
 });
 
