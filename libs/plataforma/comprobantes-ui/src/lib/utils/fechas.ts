@@ -1,4 +1,4 @@
-const ZONA_PERU = 'America/Lima';
+export const ZONA_PERU = 'America/Lima';
 const LOCALE_PERU = 'es-PE';
 const FORMATO_FECHA_CORTA = new Intl.DateTimeFormat(LOCALE_PERU, { timeZone: ZONA_PERU, day: '2-digit', month: '2-digit', year: '2-digit' });
 const FORMATO_FECHA_HORA_CORTA = new Intl.DateTimeFormat(LOCALE_PERU, {

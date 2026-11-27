@@ -28,7 +28,8 @@ export class ListarEmisores {
     const { unidadDeTrabajo, emisores, empresas } = this.dependencias;
     return unidadDeTrabajo.run(async () => {
       const activas = await empresas.listarActivas();
-      const emisoresPorEmpresa = new Map((await emisores.porEmpresas(activas.map((empresa) => empresa.id))).map((emisor) => [emisor.empresaId, emisor]));
+      const emisoresDeActivas = await emisores.porEmpresas(activas.map((empresa) => empresa.id));
+      const emisoresPorEmpresa = new Map(emisoresDeActivas.map((emisor) => [emisor.empresaId, emisor]));
       return activas.map((empresa) => empresaConEmisor(empresa, emisoresPorEmpresa.get(empresa.id)));
     });
   }

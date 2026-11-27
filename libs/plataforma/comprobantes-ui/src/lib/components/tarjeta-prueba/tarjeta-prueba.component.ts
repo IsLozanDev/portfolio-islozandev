@@ -42,5 +42,12 @@ export class TarjetaPruebaComponent {
     if (prueba.estado === 'RECHAZADA') return { tipo: 'rechazada', texto: mensajePruebaRechazada(prueba.codigo, prueba.descripcion), detalle };
     return { tipo: 'error', texto: this.mensajes.errorEnvio, detalle };
   });
-  protected readonly textoBoton = computed(() => (this.prueba() ? this.mensajes.volverAProbar : this.mensajes.ejecutar));
+  protected readonly iconoBoton = computed(() => {
+    if (this.enProceso()) return 'hourglass_top';
+    return this.prueba() ? 'replay' : 'send';
+  });
+  protected readonly textoBoton = computed(() => {
+    if (this.enProceso()) return this.mensajes.probando;
+    return this.prueba() ? this.mensajes.volverAProbar : this.mensajes.ejecutar;
+  });
 }

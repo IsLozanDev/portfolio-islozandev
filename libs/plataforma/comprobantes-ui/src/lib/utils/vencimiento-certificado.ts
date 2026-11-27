@@ -1,11 +1,12 @@
 import type { TonoEstado } from '@vitrina/shared/ui';
+import { ZONA_PERU } from './fechas';
 
 /** El valor por defecto de `plat.fe.dias_aviso_certificado`; la UI no lee el parámetro (spec 62). */
 export const DIAS_AVISO_CERTIFICADO = 30;
 const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
 
 /** `AAAA-MM-DD` en Lima: en-CA formatea así. */
-const FECHA_EN_LIMA = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' });
+const FECHA_EN_LIMA = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_PERU, year: 'numeric', month: '2-digit', day: '2-digit' });
 
 function diaEnLima(instante: Date): number {
   const [anio, mes, dia] = FECHA_EN_LIMA.format(instante).split('-').map(Number);

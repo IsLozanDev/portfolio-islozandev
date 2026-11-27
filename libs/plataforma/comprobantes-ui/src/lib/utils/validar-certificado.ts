@@ -1,6 +1,6 @@
 import { CODIGOS_ERROR_FE } from '../models/mensajes-emisor';
 
-const BYTES_POR_KB = 1024;
+export const BYTES_POR_KB = 1024;
 const KB_MAXIMOS_CERTIFICADO = 50;
 /** El mismo límite que la API (spec 49): se rechaza antes de subir. */
 export const TAMANO_MAXIMO_CERTIFICADO_BYTES = KB_MAXIMOS_CERTIFICADO * BYTES_POR_KB;

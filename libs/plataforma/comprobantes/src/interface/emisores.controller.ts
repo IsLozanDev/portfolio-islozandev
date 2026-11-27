@@ -100,7 +100,7 @@ export class EmisoresController {
   @ApiOkResponse({ type: EmisorDto, description: 'El emisor sin secretos' })
   @ApiUnauthorizedResponse({ description: 'TOKEN_INVALIDO' })
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (empresaId no es uuid)' })
-  @ApiNotFoundResponse({ type: ErrorFeDto, description: 'EMISOR_NO_ENCONTRADO, también si la empresa es de otro tenant' })
+  @ApiNotFoundResponse({ type: ErrorFeDto, description: EMISOR_DE_OTRO_TENANT })
   async consultar(@Param() parametros: unknown): Promise<EmisorDto> {
     const { empresaId } = validar(EsquemaEmpresa, parametros);
     return emisorDto(await this.consultarEmisor.ejecutar(empresaId));

@@ -40,8 +40,8 @@
   } @else {
     <div *siPermiso="permisos.configurar" class="flex justify-end border-t border-borde pt-4">
       <button mat-flat-button type="button" data-accion="probar" [disabled]="enProceso() || solicitando()" (click)="ejecutar.emit()">
-        <mat-icon aria-hidden="true">{{ enProceso() ? 'hourglass_top' : prueba() ? 'replay' : 'send' }}</mat-icon>
-        {{ enProceso() ? mensajes.probando : textoBoton() }}
+        <mat-icon aria-hidden="true">{{ iconoBoton() }}</mat-icon>
+        {{ textoBoton() }}
       </button>
     </div>
   }

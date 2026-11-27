@@ -11,7 +11,7 @@ import type { Emisor } from '../../models/emisor';
 import { AYUDA_CERTIFICADO_OPCIONAL, MENSAJES_EMISOR, mensajeErrorFe } from '../../models/mensajes-emisor';
 import { PERMISOS_FE_UI } from '../../models/permisos-fe';
 import { formatoFechaCorta } from '../../utils/fechas';
-import { EXTENSIONES_CERTIFICADO, validarArchivoCertificado } from '../../utils/validar-certificado';
+import { BYTES_POR_KB, EXTENSIONES_CERTIFICADO, validarArchivoCertificado } from '../../utils/validar-certificado';
 import { avisoVencimiento } from '../../utils/vencimiento-certificado';
 
 export interface CargaCertificado {
@@ -19,7 +19,6 @@ export interface CargaCertificado {
   clave: string;
 }
 
-const BYTES_POR_KB = 1024;
 /** Primeros y últimos grupos de la huella que se muestran: «9f3a 41c0 … 7e2c c21b». */
 const GRUPOS_VISIBLES_HUELLA = 2;
 const LARGO_GRUPO_HUELLA = 4;
