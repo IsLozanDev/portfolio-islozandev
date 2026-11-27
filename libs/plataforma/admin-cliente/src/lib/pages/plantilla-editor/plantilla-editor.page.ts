@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SesionService } from '@vitrina/shared/auth';
 import { AvisosService, CargandoComponent, ChipEstadoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
-import { catchError, debounce, distinctUntilChanged, filter, from, map, of, switchMap, timer } from 'rxjs';
+import { catchError, debounce, distinctUntilChanged, filter, from, of, switchMap, timer, type Observable } from 'rxjs';
 import { HistorialPlantillaComponent } from '../../components/historial-plantilla/historial-plantilla.component';
 import { VistaPreviaCorreoComponent } from '../../components/vista-previa-correo/vista-previa-correo.component';
 import type { ConCambiosSinGuardar } from '../../models/con-cambios-sin-guardar';
@@ -155,8 +155,8 @@ export class PlantillaEditorPage implements ConCambiosSinGuardar {
 
   protected insertarVariable(variable: VariableDeclarada): void {
     const destino = this.campoDestino();
-    const control = destino === 'asunto' ? this.asunto : this.cuerpo;
-    const elemento = (destino === 'asunto' ? this.campoAsunto() : this.campoCuerpo())?.nativeElement;
+    const control = this.controlDe(destino);
+    const elemento = this.elementoDe(destino);
     const largo = control.value.length;
     const resultado = insertarEnCursor(control.value, elemento?.selectionStart ?? largo, elemento?.selectionEnd ?? largo, marcadorDe(variable.nombre));
     control.setValue(resultado.texto);
@@ -240,7 +240,7 @@ export class PlantillaEditorPage implements ConCambiosSinGuardar {
 
   /** El error se va solo al cambiar el texto: el validador vuelve a correr y reemplaza los errores. */
   private marcarErrorDelServidor(campo: CampoPlantilla, mensaje: string): void {
-    const control = campo === 'asunto' ? this.asunto : this.cuerpo;
+    const control = this.controlDe(campo);
     control.setErrors({ ...control.errors, [ERROR_SERVIDOR]: mensaje });
     control.markAsTouched();
   }
@@ -311,9 +311,10 @@ export class PlantillaEditorPage implements ConCambiosSinGuardar {
     });
     toObservable(solicitud)
       .pipe(
+        distinctUntilChanged(mismaSolicitud),
+        // El null de un texto con errores también espera: así reemplaza a un pedido válido que todavía no salió.
+        debounce((pedido) => timer(pedido?.esBase ? SIN_ESPERA_MS : ESPERA_VISTA_PREVIA_MS)),
         filter((pedido): pedido is SolicitudVistaPrevia => pedido !== null),
-        distinctUntilChanged((anterior, actual) => anterior.asunto === actual.asunto && anterior.cuerpo === actual.cuerpo),
-        debounce((pedido) => timer(pedido.esBase ? SIN_ESPERA_MS : ESPERA_VISTA_PREVIA_MS)),
         switchMap((pedido) => this.pedirVistaPrevia(pedido)),
         takeUntilDestroyed(),
       )
@@ -323,13 +324,20 @@ export class PlantillaEditorPage implements ConCambiosSinGuardar {
       });
   }
 
-  private pedirVistaPrevia(pedido: SolicitudVistaPrevia) {
+  private pedirVistaPrevia(pedido: SolicitudVistaPrevia): Observable<VistaPrevia | null> {
     if (!this.canal) return of(null);
     this.estadoVistaPrevia.set('generando');
     return from(this.plantillas.vistaPrevia(this.codigo, this.canal, { asunto: pedido.asunto, cuerpo: pedido.cuerpo })).pipe(
-      map((vista): VistaPrevia | null => vista),
       catchError(() => of(null)),
     );
+  }
+
+  private controlDe(campo: CampoPlantilla): FormControl<string> {
+    return campo === 'asunto' ? this.asunto : this.cuerpo;
+  }
+
+  private elementoDe(campo: CampoPlantilla): HTMLInputElement | HTMLTextAreaElement | undefined {
+    return (campo === 'asunto' ? this.campoAsunto() : this.campoCuerpo())?.nativeElement;
   }
 
   private validador(error: (texto: string) => string | null): ValidatorFn {
@@ -349,6 +357,11 @@ export class PlantillaEditorPage implements ConCambiosSinGuardar {
       guardada: detalle.origen === 'BASE' ? this.mensajes.textoBase : this.mensajes.guardada(formatearFechaCorta(new Date(detalle.actualizadoEn))),
     };
   }
+}
+
+function mismaSolicitud(anterior: SolicitudVistaPrevia | null, actual: SolicitudVistaPrevia | null): boolean {
+  if (anterior === null || actual === null) return anterior === actual;
+  return anterior.asunto === actual.asunto && anterior.cuerpo === actual.cuerpo;
 }
 
 function esSinPersonalizacion(error: unknown): boolean {

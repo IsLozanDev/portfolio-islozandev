@@ -17,6 +17,7 @@ import {
   type TonoEstado,
   type ValorFiltros,
 } from '@vitrina/shared/ui';
+import { map } from 'rxjs';
 import {
   PlantillaVistaRapidaComponent,
   type DatosVistaRapida,
@@ -37,7 +38,6 @@ import type { FiltroPlantillas, ResumenPlantilla } from '../../models/plantilla'
 import { TONOS_ORIGEN_PLANTILLA } from '../../models/tonos-plantilla';
 import { PlantillasCliente } from '../../services/plantillas.cliente';
 import { formatearFechaCorta } from '../../utils/formato';
-import { map } from 'rxjs';
 import { filtroPlantillasDesdeUrl, parametrosUrlPlantillas, PRIMERA_PAGINA_PLANTILLAS } from '../../utils/filtro-url-plantillas';
 
 /** Lo que muestra cada celda, ya como texto; `plantilla` lleva el resumen para la vista rápida y el editor. */

@@ -102,6 +102,17 @@ describe('PlantillaEditorPage (admin)', () => {
     expect(pedidosDeVistaPrevia()).toEqual([]);
   });
 
+  it('un texto válido que pasa a tener errores antes de los 600 ms no pide la vista previa del texto intermedio', async () => {
+    await abrir();
+    await responderVistaPreviaInicial();
+
+    await escribir('cuerpo', '<p>{{diagnostico}</p>');
+    await escribir('cuerpo', '<p>{{diagnostico}}</p>');
+    await esperarDebounce();
+
+    expect(pedidosDeVistaPrevia()).toEqual([]);
+  });
+
   it('el chip de una variable inserta {{nombre}} en el cursor del último campo enfocado', async () => {
     await abrir();
     await responderVistaPreviaInicial();
