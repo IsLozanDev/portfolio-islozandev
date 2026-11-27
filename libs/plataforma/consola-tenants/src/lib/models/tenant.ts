@@ -38,7 +38,8 @@ export interface TenantDetalleRespuesta extends TenantListadoRespuesta {
   estado_motivo: string | null;
   estado_cambiado_en: string | null;
   version: number;
-  empresa_principal: { id: string; ruc: string; razon_social: string } | null;
+  /** `logo_url`: firmada por la API, vence en `logo_expira_en` (spec 17d). */
+  empresa_principal: { id: string; ruc: string; razon_social: string; logo_url: string | null; logo_expira_en: string | null } | null;
   historial: CambioDeEstadoRespuesta[];
 }
 
@@ -66,11 +67,20 @@ export interface CambioDeEstado {
   registradoEn: string;
 }
 
+export interface EmpresaPrincipal {
+  id: string;
+  ruc: string;
+  razonSocial: string;
+  /** null sin logo o si ya no está disponible: se ve la inicial. */
+  logoUrl: string | null;
+  logoExpiraEn: string | null;
+}
+
 export interface TenantDetalle extends TenantListado {
   estadoMotivo: string | null;
   estadoCambiadoEn: string | null;
   version: number;
-  empresaPrincipal: { id: string; ruc: string; razonSocial: string } | null;
+  empresaPrincipal: EmpresaPrincipal | null;
   historial: CambioDeEstado[];
 }
 
@@ -102,7 +112,9 @@ export function aTenantDetalle(respuesta: TenantDetalleRespuesta): TenantDetalle
     estadoMotivo: respuesta.estado_motivo,
     estadoCambiadoEn: respuesta.estado_cambiado_en,
     version: respuesta.version,
-    empresaPrincipal: empresa ? { id: empresa.id, ruc: empresa.ruc, razonSocial: empresa.razon_social } : null,
+    empresaPrincipal: empresa
+      ? { id: empresa.id, ruc: empresa.ruc, razonSocial: empresa.razon_social, logoUrl: empresa.logo_url, logoExpiraEn: empresa.logo_expira_en }
+      : null,
     historial: respuesta.historial.map(aCambioDeEstado),
   };
 }

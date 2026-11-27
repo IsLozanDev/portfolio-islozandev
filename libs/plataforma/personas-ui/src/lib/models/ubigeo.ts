@@ -9,6 +9,15 @@ export interface Ubigeo {
 /** Lo que tiene el campo de distrito: el elegido de la lista o lo que se va escribiendo. */
 export type ValorUbigeo = Ubigeo | string | null;
 
+/** Lo que dice el campo; cada pantalla pasa los suyos (spec 17d: empresa y sucursal tratan de usted). */
+export interface TextosUbigeo {
+  ayuda: string;
+  ayudaElegido: (ubigeo: Ubigeo) => string;
+  error: string;
+  errorCarga: string;
+  sinPermiso: string;
+}
+
 /** `GET /v1/catalogos/UBIGEO/items`: el distrito es el nombre; provincia y departamento, atributos. */
 export interface ItemUbigeoRespuesta {
   codigo: string;

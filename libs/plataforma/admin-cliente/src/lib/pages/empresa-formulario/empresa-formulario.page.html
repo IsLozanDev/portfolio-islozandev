@@ -1,6 +1,13 @@
 <section class="flex max-w-3xl flex-col gap-4">
   <h1 class="text-2xl font-medium">{{ empresaId ? mensajes.tituloEdicion : mensajes.tituloNueva }}</h1>
 
+  @if (recienRegistrada) {
+    <p role="status" class="flex items-center gap-2 rounded-tarjeta bg-chip-exito p-3 text-sm text-sobre-chip-exito" data-aviso="recien-registrada">
+      <mat-icon aria-hidden="true">check_circle</mat-icon>
+      <span><strong>{{ mensajes.recienRegistrada }}</strong> {{ mensajes.ahoraPuedeSubirLogo }}</span>
+    </p>
+  }
+
   @if (error(); as mensajeError) {
     <p role="alert" class="rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
   }
@@ -18,40 +25,132 @@
   } @else if (cargando()) {
     <vit-cargando />
   } @else {
-    <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
-      <div class="grid gap-x-4 sm:grid-cols-2">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ mensajes.ruc }}</mat-label>
-          <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required (blur)="alSalirDelRuc()" />
-          @if (consultandoPadron()) {
-            <vit-cargando matSuffix class="flex h-6 items-center overflow-hidden whitespace-nowrap pr-3 text-sm" [texto]="mensajes.consultandoPadron" />
-          } @else if (motivoNoApto(); as motivo) {
-            <mat-hint data-aviso="no-apto">{{ motivo }}</mat-hint>
+    <form class="flex flex-col gap-4" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
+      <section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4" data-tarjeta="tributarios">
+        <h2 class="text-lg font-medium">{{ mensajes.datosTributarios }}</h2>
+        <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
+            <mat-label>{{ mensajes.ruc }}</mat-label>
+            <input matInput formControlName="ruc" data-campo="ruc" inputmode="numeric" maxlength="11" autocomplete="off" required (blur)="alSalirDelRuc()" />
+            @if (consultandoPadron()) {
+              <vit-cargando matSuffix class="flex h-6 items-center overflow-hidden whitespace-nowrap pr-3 text-sm" [texto]="mensajes.consultandoPadron" />
+            } @else if (motivoNoApto(); as motivo) {
+              <mat-hint data-aviso="no-apto">{{ motivo }}</mat-hint>
+            }
+            <mat-error>{{ mensajeDeError(grupo.controls.ruc.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
+            <mat-label>{{ mensajes.razonSocial }}</mat-label>
+            <input matInput formControlName="razonSocial" data-campo="razonSocial" autocomplete="off" required />
+            <mat-hint data-ayuda="razon-social">{{ noEstaEnPadron() ? mensajes.noEnPadron : mensajes.ayudaRazonSocial }}</mat-hint>
+            <mat-error>{{ mensajeDeError(grupo.controls.razonSocial.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.nombreComercial }}</mat-label>
+            <input matInput formControlName="nombreComercial" data-campo="nombreComercial" autocomplete="off" />
+            <mat-error>{{ mensajeDeError(grupo.controls.nombreComercial.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ mensajes.direccionFiscal }}</mat-label>
+            <input matInput formControlName="direccionFiscal" data-campo="direccionFiscal" autocomplete="off" />
+            <mat-error>{{ mensajeDeError(grupo.controls.direccionFiscal.errors) }}</mat-error>
+          </mat-form-field>
+          <vit-ubigeo-autocompletar
+            class="sm:col-span-2"
+            [control]="grupo.controls.ubigeo"
+            [etiqueta]="comunes.etiquetaUbigeo"
+            [textos]="textosUbigeo"
+            [sinPermiso]="sinPermisoCatalogo"
+          />
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-3 rounded-tarjeta border border-borde bg-superficie p-4" data-tarjeta="identidad">
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 class="text-lg font-medium">{{ mensajes.identidadContacto }}</h2>
+          @if (logoPendiente()) {
+            <vit-chip-estado data-chip="logo-pendiente" [texto]="mensajes.logoPendiente" tono="advertencia" />
+          } @else if (logoPorQuitar()) {
+            <vit-chip-estado data-chip="logo-por-quitar" [texto]="mensajes.logoPorQuitar" tono="advertencia" />
           }
-          <mat-error>{{ mensajeDeError(grupo.controls.ruc.errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ mensajes.razonSocial }}</mat-label>
-          <input matInput formControlName="razonSocial" data-campo="razonSocial" autocomplete="off" required />
-          <mat-hint data-ayuda="razon-social">{{ noEstaEnPadron() ? mensajes.noEnPadron : mensajes.ayudaRazonSocial }}</mat-hint>
-          <mat-error>{{ mensajeDeError(grupo.controls.razonSocial.errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ mensajes.nombreComercial }}</mat-label>
-          <input matInput formControlName="nombreComercial" data-campo="nombreComercial" autocomplete="off" />
-          <mat-error>{{ mensajeDeError(grupo.controls.nombreComercial.errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ mensajes.ubigeo }}</mat-label>
-          <input matInput formControlName="ubigeo" data-campo="ubigeo" inputmode="numeric" maxlength="6" autocomplete="off" />
-          <mat-error>{{ mensajeDeError(grupo.controls.ubigeo.errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="sm:col-span-2">
-          <mat-label>{{ mensajes.direccionFiscal }}</mat-label>
-          <input matInput formControlName="direccionFiscal" data-campo="direccionFiscal" autocomplete="off" />
-          <mat-error>{{ mensajeDeError(grupo.controls.direccionFiscal.errors) }}</mat-error>
-        </mat-form-field>
-      </div>
+        </div>
+        <p class="text-sm text-sobre-superficie-variante">{{ mensajes.ayudaIdentidad }}</p>
+
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <div class="flex flex-col items-center gap-2">
+            <vit-logo-empresa [url]="urlLogo()" [nombre]="nombreEmpresa() || mensajes.sinLogo" [tamano]="96" />
+            @if (conLogo() && puedeSubirLogo) {
+              <button mat-button type="button" class="vit-destructivo" data-accion="quitar-logo" (click)="quitarLogo()">
+                <mat-icon aria-hidden="true">delete</mat-icon>
+                {{ mensajes.quitarLogo }}
+              </button>
+            } @else if (!conLogo()) {
+              <span class="text-sm text-sobre-superficie-variante">{{ mensajes.sinLogo }}</span>
+            }
+          </div>
+
+          <div class="flex min-w-0 flex-1 flex-col gap-2" data-zona="logo">
+            @if (!puedeSubirLogo) {
+              <div class="flex items-start gap-2 rounded-tarjeta border border-borde p-3 text-sm" data-aviso="sin-permiso-subir">
+                <mat-icon aria-hidden="true">block</mat-icon>
+                <span><strong>{{ mensajes.sinPermisoSubir }}</strong><br />{{ mensajes.pidaAlPropietario }}</span>
+              </div>
+            } @else if (!empresaId) {
+              <vit-archivo-carga [categoria]="categoriaLogo" [entidadTipo]="entidadArchivo" [etiqueta]="mensajes.zonaLogo" [deshabilitado]="true" />
+              <p class="flex items-center gap-1 text-sm text-sobre-superficie-variante" data-ayuda="logo-al-registrar">
+                <mat-icon aria-hidden="true">lock</mat-icon>
+                {{ mensajes.logoAlRegistrar }}
+              </p>
+            } @else {
+              @for (reinicio of [reinicioZona()]; track reinicio) {
+                <vit-archivo-carga
+                  [categoria]="categoriaLogo"
+                  [entidadTipo]="entidadArchivo"
+                  [entidadId]="empresaId"
+                  [etiqueta]="mensajes.zonaLogo"
+                  (disponible)="alQuedarDisponible($event)"
+                />
+              }
+            }
+            @if (errorLogo(); as mensajeLogo) {
+              <p role="alert" class="flex items-center gap-1 text-sm text-error" data-error="logo">
+                <mat-icon aria-hidden="true">error</mat-icon>
+                {{ mensajeLogo }}
+              </p>
+            }
+          </div>
+        </div>
+
+        <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
+            <mat-label>{{ mensajes.telefono }}</mat-label>
+            <mat-icon matPrefix aria-hidden="true">call</mat-icon>
+            <input matInput vitTelefono formControlName="telefono" data-campo="telefono" />
+            <mat-hint>{{ comunes.ayudaTelefono }}</mat-hint>
+            <mat-error>{{ mensajeDeError(grupo.controls.telefono.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic" appearance="outline">
+            <mat-label>{{ mensajes.correo }}</mat-label>
+            <input matInput type="email" formControlName="correo" data-campo="correo" autocomplete="email" />
+            <mat-hint>{{ mensajes.ayudaCorreo }}</mat-hint>
+            <mat-error>{{ mensajeDeError(grupo.controls.correo.errors) }}</mat-error>
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic" appearance="outline" class="sm:col-span-2">
+            <mat-label>{{ mensajes.sitioWeb }}</mat-label>
+            <mat-icon matPrefix aria-hidden="true">public</mat-icon>
+            <input matInput formControlName="sitioWeb" data-campo="sitioWeb" inputmode="url" autocomplete="url" (blur)="alSalirDelSitioWeb()" />
+            <mat-hint>{{ mensajes.ayudaSitioWeb }}</mat-hint>
+            <mat-error>{{ mensajeDeError(grupo.controls.sitioWeb.errors) }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        @if (empresaId && puedeSubirLogo) {
+          <p class="flex items-center gap-1 text-sm text-sobre-superficie-variante">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            {{ mensajes.logoAlGuardar }}
+          </p>
+        }
+      </section>
 
       <vit-acciones-formulario [guardando]="guardando()" [textoGuardar]="empresaId ? comunes.guardarCambios : mensajes.registrar" (cancelar)="cancelar()" />
     </form>

@@ -29,10 +29,11 @@ import {
   RegistrarEmpresa,
   SuscripcionRepositorioTypeOrm,
   TenantRepositorioTypeOrm,
+  VALIDADOR_LOGO_PORT,
 } from '@vitrina/plataforma/org';
 import { DefinicionesRepositorioTypeOrm, PARAMETRO_PORT, ParametrosModule, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { PersonasModule, VerificadorReferenciasPer } from '@vitrina/plataforma/personas';
-import { ArchivosModule } from '@vitrina/plataforma/archivos';
+import { ARCHIVO_PORT, ArchivosModule, type ArchivoPort } from '@vitrina/plataforma/archivos';
 import { InvitarPropietario, SeguridadModule, type SeguridadOpciones } from '@vitrina/plataforma/seguridad';
 import { SecretosModule, type ClavesMaestras } from '@vitrina/plataforma/secretos';
 import { NotificacionesModule, type EntornoNotificaciones } from '@vitrina/plataforma/notificaciones';
@@ -42,6 +43,7 @@ import { FallidosController } from './eventos/fallidos.controller.js';
 import { ConfiguracionCuotaParametros } from './identidad/configuracion-cuota.parametros.js';
 import { HasherDocumentoObservabilidad } from './identidad/hasher-documento.js';
 import { PadronRucIdentidad } from './identidad/padron-ruc.identidad.js';
+import { ValidadorLogoArchivos } from './org/validador-logo.archivos.js';
 import { PlanDelTenantOrg } from './identidad/plan-del-tenant.org.js';
 import { VerificadorOperadorIdentidad } from './identidad/verificador-operador.js';
 import { AltaTenant } from './org/alta-tenant.js';
@@ -53,6 +55,7 @@ import { EmpresasController } from './org/empresas.controller.js';
 import { ExigirOperador } from './org/operador.js';
 import { SucursalesController } from './org/sucursales.controller.js';
 import { TenantsPorCodigoTypeOrm } from './org/tenants-por-codigo.typeorm.js';
+import { UrlLogoEmpresaArchivos } from './org/url-logo-empresa.archivos.js';
 import { UnidadesController } from './org/unidades.controller.js';
 import { SaludController } from './salud/salud.controller.js';
 
@@ -147,12 +150,18 @@ export class AppModule {
     // Spec 42: la misma referencia en AppModule y NotificacionesModule (persona y consentimiento del destinatario).
     const personasModulo = PersonasModule.register({ imports: [catalogosModulo, identidadModulo, archivosModulo] });
     // Spec 49: la misma referencia en AppModule y ComprobantesModule (ConsultarEmpresa, la bóveda).
+    // Spec 17d: el logo de la empresa se valida sobre ARC.
     const orgModulo = OrgModule.register({
-      imports: [identidadModulo],
+      imports: [identidadModulo, archivosModulo],
       padronRuc: {
         provide: PADRON_RUC,
         useFactory: (identidadPort: IdentidadPort) => new PadronRucIdentidad(identidadPort),
         inject: [IDENTIDAD],
+      },
+      validadorLogo: {
+        provide: VALIDADOR_LOGO_PORT,
+        useFactory: (archivos: ArchivoPort) => new ValidadorLogoArchivos(archivos),
+        inject: [ARCHIVO_PORT],
       },
     });
     const secretosModulo = SecretosModule.register({ claves: clavesMaestras });
@@ -202,13 +211,14 @@ export class AppModule {
         },
         {
           provide: ConsolaTenants,
-          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, cambiarEstadoTenant: CambiarEstadoTenant) =>
+          useFactory: (unidadDeTrabajo: TypeOrmUnitOfWork, contexto: TenantContext, cambiarEstadoTenant: CambiarEstadoTenant, archivos: ArchivoPort) =>
             new ConsolaTenants({
               exigirOperador: new ExigirOperador({ unidadDeTrabajo, contexto, tenants: new TenantRepositorioTypeOrm(unidadDeTrabajo, contexto), tenantOperador }),
               consulta: new ConsultaTenantsTypeOrm(dataSource),
               cambiarEstadoTenant,
+              logos: new UrlLogoEmpresaArchivos(contexto, archivos),
             }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CambiarEstadoTenant],
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CambiarEstadoTenant, ARCHIVO_PORT],
         },
         {
           provide: AltaTenant,

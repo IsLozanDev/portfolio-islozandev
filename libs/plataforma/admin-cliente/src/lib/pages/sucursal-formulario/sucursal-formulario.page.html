@@ -12,6 +12,13 @@
     </div>
   }
 
+  @if (telefonoAnterior(); as anterior) {
+    <p role="status" class="flex items-start gap-2 rounded-tarjeta bg-chip-advertencia p-3 text-sm text-sobre-chip-advertencia" data-aviso="telefono-anterior">
+      <mat-icon aria-hidden="true">call</mat-icon>
+      <span>{{ mensajes.telefonoAnterior(anterior) }}</span>
+    </p>
+  }
+
   @if (noExiste()) {
     <vit-estado-vacio icono="store" [titulo]="mensajes.noExiste" />
     <a mat-stroked-button class="self-start" [routerLink]="rutaSucursales" [relativeTo]="rutaMontaje">{{ mensajes.volver }}</a>
@@ -19,7 +26,7 @@
     <vit-cargando />
   } @else {
     <form class="flex flex-col gap-2" [formGroup]="grupo" (ngSubmit)="guardar()" novalidate>
-      <div class="grid gap-x-4 sm:grid-cols-2">
+      <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
         <mat-form-field appearance="outline">
           <mat-label>{{ mensajes.codigo }}</mat-label>
           <input matInput formControlName="codigo" data-campo="codigo" autocomplete="off" required />
@@ -30,7 +37,7 @@
           <input matInput formControlName="nombre" data-campo="nombre" autocomplete="off" required />
           <mat-error>{{ mensajeDeError(grupo.controls.nombre.errors) }}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.establecimientoSunat }}</mat-label>
           <input matInput formControlName="codigoEstablecimientoSunat" data-campo="establecimiento" inputmode="numeric" maxlength="4" autocomplete="off" />
           @if (ayudaEstablecimiento(); as ayuda) {
@@ -39,21 +46,25 @@
           <mat-error>{{ mensajeDeError(grupo.controls.codigoEstablecimientoSunat.errors) }}</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>{{ mensajes.ubigeo }}</mat-label>
-          <input matInput formControlName="ubigeo" data-campo="ubigeo" inputmode="numeric" maxlength="6" autocomplete="off" />
-          <mat-error>{{ mensajeDeError(grupo.controls.ubigeo.errors) }}</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="sm:col-span-2">
           <mat-label>{{ mensajes.direccion }}</mat-label>
           <input matInput formControlName="direccion" data-campo="direccion" autocomplete="off" />
           <mat-error>{{ mensajeDeError(grupo.controls.direccion.errors) }}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <vit-ubigeo-autocompletar
+          class="sm:col-span-2"
+          [control]="grupo.controls.ubigeo"
+          [etiqueta]="comunes.etiquetaUbigeo"
+          [textos]="textosUbigeo"
+          [sinPermiso]="sinPermisoCatalogo"
+        />
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.telefono }}</mat-label>
-          <input matInput formControlName="telefono" data-campo="telefono" type="tel" autocomplete="off" />
-          <mat-error>{{ mensajeDeError(grupo.controls.telefono.errors) }}</mat-error>
+          <mat-icon matPrefix aria-hidden="true">call</mat-icon>
+          <input matInput vitTelefono formControlName="telefono" data-campo="telefono" />
+          <mat-hint>{{ comunes.ayudaTelefono }}</mat-hint>
+          <mat-error data-error="telefono">{{ mensajeDelTelefono() }}</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field subscriptSizing="dynamic" appearance="outline">
           <mat-label>{{ mensajes.zonaHoraria }}</mat-label>
           <input matInput formControlName="zonaHoraria" data-campo="zonaHoraria" autocomplete="off" required />
           <mat-hint>{{ mensajes.ayudaZonaHoraria }}</mat-hint>

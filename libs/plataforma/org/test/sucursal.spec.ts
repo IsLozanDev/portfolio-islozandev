@@ -2,6 +2,7 @@ import { ConflictError, ValidationError } from '@vitrina/plataforma/kernel';
 import { exigirCupo, topeSucursales } from '../src/domain/cupo-sucursales.js';
 import { Sucursal } from '../src/domain/sucursal.js';
 import { Suscripcion, type DatosSuscripcion, type EstadoSuscripcion } from '../src/domain/suscripcion.js';
+import { TelefonoInvalidoError } from '../src/domain/errores.js';
 import { EMPRESA, TENANT, datosSucursal, empresa, sucursal } from './support/fabricas.js';
 
 const ID = '0190a8e0-0000-7000-8000-000000000101';
@@ -63,7 +64,7 @@ describe('Sucursal.crear', () => {
     ['código de 21', { codigo: 'x'.repeat(21) }],
     ['nombre corto', { nombre: 'Ca' }],
     ['establecimiento de 3 dígitos', { codigoEstablecimientoSunat: '002' }],
-    ['teléfono de 31', { telefono: '9'.repeat(31) }],
+    ['teléfono incompleto', { telefono: '98765' }],
     ['zona horaria inválida', { zonaHoraria: 'America/Arequipa' }],
   ])('rechaza %s', (_caso, cambio) => {
     expect(() => Sucursal.crear(ID, empresa(), datosSucursal(cambio), SIN_TOPE)).toThrow(ValidationError);
@@ -72,6 +73,18 @@ describe('Sucursal.crear', () => {
   it('acepta otra zona IANA y establecimiento vacío', () => {
     const s = Sucursal.crear(ID, empresa(), datosSucursal({ zonaHoraria: 'America/Bogota', codigoEstablecimientoSunat: null }), SIN_TOPE);
     expect(s.datos).toMatchObject({ zonaHoraria: 'America/Bogota', codigoEstablecimientoSunat: null });
+  });
+
+  it('guarda el teléfono en E.164', () => {
+    const s = Sucursal.crear(ID, empresa(), datosSucursal({ telefono: '(054) 123-456' }), SIN_TOPE);
+    expect(s.datos.telefono).toBe('+5154123456');
+  });
+
+  it('un teléfono viejo que no es E.164 se abre igual y pide corregirlo al guardar', () => {
+    const s = sucursal(ID, { telefono: 'anexo 12' });
+
+    expect(s.datos.telefono).toBe('anexo 12');
+    expect(() => s.editar(s.datos)).toThrow(TelefonoInvalidoError);
   });
 });
 

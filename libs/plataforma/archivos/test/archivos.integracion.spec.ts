@@ -7,7 +7,7 @@ import { ArchivosAtascadosSql } from '../src/infrastructure/typeorm/archivos-ata
 import { RepositorioArchivosTypeOrm } from '../src/infrastructure/typeorm/archivos.repositorio.js';
 import { CargasPendientesSql } from '../src/infrastructure/typeorm/cargas-pendientes.sql.js';
 import { ENTIDADES_ARC, VersionArchivoEntidad } from '../src/infrastructure/typeorm/entidades.js';
-import { DIEZ_MEGABYTES, MIME_DOCX, VEINTICINCO_MEGABYTES } from './support/categorias.js';
+import { DIEZ_MEGABYTES, MIME_DOCX, UN_MEGABYTE, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 import { createTempDb, describeConDb, type TempDb } from './support/temp-db.js';
 
 const BYTES_PDF = 1_258_291;
@@ -75,7 +75,7 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
     await baseTemporal?.drop();
   });
 
-  it('lee las cinco categorías sembradas con su lista de MIME y su máximo', async () => {
+  it('lee las categorías sembradas con su lista de MIME y su máximo', async () => {
     const categorias = await enTenant(tenantA, () => Promise.all(CODIGOS_CATEGORIA.map((codigo) => repositorio.buscarCategoria(codigo))));
 
     expect(categorias.map((categoria) => categoria?.codigo)).toEqual([...CODIGOS_CATEGORIA]);
@@ -86,9 +86,10 @@ describeConDb('Archivos con TypeORM (TR-RF-080, PostgreSQL 16)', () => {
       tamanoMaxBytes: VEINTICINCO_MEGABYTES,
       sensible: true,
     });
+    expect(categorias[5]).toMatchObject({ codigo: 'LOGO', mimesPermitidos: ['image/jpeg', 'image/png'], tamanoMaxBytes: UN_MEGABYTE, sensible: false });
   });
 
-  it('lista las cinco categorías sembradas por código', async () => {
+  it('lista las categorías sembradas por código', async () => {
     const categorias = await enTenant(tenantA, () => repositorio.listarCategorias());
 
     expect(categorias.map((categoria) => categoria.codigo)).toEqual([...CODIGOS_CATEGORIA].sort());

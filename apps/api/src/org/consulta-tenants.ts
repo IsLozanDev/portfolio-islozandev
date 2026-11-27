@@ -35,19 +35,52 @@ export interface CambioDeEstado {
   registradoEn: string;
 }
 
-export interface TenantDetalle extends TenantListado {
+interface EmpresaPrincipalBase {
+  id: string;
+  ruc: string;
+  razonSocial: string;
+}
+
+export interface EmpresaPrincipalLeida extends EmpresaPrincipalBase {
+  logoArchivoId: string | null;
+}
+
+/** El logo va como URL firmada de vigencia corta: el navegador del operador no puede pedirlo a ARC (spec 17d). */
+export interface EmpresaPrincipal extends EmpresaPrincipalBase {
+  logoUrl: string | null;
+  logoExpiraEn: Date | null;
+}
+
+interface DetalleBase extends TenantListado {
   estadoMotivo: string | null;
   estadoCambiadoEn: Date | null;
   version: number;
-  empresaPrincipal: { id: string; ruc: string; razonSocial: string } | null;
   /** Del más reciente al más antiguo. */
   historial: CambioDeEstado[];
+}
+
+export interface TenantDetalleLeido extends DetalleBase {
+  empresaPrincipal: EmpresaPrincipalLeida | null;
+}
+
+export interface TenantDetalle extends DetalleBase {
+  empresaPrincipal: EmpresaPrincipal | null;
 }
 
 /** Lectura entre tenants por org.tenants_listar y org.tenant_detalle (SECURITY DEFINER). */
 export interface ConsultaTenants {
   listar(filtro: FiltroTenants): Promise<Listado<TenantListado>>;
-  detalle(tenantId: string): Promise<TenantDetalle | null>;
+  detalle(tenantId: string): Promise<TenantDetalleLeido | null>;
+}
+
+export interface LogoFirmado {
+  url: string;
+  expiraEn: Date;
+}
+
+/** URL del logo de una empresa de otro tenant, o null si el logo ya no está disponible. */
+export interface UrlLogoEmpresa {
+  firmar(tenantId: string, archivoId: string): Promise<LogoFirmado | null>;
 }
 
 export interface CambiarEstadoComando {
@@ -60,6 +93,7 @@ export interface DependenciasConsola {
   exigirOperador: Pick<ExigirOperador, 'ejecutar'>;
   consulta: ConsultaTenants;
   cambiarEstadoTenant: Pick<CambiarEstadoTenant, 'ejecutar'>;
+  logos: UrlLogoEmpresa;
 }
 
 /**
@@ -78,7 +112,13 @@ export class ConsolaTenants {
     await this.dependencias.exigirOperador.ejecutar(actor);
     const detalle = await this.dependencias.consulta.detalle(tenantId);
     if (!detalle) throw new NotFoundError('El tenant no existe');
-    return detalle;
+    const empresaPrincipal = detalle.empresaPrincipal && (await this.conLogo(tenantId, detalle.empresaPrincipal));
+    return { ...detalle, empresaPrincipal };
+  }
+
+  private async conLogo(tenantId: string, { logoArchivoId, ...empresa }: EmpresaPrincipalLeida): Promise<EmpresaPrincipal> {
+    const logo = logoArchivoId ? await this.dependencias.logos.firmar(tenantId, logoArchivoId) : null;
+    return { ...empresa, logoUrl: logo?.url ?? null, logoExpiraEn: logo?.expiraEn ?? null };
   }
 
   /** `cambiado: false` si ya estaba en ese estado: no deja historial (spec 03). */

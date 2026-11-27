@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { CODIGOS_CATEGORIA } from '../src/domain/categoria.js';
 import { categoriaDocumento, categoriaImagen, DIEZ_MEGABYTES, MIME_DOCX, VEINTICINCO_MEGABYTES } from './support/categorias.js';
 
-const MIGRACION = new URL('../../../../db/01m_arc.sql', import.meta.url);
+const MIGRACIONES_CON_CATEGORIAS = ['01m_arc.sql', '01y_org_identidad_empresa.sql'].map(
+  (archivo) => new URL(`../../../../db/${archivo}`, import.meta.url),
+);
 
 describe('CategoriaArchivo', () => {
   it('admite solo los MIME de su lista', () => {
@@ -30,9 +32,9 @@ describe('CategoriaArchivo', () => {
 });
 
 describe('CODIGOS_CATEGORIA', () => {
-  it('son los mismos códigos que siembra 01m_arc.sql', () => {
-    const migracion = readFileSync(MIGRACION, 'utf8');
-    const sembrados = [...migracion.matchAll(/^\s+\('([A-Z_]+)', ARRAY\[/gm)].map((fila) => fila[1]);
+  it('son los mismos códigos que siembran 01m_arc.sql y 01y_org_identidad_empresa.sql', () => {
+    const migraciones = MIGRACIONES_CON_CATEGORIAS.map((migracion) => readFileSync(migracion, 'utf8')).join('\n');
+    const sembrados = [...migraciones.matchAll(/\('([A-Z_]+)', ARRAY\[/g)].map((fila) => fila[1]);
 
     expect(sembrados.sort()).toEqual([...CODIGOS_CATEGORIA].sort());
   });

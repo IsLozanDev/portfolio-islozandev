@@ -62,7 +62,7 @@ afterAll(async () => {
   // sync_lector no se borra: es del clúster, como anon, y es dueño de las funciones de otras bases temporales en paralelo.
   for (const rol of ['outbox_test_app', 'org_test_app', 'org_alta_test_app', 'org_alta_test_sin_permiso', 'org_consola_test_app', 'org_consola_test_sin_permiso', 'seg_test_app', 'cfg_test_app', 'seq_test_app', 'cat_test_app', 'sync_test_app', 'sync_test_sin_permiso', 'aud_test_app', 'aud_integridad_test_app', 'obs_test_app', 'obs_test_sin_permiso', 'idn_test_app', 'idn_cuota_test_app', 'idn_cuota_test_sin_permiso', 'per_test_app', 'arc_test_app', 'arc_test_sin_permiso', 'arc_fk_test_dueno', ...creados]) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
   for (const rol of ['sec_test_app', 'sec_test_sin_permiso']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
-  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'not_plantillas_test_app', 'fe_test_app', 'fe_prueba_test_app', 'fe_comprobante_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
+  for (const rol of ['not_test_app', 'not_test_sin_permiso', 'not_plantillas_test_app', 'fe_test_app', 'fe_prueba_test_app', 'fe_comprobante_test_app', 'org_identidad_test_app']) await ejecutar(ADMIN_URL, `DROP ROLE IF EXISTS ${rol}`);
 }, TIMEOUT_MS);
 
 // Una sola base para todas: los roles anon/authenticated son del clúster y dos archivos de Jest
@@ -111,6 +111,7 @@ const CASOS = [
   { migracion: '01v_fe_sunat_directo.sql', esquema: 'fe', prueba: 'tests/01v_fe_sunat_directo.test.sql' },
   { migracion: '01w_arc_carga_sistema.sql', esquema: 'arc', prueba: 'tests/01w_arc_carga_sistema.test.sql' },
   { migracion: '01x_fe_envio.sql', esquema: 'fe', prueba: 'tests/01x_fe_envio.test.sql' },
+  { migracion: '01y_org_identidad_empresa.sql', esquema: 'org', prueba: 'tests/01y_org_identidad_empresa.test.sql' },
 ];
 
 // Definiciones de las tablas SUNAT de facturación electrónica que siembra 01f_cat_tablas_fe (6 en total).
@@ -469,6 +470,93 @@ async function inversoEnvioConIntentos() {
       () => null,
       (error) => error.code,
     );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+// Columnas, CHECK de sucursal, categoría LOGO y logo en org.tenant_detalle que agrega 01y_org_identidad_empresa
+// (spec 17d, 7 en total).
+const objetosIdentidadEmpresa = async () =>
+  (
+    await ejecutar(
+      urlDb,
+      `SELECT column_name AS o FROM information_schema.columns
+        WHERE table_schema = 'org' AND table_name = 'empresa' AND column_name IN ('logo_archivo_id', 'telefono', 'correo', 'sitio_web')
+       UNION ALL SELECT conname FROM pg_constraint WHERE conname = 'ck_sucursal_telefono_e164'
+       UNION ALL SELECT codigo FROM arc.categoria WHERE codigo = 'LOGO'
+       UNION ALL SELECT 'tenant_detalle con logo' FROM pg_proc
+        WHERE oid = 'org.tenant_detalle(uuid)'::regprocedure AND prosrc LIKE '%logo_archivo_id%'`,
+    )
+  ).rows.map((r) => r.o);
+
+const OBJETOS_IDENTIDAD_EMPRESA = [
+  'LOGO',
+  'ck_sucursal_telefono_e164',
+  'correo',
+  'logo_archivo_id',
+  'sitio_web',
+  'telefono',
+  'tenant_detalle con logo',
+];
+
+// Ejecuta `preparar` en una transacción, corre el inverso de 01y_org_identidad_empresa y devuelve el SQLSTATE con
+// que falla (o null); la transacción se revierte.
+async function inversoIdentidadEmpresaCon(preparar) {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await preparar(c);
+    return await c.query(await readFile(rutaDb('rollback/01y_org_identidad_empresa.sql'), 'utf8')).then(
+      () => null,
+      (error) => error.code,
+    );
+  } finally {
+    await c.query('ROLLBACK');
+    await c.end();
+  }
+}
+
+const TENANT_IDENTIDAD = '17d00000-0000-0000-0000-0000000000ff';
+const EMPRESA_IDENTIDAD = '17d00000-0000-0000-0000-0000000000fe';
+
+async function insertarEmpresaIdentidad(cliente, contacto = '') {
+  await cliente.query(
+    `INSERT INTO org.tenant (id, codigo, nombre, estado, version) VALUES ('${TENANT_IDENTIDAD}', 'identidad-inverso', 'Identidad inverso', 'ACTIVO', 1)`,
+  );
+  await cliente.query(
+    `INSERT INTO org.empresa (id, tenant_id, ruc, razon_social, version${contacto ? ', telefono' : ''})
+     VALUES ('${EMPRESA_IDENTIDAD}', '${TENANT_IDENTIDAD}', '20601234561', 'Identidad inverso SAC', 1${contacto ? `, '${contacto}'` : ''})`,
+  );
+}
+
+const empresaConTelefono = (cliente) => insertarEmpresaIdentidad(cliente, '+51987654321');
+
+async function archivoLogo(cliente) {
+  await cliente.query(`SELECT set_config('app.tenant_id', '${TENANT_IDENTIDAD}', true)`);
+  await cliente.query(
+    `INSERT INTO arc.archivo (id, tenant_id, categoria, entidad_tipo, entidad_id, nombre_original, estado, creado_por)
+     VALUES (gen_random_uuid(), '${TENANT_IDENTIDAD}', 'LOGO', 'EMPRESA', '${EMPRESA_IDENTIDAD}', 'logo.png', 'PENDIENTE_CARGA', gen_random_uuid())`,
+  );
+}
+
+// Revierte 01y, deja dos sucursales con teléfonos de antes y la reaplica: devuelve cómo quedaron. La transacción se revierte.
+async function telefonosSucursalNormalizados() {
+  const c = new pg.Client({ connectionString: urlDb });
+  await c.connect();
+  try {
+    await c.query('BEGIN');
+    await c.query(await readFile(rutaDb('rollback/01y_org_identidad_empresa.sql'), 'utf8'));
+    await insertarEmpresaIdentidad(c);
+    await c.query(
+      `INSERT INTO org.sucursal (id, tenant_id, empresa_id, codigo, nombre, codigo_establecimiento_sunat, es_principal, telefono, version)
+       VALUES ('17d00000-0000-0000-0000-0000000000f1', '${TENANT_IDENTIDAD}', '${EMPRESA_IDENTIDAD}', 'PRI', 'Principal', '0000', true, '987 654 321', 1),
+              ('17d00000-0000-0000-0000-0000000000f2', '${TENANT_IDENTIDAD}', '${EMPRESA_IDENTIDAD}', 'ANX', 'Anexo', '0001', false, 'anexo 12', 1)`,
+    );
+    await c.query(await readFile(rutaDb('01y_org_identidad_empresa.sql'), 'utf8'));
+    return (await c.query(`SELECT codigo, telefono FROM org.sucursal WHERE empresa_id = '${EMPRESA_IDENTIDAD}' ORDER BY codigo`)).rows;
   } finally {
     await c.query('ROLLBACK');
     await c.end();
@@ -1022,8 +1110,23 @@ describeConDb('db/ y supabase/migrations', () => {
 
     for (const { prueba } of CASOS) await ejecutar(urlDb, await readFile(rutaDb(prueba), 'utf8'));
 
+    // El inverso de 01y_org_identidad_empresa se niega con archivos LOGO o empresas con datos de contacto; sin ellos
+    // quita las columnas, el CHECK de sucursal y la categoría, y se puede reaplicar. Al reaplicarla normaliza los
+    // teléfonos de sucursal que puede y deja los demás. Va primero: es la última migración.
+    expect((await objetosIdentidadEmpresa()).sort()).toEqual(OBJETOS_IDENTIDAD_EMPRESA);
+    expect(await inversoIdentidadEmpresaCon(empresaConTelefono)).toBe('55006');
+    expect(await inversoIdentidadEmpresaCon(archivoLogo)).toBe('55006');
+    expect(await telefonosSucursalNormalizados()).toEqual([
+      { codigo: 'ANX', telefono: 'anexo 12' },
+      { codigo: 'PRI', telefono: '+51987654321' },
+    ]);
+    await ejecutar(urlDb, await readFile(rutaDb('rollback/01y_org_identidad_empresa.sql'), 'utf8'));
+    expect(await objetosIdentidadEmpresa()).toEqual([]);
+    await ejecutar(urlDb, await readFile(rutaDb('01y_org_identidad_empresa.sql'), 'utf8'));
+    expect((await objetosIdentidadEmpresa()).sort()).toEqual(OBJETOS_IDENTIDAD_EMPRESA);
+
     // El inverso de 01x_fe_envio se niega con intentos de envío; sin ellos quita fe.envio y las columnas de respuesta, y
-    // se puede reaplicar. Va primero: es la última migración. Queda revertida hasta reaplicar 01u_fe_comprobante.
+    // se puede reaplicar. Va después del de 01y_org_identidad_empresa. Queda revertida hasta reaplicar 01u_fe_comprobante.
     expect((await objetosEnvio()).sort()).toEqual(['cdr_archivo_id', 'envio', 'respondido_en']);
     expect(await inversoEnvioConIntentos()).toBe('55006');
     await ejecutar(urlDb, await readFile(rutaDb('rollback/01x_fe_envio.sql'), 'utf8'));

@@ -15,6 +15,7 @@ export { CeldaTablaDirective } from './lib/directives/celda-tabla.directive';
 export { SeccionEntradaDirective } from './lib/directives/seccion-entrada.directive';
 export { SeccionFinDirective } from './lib/directives/seccion-fin.directive';
 export { SeccionPieDirective } from './lib/directives/seccion-pie.directive';
+export { TelefonoDirective } from './lib/directives/telefono.directive';
 export type {
   OpcionesConfirmacion,
   OpcionesConfirmacionDestructiva,
@@ -34,4 +35,5 @@ export { PanelLateralService } from './lib/services/panel-lateral.service';
 export { TemaService } from './lib/services/tema.service';
 export { filasDePagina } from './lib/utils/filas-de-pagina';
 export { mensajeDeValidacion } from './lib/utils/mensaje-de-validacion';
+export { aE164, esTelefonoPeru, formatoTelefono, telefonoPeru } from './lib/utils/telefono-peru';
 export { TAMANO_PAGINA_POR_DEFECTO, TAMANOS_PAGINA, tamanoPaginaDesdeTexto, tamanoPaginaParaUrl } from './lib/utils/tamano-pagina';

@@ -3,7 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { CONFIG_AUTH } from '@vitrina/shared/auth';
 import {
   cuerpoDatosEmpresa,
+  cuerpoEdicionEmpresa,
   filaAEmpresa,
+  type DatosEdicionEmpresa,
   type DatosEmpresa,
   type Empresa,
   type EmpresaRegistrada,
@@ -38,8 +40,9 @@ export class EmpresasCliente {
     return { empresaId: respuesta.empresa_id, sucursalPrincipalId: respuesta.sucursal_principal_id, advertencias: respuesta.advertencias };
   }
 
-  async editar(empresaId: string, version: number, datos: DatosEmpresa): Promise<void> {
-    await solicitar(this.http.put(this.urlDe(empresaId), { version, ...cuerpoDatosEmpresa(datos) }));
+  /** El logo viaja en el mismo `PUT` y con la misma versión (spec 17d). */
+  async editar(empresaId: string, version: number, datos: DatosEdicionEmpresa): Promise<void> {
+    await solicitar(this.http.put(this.urlDe(empresaId), { version, ...cuerpoEdicionEmpresa(datos) }));
   }
 
   private urlDe(empresaId: string): string {

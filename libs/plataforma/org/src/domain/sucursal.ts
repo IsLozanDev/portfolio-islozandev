@@ -2,7 +2,7 @@ import { AggregateRoot, ConflictError, ValidationError } from '@vitrina/platafor
 import { exigirCupo, type CupoSucursales } from './cupo-sucursales.js';
 import type { Empresa } from './empresa.js';
 import { textoOpcional, textoRequerido } from './texto.js';
-import { CodigoEstablecimiento, Ubigeo } from './valores.js';
+import { CodigoEstablecimiento, Telefono, Ubigeo } from './valores.js';
 
 const { DOMICILIO_FISCAL } = CodigoEstablecimiento;
 
@@ -167,7 +167,7 @@ function validarDatos(datos: DatosSucursal): DatosSucursal {
     codigoEstablecimientoSunat: CodigoEstablecimiento.opcional(datos.codigoEstablecimientoSunat),
     direccion: textoOpcional(datos.direccion, 250, 'La dirección'),
     ubigeo: Ubigeo.opcional(datos.ubigeo),
-    telefono: textoOpcional(datos.telefono, 30, 'El teléfono'),
+    telefono: Telefono.opcional(datos.telefono),
     zonaHoraria: validarZonaHoraria(datos.zonaHoraria),
   };
 }

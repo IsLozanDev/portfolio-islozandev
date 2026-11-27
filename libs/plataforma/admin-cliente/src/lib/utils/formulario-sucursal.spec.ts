@@ -1,5 +1,7 @@
-import { aDatosSucursal, cargarSucursal, crearGrupoSucursal, faltaEstablecimiento } from './formulario-sucursal';
+import { aDatosSucursal, cargarSucursal, crearGrupoSucursal, faltaEstablecimiento, telefonoAnterior } from './formulario-sucursal';
 import { mensajeDeErrorOrganizacion } from './validadores-organizacion';
+
+const CAYMA = { codigo: '040103', distrito: 'CAYMA', provincia: 'AREQUIPA', departamento: 'AREQUIPA' };
 
 const CENTRO = {
   id: 's-centro',
@@ -19,7 +21,7 @@ const CENTRO = {
 describe('formulario de sucursal', () => {
   it('TR-CA-007: «Cayma» con 0002 y 040103 es válida y usa America/Lima por defecto', () => {
     const grupo = crearGrupoSucursal();
-    grupo.patchValue({ codigo: 'CAYMA', nombre: 'Cayma', codigoEstablecimientoSunat: '0002', ubigeo: '040103' });
+    grupo.patchValue({ codigo: 'CAYMA', nombre: 'Cayma', codigoEstablecimientoSunat: '0002', ubigeo: CAYMA });
 
     expect(grupo.valid).toBe(true);
     expect(aDatosSucursal(grupo)).toEqual({
@@ -53,7 +55,7 @@ describe('formulario de sucursal', () => {
 
   it('en la principal el establecimiento queda fijo en 0000, sin error, y se envía', () => {
     const grupo = crearGrupoSucursal();
-    cargarSucursal(grupo, CENTRO);
+    cargarSucursal(grupo, CENTRO, CAYMA);
 
     expect(grupo.controls.codigoEstablecimientoSunat.disabled).toBe(true);
     expect(grupo.valid).toBe(true);
@@ -68,9 +70,26 @@ describe('formulario de sucursal', () => {
 
   it('al editar una no principal el establecimiento se puede cambiar', () => {
     const grupo = crearGrupoSucursal();
-    cargarSucursal(grupo, { ...CENTRO, esPrincipal: false, codigoEstablecimientoSunat: null });
+    cargarSucursal(grupo, { ...CENTRO, esPrincipal: false, codigoEstablecimientoSunat: null }, CAYMA);
 
     expect(grupo.controls.codigoEstablecimientoSunat.enabled).toBe(true);
     expect(grupo.controls.codigoEstablecimientoSunat.value).toBe('');
+  });
+
+  it('el teléfono viaja en E.164 y uno viejo que no lo es no deja guardar (spec 17d)', () => {
+    const grupo = crearGrupoSucursal();
+    cargarSucursal(grupo, { ...CENTRO, telefono: '+51987654321' }, CAYMA);
+    expect(grupo.valid).toBe(true);
+    expect(aDatosSucursal(grupo).telefono).toBe('+51987654321');
+
+    cargarSucursal(grupo, { ...CENTRO, telefono: 'anexo 12' }, CAYMA);
+    expect(grupo.controls.telefono.hasError('telefonoPeru')).toBe(true);
+  });
+
+  it('telefonoAnterior solo marca un teléfono guardado que no es E.164', () => {
+    expect(telefonoAnterior({ ...CENTRO, telefono: 'anexo 12' })).toBe('anexo 12');
+    expect(telefonoAnterior({ ...CENTRO, telefono: '+5115550101' })).toBeNull();
+    expect(telefonoAnterior(CENTRO)).toBeNull();
+    expect(telefonoAnterior(null)).toBeNull();
   });
 });

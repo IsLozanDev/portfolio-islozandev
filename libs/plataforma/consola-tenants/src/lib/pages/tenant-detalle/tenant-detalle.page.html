@@ -55,7 +55,26 @@
 
     <h2 class="text-lg font-medium">{{ mensajes.empresaPrincipal }}</h2>
     @if (detalle.empresaPrincipal; as empresa) {
-      <p data-empresa-principal>{{ mensajes.ruc }} {{ empresa.ruc }} · {{ empresa.razonSocial }}</p>
+      <div class="flex items-center gap-3">
+        @if (empresa.logoUrl && !falloLogo()) {
+          <img
+            class="size-12 shrink-0 rounded-md border border-borde bg-superficie object-contain"
+            [src]="empresa.logoUrl"
+            [alt]="mensajes.logoDe + ' ' + empresa.razonSocial"
+            (error)="falloLogo.set(true)"
+            data-logo-empresa
+          />
+        } @else {
+          <span
+            class="flex size-12 shrink-0 items-center justify-center rounded-md bg-contenedor-secundario text-lg font-medium text-sobre-contenedor-secundario"
+            aria-hidden="true"
+            data-inicial-empresa
+          >
+            {{ inicialEmpresa() }}
+          </span>
+        }
+        <p data-empresa-principal>{{ mensajes.ruc }} {{ empresa.ruc }} · {{ empresa.razonSocial }}</p>
+      </div>
     } @else {
       <p class="text-sobre-superficie-variante">{{ mensajes.sinEmpresa }}</p>
     }

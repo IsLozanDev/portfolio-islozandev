@@ -1,6 +1,8 @@
 import { FormControl, FormGroup, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
+import { ubigeoElegido, type ValorUbigeo } from '@vitrina/plataforma/personas-ui';
+import { esTelefonoPeru, telefonoPeru } from '@vitrina/shared/ui';
 import type { DatosSucursal, Sucursal } from '../models/sucursal';
-import { campoDeTexto, ERROR_ESTABLECIMIENTO_FORMATO, ERROR_ESTABLECIMIENTO_PRINCIPAL, textoONulo, validarUbigeo } from './validadores-organizacion';
+import { campoDeTexto, codigoDeUbigeo, ERROR_ESTABLECIMIENTO_FORMATO, ERROR_ESTABLECIMIENTO_PRINCIPAL, textoONulo } from './validadores-organizacion';
 
 /** El domicilio fiscal: solo la sucursal principal lo lleva (TR-RN-003). */
 export const ESTABLECIMIENTO_PRINCIPAL = '0000';
@@ -11,7 +13,6 @@ const LONGITUD_MAXIMA_CODIGO = 20;
 const LONGITUD_MINIMA_NOMBRE = 3;
 const LONGITUD_MAXIMA_NOMBRE = 150;
 const LONGITUD_MAXIMA_DIRECCION = 250;
-const LONGITUD_MAXIMA_TELEFONO = 30;
 const LONGITUD_MAXIMA_ZONA_HORARIA = 40;
 const FORMATO_ESTABLECIMIENTO = /^\d{4}$/;
 
@@ -20,8 +21,10 @@ export type GrupoSucursal = FormGroup<{
   nombre: FormControl<string>;
   codigoEstablecimientoSunat: FormControl<string>;
   direccion: FormControl<string>;
-  ubigeo: FormControl<string>;
-  telefono: FormControl<string>;
+  /** El distrito elegido del catálogo; con el campo deshabilitado, el código guardado. */
+  ubigeo: FormControl<ValorUbigeo>;
+  /** E.164 que entrega `vitTelefono`; un teléfono guardado antes del spec 17d llega tal cual y no deja guardar. */
+  telefono: FormControl<string | null>;
   zonaHoraria: FormControl<string>;
 }>;
 
@@ -31,27 +34,34 @@ export function crearGrupoSucursal(): GrupoSucursal {
     nombre: campoDeTexto('', Validators.required, Validators.minLength(LONGITUD_MINIMA_NOMBRE), Validators.maxLength(LONGITUD_MAXIMA_NOMBRE)),
     codigoEstablecimientoSunat: campoDeTexto('', validarEstablecimiento),
     direccion: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_DIRECCION)),
-    ubigeo: campoDeTexto('', validarUbigeo),
-    telefono: campoDeTexto('', Validators.maxLength(LONGITUD_MAXIMA_TELEFONO)),
+    ubigeo: new FormControl<ValorUbigeo>(null, ubigeoElegido),
+    telefono: new FormControl<string | null>(null, telefonoPeru),
     zonaHoraria: campoDeTexto(ZONA_HORARIA_POR_DEFECTO, Validators.required, Validators.maxLength(LONGITUD_MAXIMA_ZONA_HORARIA)),
   });
 }
 
 /**
  * Edición. En la principal el establecimiento queda fijo en 0000 (el dominio no deja cambiarlo):
- * el control deshabilitado no se valida, pero `getRawValue` lo envía.
+ * el control deshabilitado no se valida, pero `getRawValue` lo envía. `ubigeo` es el distrito del catálogo que
+ * corresponde al código guardado, o el código como texto si el catálogo no está.
  */
-export function cargarSucursal(grupo: GrupoSucursal, sucursal: Sucursal): void {
+export function cargarSucursal(grupo: GrupoSucursal, sucursal: Sucursal, ubigeo: ValorUbigeo): void {
   grupo.reset({
     codigo: sucursal.codigo,
     nombre: sucursal.nombre,
     codigoEstablecimientoSunat: sucursal.esPrincipal ? ESTABLECIMIENTO_PRINCIPAL : (sucursal.codigoEstablecimientoSunat ?? ''),
     direccion: sucursal.direccion ?? '',
-    ubigeo: sucursal.ubigeo ?? '',
-    telefono: sucursal.telefono ?? '',
+    ubigeo,
+    telefono: sucursal.telefono,
     zonaHoraria: sucursal.zonaHoraria,
   });
   if (sucursal.esPrincipal) grupo.controls.codigoEstablecimientoSunat.disable();
+}
+
+/** Un teléfono guardado antes del formato E.164 (spec 17d): se abre igual y pide corregirlo al guardar. */
+export function telefonoAnterior(sucursal: Sucursal | null): string | null {
+  const telefono = sucursal?.telefono;
+  return telefono && !esTelefonoPeru(telefono) ? telefono : null;
 }
 
 /** Brecha 5 del contexto: la que dejó de ser principal quedó sin establecimiento y conviene asignarle uno. */
@@ -66,8 +76,8 @@ export function aDatosSucursal(grupo: GrupoSucursal): DatosSucursal {
     nombre: valor.nombre.trim(),
     codigoEstablecimientoSunat: textoONulo(valor.codigoEstablecimientoSunat),
     direccion: textoONulo(valor.direccion),
-    ubigeo: textoONulo(valor.ubigeo),
-    telefono: textoONulo(valor.telefono),
+    ubigeo: codigoDeUbigeo(valor.ubigeo),
+    telefono: valor.telefono,
     zonaHoraria: valor.zonaHoraria.trim(),
   };
 }

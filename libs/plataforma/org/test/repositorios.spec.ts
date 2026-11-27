@@ -66,7 +66,7 @@ describeConDb('Repositorios org (PostgreSQL 16)', () => {
   /** Tenant con empresa y sucursal principal ya guardados. */
   async function sembrar(codigo: string, ruc = '20512345671') {
     const tenant = Tenant.crear({ id: uuidV7(), codigo, nombre: `Tenant ${codigo}`, estado: 'ACTIVO' });
-    const empresa = Empresa.crear(uuidV7(), tenant.id, ruc, { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: '040101' });
+    const empresa = Empresa.crear(uuidV7(), tenant.id, ruc, { razonSocial: 'Sabores del Sur SAC', nombreComercial: null, direccionFiscal: null, ubigeo: '040101', telefono: null, correo: null, sitioWeb: null });
     const principal = Sucursal.crearPrincipal(uuidV7(), empresa, SIN_TOPE);
     await en(tenant.id, async () => {
       await repos.tenants.guardar(tenant);
@@ -171,7 +171,7 @@ describeConDb('Repositorios org (PostgreSQL 16)', () => {
   describe('empresa', () => {
     it('TR-CA-005 (persistencia): un RUC repetido en el tenant se traduce al mensaje del SRS', async () => {
       const { tenant } = await sembrar('ruc-repetido');
-      const otra = Empresa.crear(uuidV7(), tenant.id, '20512345671', { razonSocial: 'Duplicada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null });
+      const otra = Empresa.crear(uuidV7(), tenant.id, '20512345671', { razonSocial: 'Duplicada SAC', nombreComercial: null, direccionFiscal: null, ubigeo: null, telefono: null, correo: null, sitioWeb: null });
       await expect(en(tenant.id, () => repos.empresas.guardar(otra))).rejects.toThrow(
         new ConflictError('La empresa ya está registrada en este tenant'),
       );

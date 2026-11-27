@@ -59,6 +59,15 @@ export class SembrarPlataforma {
   private async crearOperador(tenantId: string): Promise<void> {
     const { crearTenant, registrarEmpresa, tenantOperador, rucOperador } = this.dependencias;
     await crearTenant.ejecutar({ id: tenantId, codigo: tenantOperador, nombre: NOMBRE_OPERADOR, estado: 'ACTIVO' });
-    await registrarEmpresa.ejecutar({ ruc: rucOperador, razonSocial: NOMBRE_OPERADOR, nombreComercial: null, direccionFiscal: null, ubigeo: null });
+    await registrarEmpresa.ejecutar({
+      ruc: rucOperador,
+      razonSocial: NOMBRE_OPERADOR,
+      nombreComercial: null,
+      direccionFiscal: null,
+      ubigeo: null,
+      telefono: null,
+      correo: null,
+      sitioWeb: null,
+    });
   }
 }

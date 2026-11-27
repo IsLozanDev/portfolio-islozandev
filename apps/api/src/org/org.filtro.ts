@@ -1,5 +1,6 @@
 import { Catch, HttpStatus, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import { ConflictError, DomainError, ForbiddenError, NotFoundError, ValidationError } from '@vitrina/plataforma/kernel';
+import { LogoInvalidoError } from '@vitrina/plataforma/org';
 import { IdentidadNoDisponibleError } from '@vitrina/plataforma/seguridad';
 
 interface Respuesta {
@@ -21,7 +22,7 @@ const CODIGOS_GENERICOS: Readonly<Record<string, string>> = {
   forbidden: 'PROHIBIDO',
 };
 
-/** Errores de dominio de /v1/org como `{ codigo, mensaje }`, igual que seg, cfg, seq y evt. */
+/** Errores de dominio de /v1/org como `{ codigo, mensaje }`, igual que seg, cfg, seq y evt. LOGO_INVALIDO suma su `motivo`. */
 @Catch(DomainError)
 export class OrgFiltro implements ExceptionFilter {
   catch(error: DomainError, host: ArgumentsHost): void {
@@ -30,6 +31,10 @@ export class OrgFiltro implements ExceptionFilter {
       .switchToHttp()
       .getResponse<Respuesta>()
       .status(estado)
-      .json({ codigo: CODIGOS_GENERICOS[error.code] ?? error.code, mensaje: error.message });
+      .json({
+        codigo: CODIGOS_GENERICOS[error.code] ?? error.code,
+        mensaje: error.message,
+        ...(error instanceof LogoInvalidoError && { motivo: error.motivo }),
+      });
   }
 }

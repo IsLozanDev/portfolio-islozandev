@@ -53,6 +53,7 @@ export class TablaComponent<Fila extends object> {
     { initialValue: false },
   );
   protected readonly tamanoActual = computed(() => this.tamanoPagina() ?? this.tamanosPagina()[0]);
+  protected readonly columnaInicio = computed(() => this.columnaConRol('inicio'));
   protected readonly columnaTitulo = computed(() => this.columnaConRol('titulo'));
   protected readonly columnaEstado = computed(() => this.columnaConRol('estado'));
   protected readonly columnasDetalle = computed(() => this.columnas().filter((columna) => columna.movil === 'detalle'));

@@ -43,4 +43,15 @@ describe('UbigeosService', () => {
     await reintento;
     expect(servicio.estado()).toBe('LISTO');
   });
+
+  it('porCodigo busca en la lista cargada y da null si no cargó o no existe', async () => {
+    expect(servicio.porCodigo('040103')).toBeNull();
+
+    const carga = servicio.cargar();
+    http.expectOne(URL_UBIGEOS).flush([CAYMA]);
+    await carga;
+
+    expect(servicio.porCodigo('040103')).toEqual({ codigo: '040103', distrito: 'CAYMA', provincia: 'AREQUIPA', departamento: 'AREQUIPA' });
+    expect(servicio.porCodigo('150122')).toBeNull();
+  });
 });

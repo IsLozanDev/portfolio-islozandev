@@ -1,6 +1,7 @@
 import type { TonoEstado } from './tono-estado';
 
-export type RolMovil = 'titulo' | 'detalle' | 'estado';
+/** `inicio` va antes del título (p. ej. una miniatura) y pinta su plantilla `vitCeldaTabla`. */
+export type RolMovil = 'inicio' | 'titulo' | 'detalle' | 'estado';
 
 export interface ColumnaTabla<Fila> {
   clave: keyof Fila & string;

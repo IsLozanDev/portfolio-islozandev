@@ -1,5 +1,5 @@
-/** Códigos sembrados en `arc.categoria` (db/01m_arc.sql). El producto no crea categorías. */
-export const CODIGOS_CATEGORIA = ['IMAGEN', 'DOCUMENTO', 'CPE_XML', 'EVIDENCIA', 'ADJUNTO_SOPORTE'] as const;
+/** Códigos sembrados en `arc.categoria` (db/01m_arc.sql y LOGO en db/01y_org_identidad_empresa.sql). El producto no crea categorías. */
+export const CODIGOS_CATEGORIA = ['IMAGEN', 'DOCUMENTO', 'CPE_XML', 'EVIDENCIA', 'ADJUNTO_SOPORTE', 'LOGO'] as const;
 export type CodigoCategoria = (typeof CODIGOS_CATEGORIA)[number];
 
 const TAMANO_MINIMO_BYTES = 1;

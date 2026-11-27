@@ -146,6 +146,9 @@ export class AltaTenant {
           nombreComercial: comando.nombreComercial ?? null,
           direccionFiscal: null,
           ubigeo: null,
+          telefono: null,
+          correo: null,
+          sitioWeb: null,
         });
         await sembrarSeries.ejecutar({ empresaId, sucursalId: sucursalPrincipalId, creadoPor: comando.actor.usuarioId });
         const propietario = await invitarPropietario.registrar(identidad, comando.actor.usuarioId);

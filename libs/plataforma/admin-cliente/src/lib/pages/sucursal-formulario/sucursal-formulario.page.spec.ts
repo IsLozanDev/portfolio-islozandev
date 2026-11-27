@@ -4,11 +4,12 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { CONFIG_AUTH } from '@vitrina/shared/auth';
+import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { AvisosService } from '@vitrina/shared/ui';
 import { vi } from 'vitest';
+import { DobleSesion } from '../../../testing/doble-sesion';
 import { API_URL } from '../../../testing/http-de-prueba';
-import { MENSAJES_ORGANIZACION, MENSAJES_SUCURSALES } from '../../models/mensajes-organizacion';
+import { MENSAJES_ORGANIZACION, MENSAJES_SUCURSALES, MENSAJES_VALIDACION_ORGANIZACION, TEXTOS_UBIGEO_ORGANIZACION } from '../../models/mensajes-organizacion';
 import { RecargaContextoService } from '../../services/recarga-contexto.service';
 import { SucursalFormularioPage } from './sucursal-formulario.page';
 
@@ -32,11 +33,19 @@ const CENTRO = {
 @Component({ selector: 'vit-destino-sucursal-formulario', template: '' })
 class Destino {}
 
+const URL_UBIGEOS = `${API_URL}/catalogos/UBIGEO/items`;
+const ITEMS_UBIGEO = [
+  { codigo: '150122', nombre: 'MIRAFLORES', atributos: { departamento: 'LIMA', provincia: 'LIMA' } },
+  { codigo: '040103', nombre: 'CAYMA', atributos: { departamento: 'AREQUIPA', provincia: 'AREQUIPA' } },
+];
+const PERMISO_CATALOGO = 'plat.catalogo.leer';
+
 describe('SucursalFormularioPage', () => {
   let harness: RouterTestingHarness;
   let http: HttpTestingController;
   let avisos: { toast: ReturnType<typeof vi.fn> };
   let recarga: { recargar: ReturnType<typeof vi.fn> };
+  let sesion: DobleSesion;
 
   const elemento = () => harness.routeNativeElement as HTMLElement;
   const url = () => TestBed.inject(Router).url;
@@ -65,6 +74,7 @@ describe('SucursalFormularioPage', () => {
         ]),
         { provide: AvisosService, useValue: avisos },
         { provide: RecargaContextoService, useValue: recarga },
+        { provide: SesionService, useValue: sesion },
         { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL } },
       ],
     });
@@ -96,12 +106,15 @@ describe('SucursalFormularioPage', () => {
     await escribir('codigo', 'CAYMA');
     await escribir('nombre', 'Cayma');
     await escribir('establecimiento', '0002');
-    await escribir('ubigeo', '040103');
   }
+
+  const edicion = () => http.expectOne((solicitud) => solicitud.method === 'PUT' && solicitud.url === `${URL_SUCURSALES}/s-centro`);
+  const enPagina = (selector: string) => elemento().querySelector<HTMLElement>(selector);
 
   beforeEach(() => {
     avisos = { toast: vi.fn() };
     recarga = { recargar: vi.fn(async () => undefined) };
+    sesion = new DobleSesion();
   });
 
   afterEach(() => http.verify());
@@ -118,7 +131,7 @@ describe('SucursalFormularioPage', () => {
       nombre: 'Cayma',
       codigo_establecimiento_sunat: '0002',
       direccion: null,
-      ubigeo: '040103',
+      ubigeo: null,
       telefono: null,
       zona_horaria: 'America/Lima',
     });
@@ -166,11 +179,12 @@ describe('SucursalFormularioPage', () => {
     expect(ayuda()).toBe(MENSAJES_SUCURSALES.ayudaPrincipal);
 
     await escribir('telefono', '054-123456');
+    expect(campo('telefono')?.value).toBe('(054) 123-456');
     await enviar();
 
     const peticion = http.expectOne(`${URL_SUCURSALES}/s-centro`);
     expect(peticion.request.method).toBe('PUT');
-    expect(peticion.request.body).toMatchObject({ version: 2, codigo_establecimiento_sunat: '0000', telefono: '054-123456' });
+    expect(peticion.request.body).toMatchObject({ version: 2, codigo_establecimiento_sunat: '0000', telefono: '+5154123456', ubigeo: '040101' });
     peticion.flush(null, { status: 204, statusText: 'No Content' });
     await estable();
 
@@ -211,5 +225,65 @@ describe('SucursalFormularioPage', () => {
 
     expect(elemento().textContent).toContain(MENSAJES_SUCURSALES.noExiste);
     expect(elemento().querySelector('form')).toBeNull();
+  });
+
+  describe('ubigeo y teléfono (spec 17d)', () => {
+    it('sin plat.catalogo.leer el ubigeo queda deshabilitado con su aviso y conserva el código', async () => {
+      await abrirEdicion(CENTRO);
+
+      http.expectNone(URL_UBIGEOS);
+      expect(campo('ubigeo')?.disabled).toBe(true);
+      expect(campo('ubigeo')?.value).toBe('040101');
+      expect(enPagina('[data-prueba=ayuda-ubigeo]')?.textContent?.trim()).toBe(TEXTOS_UBIGEO_ORGANIZACION.sinPermiso);
+    });
+
+    it('con el catálogo, el ubigeo guardado se ve con su nombre y «cayma» se elige de la lista', async () => {
+      sesion.conPermisos(PERMISO_CATALOGO);
+      await abrirEdicion({ ...CENTRO, ubigeo: '150122' });
+      http.expectOne(URL_UBIGEOS).flush(ITEMS_UBIGEO);
+      await estable();
+      expect(campo('ubigeo')?.value).toBe('LIMA / LIMA / MIRAFLORES');
+
+      campo('ubigeo')?.focus();
+      await escribir('ubigeo', 'cayma');
+      const opciones = [...document.querySelectorAll<HTMLElement>('[data-prueba="opcion-ubigeo"]')];
+      expect(opciones.map((opcion) => opcion.textContent?.trim())).toEqual(['AREQUIPA / AREQUIPA / CAYMA']);
+      opciones[0]?.click();
+      await estable();
+
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ ubigeo: '040103' });
+    });
+
+    it('un distrito escrito sin elegirlo de la lista no deja guardar', async () => {
+      sesion.conPermisos(PERMISO_CATALOGO);
+      await abrir('/admin/sucursales/nueva?empresa=e-sabores');
+      http.expectOne(URL_UBIGEOS).flush(ITEMS_UBIGEO);
+      await llenarCayma();
+      await escribir('ubigeo', 'cayma');
+      await enviar();
+
+      http.expectNone(URL_SUCURSALES_SABORES);
+      expect(enPagina('vit-ubigeo-autocompletar mat-error')?.textContent?.trim()).toBe(TEXTOS_UBIGEO_ORGANIZACION.error);
+    });
+
+    it('un teléfono viejo se abre sin error con un aviso, pide corregirlo al guardar y se guarda en E.164', async () => {
+      await abrirEdicion({ ...CENTRO, telefono: 'anexo 12' });
+
+      expect(enPagina('[data-aviso=telefono-anterior]')?.textContent).toContain(MENSAJES_SUCURSALES.telefonoAnterior('anexo 12'));
+      expect(campo('telefono')?.value).toBe('anexo 12');
+      expect(enPagina('[data-error=telefono]')).toBeNull();
+
+      await enviar();
+      http.expectNone(`${URL_SUCURSALES}/s-centro`);
+      expect(enPagina('[data-error=telefono]')?.textContent?.trim()).toBe(MENSAJES_SUCURSALES.corregirTelefono);
+
+      await escribir('telefono', '9876');
+      expect(enPagina('[data-error=telefono]')?.textContent?.trim()).toBe(MENSAJES_VALIDACION_ORGANIZACION.telefonoPeru);
+
+      await escribir('telefono', '987654321');
+      await enviar();
+      expect(edicion().request.body).toMatchObject({ telefono: '+51987654321' });
+    });
   });
 });

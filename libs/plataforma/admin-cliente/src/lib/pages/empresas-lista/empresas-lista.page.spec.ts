@@ -1,3 +1,4 @@
+import { BreakpointObserver, type BreakpointState } from '@angular/cdk/layout';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting, type TestRequest } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
@@ -5,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { of } from 'rxjs';
 import { CONFIG_AUTH, SesionService } from '@vitrina/shared/auth';
 import { TablaComponent } from '@vitrina/shared/ui';
 import { DobleSesion } from '../../../testing/doble-sesion';
@@ -19,9 +21,17 @@ const SABORES = {
   nombre_comercial: null,
   direccion_fiscal: null,
   ubigeo: '040101',
+  telefono: null,
+  correo: null,
+  sitio_web: null,
+  logo_archivo_id: null,
   activo: true,
   version: 1,
 };
+
+const PERMISO_DESCARGAR = 'plat.archivo.descargar';
+const URL_LOGO = 'https://storage.ejemplo/logo-sabores.png';
+const DELIVERY = { ...SABORES, id: 'e-delivery', ruc: '20612223334', razon_social: 'Delivery del Sur SAC' };
 
 @Component({ selector: 'vit-destino-empresas-lista', template: '' })
 class Destino {}
@@ -40,7 +50,8 @@ describe('EmpresasListaPage', () => {
     await harness.fixture.whenStable();
   }
 
-  async function abrir(ruta = '/admin/empresas'): Promise<TestRequest> {
+  async function abrir(ruta = '/admin/empresas', enCelular = false): Promise<TestRequest> {
+    const ancho: BreakpointState = { matches: enCelular, breakpoints: {} };
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -51,6 +62,7 @@ describe('EmpresasListaPage', () => {
         ]),
         { provide: SesionService, useValue: sesion },
         { provide: CONFIG_AUTH, useValue: { apiUrl: API_URL } },
+        { provide: BreakpointObserver, useValue: { observe: () => of(ancho) } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -121,5 +133,45 @@ describe('EmpresasListaPage', () => {
     await responder(await abrir(), { items: [], total: 0 });
     expect(elemento().textContent).toContain('No hay empresas registradas.');
     expect(url()).toBe('/admin/empresas');
+  });
+
+  describe('miniatura del logo (spec 17d)', () => {
+    const miniaturas = () => [...elemento().querySelectorAll<HTMLElement>('vit-logo-empresa')];
+    const firmaDe = (archivoId: string) => http.expectOne((solicitud) => solicitud.url === `${API_URL}/archivos/${archivoId}/descarga`);
+    const conLogo = { ...SABORES, logo_archivo_id: 'logo-sabores' };
+
+    async function listarConLogo(enCelular = false): Promise<void> {
+      await responder(await abrir('/admin/empresas', enCelular), { items: [conLogo, DELIVERY], total: 2 });
+      firmaDe('logo-sabores').flush({ url: URL_LOGO, expira_en: new Date(Date.now() + 900_000).toISOString() });
+      await estable();
+    }
+
+    it('muestra la miniatura de 32 px de la empresa con logo y la inicial en la que no tiene', async () => {
+      sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar, PERMISO_DESCARGAR);
+      await listarConLogo();
+
+      const [sabores, delivery] = miniaturas();
+      expect(sabores?.querySelector('img')?.src).toBe(URL_LOGO);
+      expect(sabores?.querySelector('[data-prueba=logo-empresa]')?.classList).toContain('size-8');
+      expect(delivery?.querySelector('img')).toBeNull();
+      expect(delivery?.textContent?.trim()).toBe('D');
+    });
+
+    it('en celular la miniatura va al inicio de la fila, antes de la razón social', async () => {
+      sesion.conPermisos(PERMISOS_ADMIN.organizacionConsultar, PERMISO_DESCARGAR);
+      await listarConLogo(true);
+
+      const fila = elemento().querySelector('li');
+      expect(fila?.firstElementChild?.querySelector('vit-logo-empresa img')?.getAttribute('src')).toBe(URL_LOGO);
+      expect(fila?.querySelector('.font-medium')?.textContent?.trim()).toBe('Sabores del Sur SAC');
+      expect(fila?.textContent).toContain('20512345671');
+    });
+
+    it('sin plat.archivo.descargar muestra las iniciales sin pedir ninguna URL', async () => {
+      await responder(await abrir(), { items: [conLogo, DELIVERY], total: 2 });
+
+      http.expectNone((solicitud) => solicitud.url.includes('/archivos/'));
+      expect(miniaturas().map((miniatura) => miniatura.textContent?.trim())).toEqual(['S', 'D']);
+    });
   });
 });

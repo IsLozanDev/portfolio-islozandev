@@ -16,6 +16,8 @@ export function estadoDe(archivo: Archivo): EstadoArchivo {
     estado: archivo.estado,
     ...(archivo.motivoRechazo !== null && { motivoRechazo: archivo.motivoRechazo }),
     categoria: archivo.categoria,
+    entidadTipo: archivo.entidadTipo,
+    entidadId: archivo.entidadId,
     nombreOriginal: archivo.nombreOriginal,
     ...(bytes !== null && { bytes }),
     ...(hashSha256 !== null && { hashSha256 }),

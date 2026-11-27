@@ -1,11 +1,14 @@
 import { ValidationError, type EventPublisher, type IdGenerator, type TenantContext, type UnitOfWork } from '@vitrina/plataforma/kernel';
 import { advertenciasDelPadron } from '../domain/advertencias-padron.js';
-import { Empresa, type DatosEmpresa } from '../domain/empresa.js';
+import { Empresa, type DatosEmpresa, type LogoEdicion } from '../domain/empresa.js';
+import { LogoInvalidoError } from '../domain/errores.js';
+import { LogoValidado } from '../domain/logo.js';
 import { Sucursal } from '../domain/sucursal.js';
 import { Ruc } from '../domain/valores.js';
 import { buscarTenant, cupoSucursales, existe } from './comunes.js';
 import type { PadronRucPort } from './ports/padron-ruc.port.js';
 import type { RepositorioEmpresas, RepositorioSucursales, RepositorioSuscripciones, RepositorioTenants } from './ports/repositorios.js';
+import type { ValidadorLogoPort } from './ports/validador-logo.port.js';
 import { publicarEventos } from './publicar-eventos.js';
 import { exigirVersion } from './version-obsoleta.js';
 
@@ -16,10 +19,15 @@ export interface RegistrarEmpresaComando {
   nombreComercial: string | null;
   direccionFiscal: string | null;
   ubigeo: string | null;
+  telefono: string | null;
+  correo: string | null;
+  sitioWeb: string | null;
 }
 
 export interface EditarEmpresaComando extends DatosEmpresa {
   empresaId: string;
+  /** null quita el logo. */
+  logoArchivoId: string | null;
   /** La que leyó el cliente. */
   version: number;
 }
@@ -77,17 +85,26 @@ export class EditarEmpresa {
     private readonly contexto: TenantContext,
     private readonly eventos: EventPublisher,
     private readonly repos: Pick<EmpresaRepos, 'tenants' | 'empresas'>,
+    private readonly validadorLogo: ValidadorLogoPort,
   ) {}
 
-  async ejecutar({ empresaId, version, ...datos }: EditarEmpresaComando): Promise<void> {
+  async ejecutar({ empresaId, version, logoArchivoId, ...datos }: EditarEmpresaComando): Promise<void> {
     await this.uow.run(async () => {
       (await buscarTenant(this.repos.tenants, this.contexto)).exigirOperativo();
       const empresa = existe(await this.repos.empresas.buscar(empresaId), 'La empresa no existe');
       exigirVersion(empresa, version);
 
-      empresa.editar(datos);
+      empresa.editar(datos, await this.logoTrasValidar(empresa, logoArchivoId));
       await this.repos.empresas.guardar(empresa);
       await publicarEventos(this.eventos, empresa);
     });
+  }
+
+  /** Solo un logo nuevo pasa por ARC: el que ya tenía o quitarlo no se validan. */
+  private async logoTrasValidar(empresa: Empresa, logoArchivoId: string | null): Promise<LogoEdicion> {
+    if (logoArchivoId === null || logoArchivoId === empresa.logoArchivoId) return logoArchivoId;
+    const resultado = await this.validadorLogo.validar(logoArchivoId, empresa.id);
+    if (!resultado.valido) throw new LogoInvalidoError(resultado.motivo);
+    return LogoValidado.confirmado(logoArchivoId);
   }
 }

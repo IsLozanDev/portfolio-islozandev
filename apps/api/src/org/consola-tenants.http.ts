@@ -71,6 +71,12 @@ export class EmpresaPrincipalDto {
 
   @ApiProperty()
   razon_social!: string;
+
+  @ApiProperty({ nullable: true, description: 'URL firmada del logo, válida 300 s; null sin logo o si el logo no está disponible' })
+  logo_url!: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time', description: 'Vence logo_url' })
+  logo_expira_en!: string | null;
 }
 
 export class CambioDeEstadoDto {
@@ -147,6 +153,8 @@ export function tenantDetalleDto(tenant: TenantDetalle): TenantDetalleDto {
       id: tenant.empresaPrincipal.id,
       ruc: tenant.empresaPrincipal.ruc,
       razon_social: tenant.empresaPrincipal.razonSocial,
+      logo_url: tenant.empresaPrincipal.logoUrl,
+      logo_expira_en: tenant.empresaPrincipal.logoExpiraEn?.toISOString() ?? null,
     },
     historial: tenant.historial.map(cambioDeEstadoDto),
   };

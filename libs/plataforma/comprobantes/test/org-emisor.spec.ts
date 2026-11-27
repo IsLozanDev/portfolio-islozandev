@@ -12,6 +12,10 @@ const EMPRESA: EmpresaListada = {
   nombreComercial: 'EL SAZON',
   direccionFiscal: 'AV. LARCO 123, MIRAFLORES',
   ubigeo: '150122',
+  telefono: null,
+  correo: null,
+  sitioWeb: null,
+  logoArchivoId: null,
   activo: true,
   version: 3,
 };

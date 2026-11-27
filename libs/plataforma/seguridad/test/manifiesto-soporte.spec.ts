@@ -20,7 +20,7 @@ describe('Manifiesto PLAT 1.27.0: bitácora y soporte (spec 18)', () => {
   });
 
   it('declara los tres permisos con alcance TENANT; solo autorizar es sensible (TR-RN-009)', () => {
-    expect(manifiesto.version).toBe('1.30.0');
+    expect(manifiesto.version).toBe('1.31.0');
     const declarados = [PERMISOS_SEG.seguridadBitacora, PERMISOS_SEG.soporteAutorizar, PERMISOS_SEG.soporteSolicitar].map((codigo) => [
       codigo,
       permiso(codigo)?.alcance_minimo,

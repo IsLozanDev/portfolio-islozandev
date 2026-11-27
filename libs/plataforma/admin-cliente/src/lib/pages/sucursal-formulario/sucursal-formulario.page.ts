@@ -2,16 +2,19 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AccionesFormularioComponent, AvisosService, CargandoComponent, EstadoVacioComponent } from '@vitrina/shared/ui';
+import { UbigeoAutocompletarComponent } from '@vitrina/plataforma/personas-ui';
+import { AccionesFormularioComponent, AvisosService, CargandoComponent, EstadoVacioComponent, TelefonoDirective } from '@vitrina/shared/ui';
 import { aErrorAdmin, CODIGO_NO_ENCONTRADO, CODIGO_VERSION_OBSOLETA } from '../../models/error-admin';
-import { MENSAJES_ORGANIZACION, MENSAJES_SUCURSALES } from '../../models/mensajes-organizacion';
+import { MENSAJES_ORGANIZACION, MENSAJES_SUCURSALES, TEXTOS_UBIGEO_ORGANIZACION } from '../../models/mensajes-organizacion';
 import type { Sucursal } from '../../models/sucursal';
 import { RecargaContextoService } from '../../services/recarga-contexto.service';
 import { SucursalesCliente } from '../../services/sucursales.cliente';
+import { UbigeosOrganizacionService } from '../../services/ubigeos-organizacion.service';
 import { PARAMETRO_URL_ORGANIZACION } from '../../utils/filtro-url-organizacion';
-import { aDatosSucursal, cargarSucursal, crearGrupoSucursal, faltaEstablecimiento } from '../../utils/formulario-sucursal';
+import { aDatosSucursal, cargarSucursal, crearGrupoSucursal, faltaEstablecimiento, telefonoAnterior } from '../../utils/formulario-sucursal';
 import { mensajeDeErrorOrganizacion } from '../../utils/validadores-organizacion';
 
 const PARAMETRO_SUCURSAL_ID = 'sucursalId';
@@ -21,11 +24,24 @@ const RUTA_SUCURSALES = 'sucursales';
 /** Alta (`/sucursales/nueva?empresa=`) y edición (`/sucursales/:sucursalId/editar`) de una sucursal (U-05, TR-RF-003). */
 @Component({
   selector: 'vit-sucursal-formulario',
-  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule, MatInputModule, RouterLink, AccionesFormularioComponent, CargandoComponent, EstadoVacioComponent],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    RouterLink,
+    AccionesFormularioComponent,
+    CargandoComponent,
+    EstadoVacioComponent,
+    TelefonoDirective,
+    UbigeoAutocompletarComponent,
+  ],
   templateUrl: './sucursal-formulario.page.html',
 })
 export class SucursalFormularioPage {
   private readonly sucursales = inject(SucursalesCliente);
+  private readonly ubigeos = inject(UbigeosOrganizacionService);
   private readonly recargaContexto = inject(RecargaContextoService);
   private readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
@@ -36,6 +52,8 @@ export class SucursalFormularioPage {
   protected readonly rutaSucursales = RUTA_SUCURSALES;
   protected readonly rutaMontaje = this.ruta.parent;
   protected readonly mensajeDeError = mensajeDeErrorOrganizacion;
+  protected readonly textosUbigeo = TEXTOS_UBIGEO_ORGANIZACION;
+  protected readonly sinPermisoCatalogo = this.ubigeos.sinPermiso();
   protected readonly grupo = crearGrupoSucursal();
   /** null en el alta. */
   protected readonly sucursalId = this.ruta.snapshot.paramMap.get(PARAMETRO_SUCURSAL_ID);
@@ -53,6 +71,8 @@ export class SucursalFormularioPage {
     if (sucursal?.esPrincipal) return MENSAJES_SUCURSALES.ayudaPrincipal;
     return sucursal && faltaEstablecimiento(sucursal) ? MENSAJES_SUCURSALES.ayudaAsignarEstablecimiento : null;
   });
+  /** Spec 17d: el guardado antes del formato E.164; se avisa al abrir y se pide corregir al guardar. */
+  protected readonly telefonoAnterior = computed(() => telefonoAnterior(this.sucursal()));
 
   constructor() {
     if (this.sucursalId) {
@@ -61,6 +81,14 @@ export class SucursalFormularioPage {
     }
     // El alta necesita la empresa: sin ella, a la lista, que elige una.
     if (!this.empresaIdDelAlta) void this.volverALista(null);
+    else if (this.sinPermisoCatalogo) this.grupo.controls.ubigeo.disable();
+  }
+
+  /** Mientras siga el teléfono viejo, el error pide corregirlo; si ya se escribió otro, el del formato. */
+  protected mensajeDelTelefono(): string | null {
+    const telefono = this.grupo.controls.telefono;
+    const sigueElAnterior = telefono.value !== null && telefono.value === this.telefonoAnterior();
+    return sigueElAnterior ? MENSAJES_SUCURSALES.corregirTelefono : this.mensajeDeError(telefono.errors);
   }
 
   /** TR-RNF-008: trae lo que guardó el otro usuario y descarta lo editado aquí. */
@@ -126,7 +154,7 @@ export class SucursalFormularioPage {
     this.versionObsoleta.set(false);
     try {
       const sucursal = await this.sucursales.consultar(sucursalId);
-      cargarSucursal(this.grupo, sucursal);
+      cargarSucursal(this.grupo, sucursal, await this.ubigeos.valorGuardado(this.grupo.controls.ubigeo, sucursal.ubigeo));
       this.sucursal.set(sucursal);
     } catch (error) {
       const errorAdmin = aErrorAdmin(error);

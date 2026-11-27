@@ -1,6 +1,6 @@
 # SPEC 62 — Facturación electrónica: lista de emisores por empresa y página del emisor con proveedor, certificado, prueba en beta y paso a producción
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 49, SPEC 50, SPEC 51c, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d, SPEC 15e
 > **Date:** 2026-11-25
 > **Objective:** Dar al encargado de facturación, en la app de administración, una lista de las empresas del tenant con el estado de su emisor electrónico y una página por empresa donde configura el proveedor y la credencial, sube el certificado, lanza la prueba en beta y ve su resultado, y pasa a producción con confirmación y aal2 (UI de TR-RF-052).

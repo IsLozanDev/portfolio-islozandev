@@ -68,6 +68,9 @@ export interface EstadoArchivo {
   estado: CodigoEstadoArchivo;
   motivoRechazo?: MotivoRechazo;
   categoria: string;
+  /** La entidad dueña, para que otro módulo confirme que el archivo es de la suya (spec 17d). */
+  entidadTipo: string;
+  entidadId: string;
   nombreOriginal: string;
   bytes?: number;
   hashSha256?: string;

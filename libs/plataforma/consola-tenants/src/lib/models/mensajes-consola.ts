@@ -23,6 +23,7 @@ export const MENSAJES_DETALLE = {
   vigenteHasta: 'Vigente hasta',
   sinVencimiento: 'Sin vencimiento',
   empresaPrincipal: 'Empresa principal',
+  logoDe: 'Logo de',
   sinEmpresa: 'Sin empresa principal',
   ruc: 'RUC',
   historial: 'Historial de estados',

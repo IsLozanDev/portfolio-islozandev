@@ -5,6 +5,7 @@ const texto = { type: 'string' };
 const nulo = { type: 'null' };
 const textoNulo = { anyOf: [texto, nulo] };
 const uuid = { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' };
+const uuidNulo = { anyOf: [uuid, nulo] };
 const enteroNulo = { anyOf: [{ type: 'integer', minimum: 1 }, nulo] };
 const estadoTenant = { enum: ['PRUEBA', 'ACTIVO', 'SUSPENDIDO', 'BAJA'] };
 const productoCodigo = { enum: ['REST', 'PSI', 'COL', 'LIB', 'GYM', 'CLI', 'DOC', 'ECO', 'LEX'] };
@@ -18,7 +19,12 @@ const objeto = (properties: Record<string, object>) => ({
 });
 
 const cambioEstado = objeto({ estado_anterior: estadoTenant, motivo: texto, fecha_efectiva: texto });
-const empresa = objeto({ ruc: { type: 'string', pattern: '^\\d{11}$' }, razon_social: texto, nombre_comercial: textoNulo });
+const empresa = objeto({
+  ruc: { type: 'string', pattern: '^\\d{11}$' },
+  razon_social: texto,
+  nombre_comercial: textoNulo,
+  logo_archivo_id: uuidNulo,
+});
 const sucursal = objeto({
   empresa_id: uuid,
   codigo: texto,
@@ -26,7 +32,7 @@ const sucursal = objeto({
   es_principal: { type: 'boolean' },
   codigo_establecimiento_sunat: textoNulo,
 });
-const unidad = objeto({ empresa_id: uuid, sucursal_id: { anyOf: [uuid, nulo] }, tipo: texto, codigo: texto });
+const unidad = objeto({ empresa_id: uuid, sucursal_id: uuidNulo, tipo: texto, codigo: texto });
 
 /** Esquemas de los eventos de org, todos en schema_version 1. */
 export const ESQUEMAS_ORG: Readonly<Record<string, object>> = {

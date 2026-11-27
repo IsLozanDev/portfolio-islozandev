@@ -78,7 +78,13 @@ describe('TenantsCliente', () => {
       estado_motivo: 'Deuda de 60 días',
       estado_cambiado_en: '2026-10-20T15:00:00.000Z',
       version: 3,
-      empresa_principal: { id: 'e-1', ruc: '20512345671', razon_social: 'Fuerza Total S.A.C.' },
+      empresa_principal: {
+        id: 'e-1',
+        ruc: '20512345671',
+        razon_social: 'Fuerza Total S.A.C.',
+        logo_url: 'https://storage.ejemplo/logo.png',
+        logo_expira_en: '2026-11-27T15:05:00.000Z',
+      },
       historial: [
         {
           estado_anterior: 'ACTIVO',
@@ -93,7 +99,13 @@ describe('TenantsCliente', () => {
     await expect(respuesta).resolves.toMatchObject({
       estadoMotivo: 'Deuda de 60 días',
       version: 3,
-      empresaPrincipal: { id: 'e-1', ruc: '20512345671', razonSocial: 'Fuerza Total S.A.C.' },
+      empresaPrincipal: {
+        id: 'e-1',
+        ruc: '20512345671',
+        razonSocial: 'Fuerza Total S.A.C.',
+        logoUrl: 'https://storage.ejemplo/logo.png',
+        logoExpiraEn: '2026-11-27T15:05:00.000Z',
+      },
       historial: [{ estadoAnterior: 'ACTIVO', estadoNuevo: 'SUSPENDIDO', motivo: 'Deuda de 60 días', registradoEn: '2026-10-20T15:00:01.000Z' }],
     });
   });
