@@ -9,6 +9,7 @@ import { BYTES_MAXIMOS_CERTIFICADO, CargarCertificado } from '../src/application
 import { ConfigurarEmisor } from '../src/application/configurar-emisor.js';
 import { ConsultarEmisor } from '../src/application/consultar-emisor.js';
 import { HabilitarProduccion } from '../src/application/habilitar-produccion.js';
+import { ListarEmisores } from '../src/application/listar-emisores.js';
 import { SolicitarPruebaEmisor } from '../src/application/solicitar-prueba-emisor.js';
 import { Emisor } from '../src/domain/emisor.js';
 import { PERMISOS_FE } from '../src/domain/permisos-fe.js';
@@ -74,6 +75,7 @@ describe('HTTP /v1/fe/emisores (TR-RF-052)', () => {
         { provide: CargarCertificado, useValue: new CargarCertificado(dobles) },
         { provide: SolicitarPruebaEmisor, useValue: new SolicitarPruebaEmisor(dobles) },
         { provide: HabilitarProduccion, useValue: new HabilitarProduccion(dobles) },
+        { provide: ListarEmisores, useValue: new ListarEmisores(dobles) },
       ],
     }).compile();
     app = modulo.createNestApplication({ logger: false });
@@ -188,6 +190,25 @@ describe('HTTP /v1/fe/emisores (TR-RF-052)', () => {
     expect(consultado.status).toBe(200);
   });
 
+  it('spec 62: GET /v1/fe/emisores con solo plat.fe.consultar y aal1 → 200; sin el permiso → 403', async () => {
+    await put(cuerpoConfigurar);
+    permisosDelActor = [PERMISOS_FE.consultar];
+    const lista = await http().get('/v1/fe/emisores').set('X-Sucursal-Id', SUCURSAL).set('x-prueba-aal', 'aal1');
+    expect(lista.status).toBe(200);
+    expect(lista.body).toEqual([
+      {
+        empresa_id: EMPRESA,
+        ruc: '20601234561',
+        razon_social: 'EMPRESA DE PRUEBA SAC',
+        emisor: { estado: 'BORRADOR', proveedor: 'SIMULADO', ambiente: 'BETA', certificado_vence_en: null, prueba_estado: null },
+      },
+    ]);
+    expect(JSON.stringify(lista.body)).not.toMatch(/MODDATOS|huella|url|clave|secreto/);
+
+    permisosDelActor = [PERMISOS_FE.configurar];
+    expect((await http().get('/v1/fe/emisores').set('X-Sucursal-Id', SUCURSAL)).status).toBe(403);
+  });
+
   it('sin plat.fe.configurar → 403 en PUT y POST; sin plat.fe.consultar → 403 en GET', async () => {
     permisosDelActor = [PERMISOS_FE.consultar];
     expect((await put(cuerpoConfigurar)).status).toBe(403);
@@ -284,6 +305,11 @@ describe('HTTP /v1/fe/emisores (TR-RF-052)', () => {
     for (const nombre of ['EmisorDto', 'CertificadoEmisorDto', 'PruebaEmisorDto']) {
       expect(propiedades(nombre).filter((campo) => /clave|secreto|pfx|token/.test(campo))).toEqual([]);
     }
+    const lista = documento.paths['/v1/fe/emisores'].get;
+    expect(Object.keys(lista?.responses ?? {}).sort()).toEqual(['200', '401', '403']);
+    expect(JSON.stringify(lista?.parameters ?? [])).not.toContain('empresaId');
+    expect(propiedades('EmpresaConEmisorDto')).toEqual(['empresa_id', 'ruc', 'razon_social', 'emisor']);
+    expect(propiedades('ResumenEmisorDto')).toEqual(['estado', 'proveedor', 'ambiente', 'certificado_vence_en', 'prueba_estado']);
     expect(propiedades('ConfigurarEmisorDto')).toContain('url_proveedor');
     expect(propiedades('ConfigurarEmisorDto')).toContain('clave');
   });

@@ -28,6 +28,17 @@ export class RepositorioEmisoresTypeOrm implements RepositorioEmisores {
     return this.buscarDelTenant({ id: emisorId });
   }
 
+  async porEmpresas(empresaIds: string[]): Promise<Emisor[]> {
+    if (empresaIds.length === 0) return [];
+    const filas = await this.manager
+      .getRepository(EmisorEntidad)
+      .createQueryBuilder('emisor')
+      .where('emisor.tenantId = :tenantId', { tenantId: this.tenantId })
+      .andWhere('emisor.empresaId IN (:...empresaIds)', { empresaIds })
+      .getMany();
+    return filas.map(emisorDesdeFila);
+  }
+
   /** Dos altas a la vez de la misma empresa: la segunda choca con uq_emisor_empresa y responde como versión obsoleta. */
   async insertar(emisor: Emisor): Promise<void> {
     try {

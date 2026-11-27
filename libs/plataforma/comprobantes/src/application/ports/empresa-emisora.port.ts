@@ -19,4 +19,6 @@ export interface EstablecimientoPrincipalPort {
 export interface EmpresaEmisoraPort {
   /** Del tenant del contexto. EmpresaNoEncontradaError si no existe (también si es de otro tenant). */
   obtener(empresaId: string): Promise<EmpresaEmisora>;
+  /** Las empresas activas del tenant del contexto, por razón social. */
+  listarActivas(): Promise<EmpresaEmisora[]>;
 }

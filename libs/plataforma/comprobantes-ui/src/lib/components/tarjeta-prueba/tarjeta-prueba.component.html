@@ -1,0 +1,48 @@
+<div class="flex flex-col gap-5">
+  <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.explicacion }}</p>
+
+  @if (enProceso()) {
+    <div class="flex flex-col gap-2" data-prueba="en-proceso">
+      <mat-progress-bar mode="indeterminate" />
+      <p class="m-0 text-sm" role="status">{{ mensajes.enProceso(prueba()?.numero ?? 0) }}</p>
+    </div>
+    @if (agotado()) {
+      <div class="flex flex-wrap items-center gap-3 rounded-tarjeta bg-chip-advertencia p-3 text-sm text-sobre-chip-advertencia" data-prueba="agotado">
+        <span class="flex-1">{{ sigueEnProceso }}</span>
+        <button mat-stroked-button type="button" data-accion="actualizar" (click)="actualizar.emit()">{{ mensajes.actualizar }}</button>
+      </div>
+    }
+  } @else if (resultado(); as resultadoPrueba) {
+    <div
+      class="flex items-start gap-3 rounded-tarjeta p-3 text-sm"
+      [class]="resultadoPrueba.tipo === 'aceptada' ? 'bg-chip-exito text-sobre-chip-exito' : 'bg-contenedor-error text-sobre-contenedor-error'"
+      [attr.data-prueba]="resultadoPrueba.tipo"
+      role="status"
+    >
+      <mat-icon aria-hidden="true">{{ resultadoPrueba.tipo === 'aceptada' ? 'check_circle' : 'error' }}</mat-icon>
+      <div class="flex flex-col gap-1">
+        <span class="font-medium">{{ resultadoPrueba.texto }}</span>
+        <span>{{ resultadoPrueba.detalle }}</span>
+      </div>
+    </div>
+  } @else {
+    <p class="m-0 flex items-center gap-2 text-sm text-sobre-superficie-variante">
+      <mat-icon aria-hidden="true">science</mat-icon>{{ mensajes.aunNoHay }}
+    </p>
+  }
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="prueba">{{ mensajeError }}</p>
+  }
+
+  @if (enProduccion()) {
+    <p class="m-0 border-t border-borde pt-4 text-sm text-sobre-superficie-variante" data-motivo="prueba">{{ sinPruebasEnProduccion }}</p>
+  } @else {
+    <div *siPermiso="permisos.configurar" class="flex justify-end border-t border-borde pt-4">
+      <button mat-flat-button type="button" data-accion="probar" [disabled]="enProceso() || solicitando()" (click)="ejecutar.emit()">
+        <mat-icon aria-hidden="true">{{ iconoBoton() }}</mat-icon>
+        {{ textoBoton() }}
+      </button>
+    </div>
+  }
+</div>

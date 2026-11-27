@@ -128,6 +128,9 @@
       ],
       "@vitrina/plataforma/consola-identidad": [
         "./libs/plataforma/consola-identidad/src/index.ts"
+      ],
+      "@vitrina/plataforma/comprobantes-ui": [
+        "./libs/plataforma/comprobantes-ui/src/index.ts"
       ]
     }
   }

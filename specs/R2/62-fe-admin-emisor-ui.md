@@ -1,6 +1,6 @@
 # SPEC 62 — Facturación electrónica: lista de emisores por empresa y página del emisor con proveedor, certificado, prueba en beta y paso a producción
 
-> **Status:** Borrador
+> **Status:** Aprobado
 > **Depends on:** SPEC 49, SPEC 50, SPEC 51c, SPEC 17c, SPEC 15b, SPEC 15c, SPEC 15d, SPEC 15e
 > **Date:** 2026-11-25
 > **Objective:** Dar al encargado de facturación, en la app de administración, una lista de las empresas del tenant con el estado de su emisor electrónico y una página por empresa donde configura el proveedor y la credencial, sube el certificado, lanza la prueba en beta y ve su resultado, y pasa a producción con confirmación y aal2 (UI de TR-RF-052).
@@ -286,6 +286,24 @@ Se recorre en claro, oscuro y 600 px, con la consola sin errores y capturas comp
 - **Sí:** «Pasar a producción» con `confirmarDestructiva` y sin motivo. No se puede volver a beta (TR-RNF-021). El back audita la acción.
 - **No:** acceso al emisor desde el formulario de la empresa. El menú alcanza, y no se toca `empresa-formulario`.
 - **No:** crear series de comprobantes desde el emisor: es del spec 60.
+
+### Decisiones tomadas al implementar (2026-11-26)
+
+- **Ruta del catálogo:** `GET /v1/catalogos/PROVEEDOR_FE/items`, la que expone el controlador y ya usa `personas-ui`; no `/v1/cat/catalogos/...`.
+- **`plat.catalogo.leer`:** antes de este spec solo lo tenían `PLAT_PROPIETARIO` y `PLAT_ADMIN_CONFIGURACION`, no «los demás roles de operación». Se suma a `PLAT_ENCARGADO_FACTURACION` igual, y el test del manifiesto de `catalogos` lo admite.
+- **`ErrorFe`** vive en `models/error-fe.ts`, como `error-personas.ts` (CLAUDE.md pone los errores propios en `models/`); `utils/solicitar.ts` solo mapea. El 413 sale con el código `ARCHIVO_DEMASIADO_GRANDE`.
+- **`SIMULADO`:** el catálogo lo lista en todos los ambientes; `ProveedoresFeService.descartar` lo quita de la lista cuando el `PUT` responde `PROVEEDOR_FE_INVALIDO`.
+- **Consulta de la prueba:** `SeguimientoPruebaService` emite `{ emisor, agotado }`; `agotado` es true en la consulta 40 si sigue `EN_PROCESO`.
+- **Aviso de vencimiento:** «Vence hoy», «Vence en 1 día», «Vence en N días» (advertencia) y «Vencido» (error), en días de calendario de Lima.
+- **Régimen de IGV:** las etiquetas son las del back («General», «Reducido para restaurantes»), sin los porcentajes del canvas.
+- **Encabezado de la página:** la razón social y el RUC salen de `GET /v1/fe/emisores`, porque `EmisorDto` no los trae y el rol no tiene `plat.organizacion.consultar`.
+- **Enlace del 422:** va a `/admin/empresas/:id/editar`; `/admin/empresas/:id` no existe.
+- **Pie de las tarjetas:** las acciones van en una fila con borde al final del cuerpo de cada tarjeta, no en `vitSeccionPie`: ese slot solo proyecta contenido escrito en la página y el formulario vive en la tarjeta.
+- **Entrada de las secciones:** componente `vit-entrada-seccion` (número o marca de hecho), porque el contexto de un `ng-template` no se tipa en plantillas estrictas.
+- **Lista en celular:** `vit-tabla` no admite detalle solo de celular; la celda del RUC suma «· proveedor · ambiente» con `max-[600px]:inline`. El vencimiento va en su propia línea de detalle.
+- **Nombre del proveedor en la lista:** del catálogo; sin `plat.catalogo.leer` se ve el código y la lista sigue.
+- **Prueba de rutas en `admin-cliente`:** usa los códigos de permiso como constantes locales; el lint prohíbe el import estático de una lib lazy.
+- **Presupuesto del bundle:** el aviso de 600 kB ya salta en `main` (698,65 kB); esta rama suma 0,6 kB.
 
 ## Riesgos
 

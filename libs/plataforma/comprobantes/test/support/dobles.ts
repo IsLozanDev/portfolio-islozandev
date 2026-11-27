@@ -193,6 +193,10 @@ export class RepositorioEmisoresMemoria implements RepositorioEmisores, Transacc
     return Promise.resolve(this.copia(this.delTenant().find((emisor) => emisor.id === emisorId)));
   }
 
+  porEmpresas(empresaIds: string[]): Promise<Emisor[]> {
+    return Promise.resolve(this.delTenant().filter((emisor) => empresaIds.includes(emisor.empresaId)).map((emisor) => Emisor.reconstituir(emisor.datos)));
+  }
+
   insertar(emisor: Emisor): Promise<void> {
     if (this.delTenant().some((otro) => otro.empresaId === emisor.empresaId)) throw new VersionObsoletaEmisorError();
     this.filas.push(Emisor.reconstituir(emisor.datos));
@@ -238,9 +242,18 @@ export class EmpresasMemoria implements EmpresaEmisoraPort {
   obtener(empresaId: string): Promise<EmpresaEmisora> {
     const empresa = this.empresas.get(empresaId);
     if (!empresa || empresa.tenantId !== this.contexto.current().tenantId) throw new EmpresaNoEncontradaError();
-    const { id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo } = empresa;
-    return Promise.resolve({ id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo });
+    return Promise.resolve(sinTenant(empresa));
   }
+
+  listarActivas(): Promise<EmpresaEmisora[]> {
+    const tenantId = this.contexto.current().tenantId;
+    const activas = [...this.empresas.values()].filter((empresa) => empresa.tenantId === tenantId && empresa.activa);
+    return Promise.resolve(activas.sort((una, otra) => una.razonSocial.localeCompare(otra.razonSocial)).map(sinTenant));
+  }
+}
+
+function sinTenant({ id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo }: EmpresaEmisora): EmpresaEmisora {
+  return { id, ruc, activa, razonSocial, nombreComercial, domicilioFiscal, ubigeo };
 }
 
 export class ProveedoresMemoria implements ProveedoresFe {

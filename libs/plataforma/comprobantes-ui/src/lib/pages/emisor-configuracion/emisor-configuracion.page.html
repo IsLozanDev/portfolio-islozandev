@@ -1,0 +1,119 @@
+<section class="flex max-w-[880px] flex-col gap-5">
+  <a mat-button class="self-start" routerLink=".." data-accion="volver">
+    <mat-icon aria-hidden="true">arrow_back</mat-icon>{{ mensajes.volver }}
+  </a>
+
+  @if (errorCarga(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="carga">{{ mensajeError }}</p>
+  }
+
+  @if (cargando()) {
+    <vit-cargando />
+  } @else if (empresa(); as datosEmpresa) {
+    <header class="flex flex-col gap-1.5">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="m-0 text-2xl font-medium">{{ datosEmpresa.razonSocial }}</h1>
+        <vit-chip-estado [texto]="encabezado().estado" [tono]="encabezado().tono" data-chip="estado" />
+        @if (encabezado().ambiente; as ambiente) {
+          <vit-chip-estado [texto]="ambiente" tono="neutro" data-chip="ambiente" />
+        }
+      </div>
+      <p class="m-0 text-sm text-sobre-superficie-variante">
+        RUC <span class="font-mono text-[13px]">{{ datosEmpresa.ruc }}</span> · {{ mensajes.subtitulo }}
+      </p>
+    </header>
+
+    <vit-grupo-plegable>
+      <vit-seccion-plegable
+        data-seccion="proveedor"
+        [titulo]="mensajes.secciones.proveedor"
+        [resumen]="resumenes().proveedor"
+        [expandida]="expandidas().proveedor"
+        (expandidaChange)="alternar('proveedor', $event)"
+      >
+        <vit-entrada-seccion vitSeccionEntrada [numero]="numeroDe.proveedor" [hecha]="hechas().proveedor" [deshabilitada]="deshabilitadas().proveedor" />
+        <vit-tarjeta-proveedor
+          [emisor]="emisor()"
+          [proveedores]="proveedores()"
+          [soloLectura]="soloLectura()"
+          [guardando]="guardando()"
+          [error]="errores().proveedor ?? null"
+          (guardar)="guardarProveedor($event)"
+        />
+        @if (seccionDatosIncompletos() === 'proveedor') {
+          <ng-container *ngTemplateOutlet="enlaceEmpresa" />
+        }
+      </vit-seccion-plegable>
+
+      <vit-seccion-plegable
+        data-seccion="certificado"
+        [titulo]="mensajes.secciones.certificado"
+        [resumen]="resumenes().certificado"
+        [deshabilitada]="deshabilitadas().certificado"
+        [expandida]="expandidas().certificado"
+        (expandidaChange)="alternar('certificado', $event)"
+      >
+        <vit-entrada-seccion vitSeccionEntrada [numero]="numeroDe.certificado" [hecha]="hechas().certificado" [deshabilitada]="deshabilitadas().certificado" />
+        @if (avisoCertificado(); as aviso) {
+          <vit-chip-estado vitSeccionFin [texto]="aviso.texto" [tono]="aviso.tono" data-chip="vencimiento" />
+        }
+        <vit-tarjeta-certificado
+          [emisor]="emisor()"
+          [requiereCertificado]="requiereCertificado()"
+          [ahora]="ahora()"
+          [subiendo]="subiendo()"
+          [error]="errores().certificado ?? null"
+          (subir)="subirCertificado($event)"
+        />
+      </vit-seccion-plegable>
+
+      <vit-seccion-plegable
+        data-seccion="prueba"
+        [titulo]="mensajes.secciones.prueba"
+        [resumen]="resumenes().prueba"
+        [deshabilitada]="deshabilitadas().prueba"
+        [expandida]="expandidas().prueba"
+        (expandidaChange)="alternar('prueba', $event)"
+      >
+        <vit-entrada-seccion vitSeccionEntrada [numero]="numeroDe.prueba" [hecha]="hechas().prueba" [deshabilitada]="deshabilitadas().prueba" />
+        @if (chipPrueba(); as chip) {
+          <vit-chip-estado vitSeccionFin [texto]="chip.texto" [tono]="chip.tono" data-chip="prueba" />
+        }
+        <vit-tarjeta-prueba
+          [emisor]="emisor()"
+          [solicitando]="solicitando()"
+          [agotado]="consultaAgotada()"
+          [error]="errores().prueba ?? null"
+          (ejecutar)="ejecutarPrueba()"
+          (actualizar)="seguirPrueba()"
+        />
+        @if (seccionDatosIncompletos() === 'prueba') {
+          <ng-container *ngTemplateOutlet="enlaceEmpresa" />
+        }
+      </vit-seccion-plegable>
+
+      <vit-seccion-plegable
+        data-seccion="produccion"
+        [titulo]="mensajes.secciones.produccion"
+        [resumen]="resumenes().produccion"
+        [deshabilitada]="deshabilitadas().produccion"
+        [expandida]="expandidas().produccion"
+        (expandidaChange)="alternar('produccion', $event)"
+      >
+        <vit-entrada-seccion vitSeccionEntrada [numero]="numeroDe.produccion" [hecha]="hechas().produccion" [deshabilitada]="deshabilitadas().produccion" />
+        <vit-tarjeta-produccion [emisor]="emisor()" [ahora]="ahora()" [pasando]="pasando()" [error]="errores().produccion ?? null" (pasar)="pasarAProduccion()" />
+        @if (seccionDatosIncompletos() === 'produccion') {
+          <ng-container *ngTemplateOutlet="enlaceEmpresa" />
+        }
+      </vit-seccion-plegable>
+    </vit-grupo-plegable>
+
+    <ng-template #enlaceEmpresa>
+      <a mat-stroked-button class="mt-3" [routerLink]="['../../../empresas', empresaId, 'editar']" data-accion="completar-empresa">
+        <mat-icon aria-hidden="true">edit</mat-icon>{{ mensajes.completarEmpresa }}
+      </a>
+    </ng-template>
+  } @else if (!errorCarga()) {
+    <vit-estado-vacio icono="domain_disabled" [titulo]="mensajes.empresaNoEncontrada" />
+  }
+</section>

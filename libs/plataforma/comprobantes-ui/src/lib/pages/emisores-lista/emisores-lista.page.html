@@ -1,0 +1,49 @@
+<section class="flex flex-col gap-4">
+  <header class="flex flex-col gap-1.5">
+    <h1 class="m-0 text-2xl font-medium">{{ mensajes.titulo }}</h1>
+    <p class="m-0 text-sm text-sobre-superficie-variante">{{ mensajes.subtitulo }}</p>
+  </header>
+
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="api">{{ mensajeError }}</p>
+  }
+
+  <vit-tabla
+    [columnas]="columnas"
+    [filas]="filasVisibles()"
+    [total]="filas().length"
+    [cargando]="cargando()"
+    [indicePagina]="paginaActual().indice"
+    [tamanoPagina]="paginaActual().tamano"
+    [textoVacio]="mensajes.sinEmpresas"
+    (pagina)="paginar($event)"
+  >
+    <ng-template vitCeldaTabla="empresa" let-fila>
+      <a class="font-medium text-sobre-superficie no-underline hover:text-primario hover:underline" [routerLink]="fila.empresaId" data-accion="abrir-empresa">
+        {{ fila.empresa }}
+      </a>
+    </ng-template>
+    <ng-template vitCeldaTabla="ruc" let-fila>
+      <span class="font-mono text-[13px]">{{ fila.ruc }}</span>
+      <!-- En celular, la línea de detalle del canvas: «RUC · proveedor · ambiente». -->
+      <span class="hidden max-[600px]:inline"> · {{ fila.proveedor }} · {{ fila.ambiente }}</span>
+    </ng-template>
+    <ng-template vitCeldaTabla="vence" let-fila>
+      <span class="inline-flex items-center gap-2">
+        <span [class.text-sobre-superficie-variante]="fila.vence === mensajes.sinDato">{{ fila.vence }}</span>
+        @if (fila.aviso; as aviso) {
+          <vit-chip-estado [texto]="aviso.texto" [tono]="aviso.tono" data-chip="vencimiento" />
+        }
+      </span>
+    </ng-template>
+    <ng-template vitAccionesFila let-fila>
+      @if (fila.configurado) {
+        <a mat-icon-button [routerLink]="fila.empresaId" [attr.aria-label]="mensajes.verEmisor + ': ' + fila.empresa" data-accion="ver">
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </a>
+      } @else {
+        <a mat-button [routerLink]="fila.empresaId" [attr.aria-label]="mensajes.configurar + ': ' + fila.empresa" data-accion="configurar">{{ mensajes.configurar }}</a>
+      }
+    </ng-template>
+  </vit-tabla>
+</section>

@@ -1,0 +1,66 @@
+<div class="flex flex-col gap-5">
+  @if (!requiereCertificado()) {
+    <p class="m-0 text-sm text-sobre-superficie-variante" data-ayuda="opcional">{{ ayudaOpcional }}</p>
+  }
+
+  @if (certificado(); as datos) {
+    <dl class="m-0 grid gap-4 sm:grid-cols-3" data-certificado="actual">
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.rucCertificado }}</dt>
+        <dd class="m-0 font-mono text-[13px]">{{ datos.ruc }}</dd>
+      </div>
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.vence }}</dt>
+        <dd class="m-0 flex flex-wrap items-center gap-2 text-sm">
+          {{ vence() }}
+          @if (aviso(); as avisoVencimiento) {
+            <vit-chip-estado [texto]="avisoVencimiento.texto" [tono]="avisoVencimiento.tono" />
+          }
+        </dd>
+      </div>
+      <div>
+        <dt class="mb-1 text-xs text-sobre-superficie-variante">{{ mensajes.huella }}</dt>
+        <dd class="m-0 font-mono text-[13px]">{{ huella() }}</dd>
+      </div>
+    </dl>
+    @if (aviso()) {
+      <p class="m-0 flex items-start gap-3 rounded-tarjeta bg-chip-advertencia p-3 text-sm text-sobre-chip-advertencia">
+        <mat-icon aria-hidden="true">schedule</mat-icon>{{ mensajes.sinInterrupcion }}
+      </p>
+    }
+  }
+
+  @if (errorVisible(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="certificado">{{ mensajeError }}</p>
+  }
+
+  <ng-container *siPermiso="permisos.configurar">
+    <div class="flex flex-col gap-3">
+      <input #selector class="hidden" type="file" [accept]="aceptar" data-campo="archivo" (change)="alElegir($event)" />
+      <div class="flex flex-wrap items-center gap-3">
+        <button mat-stroked-button type="button" data-accion="elegir-archivo" (click)="elegirArchivo()">
+          <mat-icon aria-hidden="true">upload_file</mat-icon>{{ mensajes.elegirArchivo }}
+        </button>
+        @if (archivo(); as elegido) {
+          <span class="text-sm" data-archivo="elegido">{{ elegido.name }} · {{ tamano() }}</span>
+        }
+      </div>
+      <mat-form-field appearance="outline" class="sm:max-w-sm">
+        <mat-label>{{ mensajes.clave }}</mat-label>
+        <input matInput type="password" autocomplete="off" data-campo="clave-certificado" [ngModel]="clave()" (ngModelChange)="clave.set($event)" />
+      </mat-form-field>
+    </div>
+    <div class="flex flex-wrap items-center justify-end gap-2 border-t border-borde pt-4">
+      <span class="mr-auto inline-flex items-center gap-1.5 text-[13px] text-sobre-superficie-variante">
+        <mat-icon class="text-lg" aria-hidden="true">lock</mat-icon>{{ mensajes.restricciones }}
+      </span>
+      <button mat-flat-button type="button" data-accion="subir" [disabled]="!puedeSubir()" [attr.aria-busy]="subiendo()" (click)="enviar()">
+        @if (subiendo()) {
+          <mat-progress-spinner mode="indeterminate" diameter="18" />
+        } @else {
+          {{ certificado() ? mensajes.reemplazar : mensajes.subir }}
+        }
+      </button>
+    </div>
+  </ng-container>
+</div>

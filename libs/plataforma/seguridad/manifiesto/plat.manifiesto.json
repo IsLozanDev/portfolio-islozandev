@@ -1,12 +1,13 @@
 {
   "producto_codigo": "PLAT",
   "nombre": "Plataforma",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "modulos": [
     { "codigo": "seguridad", "nombre": "Seguridad", "orden": 1 },
     { "codigo": "configuracion", "nombre": "Configuración", "orden": 2 },
     { "codigo": "organizacion", "nombre": "Organización", "orden": 3 },
-    { "codigo": "consola", "nombre": "Consola", "orden": 4 }
+    { "codigo": "facturacion", "nombre": "Facturación", "orden": 4 },
+    { "codigo": "consola", "nombre": "Consola", "orden": 5 }
   ],
   "opciones": [
     { "codigo": "plat.seguridad", "modulo": "seguridad", "padre": null, "nombre": "Seguridad", "icono": "admin_panel_settings", "orden": 1, "permisos": [] },
@@ -27,7 +28,9 @@
     { "codigo": "plat.organizacion.sucursales", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Sucursales", "ruta": "/admin/sucursales", "icono": "store", "orden": 2, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.organizacion.unidades", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Unidades", "ruta": "/admin/unidades", "icono": "view_module", "orden": 3, "permisos": ["plat.organizacion.consultar"] },
     { "codigo": "plat.organizacion.personas", "modulo": "organizacion", "padre": "plat.organizacion", "nombre": "Personas", "ruta": "/admin/personas", "icono": "contacts", "orden": 4, "permisos": ["plat.persona.leer"] },
-    { "codigo": "plat.consola", "modulo": "consola", "padre": null, "nombre": "Consola", "icono": "dns", "orden": 4, "permisos": [] },
+    { "codigo": "plat.facturacion", "modulo": "facturacion", "padre": null, "nombre": "Facturación", "icono": "receipt_long", "orden": 4, "permisos": [] },
+    { "codigo": "plat.facturacion.emisores", "modulo": "facturacion", "padre": "plat.facturacion", "nombre": "Emisor electrónico", "ruta": "/admin/fe/emisores", "icono": "verified", "orden": 1, "permisos": ["plat.fe.consultar"] },
+    { "codigo": "plat.consola", "modulo": "consola", "padre": null, "nombre": "Consola", "icono": "dns", "orden": 5, "permisos": [] },
     { "codigo": "plat.consola.tenants", "modulo": "consola", "padre": "plat.consola", "nombre": "Tenants", "ruta": "/consola/tenants", "icono": "apartment", "orden": 1, "permisos": ["plat.tenant.consultar"] },
     { "codigo": "plat.consola.soporte", "modulo": "consola", "padre": "plat.consola", "nombre": "Soporte", "ruta": "/consola/soporte", "icono": "support_agent", "orden": 2, "permisos": ["plat.soporte.solicitar"] },
     { "codigo": "plat.consola.catalogos", "modulo": "consola", "padre": "plat.consola", "nombre": "Catálogos", "ruta": "/consola/catalogos", "icono": "library_books", "orden": 3, "permisos": ["plat.catalogo.item_gestionar"] },
@@ -144,7 +147,7 @@
     {
       "codigo": "PLAT_ENCARGADO_FACTURACION",
       "nombre": "Encargado de facturación electrónica",
-      "permisos": ["plat.fe.configurar", "plat.fe.consultar", "plat.sesion.contexto"]
+      "permisos": ["plat.fe.configurar", "plat.fe.consultar", "plat.sesion.contexto", "plat.catalogo.leer"]
     }
   ],
   "parametros": [

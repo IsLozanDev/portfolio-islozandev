@@ -18,7 +18,7 @@ describe('Manifiesto PLAT 1.27.0: plantillas de notificación (spec 43)', () => 
   });
 
   it('está en la versión 1.27.0 y declara los dos permisos con alcance TENANT, no sensibles', () => {
-    expect(manifiesto.version).toBe('1.29.0');
+    expect(manifiesto.version).toBe('1.30.0');
     const dePlantillas = manifiesto.permisos.filter((permiso) => esDePlantillas(permiso.codigo));
     expect(dePlantillas.map((permiso) => [permiso.codigo, permiso.alcance_minimo, permiso.sensible])).toEqual([
       [PERMISOS_PLANTILLAS.consultar, 'TENANT', false],

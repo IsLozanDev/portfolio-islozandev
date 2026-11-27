@@ -1,0 +1,77 @@
+<form class="flex flex-col gap-5" [formGroup]="grupo" (ngSubmit)="enviar()" novalidate>
+  @if (avisaRepetirPrueba()) {
+    <p class="m-0 flex items-start gap-3 rounded-tarjeta bg-chip-info p-3 text-sm text-sobre-chip-info" data-aviso="repetir-prueba">
+      <mat-icon aria-hidden="true">info</mat-icon>{{ mensajes.avisoRepetirPrueba }}
+    </p>
+  }
+  @if (error(); as mensajeError) {
+    <p role="alert" class="m-0 rounded-tarjeta bg-contenedor-error p-3 text-sm text-sobre-contenedor-error" data-error="proveedor">{{ mensajeError }}</p>
+  }
+
+  <div class="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+    <mat-form-field appearance="outline" class="sm:col-span-2">
+      <mat-label>{{ mensajes.proveedor }}</mat-label>
+      <mat-select formControlName="proveedor" data-campo="proveedor" required>
+        @for (proveedor of proveedores(); track proveedor.codigo) {
+          <mat-option [value]="proveedor.codigo">{{ proveedor.nombre }}</mat-option>
+        }
+      </mat-select>
+      @if (enProduccion()) {
+        <mat-hint>{{ mensajes.bloqueadoEnProduccion }}</mat-hint>
+      } @else if (proveedores().length === 0) {
+        <mat-hint data-ayuda="sin-proveedores">{{ mensajes.sinProveedores }}</mat-hint>
+      }
+      <mat-error>{{ grupo.controls.proveedor.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+
+    @if (pideUrl()) {
+      <mat-form-field appearance="outline" class="sm:col-span-2">
+        <mat-label>{{ mensajes.url }}</mat-label>
+        <input matInput type="url" formControlName="url" data-campo="url" autocomplete="off" required />
+        <mat-error>{{ grupo.controls.url.errors | mensajeValidacion }}</mat-error>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ esSunat() ? mensajes.usuarioSol : mensajes.usuario }}</mat-label>
+      <input matInput formControlName="usuario" data-campo="usuario" autocomplete="off" required />
+      @if (esSunat()) {
+        <mat-hint>{{ mensajes.ayudaUsuarioSol }}</mat-hint>
+      }
+      <mat-error>{{ grupo.controls.usuario.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ esSunat() ? mensajes.claveSol : mensajes.clave }}</mat-label>
+      <input matInput type="password" formControlName="clave" data-campo="clave" autocomplete="new-password" />
+      @if (tieneCredencial()) {
+        <mat-hint data-ayuda="clave">{{ ayudaClaveConfigurada }}</mat-hint>
+      }
+      <mat-error>{{ grupo.controls.clave.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.regimenIgv }}</mat-label>
+      <mat-select formControlName="regimenIgv" data-campo="regimen">
+        @for (regimen of regimenes; track regimen.codigo) {
+          <mat-option [value]="regimen.codigo">{{ regimen.texto }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ mensajes.leyendaPie }}</mat-label>
+      <input matInput formControlName="leyendaPie" data-campo="leyenda" autocomplete="off" />
+      <mat-error>{{ grupo.controls.leyendaPie.errors | mensajeValidacion }}</mat-error>
+    </mat-form-field>
+  </div>
+
+  <div *siPermiso="permisos.configurar" class="flex flex-wrap justify-end gap-2 border-t border-borde pt-4">
+    <button mat-button type="button" data-accion="descartar" (click)="descartar()">{{ mensajes.descartar }}</button>
+    <button mat-flat-button type="submit" data-accion="guardar" [disabled]="guardando()" [attr.aria-busy]="guardando()">
+      @if (guardando()) {
+        <mat-progress-spinner mode="indeterminate" diameter="18" />
+      } @else {
+        {{ mensajes.guardar }}
+      }
+    </button>
+  </div>
+</form>

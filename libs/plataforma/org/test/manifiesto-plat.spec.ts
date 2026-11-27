@@ -26,7 +26,7 @@ describe('Manifiesto PLAT 1.27.0: parte de org (specs 12 y 17a)', () => {
   });
 
   it('declara los permisos de org con su alcance; crear y cambiar estado de tenants son sensibles', () => {
-    expect(manifiesto.version).toBe('1.29.0');
+    expect(manifiesto.version).toBe('1.30.0');
     const declarados = [...PERMISOS_TENANTS, ...PERMISOS_ORGANIZACION].map((codigo) => [codigo, permiso(codigo)?.alcance_minimo, permiso(codigo)?.sensible]);
     expect(declarados).toEqual([
       ['plat.tenant.crear', 'TENANT', true],
@@ -81,7 +81,7 @@ describe('Manifiesto PLAT 1.27.0: parte de org (specs 12 y 17a)', () => {
   it('declara los módulos organizacion y consola con sus opciones de menú', () => {
     expect(manifiesto.modulos.filter((modulo) => ['organizacion', 'consola'].includes(modulo.codigo))).toEqual([
       { codigo: 'organizacion', nombre: 'Organización', orden: 3 },
-      { codigo: 'consola', nombre: 'Consola', orden: 4 },
+      { codigo: 'consola', nombre: 'Consola', orden: 5 },
     ]);
     const opciones = manifiesto.opciones.filter((opcion) => ['organizacion', 'consola'].includes(opcion.modulo)).map(({ codigo, padre, ruta, permisos }) => [codigo, padre, ruta, permisos]);
     expect(opciones).toEqual([

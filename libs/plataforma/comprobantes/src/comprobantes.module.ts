@@ -5,7 +5,7 @@ import { CATALOGO_PORT, type CatalogoPort } from '@vitrina/plataforma/catalogos'
 import type { Clock, EventPublisher, IdGenerator, TenantContext } from '@vitrina/plataforma/kernel';
 import { CLOCK, EVENT_PUBLISHER, ID_GENERATOR, TENANT_CONTEXT, TypeOrmUnitOfWork } from '@vitrina/plataforma/kernel-infra';
 import { CORRELATIVO_PORT, SERIES_ACTIVAS_PORT, type CorrelativoPort, type SeriesActivasPort } from '@vitrina/plataforma/correlativos';
-import { ConsultarEmpresa, ConsultarSucursal, ListarSucursales, PADRON_RUC, type PadronRucPort } from '@vitrina/plataforma/org';
+import { ConsultarEmpresa, ConsultarSucursal, ListarEmpresas, ListarSucursales, PADRON_RUC, type PadronRucPort } from '@vitrina/plataforma/org';
 import { PARAMETRO_PORT, type ParametroPort } from '@vitrina/plataforma/parametros';
 import { BOVEDA_SECRETOS, type BovedaSecretos } from '@vitrina/plataforma/secretos';
 import { AvisarCertificadosPorVencer } from './application/avisar-certificados-por-vencer.js';
@@ -22,6 +22,7 @@ import { EncolarEnvioComprobante } from './application/encolar-envio-comprobante
 import { EncolarPruebaEmisor } from './application/encolar-prueba-emisor.js';
 import { EnviarComprobante } from './application/enviar-comprobante.js';
 import { HabilitarProduccion } from './application/habilitar-produccion.js';
+import { ListarEmisores } from './application/listar-emisores.js';
 import type { PseOsePort } from './application/ports/pse-ose.port.js';
 import { SolicitarPruebaEmisor } from './application/solicitar-prueba-emisor.js';
 import { PROVEEDORES_CON_ADAPTADOR } from './domain/proveedores-fe.js';
@@ -61,7 +62,7 @@ const CONTEXTO_LOG = 'Comprobantes';
 
 export interface ComprobantesOpciones {
   /**
-   * Módulos que exportan ConsultarEmpresa, ConsultarSucursal y PADRON_RUC (OrgModule), CATALOGO_PORT (CatalogosModule),
+   * Módulos que exportan ConsultarEmpresa, ListarEmpresas, ConsultarSucursal y PADRON_RUC (OrgModule), CATALOGO_PORT (CatalogosModule),
    * BOVEDA_SECRETOS (SecretosModule), PARAMETRO_PORT (ParametrosModule) y CORRELATIVO_PORT y SERIES_ACTIVAS_PORT
    * (CorrelativosModule). La misma referencia que en la app: cada uno registra sus controladores.
    */
@@ -81,7 +82,7 @@ export interface ComprobantesPruebasOpciones {
   /** Cola `fe-pruebas`. */
   redisUrl: string;
   entorno: EntornoFe;
-  /** Módulos que exportan ConsultarEmpresa y ListarSucursales (OrgModule), CATALOGO_PORT (CatalogosModule) y BOVEDA_SECRETOS (SecretosModule). */
+  /** Módulos que exportan ConsultarEmpresa, ListarEmpresas y ListarSucursales (OrgModule), CATALOGO_PORT (CatalogosModule) y BOVEDA_SECRETOS (SecretosModule). */
   imports: ModuleMetadata['imports'];
 }
 
@@ -90,7 +91,7 @@ export interface ComprobantesEnviosOpciones {
   redisUrl: string;
   entorno: EntornoFe;
   /**
-   * Módulos que exportan ConsultarEmpresa y ConsultarSucursal (OrgModule), CATALOGO_PORT (CatalogosModule),
+   * Módulos que exportan ConsultarEmpresa, ListarEmpresas y ConsultarSucursal (OrgModule), CATALOGO_PORT (CatalogosModule),
    * BOVEDA_SECRETOS (SecretosModule) y ARCHIVO_SISTEMA_PORT (ArchivosModule.registrarWorker).
    */
   imports: ModuleMetadata['imports'];
@@ -203,6 +204,7 @@ export class ComprobantesModule {
             boveda: BovedaSecretos,
             catalogo: CatalogoPort,
             consultarEmpresa: ConsultarEmpresa,
+            listarEmpresas: ListarEmpresas,
           ): DependenciasEmisor => ({
             unidadDeTrabajo,
             contexto,
@@ -212,14 +214,15 @@ export class ComprobantesModule {
             auditoria,
             boveda,
             emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
-            empresas: new EmpresaEmisoraOrg(consultarEmpresa),
+            empresas: new EmpresaEmisoraOrg(consultarEmpresa, listarEmpresas),
             proveedores: new ProveedoresFeCatalogo(catalogo),
             lector: new LectorCertificadoForge(),
             entorno: reglas,
           }),
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, AUDITORIA, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa],
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, ID_GENERATOR, EVENT_PUBLISHER, AUDITORIA, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa, ListarEmpresas],
         },
         casoDeUsoDelEmisor(ConsultarEmisor),
+        casoDeUsoDelEmisor(ListarEmisores),
         casoDeUsoDelEmisor(ConfigurarEmisor),
         casoDeUsoDelEmisor(CargarCertificado),
         casoDeUsoDelEmisor(SolicitarPruebaEmisor),
@@ -301,6 +304,7 @@ export class ComprobantesModule {
             catalogo: CatalogoPort,
             consultarEmpresa: ConsultarEmpresa,
             listarSucursales: ListarSucursales,
+            listarEmpresas: ListarEmpresas,
           ) => {
             const proveedores = new ProveedoresFeCatalogo(catalogo);
             const informar: Registrar = (mensaje, datos) => logger.log({ evento: mensaje, ...datos });
@@ -310,7 +314,7 @@ export class ComprobantesModule {
               reloj,
               publicador,
               emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
-              empresas: new EmpresaEmisoraOrg(consultarEmpresa),
+              empresas: new EmpresaEmisoraOrg(consultarEmpresa, listarEmpresas),
               establecimientos: new EstablecimientoPrincipalOrg(listarSucursales),
               proveedores,
               boveda,
@@ -318,7 +322,7 @@ export class ComprobantesModule {
               informar,
             });
           },
-          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa, ListarSucursales],
+          inject: [TypeOrmUnitOfWork, TENANT_CONTEXT, CLOCK, EVENT_PUBLISHER, BOVEDA_SECRETOS, CATALOGO_PORT, ConsultarEmpresa, ListarSucursales, ListarEmpresas],
         },
       ],
       exports: [EjecutarPruebaEmisor],
@@ -363,6 +367,7 @@ export class ComprobantesModule {
             consultarEmpresa: ConsultarEmpresa,
             consultarSucursal: ConsultarSucursal,
             archivos: ArchivoSistemaPort,
+            listarEmpresas: ListarEmpresas,
           ) => {
             const proveedores = new ProveedoresFeCatalogo(catalogo);
             return new EnviarComprobante({
@@ -374,7 +379,7 @@ export class ComprobantesModule {
               comprobantes: new RepositorioComprobantesTypeOrm(unidadDeTrabajo, contexto),
               envios: new RepositorioEnviosTypeOrm(unidadDeTrabajo, contexto),
               emisores: new RepositorioEmisoresTypeOrm(unidadDeTrabajo, contexto),
-              empresas: new EmpresaEmisoraOrg(consultarEmpresa),
+              empresas: new EmpresaEmisoraOrg(consultarEmpresa, listarEmpresas),
               sucursales: new SucursalesEmisorasOrg(consultarSucursal),
               catalogos: new CatalogosSunatCatalogo(catalogo),
               proveedores,
@@ -396,6 +401,7 @@ export class ComprobantesModule {
             ConsultarEmpresa,
             ConsultarSucursal,
             ARCHIVO_SISTEMA_PORT,
+            ListarEmpresas,
           ],
         },
       ],

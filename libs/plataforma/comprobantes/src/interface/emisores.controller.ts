@@ -25,11 +25,12 @@ import { BYTES_MAXIMOS_CERTIFICADO, CargarCertificado } from '../application/car
 import { ConfigurarEmisor } from '../application/configurar-emisor.js';
 import { ConsultarEmisor } from '../application/consultar-emisor.js';
 import { HabilitarProduccion } from '../application/habilitar-produccion.js';
+import { ListarEmisores } from '../application/listar-emisores.js';
 import { SolicitarPruebaEmisor } from '../application/solicitar-prueba-emisor.js';
 import { LARGO_MAXIMO_LEYENDA, LARGO_MAXIMO_PROVEEDOR, LARGO_MAXIMO_URL, LARGO_MAXIMO_USUARIO } from '../domain/emisor.js';
 import { PERMISOS_FE } from '../domain/permisos-fe.js';
 import { REGIMENES_IGV } from '../domain/regimen-igv.js';
-import { CargarCertificadoDto, ConfigurarEmisorDto, EmisorDto, ErrorFeDto, emisorDto } from './emisores.dto.js';
+import { CargarCertificadoDto, ConfigurarEmisorDto, EmisorDto, EmpresaConEmisorDto, ErrorFeDto, emisorDto, empresaConEmisorDto } from './emisores.dto.js';
 import { CertificadoGrandeFiltro, ComprobantesFiltro, solicitudInvalida, validar } from './emisores.http.js';
 
 /** Cotas de entrada: el formato real de cada campo lo valida el dominio, con su código de error. */
@@ -61,6 +62,7 @@ interface RespuestaConEstado {
 
 const PASO_SENSIBLE = 'TOKEN_INVALIDO o MFA_REQUERIDA: `plat.fe.configurar` es sensible y exige aal2 (TR-RN-009)';
 const EMPRESA_O_EMISOR = 'EMPRESA_NO_ENCONTRADA (también si es de otro tenant) o EMISOR_NO_ENCONTRADO';
+const PARAMETRO_EMPRESA = { name: 'empresaId', format: 'uuid' } as const;
 const EMISOR_DE_OTRO_TENANT = 'EMISOR_NO_ENCONTRADO, también si la empresa es de otro tenant';
 
 /** TR-RF-052: el emisor electrónico de cada empresa, su prueba en beta y su paso a producción. Ninguna respuesta lleva claves, token ni el .pfx. */
@@ -68,7 +70,6 @@ const EMISOR_DE_OTRO_TENANT = 'EMISOR_NO_ENCONTRADO, también si la empresa es d
 @ApiBearerAuth()
 @ApiHeader({ name: 'X-Sucursal-Id', required: true })
 @ApiForbiddenResponse({ description: 'SIN_PERMISO o SUCURSAL_NO_ASIGNADA' })
-@ApiParam({ name: 'empresaId', format: 'uuid' })
 @UseFilters(ComprobantesFiltro, CertificadoGrandeFiltro)
 @Controller('fe/emisores')
 export class EmisoresController {
@@ -78,20 +79,35 @@ export class EmisoresController {
     @Inject(CargarCertificado) private readonly cargarCertificado: CargarCertificado,
     @Inject(SolicitarPruebaEmisor) private readonly solicitarPruebaEmisor: SolicitarPruebaEmisor,
     @Inject(HabilitarProduccion) private readonly habilitarProduccion: HabilitarProduccion,
+    @Inject(ListarEmisores) private readonly listarEmisores: ListarEmisores,
   ) {}
 
+  @Get()
+  @Permiso(PERMISOS_FE.consultar)
+  @ApiOkResponse({
+    type: EmpresaConEmisorDto,
+    isArray: true,
+    description: 'Las empresas activas del tenant por razón social, con el resumen de su emisor o null',
+  })
+  @ApiUnauthorizedResponse({ description: 'TOKEN_INVALIDO' })
+  async listar(): Promise<EmpresaConEmisorDto[]> {
+    return (await this.listarEmisores.ejecutar()).map(empresaConEmisorDto);
+  }
+
   @Get(':empresaId')
+  @ApiParam(PARAMETRO_EMPRESA)
   @Permiso(PERMISOS_FE.consultar)
   @ApiOkResponse({ type: EmisorDto, description: 'El emisor sin secretos' })
   @ApiUnauthorizedResponse({ description: 'TOKEN_INVALIDO' })
   @ApiBadRequestResponse({ description: 'SOLICITUD_INVALIDA (empresaId no es uuid)' })
-  @ApiNotFoundResponse({ type: ErrorFeDto, description: 'EMISOR_NO_ENCONTRADO, también si la empresa es de otro tenant' })
+  @ApiNotFoundResponse({ type: ErrorFeDto, description: EMISOR_DE_OTRO_TENANT })
   async consultar(@Param() parametros: unknown): Promise<EmisorDto> {
     const { empresaId } = validar(EsquemaEmpresa, parametros);
     return emisorDto(await this.consultarEmisor.ejecutar(empresaId));
   }
 
   @Put(':empresaId')
+  @ApiParam(PARAMETRO_EMPRESA)
   @Permiso(PERMISOS_FE.configurar)
   @ApiBody({ type: ConfigurarEmisorDto })
   @ApiOkResponse({ type: EmisorDto, description: 'Emisor actualizado' })
@@ -131,6 +147,7 @@ export class EmisoresController {
   }
 
   @Post(':empresaId/certificado')
+  @ApiParam(PARAMETRO_EMPRESA)
   @HttpCode(HttpStatus.OK)
   @Permiso(PERMISOS_FE.configurar)
   @UseInterceptors(FileInterceptor(CAMPO_ARCHIVO, { limits: LIMITES_MULTIPART }))
@@ -155,6 +172,7 @@ export class EmisoresController {
   }
 
   @Post(':empresaId/prueba')
+  @ApiParam(PARAMETRO_EMPRESA)
   @HttpCode(HttpStatus.ACCEPTED)
   @Permiso(PERMISOS_FE.configurar)
   @ApiAcceptedResponse({
@@ -174,6 +192,7 @@ export class EmisoresController {
   }
 
   @Post(':empresaId/produccion')
+  @ApiParam(PARAMETRO_EMPRESA)
   @HttpCode(HttpStatus.OK)
   @Permiso(PERMISOS_FE.configurar)
   @ApiOkResponse({ type: EmisorDto, description: 'Emisor en PRODUCCION (estado y ambiente)' })

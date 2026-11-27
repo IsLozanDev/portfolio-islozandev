@@ -2,6 +2,7 @@ import { AvisarCertificadosPorVencer, TAMANO_LOTE_AVISOS } from '../src/applicat
 import { BYTES_MAXIMOS_CERTIFICADO, CargarCertificado, type CargarCertificadoComando } from '../src/application/cargar-certificado.js';
 import { ConfigurarEmisor, type ConfigurarEmisorComando } from '../src/application/configurar-emisor.js';
 import { ConsultarEmisor } from '../src/application/consultar-emisor.js';
+import { ListarEmisores } from '../src/application/listar-emisores.js';
 import { Emisor } from '../src/domain/emisor.js';
 import {
   ActorRequeridoFeError,
@@ -167,6 +168,44 @@ describe('ConsultarEmisor', () => {
 
     dobles.contexto.alcance = { tenantId: TENANT_B, actorId: USUARIO };
     await expect(new ConsultarEmisor(dobles).ejecutar(EMPRESA)).rejects.toBeInstanceOf(EmisorNoEncontradoError);
+  });
+});
+
+describe('ListarEmisores (spec 62)', () => {
+  const OTRA_EMPRESA = 'eeeeeeee-0000-4000-8000-000000000004';
+
+  it('empresas activas del tenant por razón social; sin emisor → null; inactivas y de otro tenant no vienen', async () => {
+    const dobles = crearDobles();
+    dobles.empresas.empresas.set(OTRA_EMPRESA, {
+      id: OTRA_EMPRESA,
+      ruc: '20601234563',
+      activa: true,
+      razonSocial: 'ANDES SAC',
+      nombreComercial: null,
+      domicilioFiscal: null,
+      ubigeo: null,
+      tenantId: TENANT_A,
+    });
+    await new ConfigurarEmisor(dobles).ejecutar(comando());
+    await new CargarCertificado(dobles).ejecutar(carga(crearPfx(ahora)));
+
+    const lista = await new ListarEmisores(dobles).ejecutar();
+
+    expect(lista).toEqual([
+      { empresaId: OTRA_EMPRESA, ruc: '20601234563', razonSocial: 'ANDES SAC', emisor: null },
+      {
+        empresaId: EMPRESA,
+        ruc: RUC_EMPRESA,
+        razonSocial: 'EMPRESA DE PRUEBA SAC',
+        emisor: { estado: 'CONFIGURADO', proveedor: SIMULADO, ambiente: 'BETA', certificadoVenceEn: expect.any(Date), pruebaEstado: null },
+      },
+    ]);
+    expect(lista.map((empresa) => empresa.empresaId)).not.toContain(EMPRESA_INACTIVA);
+
+    dobles.contexto.alcance = { tenantId: TENANT_B, actorId: USUARIO };
+    expect(await new ListarEmisores(dobles).ejecutar()).toEqual([
+      { empresaId: EMPRESA_DE_B, ruc: '20512345678', razonSocial: 'EMPRESA DE PRUEBA SAC', emisor: null },
+    ]);
   });
 });
 

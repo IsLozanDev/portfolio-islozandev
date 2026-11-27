@@ -14,6 +14,9 @@ import { PERMISOS_CATALOGOS_ADMIN } from './models/permisos-catalogos-admin';
 @Component({ template: '' })
 class Prohibido {}
 
+/** `comprobantes-ui` es lazy: no se importa estático ni en la prueba (spec 62). */
+const PERMISOS_FE = { consultar: 'plat.fe.consultar', configurar: 'plat.fe.configurar' };
+
 /** La primera carga lazy transforma Material entero; con la máquina ocupada pasa los 5 s por defecto. */
 const ESPERA_PRECARGA_MS = 30_000;
 
@@ -144,6 +147,15 @@ describe('ADMIN_CLIENTE_ROUTES', () => {
   it('/admin/catalogos sin personalizar ni item_propio va a /403 (spec 19e)', async () => {
     sesion.conPermisos(PERMISOS_CATALOGOS_ADMIN.leer, PERMISOS_CATALOGOS_ADMIN.feriadoGestionar);
     expect((await navegar('/admin/catalogos')).url).toBe(RUTA_PROHIBIDO);
+  });
+
+  it('/admin/fe/emisores abre la lista con plat.fe.consultar y sin él va a /403 (spec 62)', async () => {
+    sesion.conPermisos(PERMISOS_FE.consultar);
+    expect(await navegar('/admin/fe/emisores')).toEqual({ url: '/admin/fe/emisores', titulo: 'Emisor electrónico' });
+
+    TestBed.resetTestingModule();
+    sesion = new DobleSesion().conPermisos(PERMISOS_FE.configurar);
+    expect((await navegar('/admin/fe/emisores')).url).toBe(RUTA_PROHIBIDO);
   });
 
   it('/admin/empresas sin plat.organizacion.consultar va a /403', async () => {
